@@ -1,0 +1,22 @@
+{
+    "name": "KickbaseKumpel Flutter Dev",
+    "image": "mcr.microsoft.com/devcontainers/flutter:3.9",
+    "features": {
+        "ghcr.io/devcontainers/features/git:1": {}
+    },
+    "postCreateCommand": "flutter pub get && dart pub global activate build_runner && dart pub global activate riverpod_generator",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "Dart-Code.flutter",
+                "Dart-Code.dart-code",
+                "esbenp.prettier-vscode",
+                "GitHub.Copilot"
+            ]
+        }
+    },
+    "forwardPorts": [
+        8080
+    ],
+    "remoteUser": "vscode"
+}
