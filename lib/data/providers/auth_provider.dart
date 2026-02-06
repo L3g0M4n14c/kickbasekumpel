@@ -42,7 +42,9 @@ final currentUserProvider = Provider<User?>((ref) {
 });
 
 /// FutureProvider für den aktuellen User mit Result
-final currentUserResultProvider = FutureProvider<AuthResult<User?>>((ref) async {
+final currentUserResultProvider = FutureProvider<AuthResult<User?>>((
+  ref,
+) async {
   final repository = ref.watch(authRepositoryProvider);
   return await repository.getCurrentUser();
 });
@@ -57,17 +59,9 @@ class AuthState {
   final String? error;
   final String? successMessage;
 
-  const AuthState({
-    this.isLoading = false,
-    this.error,
-    this.successMessage,
-  });
+  const AuthState({this.isLoading = false, this.error, this.successMessage});
 
-  AuthState copyWith({
-    bool? isLoading,
-    String? error,
-    String? successMessage,
-  }) {
+  AuthState copyWith({bool? isLoading, String? error, String? successMessage}) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
       error: error,
@@ -108,31 +102,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       return true;
     } else if (result is AuthFailure<User>) {
-      state = state.copyWith(
-        isLoading: false,
-        error: result.message,
-      );
+      state = state.copyWith(isLoading: false, error: result.message);
       return false;
     }
 
-    state = state.copyWith(
-      isLoading: false,
-      error: 'Unbekannter Fehler',
-    );
+    state = state.copyWith(isLoading: false, error: 'Unbekannter Fehler');
     return false;
   }
 
   /// Sign in with email and password
-  Future<bool> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<bool> signIn({required String email, required String password}) async {
     state = state.copyWith(isLoading: true);
 
-    final result = await _repository.signIn(
-      email: email,
-      password: password,
-    );
+    final result = await _repository.signIn(email: email, password: password);
 
     if (result is AuthSuccess<User>) {
       state = state.copyWith(
@@ -141,17 +123,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       return true;
     } else if (result is AuthFailure<User>) {
-      state = state.copyWith(
-        isLoading: false,
-        error: result.message,
-      );
+      state = state.copyWith(isLoading: false, error: result.message);
       return false;
     }
 
-    state = state.copyWith(
-      isLoading: false,
-      error: 'Unbekannter Fehler',
-    );
+    state = state.copyWith(isLoading: false, error: 'Unbekannter Fehler');
     return false;
   }
 
@@ -168,17 +144,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       return true;
     } else if (result is AuthFailure) {
-      state = state.copyWith(
-        isLoading: false,
-        error: result.message,
-      );
+      state = state.copyWith(isLoading: false, error: result.message);
       return false;
     }
 
-    state = state.copyWith(
-      isLoading: false,
-      error: 'Unbekannter Fehler',
-    );
+    state = state.copyWith(isLoading: false, error: 'Unbekannter Fehler');
     return false;
   }
 
@@ -195,25 +165,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       return true;
     } else if (result is AuthFailure) {
-      state = state.copyWith(
-        isLoading: false,
-        error: result.message,
-      );
+      state = state.copyWith(isLoading: false, error: result.message);
       return false;
     }
 
-    state = state.copyWith(
-      isLoading: false,
-      error: 'Unbekannter Fehler',
-    );
+    state = state.copyWith(isLoading: false, error: 'Unbekannter Fehler');
     return false;
   }
 
   /// Update user profile
-  Future<bool> updateProfile({
-    String? displayName,
-    String? photoURL,
-  }) async {
+  Future<bool> updateProfile({String? displayName, String? photoURL}) async {
     state = state.copyWith(isLoading: true);
 
     final result = await _repository.updateProfile(
@@ -228,17 +189,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       return true;
     } else if (result is AuthFailure) {
-      state = state.copyWith(
-        isLoading: false,
-        error: result.message,
-      );
+      state = state.copyWith(isLoading: false, error: result.message);
       return false;
     }
 
-    state = state.copyWith(
-      isLoading: false,
-      error: 'Unbekannter Fehler',
-    );
+    state = state.copyWith(isLoading: false, error: 'Unbekannter Fehler');
     return false;
   }
 
@@ -255,17 +210,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       return true;
     } else if (result is AuthFailure) {
-      state = state.copyWith(
-        isLoading: false,
-        error: result.message,
-      );
+      state = state.copyWith(isLoading: false, error: result.message);
       return false;
     }
 
-    state = state.copyWith(
-      isLoading: false,
-      error: 'Unbekannter Fehler',
-    );
+    state = state.copyWith(isLoading: false, error: 'Unbekannter Fehler');
     return false;
   }
 
@@ -276,7 +225,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
 }
 
 /// Provider für AuthNotifier
-final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((
+  ref,
+) {
   final repository = ref.watch(authRepositoryProvider);
   return AuthNotifier(repository);
 });
@@ -288,10 +239,7 @@ final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref
 /// Provider für Check ob User angemeldet ist
 final isAuthenticatedProvider = Provider<bool>((ref) {
   final authState = ref.watch(authStateProvider);
-  return authState.maybeWhen(
-    data: (user) => user != null,
-    orElse: () => false,
-  );
+  return authState.maybeWhen(data: (user) => user != null, orElse: () => false);
 });
 
 /// Provider für User ID

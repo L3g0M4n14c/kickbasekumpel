@@ -8,7 +8,7 @@ class AuthRepository implements AuthRepositoryInterface {
   User? _cachedUser;
 
   AuthRepository({AuthSource? authSource})
-      : _authSource = authSource ?? AuthSource() {
+    : _authSource = authSource ?? AuthSource() {
     // Initialize cached user
     _cachedUser = _authSource.currentUser;
 
@@ -66,10 +66,7 @@ class AuthRepository implements AuthRepositoryInterface {
     required String email,
     required String password,
   }) async {
-    final result = await _authSource.signIn(
-      email: email,
-      password: password,
-    );
+    final result = await _authSource.signIn(email: email, password: password);
 
     // Update cache on success
     if (result is AuthSuccess<User>) {

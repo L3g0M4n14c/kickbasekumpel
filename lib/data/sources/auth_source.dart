@@ -9,7 +9,8 @@ class AuthException implements Exception {
   const AuthException(this.message, {this.code});
 
   @override
-  String toString() => 'AuthException: $message${code != null ? ' (code: $code)' : ''}';
+  String toString() =>
+      'AuthException: $message${code != null ? ' (code: $code)' : ''}';
 }
 
 /// Data source for Firebase Authentication operations
@@ -17,7 +18,7 @@ class AuthSource {
   final FirebaseAuth _firebaseAuth;
 
   AuthSource({FirebaseAuth? firebaseAuth})
-      : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
+    : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
 
   /// Stream of authentication state changes
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
@@ -70,14 +71,9 @@ class AuthSource {
 
       return AuthSuccess(user);
     } on FirebaseAuthException catch (e) {
-      return AuthFailure(
-        _getErrorMessage(e.code),
-        code: e.code,
-      );
+      return AuthFailure(_getErrorMessage(e.code), code: e.code);
     } catch (e) {
-      return AuthFailure(
-        'Ein unerwarteter Fehler ist aufgetreten: $e',
-      );
+      return AuthFailure('Ein unerwarteter Fehler ist aufgetreten: $e');
     }
   }
 
@@ -110,14 +106,9 @@ class AuthSource {
 
       return AuthSuccess(user);
     } on FirebaseAuthException catch (e) {
-      return AuthFailure(
-        _getErrorMessage(e.code),
-        code: e.code,
-      );
+      return AuthFailure(_getErrorMessage(e.code), code: e.code);
     } catch (e) {
-      return AuthFailure(
-        'Ein unerwarteter Fehler ist aufgetreten: $e',
-      );
+      return AuthFailure('Ein unerwarteter Fehler ist aufgetreten: $e');
     }
   }
 
@@ -127,14 +118,9 @@ class AuthSource {
       await _firebaseAuth.signOut();
       return const AuthSuccess(null);
     } on FirebaseAuthException catch (e) {
-      return AuthFailure(
-        _getErrorMessage(e.code),
-        code: e.code,
-      );
+      return AuthFailure(_getErrorMessage(e.code), code: e.code);
     } catch (e) {
-      return AuthFailure(
-        'Fehler beim Abmelden: $e',
-      );
+      return AuthFailure('Fehler beim Abmelden: $e');
     }
   }
 
@@ -151,14 +137,9 @@ class AuthSource {
       await _firebaseAuth.sendPasswordResetEmail(email: email.trim());
       return const AuthSuccess(null);
     } on FirebaseAuthException catch (e) {
-      return AuthFailure(
-        _getErrorMessage(e.code),
-        code: e.code,
-      );
+      return AuthFailure(_getErrorMessage(e.code), code: e.code);
     } catch (e) {
-      return AuthFailure(
-        'Fehler beim Senden der Passwort-Reset-E-Mail: $e',
-      );
+      return AuthFailure('Fehler beim Senden der Passwort-Reset-E-Mail: $e');
     }
   }
 
@@ -170,10 +151,7 @@ class AuthSource {
     try {
       final user = _firebaseAuth.currentUser;
       if (user == null) {
-        return const AuthFailure(
-          'Kein Benutzer angemeldet',
-          code: 'no-user',
-        );
+        return const AuthFailure('Kein Benutzer angemeldet', code: 'no-user');
       }
 
       if (displayName != null) {
@@ -187,14 +165,9 @@ class AuthSource {
       await user.reload();
       return const AuthSuccess(null);
     } on FirebaseAuthException catch (e) {
-      return AuthFailure(
-        _getErrorMessage(e.code),
-        code: e.code,
-      );
+      return AuthFailure(_getErrorMessage(e.code), code: e.code);
     } catch (e) {
-      return AuthFailure(
-        'Fehler beim Aktualisieren des Profils: $e',
-      );
+      return AuthFailure('Fehler beim Aktualisieren des Profils: $e');
     }
   }
 
@@ -203,23 +176,15 @@ class AuthSource {
     try {
       final user = _firebaseAuth.currentUser;
       if (user == null) {
-        return const AuthFailure(
-          'Kein Benutzer angemeldet',
-          code: 'no-user',
-        );
+        return const AuthFailure('Kein Benutzer angemeldet', code: 'no-user');
       }
 
       await user.delete();
       return const AuthSuccess(null);
     } on FirebaseAuthException catch (e) {
-      return AuthFailure(
-        _getErrorMessage(e.code),
-        code: e.code,
-      );
+      return AuthFailure(_getErrorMessage(e.code), code: e.code);
     } catch (e) {
-      return AuthFailure(
-        'Fehler beim Löschen des Kontos: $e',
-      );
+      return AuthFailure('Fehler beim Löschen des Kontos: $e');
     }
   }
 
@@ -228,10 +193,7 @@ class AuthSource {
     try {
       final user = _firebaseAuth.currentUser;
       if (user == null) {
-        return const AuthFailure(
-          'Kein Benutzer angemeldet',
-          code: 'no-user',
-        );
+        return const AuthFailure('Kein Benutzer angemeldet', code: 'no-user');
       }
 
       await user.reload();
@@ -245,14 +207,9 @@ class AuthSource {
 
       return AuthSuccess(reloadedUser);
     } on FirebaseAuthException catch (e) {
-      return AuthFailure(
-        _getErrorMessage(e.code),
-        code: e.code,
-      );
+      return AuthFailure(_getErrorMessage(e.code), code: e.code);
     } catch (e) {
-      return AuthFailure(
-        'Fehler beim Neuladen des Benutzers: $e',
-      );
+      return AuthFailure('Fehler beim Neuladen des Benutzers: $e');
     }
   }
 
