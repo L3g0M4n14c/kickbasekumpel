@@ -58,18 +58,63 @@ class MyWidget extends ConsumerWidget {
 
 ## 📦 Provider Overview
 
+### Service Providers (`service_providers.dart`) ⭐ NEU
+
+Zentrale Service-Instanzen für API-Kommunikation:
+
+**HTTP & API:**
+- `httpClientProvider` - `http.Client` - Singleton HTTP client
+- `httpClientWrapperProvider` - `HttpClientWrapper` - HTTP mit Retry-Logik
+- `kickbaseApiClientProvider` - `KickbaseAPIClient` - Kickbase API v4 client
+- `secureStorageProvider` - `FlutterSecureStorage` - Token storage
+
+**Async Services:**
+- `ligainsiderServiceFutureProvider` - `FutureProvider<LigainsiderService>` - Ligainsider scraper
+
+**Barrel Export:**
+- `syncServicesProvider` - `SyncServices` - Alle synchronen Services gebündelt
+
+**Verwendung:**
+```dart
+// HTTP Client
+final client = ref.watch(httpClientProvider);
+
+// API Client
+final apiClient = ref.watch(kickbaseApiClientProvider);
+await apiClient.getLeagues();
+
+// Ligainsider Service (async)
+final serviceAsync = ref.watch(ligainsiderServiceFutureProvider);
+serviceAsync.when(
+  data: (service) => service.getPlayerStatus('Max', 'Mustermann'),
+  loading: () => CircularProgressIndicator(),
+  error: (err, stack) => Text('Error: $err'),
+);
+
+// Alle Services gebündelt
+final services = ref.watch(syncServicesProvider);
+final leagues = await services.kickbaseApiClient.getLeagues();
+```
+
 ### Repository Providers (`repository_providers.dart`)
 
-Grundlegende Firebase- und Repository-Instanzen:
+Grundlegende Firebase- und Repository-Instanzen mit **API-first Pattern**:
 
 - `firestoreProvider` - FirebaseFirestore instance
 - `firebaseAuthProvider` - FirebaseAuth instance
-- `userRepositoryProvider` - User repository
-- `leagueRepositoryProvider` - League repository
-- `playerRepositoryProvider` - Player repository
-- `transferRepositoryProvider` - Transfer repository
+- `userRepositoryProvider` - User repository (mit API-Integration)
+- `leagueRepositoryProvider` - League repository (mit API-Integration)
+- `playerRepositoryProvider` - Player repository (mit API-Integration)
+- `transferRepositoryProvider` - Transfer repository (mit API-Integration)
 - `recommendationRepositoryProvider` - Recommendation repository
 - `authRepositoryProvider` - Auth repository
+
+**NEU: API-first Pattern:**
+```dart
+final leagueRepo = ref.watch(leagueRepositoryProvider);
+// Versucht zuerst API, dann Cache aus Firestore
+final result = await leagueRepo.getAll(); 
+```
 
 ### User Providers (`user_providers.dart`)
 

@@ -379,18 +379,77 @@ flutter test test/data/services/ --coverage
 - [x] KickbaseAPIClient vollständig portiert
 - [x] LigainsiderService HTML Scraper
 - [x] HttpClientWrapper mit Retry
-- [x] Riverpod Service Provider
-- [x] Integration in Repositories
+- [x] Riverpod Service Provider (service_providers.dart)
+- [x] Integration in Repositories (API-first Pattern)
 - [x] Error Handling & Exceptions
 - [x] Token Management
 - [x] Offline Fallback Caching
-- [x] Git Commit: "Phase 4: Services & API Integration"
+- [x] Phase 4e: Repositories aktualisiert mit API-Integration
+- [x] Git Commit: "Phase 4: Services & API Integration ✅"
+
+---
+
+## ✅ Phase 4e - ABGESCHLOSSEN
+
+### Implementierte Features:
+
+**1. Service Providers (`lib/data/providers/service_providers.dart`):**
+```dart
+// Synchrone Providers
+final httpClientProvider = Provider<http.Client>(...);
+final httpClientWrapperProvider = Provider<HttpClientWrapper>(...);
+final kickbaseApiClientProvider = Provider<KickbaseAPIClient>(...);
+
+// Async Provider für LigainsiderService
+final ligainsiderServiceFutureProvider = FutureProvider<LigainsiderService>(...);
+
+// Barrel Export für synchrone Services
+final syncServicesProvider = Provider<SyncServices>(...);
+```
+
+**2. Repository Updates (API-first Pattern):**
+- ✅ **LeagueRepository**: `getAll()`, `getById()` mit API → Cache → Fallback
+- ✅ **PlayerRepository**: `getByLeague()` mit API-Integration
+- ✅ **TransferRepository**: `getByLeagueAndUser()` mit API-Integration
+- ✅ **UserRepository**: `getCurrent()` mit API-Integration
+
+**3. Repository Provider Injection:**
+```dart
+final leagueRepositoryProvider = Provider<LeagueRepository>((ref) {
+  return LeagueRepository(
+    firestore: ref.watch(firestoreProvider),
+    apiClient: ref.watch(kickbaseApiClientProvider), // ← Neu!
+  );
+});
+```
+
+**4. API-first Pattern:**
+```dart
+@override
+Future<Result<List<League>>> getAll() async {
+  try {
+    // 1. Fetch from Kickbase API
+    final leagues = await apiClient.getLeagues();
+    
+    // 2. Cache in Firestore
+    for (final league in leagues) {
+      await collection.doc(league.i).set(toFirestore(league));
+    }
+    
+    return Success(leagues);
+  } catch (e) {
+    // 3. Fallback: Load from Firestore cache
+    debugPrint('⚠️ API error, falling back to Firestore cache: $e');
+    return await super.getAll();
+  }
+}
+```
 
 ---
 
 ## 🔗 Nächster Schritt
 
-Wenn Phase 4 fertig: → **[Phase 5: UI Screens](./PHASE_5_UI.md)**
+Phase 4 ist vollständig abgeschlossen! → **[Phase 5: UI Screens](./PHASE_5_UI.md)**
 
 ---
 
@@ -400,8 +459,10 @@ Wenn Phase 4 fertig: → **[Phase 5: UI Screens](./PHASE_5_UI.md)**
 - **html Package:** https://pub.dev/packages/html
 - **Riverpod Services:** https://riverpod.dev
 - **Error Handling:** https://dart.dev/guides/libraries/async-await
+- **service_providers.dart:** `lib/data/providers/service_providers.dart`
+- **Updated Repositories:** `lib/data/repositories/firestore_repositories.dart`
 
 ---
 
-**Fortschritt:** Phase 1-3 (✅) → Phase 4 (⏳)  
-**Copilot wird ~70% dieser Arbeit machen!**
+**Fortschritt:** Phase 1-4 (✅) → Phase 5 (⏳)  
+**Phase 4 vollständig implementiert!** 🎉
