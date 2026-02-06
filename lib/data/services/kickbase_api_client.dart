@@ -1,0 +1,518 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
+
+import '../../domain/exceptions/kickbase_exceptions.dart';
+import '../models/league_model.dart';
+import '../models/lineup_model.dart';
+import '../models/market_model.dart';
+import '../models/performance_model.dart';
+import '../models/player_model.dart';
+import '../models/transfer_model.dart';
+import '../models/user_model.dart';
+
+/// Kickbase API Client
+///
+/// Handles all HTTP communication with Kickbase API v4.
+/// Manages authentication token, error handling, and retry logic.
+///
+/// Based on KickbaseAPIClient.swift from iOS app.
+class KickbaseAPIClient {
+  static const String _baseUrl = 'https://api.kickbase.com';
+  static const String _apiVersion = 'v4';
+  static const String _tokenKey = 'kickbase_token';
+  static const Duration _timeout = Duration(seconds: 30);
+  static const int _maxRetries = 3;
+  static const Duration _initialRetryDelay = Duration(milliseconds: 500);
+
+  final http.Client _httpClient;
+  final FlutterSecureStorage _secureStorage;
+
+  String? _cachedToken;
+
+  KickbaseAPIClient({
+    http.Client? httpClient,
+    FlutterSecureStorage? secureStorage,
+  }) : _httpClient = httpClient ?? http.Client(),
+       _secureStorage = secureStorage ?? const FlutterSecureStorage();
+
+  // MARK: - Token Management
+
+  /// Set authentication token
+  Future<void> setAuthToken(String token) async {
+    _cachedToken = token;
+    await _secureStorage.write(key: _tokenKey, value: token);
+    print('🔑 Auth token set for KickbaseAPIClient');
+  }
+
+  /// Get authentication token
+  Future<String?> getAuthToken() async {
+    if (_cachedToken != null) {
+      return _cachedToken;
+    }
+    _cachedToken = await _secureStorage.read(key: _tokenKey);
+    return _cachedToken;
+  }
+
+  /// Check if auth token exists
+  Future<bool> hasAuthToken() async {
+    final token = await getAuthToken();
+    return token != null && token.isNotEmpty;
+  }
+
+  /// Clear authentication token
+  Future<void> clearAuthToken() async {
+    _cachedToken = null;
+    await _secureStorage.delete(key: _tokenKey);
+    print('🗑️ Auth token cleared');
+  }
+
+  // MARK: - Generic API Request Methods
+
+  /// Make HTTP request with auth token
+  Future<http.Response> _makeRequest({
+    required String endpoint,
+    String method = 'GET',
+    Map<String, dynamic>? body,
+    Map<String, String>? headers,
+    bool requiresAuth = true,
+  }) async {
+    final token = await getAuthToken();
+
+    if (requiresAuth && (token == null || token.isEmpty)) {
+      throw const AuthenticationException('No authentication token available');
+    }
+
+    final url = Uri.parse('$_baseUrl$endpoint');
+    final requestHeaders = <String, String>{
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      if (requiresAuth && token != null) 'Authorization': 'Bearer $token',
+      ...?headers,
+    };
+
+    print('📤 Making $method request to: $url');
+
+    late http.Response response;
+
+    try {
+      final request = http.Request(method, url)..headers.addAll(requestHeaders);
+
+      if (body != null) {
+        request.body = jsonEncode(body);
+      }
+
+      final streamedResponse = await _httpClient
+          .send(request)
+          .timeout(_timeout);
+      response = await http.Response.fromStream(streamedResponse);
+    } on SocketException catch (e) {
+      throw NetworkException('No internet connection', originalError: e);
+    } on TimeoutException catch (e) {
+      throw TimeoutException(
+        'Request timeout after ${_timeout.inSeconds}s',
+        originalError: e,
+      );
+    } on http.ClientException catch (e) {
+      throw NetworkException('Network error: ${e.message}', originalError: e);
+    }
+
+    print('📊 Response Status Code: ${response.statusCode}');
+    if (response.body.isNotEmpty) {
+      final preview = response.body.length > 500
+          ? '${response.body.substring(0, 500)}...'
+          : response.body;
+      print('📥 Response: $preview');
+    }
+
+    return response;
+  }
+
+  /// Try multiple endpoints until one succeeds
+  // ignore: unused_element
+  Future<Map<String, dynamic>> _tryMultipleEndpoints({
+    required List<String> endpoints,
+    String method = 'GET',
+    Map<String, dynamic>? body,
+  }) async {
+    final token = await getAuthToken();
+
+    if (token == null || token.isEmpty) {
+      throw const AuthenticationException('No authentication token available');
+    }
+
+    Exception? lastError;
+
+    for (var i = 0; i < endpoints.length; i++) {
+      final endpoint = endpoints[i];
+
+      try {
+        final response = await _makeRequest(
+          endpoint: endpoint,
+          method: method,
+          body: body,
+        );
+
+        if (response.statusCode == 200) {
+          final json = _parseJson(response.body);
+          if (json.isNotEmpty) {
+            print(
+              '✅ Found working endpoint (${i + 1}/${endpoints.length}): $endpoint',
+            );
+            return json;
+          } else {
+            print('⚠️ Could not parse JSON from endpoint: $endpoint');
+            continue;
+          }
+        } else if (response.statusCode == 401) {
+          throw const AuthenticationException('Authentication failed');
+        } else if (response.statusCode == 404) {
+          print('⚠️ Endpoint $endpoint not found (404), trying next...');
+          continue;
+        } else if (response.statusCode == 403) {
+          print('⚠️ Access forbidden (403) for endpoint $endpoint');
+          continue;
+        } else if (response.statusCode >= 500) {
+          print(
+            '⚠️ Server error (${response.statusCode}) for endpoint $endpoint',
+          );
+          continue;
+        } else {
+          print('⚠️ HTTP ${response.statusCode} for endpoint $endpoint');
+          continue;
+        }
+      } catch (e) {
+        lastError = e as Exception;
+        print('❌ Error with endpoint $endpoint: $e');
+        continue;
+      }
+    }
+
+    if (lastError != null) {
+      throw lastError;
+    }
+
+    throw AllEndpointsFailedException(
+      'Could not connect to Kickbase API. All endpoints failed.',
+      attemptedEndpoints: endpoints,
+    );
+  }
+
+  /// Make request with exponential backoff retry logic
+  Future<http.Response> _makeRequestWithRetry({
+    required String endpoint,
+    String method = 'GET',
+    Map<String, dynamic>? body,
+    int retryCount = 0,
+  }) async {
+    try {
+      final response = await _makeRequest(
+        endpoint: endpoint,
+        method: method,
+        body: body,
+      );
+
+      // Retry on 5xx server errors
+      if (response.statusCode >= 500 && retryCount < _maxRetries) {
+        final delay =
+            _initialRetryDelay * (1 << retryCount); // Exponential backoff
+        print(
+          '⏳ Retrying request in ${delay.inMilliseconds}ms (attempt ${retryCount + 1}/$_maxRetries)',
+        );
+        await Future.delayed(delay);
+        return _makeRequestWithRetry(
+          endpoint: endpoint,
+          method: method,
+          body: body,
+          retryCount: retryCount + 1,
+        );
+      }
+
+      return response;
+    } catch (e) {
+      // Retry on network errors
+      if (e is NetworkException && retryCount < _maxRetries) {
+        final delay = _initialRetryDelay * (1 << retryCount);
+        print(
+          '⏳ Retrying after network error in ${delay.inMilliseconds}ms (attempt ${retryCount + 1}/$_maxRetries)',
+        );
+        await Future.delayed(delay);
+        return _makeRequestWithRetry(
+          endpoint: endpoint,
+          method: method,
+          body: body,
+          retryCount: retryCount + 1,
+        );
+      }
+      rethrow;
+    }
+  }
+
+  // MARK: - Response Processing
+
+  /// Parse and handle HTTP response
+  T _processResponse<T>(
+    http.Response response,
+    T Function(Map<String, dynamic>) fromJson,
+  ) {
+    // Handle error status codes
+    if (response.statusCode == 401) {
+      throw const AuthenticationException(
+        'Authentication failed. Token may be expired.',
+      );
+    } else if (response.statusCode == 404) {
+      throw NotFoundException(
+        'Resource not found',
+        originalError: response.body,
+      );
+    } else if (response.statusCode == 429) {
+      final retryAfter = response.headers['retry-after'];
+      throw RateLimitException(
+        'Rate limit exceeded',
+        retryAfterSeconds: retryAfter != null ? int.tryParse(retryAfter) : null,
+      );
+    } else if (response.statusCode >= 500) {
+      throw ServerException(
+        'Server error occurred',
+        statusCode: response.statusCode,
+        originalError: response.body,
+      );
+    } else if (response.statusCode != 200) {
+      throw KickbaseException(
+        'HTTP ${response.statusCode}: ${response.reasonPhrase}',
+        code: response.statusCode.toString(),
+        originalError: response.body,
+      );
+    }
+
+    // Parse JSON response
+    try {
+      final json = _parseJson(response.body);
+      return fromJson(json);
+    } catch (e) {
+      throw ParsingException(
+        'Failed to parse response: ${e.toString()}',
+        originalError: e,
+      );
+    }
+  }
+
+  /// Parse JSON string to Map
+  Map<String, dynamic> _parseJson(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+      return {'data': decoded};
+    } catch (e) {
+      throw ParsingException('Invalid JSON format', originalError: e);
+    }
+  }
+
+  // MARK: - Network Testing
+
+  /// Test network connectivity
+  Future<bool> testNetworkConnectivity() async {
+    print('🌐 Testing network connectivity...');
+
+    try {
+      final url = Uri.parse(_baseUrl);
+      final response = await _httpClient
+          .head(url)
+          .timeout(const Duration(seconds: 5));
+
+      print('✅ Network test successful - Status: ${response.statusCode}');
+      return true;
+    } catch (e) {
+      print('❌ Network test failed: $e');
+      return false;
+    }
+  }
+
+  // MARK: - API Methods
+
+  /// Get current user info
+  /// GET /v4/user
+  Future<User> getUser() async {
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/user',
+      method: 'GET',
+    );
+
+    return _processResponse(response, User.fromJson);
+  }
+
+  /// Get all leagues
+  /// GET /v4/leagues/selection
+  Future<List<League>> getLeagues() async {
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/selection',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    final leaguesData = json['leagues'] as List<dynamic>?;
+
+    if (leaguesData == null) {
+      throw const ParsingException('No leagues data in response');
+    }
+
+    return leaguesData
+        .map((e) => League.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Get league details
+  /// GET /v4/leagues/{leagueId}/overview
+  Future<League> getLeague(String leagueId) async {
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/overview',
+      method: 'GET',
+    );
+
+    return _processResponse(response, League.fromJson);
+  }
+
+  /// Get all players in a league
+  /// GET /v4/leagues/{leagueId}/players
+  Future<List<Player>> getLeaguePlayers(String leagueId) async {
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/players',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    final playersData = json['players'] as List<dynamic>?;
+
+    if (playersData == null) {
+      throw const ParsingException('No players data in response');
+    }
+
+    return playersData
+        .map((e) => Player.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Get current lineup
+  /// GET /v4/leagues/{leagueId}/lineup
+  Future<LineupResponse> getLineup(String leagueId) async {
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/lineup',
+      method: 'GET',
+    );
+
+    return _processResponse(response, LineupResponse.fromJson);
+  }
+
+  /// Update lineup
+  /// POST /v4/leagues/{leagueId}/lineup
+  Future<void> updateLineup(String leagueId, LineupUpdateRequest lineup) async {
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/lineup',
+      method: 'POST',
+      body: {'playerIds': lineup.playerIds},
+    );
+
+    if (response.statusCode != 200) {
+      throw KickbaseException(
+        'Failed to update lineup: ${response.statusCode}',
+        code: response.statusCode.toString(),
+      );
+    }
+  }
+
+  /// Get available players on market
+  /// GET /v4/leagues/{leagueId}/market
+  Future<List<MarketPlayer>> getMarketAvailable(String leagueId) async {
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/market',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    final playersData = json['players'] as List<dynamic>?;
+
+    if (playersData == null) {
+      throw const ParsingException('No market players data in response');
+    }
+
+    return playersData
+        .map((e) => MarketPlayer.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Buy player from market
+  /// POST /v4/leagues/{leagueId}/market/{playerId}/offers
+  Future<BidResponse> buyPlayer(
+    String leagueId,
+    String playerId,
+    int price,
+  ) async {
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/market/$playerId/offers',
+      method: 'POST',
+      body: {'price': price},
+    );
+
+    return _processResponse(response, BidResponse.fromJson);
+  }
+
+  /// Sell player to market
+  /// POST /v4/leagues/{leagueId}/market
+  Future<BidResponse> sellPlayer(
+    String leagueId,
+    String playerId,
+    int price,
+  ) async {
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/market',
+      method: 'POST',
+      body: {'playerId': playerId, 'price': price},
+    );
+
+    return _processResponse(response, BidResponse.fromJson);
+  }
+
+  /// Get player statistics/performance
+  /// GET /v4/leagues/{leagueId}/players/{playerId}/performance
+  Future<PlayerPerformanceResponse> getPlayerStats(
+    String leagueId,
+    String playerId,
+  ) async {
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/players/$playerId/performance',
+      method: 'GET',
+    );
+
+    return _processResponse(response, PlayerPerformanceResponse.fromJson);
+  }
+
+  /// Get transfers for a user
+  /// GET /v4/leagues/{leagueId}/managers/{userId}/transfer
+  Future<List<Transfer>> getTransfers(String leagueId, String userId) async {
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/managers/$userId/transfer',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    final transfersData = json['transfers'] as List<dynamic>?;
+
+    if (transfersData == null) {
+      throw const ParsingException('No transfers data in response');
+    }
+
+    return transfersData
+        .map((e) => Transfer.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Dispose resources
+  void dispose() {
+    _httpClient.close();
+  }
+}

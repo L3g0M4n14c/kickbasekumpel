@@ -6,6 +6,9 @@
 /// import 'package:kickbasekumpel/data/providers/providers.dart';
 /// ```
 
+// API & Service Providers
+export 'kickbase_api_provider.dart';
+
 // Repository Providers
 export 'repository_providers.dart';
 
