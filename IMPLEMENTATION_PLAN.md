@@ -4,8 +4,8 @@
 
 | Phase | Titel | Dauer | Copilot | User | Status |
 |-------|-------|-------|---------|------|--------|
-| 1 | Setup & Infrastruktur | 1.5h | 85% | 15% | ✅ Aktiv |
-| 2 | Dart Modelle migrieren | 1.5h | 95% | 5% | ⏳ Nächst |
+| 1 | Setup & Infrastruktur | 1.5h | 85% | 15% | ✅ Fertig |
+| 2 | Dart Modelle migrieren | 1.5h | 95% | 5% | ✅ Aktiv |
 | 3 | Firebase Backend | 3h | 70% | 30% | ⏳ Planung |
 | 4 | Services portieren | 2h | 70% | 30% | ⏳ Planung |
 | 5 | UI-Screens | 3h | 60% | 40% | ⏳ Planung |
@@ -31,12 +31,14 @@
 
 Detaillierte Guides für jede Phase:
 
-### [Phase 1: Setup & GitHub (1.5h)](./docs/PHASE_1_SETUP.md)
+### [Phase 1: Setup & GitHub (1.5h)](./docs/PHASE_1_SETUP.md) ✅ **FERTIG**
 - ✅ Flutter Projekt Struktur
 - ✅ Dependencies & pubspec.yaml
 - ✅ .devcontainer für Codespaces
-- ⏳ GitHub Repository erstellen
-- ⏳ Firebase Projekt & Credentials
+- ✅ GitHub Repository erstellen
+- ✅ Firebase Projekt & Credentials
+- ✅ iOS Deployment Target 15.0
+- ✅ App auf echtem iPhone deployed
 
 ### [Phase 2: Dart Modelle (1.5h)](./docs/PHASE_2_MODELS.md)
 - Swift Codable → Freezed Modelle
@@ -92,12 +94,12 @@ Detaillierte Guides für jede Phase:
 ## 📊 Fortschritt
 
 ```
-Phase 1: ████████░░░░ (70%)  - Setup Struktur fertig, GitHub pending
-Phase 2: ░░░░░░░░░░░░ (0%)   - Wartet auf Phase 1b
-Phase 3: ░░░░░░░░░░░░ (0%)   - Wartet auf Phase 2
-Phase 4: ░░░░░░░░░░░░ (0%)   - Wartet auf Phase 3
-Phase 5: ░░░░░░░░░░░░ (0%)   - Wartet auf Phase 4
-Phase 6: ░░░░░░░░░░░░ (0%)   - Wartet auf Phase 5
+Phase 1: ████████████ (100%) - ✅ FERTIG!
+Phase 2: ░░░░░░░░░░░░ (0%)   - 🚀 Aktiv!
+Phase 3: ░░░░░░░░░░░░ (0%)   - ⏳ Nächst
+Phase 4: ░░░░░░░░░░░░ (0%)   - ⏳ Planung
+Phase 5: ░░░░░░░░░░░░ (0%)   - ⏳ Planung
+Phase 6: ░░░░░░░░░░░░ (0%)   - ⏳ Planung
 Phase 7: ░░░░░░░░░░░░ (0%)   - Wartet auf Phase 6
 ```
 

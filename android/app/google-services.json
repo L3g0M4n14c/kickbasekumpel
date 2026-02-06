@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "843006606880",
+    "project_id": "kickbasekumpel",
+    "storage_bucket": "kickbasekumpel.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:843006606880:android:b885b46004b6515fde0645",
+        "android_client_info": {
+          "package_name": "de.legomaniac.kickbasehelper"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9klScyAgpN-rd2QqTNDKJh_6f-4Z5Vn0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

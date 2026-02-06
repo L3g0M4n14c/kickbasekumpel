@@ -24,12 +24,13 @@ Jede Phase hat ihre eigene detaillierte Dokumentation:
 
 ### Phase-Guides (in docs/ Ordner)
 
-1. **[PHASE_1_SETUP.md](./docs/PHASE_1_SETUP.md)** - Setup & GitHub (1.5h)
+1. **[PHASE_1_SETUP.md](./docs/PHASE_1_SETUP.md)** - Setup & GitHub (1.5h) ✅ **FERTIG**
    - Flutter Projekt Struktur ✅
    - Dependencies ✅
    - .devcontainer ✅
-   - GitHub Repo erstellen ⏳
-   - Firebase Projekt ⏳
+   - GitHub Repo erstellen ✅
+   - Firebase Projekt ✅
+   - App deployed auf iPhone ✅
 
 2. **[PHASE_2_MODELS.md](./docs/PHASE_2_MODELS.md)** - Dart Modelle (1.5h)
    - Swift → Dart Conversion

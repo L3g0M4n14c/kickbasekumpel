@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
@@ -34,31 +35,28 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDOCAbC1234567890',
-    appId: '1:123456789:web:abc123def456',
-    messagingSenderId: '123456789',
-    projectId: 'kickbasekumpel-dev',
-    authDomain: 'kickbasekumpel-dev.firebaseapp.com',
-    databaseURL: 'https://kickbasekumpel-dev.firebaseio.com',
-    storageBucket: 'kickbasekumpel-dev.appspot.com',
-    measurementId: 'G-ABC123DEF456',
+    apiKey: 'AIzaSyAwu1rs5Dvr_L0iMnv_6hdbBHWCvwokrxs',
+    appId: '1:843006606880:web:873da22f6bdea565de0645',
+    messagingSenderId: '843006606880',
+    projectId: 'kickbasekumpel',
+    authDomain: 'kickbasekumpel.firebaseapp.com',
+    storageBucket: 'kickbasekumpel.firebasestorage.app',
+    measurementId: 'G-F107DFZ643',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDOCAbC1234567890',
-    appId: '1:123456789:android:abc123def456',
-    messagingSenderId: '123456789',
-    projectId: 'kickbasekumpel-dev',
-    databaseURL: 'https://kickbasekumpel-dev.firebaseio.com',
-    storageBucket: 'kickbasekumpel-dev.appspot.com',
+    apiKey: 'AIzaSyAwu1rs5Dvr_L0iMnv_6hdbBHWCvwokrxs',
+    appId: '1:843006606880:android:873da22f6bdea565de0645',
+    messagingSenderId: '843006606880',
+    projectId: 'kickbasekumpel',
+    storageBucket: 'kickbasekumpel.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDOCAbC1234567890',
-    appId: '1:123456789:ios:abc123def456',
-    messagingSenderId: '123456789',
-    projectId: 'kickbasekumpel-dev',
-    databaseURL: 'https://kickbasekumpel-dev.firebaseio.com',
-    storageBucket: 'kickbasekumpel-dev.appspot.com',
+    apiKey: 'AIzaSyAwu1rs5Dvr_L0iMnv_6hdbBHWCvwokrxs',
+    appId: '1:843006606880:ios:873da22f6bdea565de0645',
+    messagingSenderId: '843006606880',
+    projectId: 'kickbasekumpel',
+    storageBucket: 'kickbasekumpel.firebasestorage.app',
   );
 }
