@@ -18,7 +18,6 @@ import '../widgets/common/empty_state_widget.dart';
 import '../widgets/common/retry_widget.dart';
 import '../widgets/charts/position_badge.dart';
 import '../widgets/buttons/action_button.dart';
-import '../widgets/buttons/floating_action_menu.dart';
 import '../widgets/buttons/confirmation_dialog.dart';
 import '../../data/models/player_model.dart';
 import '../../data/models/league_model.dart';
@@ -221,12 +220,12 @@ class _WidgetGalleryScreenState extends State<WidgetGalleryScreen> {
       const SizedBox(height: 24),
 
       _buildSectionTitle('Match Card'),
-      const MatchCard(
+      MatchCard(
         homeTeam: 'FC Bayern München',
         awayTeam: 'Borussia Dortmund',
         homeScore: 3,
         awayScore: 1,
-        kickoff: null,
+        kickoff: DateTime.now().subtract(const Duration(hours: 3)),
         isFinished: true,
       ),
       const SizedBox(height: 16),

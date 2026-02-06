@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 /// Search Field für KickbaseKumpel
@@ -89,10 +91,7 @@ class _SearchFieldState extends State<SearchField> {
       onChanged: _onSearchChanged,
       decoration: InputDecoration(
         hintText: widget.hintText,
-        prefixIcon: Icon(
-          Icons.search,
-          color: colorScheme.onSurfaceVariant,
-        ),
+        prefixIcon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
         suffixIcon: _controller.text.isNotEmpty
             ? IconButton(
                 icon: const Icon(Icons.clear),
@@ -114,6 +113,3 @@ class _SearchFieldState extends State<SearchField> {
     );
   }
 }
-
-// Timer-Import für Debouncing
-import 'dart:async';

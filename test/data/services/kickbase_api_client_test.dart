@@ -171,7 +171,6 @@ void main() {
 
   group('API Methods', () {
     const testToken = 'test_token';
-    const baseUrl = 'https://api.kickbase.com';
 
     setUp(() async {
       when(
