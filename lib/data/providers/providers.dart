@@ -19,3 +19,6 @@ export 'league_providers.dart';
 export 'player_providers.dart';
 export 'transfer_providers.dart';
 export 'recommendation_providers.dart';
+
+// Presentation Providers
+export '../../presentation/providers/market_providers.dart';

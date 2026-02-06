@@ -1,14 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import '../../../data/providers/player_providers.dart';
-import '../../../data/models/player_model.dart';
+import '../../../data/models/market_model.dart';
+import '../../../data/models/transfer_model.dart';
+import '../../../data/providers/league_providers.dart';
+import '../../../data/providers/transfer_providers.dart';
+import '../../providers/market_providers.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/error_widget.dart';
+import '../../widgets/market/player_market_card.dart';
+import '../../widgets/market/buy_player_bottom_sheet.dart';
+import '../../widgets/market/market_filters.dart';
 
 /// Market Screen
 ///
-/// Zeigt den Spielermarkt an und ermöglicht Kauf/Verkauf von Spielern.
+/// Komplexer Screen mit Tab Navigation, Filtering, Sorting und Buy Flow.
+/// Features:
+/// - 4 Tabs: Available, My Selling, Recent Transfers, Watchlist
+/// - Filter: Position, Price Range, Search
+/// - Sort: Multiple Options
+/// - Pull-to-Refresh & Pagination
+/// - Buy Flow with Bottom Sheet
 class MarketScreen extends ConsumerStatefulWidget {
   const MarketScreen({super.key});
 
@@ -16,10 +27,31 @@ class MarketScreen extends ConsumerStatefulWidget {
   ConsumerState<MarketScreen> createState() => _MarketScreenState();
 }
 
-class _MarketScreenState extends ConsumerState<MarketScreen> {
-  String _searchQuery = '';
-  int? _selectedPosition;
-  String _sortBy = 'marketValue';
+class _MarketScreenState extends ConsumerState<MarketScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        ref
+            .read(marketTabProvider.notifier)
+            .setTab(MarketTab.values[_tabController.index]);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,437 +59,493 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
     final size = MediaQuery.of(context).size;
     final isTablet = size.width > 600;
 
-    final playersAsync = ref.watch(allPlayersProvider);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Transfermarkt'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () => _showFilterBottomSheet(context),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(100),
+          child: Column(
+            children: [
+              // Search Bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Spieler suchen...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              ref
+                                  .read(marketFilterProvider.notifier)
+                                  .setSearchQuery('');
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: theme.colorScheme.surface,
+                  ),
+                  onChanged: (value) {
+                    ref
+                        .read(marketFilterProvider.notifier)
+                        .setSearchQuery(value);
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Tabs
+              TabBar(
+                controller: _tabController,
+                isScrollable: !isTablet,
+                tabs: const [
+                  Tab(text: 'Verfügbar', icon: Icon(Icons.shopping_cart)),
+                  Tab(text: 'Meine Verkäufe', icon: Icon(Icons.sell)),
+                  Tab(text: 'Transfers', icon: Icon(Icons.swap_horiz)),
+                  Tab(text: 'Merkliste', icon: Icon(Icons.bookmark)),
+                ],
+              ),
+            ],
           ),
+        ),
+        actions: [
+          // Filter Button
           IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => ref.invalidate(allPlayersProvider),
+            icon: Stack(
+              children: [
+                const Icon(Icons.filter_list),
+                Consumer(
+                  builder: (context, ref, child) {
+                    final filter = ref.watch(marketFilterProvider);
+                    if (filter.hasActiveFilters) {
+                      return Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.error,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ],
+            ),
+            onPressed: () {
+              _showFilterBottomSheet(context);
+            },
+          ),
+          // Sort Menu
+          PopupMenuButton<MarketSortOption>(
+            icon: const Icon(Icons.sort),
+            onSelected: (option) {
+              ref.read(marketFilterProvider.notifier).setSortOption(option);
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: MarketSortOption.price,
+                child: Text('Preis (aufsteigend)'),
+              ),
+              const PopupMenuItem(
+                value: MarketSortOption.priceDesc,
+                child: Text('Preis (absteigend)'),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: MarketSortOption.points,
+                child: Text('Punkte (aufsteigend)'),
+              ),
+              const PopupMenuItem(
+                value: MarketSortOption.pointsDesc,
+                child: Text('Punkte (absteigend)'),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: MarketSortOption.averagePoints,
+                child: Text('Ø Punkte (aufsteigend)'),
+              ),
+              const PopupMenuItem(
+                value: MarketSortOption.averagePointsDesc,
+                child: Text('Ø Punkte (absteigend)'),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: MarketSortOption.marketValue,
+                child: Text('Marktwert (aufsteigend)'),
+              ),
+              const PopupMenuItem(
+                value: MarketSortOption.marketValueDesc,
+                child: Text('Marktwert (absteigend)'),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: MarketSortOption.name,
+                child: Text('Name (A-Z)'),
+              ),
+            ],
           ),
         ],
       ),
-      body: Column(
+      body: TabBarView(
+        controller: _tabController,
         children: [
-          // Search Bar
-          Padding(
-            padding: EdgeInsets.all(isTablet ? 24.0 : 16.0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Spieler suchen...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () => setState(() => _searchQuery = ''),
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onChanged: (value) => setState(() => _searchQuery = value),
-            ),
-          ),
-
-          // Players List
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async {
-                ref.invalidate(allPlayersProvider);
-              },
-              child: playersAsync.when(
-                data: (players) {
-                  // Filter players
-                  var filteredPlayers = players.where((player) {
-                    final matchesSearch =
-                        _searchQuery.isEmpty ||
-                        player.firstName.toLowerCase().contains(
-                          _searchQuery.toLowerCase(),
-                        ) ||
-                        player.lastName.toLowerCase().contains(
-                          _searchQuery.toLowerCase(),
-                        ) ||
-                        player.teamName.toLowerCase().contains(
-                          _searchQuery.toLowerCase(),
-                        );
-
-                    final matchesPosition =
-                        _selectedPosition == null ||
-                        player.position == _selectedPosition;
-
-                    return matchesSearch && matchesPosition;
-                  }).toList();
-
-                  // Sort players
-                  filteredPlayers.sort((a, b) {
-                    switch (_sortBy) {
-                      case 'marketValue':
-                        return b.marketValue.compareTo(a.marketValue);
-                      case 'points':
-                        return b.totalPoints.compareTo(a.totalPoints);
-                      case 'avgPoints':
-                        return b.averagePoints.compareTo(a.averagePoints);
-                      default:
-                        return 0;
-                    }
-                  });
-
-                  if (filteredPlayers.isEmpty) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.search_off,
-                              size: 64,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Keine Spieler gefunden',
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Versuche eine andere Suche oder Filter',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-
-                  return ListView.builder(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isTablet ? 24.0 : 16.0,
-                      vertical: 8.0,
-                    ),
-                    itemCount: filteredPlayers.length,
-                    itemBuilder: (context, index) {
-                      final player = filteredPlayers[index];
-                      return _PlayerMarketCard(
-                        player: player,
-                        onTap: () => context.push('/player/${player.id}'),
-                      );
-                    },
-                  );
-                },
-                loading: () => const LoadingWidget(),
-                error: (error, stack) => ErrorWidgetCustom(
-                  error: error,
-                  onRetry: () => ref.invalidate(allPlayersProvider),
-                ),
-              ),
-            ),
-          ),
+          _AvailablePlayersTab(),
+          _MySellingPlayersTab(),
+          _RecentTransfersTab(),
+          _WatchlistTab(),
         ],
       ),
     );
   }
 
   void _showFilterBottomSheet(BuildContext context) {
-    final theme = Theme.of(context);
-
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) {
-          return Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Filter & Sortierung',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 24),
+      isScrollControlled: true,
+      builder: (context) => const MarketFilters(),
+    );
+  }
+}
 
-                // Position Filter
-                Text('Position', style: theme.textTheme.titleMedium),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    FilterChip(
-                      label: const Text('Alle'),
-                      selected: _selectedPosition == null,
-                      onSelected: (selected) {
-                        setModalState(() => _selectedPosition = null);
-                        setState(() => _selectedPosition = null);
-                      },
-                    ),
-                    FilterChip(
-                      label: const Text('Torwart'),
-                      selected: _selectedPosition == 1,
-                      onSelected: (selected) {
-                        setModalState(
-                          () => _selectedPosition = selected ? 1 : null,
-                        );
-                        setState(() => _selectedPosition = selected ? 1 : null);
-                      },
-                    ),
-                    FilterChip(
-                      label: const Text('Abwehr'),
-                      selected: _selectedPosition == 2,
-                      onSelected: (selected) {
-                        setModalState(
-                          () => _selectedPosition = selected ? 2 : null,
-                        );
-                        setState(() => _selectedPosition = selected ? 2 : null);
-                      },
-                    ),
-                    FilterChip(
-                      label: const Text('Mittelfeld'),
-                      selected: _selectedPosition == 3,
-                      onSelected: (selected) {
-                        setModalState(
-                          () => _selectedPosition = selected ? 3 : null,
-                        );
-                        setState(() => _selectedPosition = selected ? 3 : null);
-                      },
-                    ),
-                    FilterChip(
-                      label: const Text('Sturm'),
-                      selected: _selectedPosition == 4,
-                      onSelected: (selected) {
-                        setModalState(
-                          () => _selectedPosition = selected ? 4 : null,
-                        );
-                        setState(() => _selectedPosition = selected ? 4 : null);
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
+// ============================================================================
+// AVAILABLE PLAYERS TAB
+// ============================================================================
 
-                // Sort By
-                Text('Sortieren nach', style: theme.textTheme.titleMedium),
-                const SizedBox(height: 8),
-                ListTile(
-                  title: const Text('Marktwert'),
-                  leading: Radio<String>(
-                    value: 'marketValue',
-                    groupValue: _sortBy,
-                    onChanged: (value) {
-                      setModalState(() => _sortBy = value!);
-                      setState(() => _sortBy = value!);
-                    },
-                  ),
-                ),
-                ListTile(
-                  title: const Text('Gesamtpunkte'),
-                  leading: Radio<String>(
-                    value: 'points',
-                    groupValue: _sortBy,
-                    onChanged: (value) {
-                      setModalState(() => _sortBy = value!);
-                      setState(() => _sortBy = value!);
-                    },
-                  ),
-                ),
-                ListTile(
-                  title: const Text('Ø Punkte'),
-                  leading: Radio<String>(
-                    value: 'avgPoints',
-                    groupValue: _sortBy,
-                    onChanged: (value) {
-                      setModalState(() => _sortBy = value!);
-                      setState(() => _sortBy = value!);
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                  ),
-                  child: const Text('Anwenden'),
-                ),
-              ],
-            ),
-          );
+class _AvailablePlayersTab extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final playersAsync = ref.watch(marketPlayersProvider);
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(marketPlayersProvider);
+      },
+      child: playersAsync.when(
+        data: (players) {
+          if (players.isEmpty) {
+            return _EmptyState(
+              icon: Icons.shopping_cart_outlined,
+              message: 'Keine Spieler verfügbar',
+              subtitle: 'Aktuell sind keine Spieler auf dem Markt',
+            );
+          }
+
+          return _PlayerList(players: players);
         },
+        loading: () => const Center(child: LoadingWidget()),
+        error: (error, stack) => ErrorWidgetCustom(
+          error: error,
+          onRetry: () => ref.invalidate(marketPlayersProvider),
+        ),
       ),
     );
   }
 }
 
-class _PlayerMarketCard extends StatelessWidget {
-  final Player player;
-  final VoidCallback onTap;
+// ============================================================================
+// MY SELLING PLAYERS TAB
+// ============================================================================
 
-  const _PlayerMarketCard({required this.player, required this.onTap});
+class _MySellingPlayersTab extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final playersAsync = ref.watch(mySellingPlayersProvider);
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(mySellingPlayersProvider);
+      },
+      child: playersAsync.when(
+        data: (players) {
+          if (players.isEmpty) {
+            return _EmptyState(
+              icon: Icons.sell_outlined,
+              message: 'Keine aktiven Verkäufe',
+              subtitle: 'Du hast aktuell keine Spieler zum Verkauf angeboten',
+            );
+          }
+
+          return _PlayerList(players: players, showSellOptions: true);
+        },
+        loading: () => const Center(child: LoadingWidget()),
+        error: (error, stack) => ErrorWidgetCustom(
+          error: error,
+          onRetry: () => ref.invalidate(mySellingPlayersProvider),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// RECENT TRANSFERS TAB
+// ============================================================================
+
+class _RecentTransfersTab extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final leagueId = ref.watch(selectedLeagueIdProvider);
+
+    if (leagueId == null) {
+      return const Center(child: Text('Keine Liga ausgewählt'));
+    }
+
+    final transfersAsync = ref.watch(leagueTransfersProvider(leagueId));
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(leagueTransfersProvider(leagueId));
+      },
+      child: transfersAsync.when(
+        data: (transfers) {
+          if (transfers.isEmpty) {
+            return _EmptyState(
+              icon: Icons.swap_horiz_outlined,
+              message: 'Keine Transfers',
+              subtitle: 'Es gab noch keine Transfers in dieser Liga',
+            );
+          }
+
+          return _TransferList(transfers: transfers);
+        },
+        loading: () => const Center(child: LoadingWidget()),
+        error: (error, stack) => ErrorWidgetCustom(
+          error: error,
+          onRetry: () => ref.invalidate(leagueTransfersProvider(leagueId)),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// WATCHLIST TAB
+// ============================================================================
+
+class _WatchlistTab extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final playersAsync = ref.watch(watchlistPlayersProvider);
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(watchlistPlayersProvider);
+      },
+      child: playersAsync.when(
+        data: (players) {
+          if (players.isEmpty) {
+            return _EmptyState(
+              icon: Icons.bookmark_outline,
+              message: 'Keine Spieler auf der Merkliste',
+              subtitle:
+                  'Füge Spieler zur Merkliste hinzu, um sie hier zu sehen',
+            );
+          }
+
+          return _PlayerList(players: players, showWatchlistIcon: false);
+        },
+        loading: () => const Center(child: LoadingWidget()),
+        error: (error, stack) => ErrorWidgetCustom(
+          error: error,
+          onRetry: () => ref.invalidate(watchlistPlayersProvider),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// PLAYER LIST WIDGET
+// ============================================================================
+
+class _PlayerList extends ConsumerWidget {
+  final List<MarketPlayer> players;
+  final bool showSellOptions;
+  final bool showWatchlistIcon;
+
+  const _PlayerList({
+    required this.players,
+    this.showSellOptions = false,
+    this.showWatchlistIcon = true,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: players.length,
+      itemBuilder: (context, index) {
+        final player = players[index];
+        return PlayerMarketCard(
+          player: player,
+          showSellOptions: showSellOptions,
+          showWatchlistIcon: showWatchlistIcon,
+          onTap: () => _showBuyBottomSheet(context, ref, player),
+        );
+      },
+    );
+  }
+
+  void _showBuyBottomSheet(
+    BuildContext context,
+    WidgetRef ref,
+    MarketPlayer player,
+  ) {
+    // Set selected player
+    ref.read(selectedPlayerProvider.notifier).select(player);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => BuyPlayerBottomSheet(player: player),
+    );
+  }
+}
+
+// ============================================================================
+// TRANSFER LIST WIDGET
+// ============================================================================
+
+class _TransferList extends StatelessWidget {
+  final List<Transfer> transfers;
+
+  const _TransferList({required this.transfers});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Row(
-            children: [
-              // Player Image
-              CircleAvatar(
-                radius: 28,
-                backgroundImage: player.profileBigUrl.isNotEmpty
-                    ? NetworkImage(player.profileBigUrl)
-                    : null,
-                child: player.profileBigUrl.isEmpty
-                    ? const Icon(Icons.person)
-                    : null,
-              ),
-              const SizedBox(width: 12),
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: transfers.length,
+      itemBuilder: (context, index) {
+        final transfer = transfers[index];
+        // Determine if it's a buy (to current user) or sell
+        final isBuy = transfer.status == 'completed';
 
-              // Player Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${player.firstName} ${player.lastName}',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      player.teamName,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.stars,
-                          size: 14,
-                          color: theme.colorScheme.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${player.averagePoints.toStringAsFixed(1)} Ø',
-                          style: theme.textTheme.bodySmall,
-                        ),
-                        const SizedBox(width: 12),
-                        Icon(
-                          Icons.trending_up,
-                          size: 14,
-                          color: _getTrendColor(player.marketValueTrend),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${player.marketValueTrend > 0 ? '+' : ''}${(player.marketValueTrend / 1000).toStringAsFixed(0)}k',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: _getTrendColor(player.marketValueTrend),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: isBuy
+                  ? theme.colorScheme.primaryContainer
+                  : theme.colorScheme.errorContainer,
+              child: Icon(
+                isBuy ? Icons.arrow_downward : Icons.arrow_upward,
+                color: isBuy
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.error,
+              ),
+            ),
+            title: Text(
+              transfer.playerName,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(
+              '${transfer.fromUsername} → ${transfer.toUsername}',
+              style: theme.textTheme.bodySmall,
+            ),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${(transfer.price / 1000000).toStringAsFixed(1)}M €',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
-              ),
-
-              // Market Value
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '${(player.marketValue / 1000000).toStringAsFixed(2)}M €',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getPositionColor(
-                        player.position,
-                      ).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      _getPositionName(player.position),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: _getPositionColor(player.position),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                Text(
+                  _formatDate(transfer.timestamp.toIso8601String()),
+                  style: theme.textTheme.bodySmall,
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Color _getTrendColor(int trend) {
-    if (trend > 0) return Colors.green;
-    if (trend < 0) return Colors.red;
-    return Colors.grey;
-  }
+  String _formatDate(String dateStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      final now = DateTime.now();
+      final difference = now.difference(date);
 
-  Color _getPositionColor(int position) {
-    switch (position) {
-      case 1:
-        return Colors.yellow;
-      case 2:
-        return Colors.blue;
-      case 3:
-        return Colors.green;
-      case 4:
-        return Colors.red;
-      default:
-        return Colors.grey;
+      if (difference.inDays == 0) {
+        return 'Heute';
+      } else if (difference.inDays == 1) {
+        return 'Gestern';
+      } else if (difference.inDays < 7) {
+        return 'vor ${difference.inDays} Tagen';
+      } else {
+        return '${date.day}.${date.month}.${date.year}';
+      }
+    } catch (e) {
+      return dateStr;
     }
   }
+}
 
-  String _getPositionName(int position) {
-    switch (position) {
-      case 1:
-        return 'TW';
-      case 2:
-        return 'ABW';
-      case 3:
-        return 'MIT';
-      case 4:
-        return 'STU';
-      default:
-        return 'UNK';
-    }
+// ============================================================================
+// EMPTY STATE WIDGET
+// ============================================================================
+
+class _EmptyState extends StatelessWidget {
+  final IconData icon;
+  final String message;
+  final String subtitle;
+
+  const _EmptyState({
+    required this.icon,
+    required this.message,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 80, color: theme.colorScheme.outline),
+            const SizedBox(height: 24),
+            Text(
+              message,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                color: theme.colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
