@@ -19,6 +19,9 @@ class LigainsiderPlayer with _$LigainsiderPlayer {
     required DateTime last_update,
     String? status_text,
     DateTime? expected_return,
+    String? alternative, // Name der Alternative (für Lineup-Status)
+    String? ligainsiderId, // Ligainsider ID (z.B. "nikola-vasilj_13866")
+    String? imageUrl, // URL zum Profilbild
   }) = _LigainsiderPlayer;
 
   factory LigainsiderPlayer.fromJson(Map<String, dynamic> json) =>
@@ -90,4 +93,46 @@ class InjuryReport with _$InjuryReport {
 
   factory InjuryReport.fromJson(Map<String, dynamic> json) =>
       _$InjuryReportFromJson(json);
+}
+
+/// Ligainsider Player Status Enum
+enum LigainsiderPlayerStatus {
+  likelyStart, // S11 ohne Alternative
+  startWithAlternative, // S11 mit Alternative (1. Option)
+  isAlternative, // Ist die Alternative (2. Option)
+  bench, // Auf der Bank / im Kader aber nicht in S11
+  out, // Nicht im Kader / nicht gefunden
+}
+
+/// Extension to get icon and color for status
+extension LigainsiderPlayerStatusExtension on LigainsiderPlayerStatus {
+  String get icon {
+    switch (this) {
+      case LigainsiderPlayerStatus.likelyStart:
+        return '✓';
+      case LigainsiderPlayerStatus.startWithAlternative:
+        return '1';
+      case LigainsiderPlayerStatus.isAlternative:
+        return '2';
+      case LigainsiderPlayerStatus.bench:
+        return '−';
+      case LigainsiderPlayerStatus.out:
+        return '✗';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case LigainsiderPlayerStatus.likelyStart:
+        return 'Wahrscheinlich in Startelf';
+      case LigainsiderPlayerStatus.startWithAlternative:
+        return 'In Startelf mit Alternative';
+      case LigainsiderPlayerStatus.isAlternative:
+        return 'Alternative';
+      case LigainsiderPlayerStatus.bench:
+        return 'Auf der Bank';
+      case LigainsiderPlayerStatus.out:
+        return 'Nicht im Kader';
+    }
+  }
 }

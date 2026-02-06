@@ -23,6 +23,9 @@ _$LigainsiderPlayerImpl _$$LigainsiderPlayerImplFromJson(
   expected_return: json['expected_return'] == null
       ? null
       : DateTime.parse(json['expected_return'] as String),
+  alternative: json['alternative'] as String?,
+  ligainsiderId: json['ligainsiderId'] as String?,
+  imageUrl: json['imageUrl'] as String?,
 );
 
 Map<String, dynamic> _$$LigainsiderPlayerImplToJson(
@@ -40,6 +43,9 @@ Map<String, dynamic> _$$LigainsiderPlayerImplToJson(
   'last_update': instance.last_update.toIso8601String(),
   'status_text': instance.status_text,
   'expected_return': instance.expected_return?.toIso8601String(),
+  'alternative': instance.alternative,
+  'ligainsiderId': instance.ligainsiderId,
+  'imageUrl': instance.imageUrl,
 };
 
 _$LigainsiderStatusImpl _$$LigainsiderStatusImplFromJson(

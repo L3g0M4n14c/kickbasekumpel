@@ -33,6 +33,11 @@ mixin _$LigainsiderPlayer {
   DateTime get last_update => throw _privateConstructorUsedError;
   String? get status_text => throw _privateConstructorUsedError;
   DateTime? get expected_return => throw _privateConstructorUsedError;
+  String? get alternative =>
+      throw _privateConstructorUsedError; // Name der Alternative (für Lineup-Status)
+  String? get ligainsiderId =>
+      throw _privateConstructorUsedError; // Ligainsider ID (z.B. "nikola-vasilj_13866")
+  String? get imageUrl => throw _privateConstructorUsedError;
 
   /// Serializes this LigainsiderPlayer to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -64,6 +69,9 @@ abstract class $LigainsiderPlayerCopyWith<$Res> {
     DateTime last_update,
     String? status_text,
     DateTime? expected_return,
+    String? alternative,
+    String? ligainsiderId,
+    String? imageUrl,
   });
 }
 
@@ -94,6 +102,9 @@ class _$LigainsiderPlayerCopyWithImpl<$Res, $Val extends LigainsiderPlayer>
     Object? last_update = null,
     Object? status_text = freezed,
     Object? expected_return = freezed,
+    Object? alternative = freezed,
+    Object? ligainsiderId = freezed,
+    Object? imageUrl = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -145,6 +156,18 @@ class _$LigainsiderPlayerCopyWithImpl<$Res, $Val extends LigainsiderPlayer>
                 ? _value.expected_return
                 : expected_return // ignore: cast_nullable_to_non_nullable
                       as DateTime?,
+            alternative: freezed == alternative
+                ? _value.alternative
+                : alternative // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            ligainsiderId: freezed == ligainsiderId
+                ? _value.ligainsiderId
+                : ligainsiderId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            imageUrl: freezed == imageUrl
+                ? _value.imageUrl
+                : imageUrl // ignore: cast_nullable_to_non_nullable
+                      as String?,
           )
           as $Val,
     );
@@ -173,6 +196,9 @@ abstract class _$$LigainsiderPlayerImplCopyWith<$Res>
     DateTime last_update,
     String? status_text,
     DateTime? expected_return,
+    String? alternative,
+    String? ligainsiderId,
+    String? imageUrl,
   });
 }
 
@@ -202,6 +228,9 @@ class __$$LigainsiderPlayerImplCopyWithImpl<$Res>
     Object? last_update = null,
     Object? status_text = freezed,
     Object? expected_return = freezed,
+    Object? alternative = freezed,
+    Object? ligainsiderId = freezed,
+    Object? imageUrl = freezed,
   }) {
     return _then(
       _$LigainsiderPlayerImpl(
@@ -253,6 +282,18 @@ class __$$LigainsiderPlayerImplCopyWithImpl<$Res>
             ? _value.expected_return
             : expected_return // ignore: cast_nullable_to_non_nullable
                   as DateTime?,
+        alternative: freezed == alternative
+            ? _value.alternative
+            : alternative // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        ligainsiderId: freezed == ligainsiderId
+            ? _value.ligainsiderId
+            : ligainsiderId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        imageUrl: freezed == imageUrl
+            ? _value.imageUrl
+            : imageUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
       ),
     );
   }
@@ -274,6 +315,9 @@ class _$LigainsiderPlayerImpl implements _LigainsiderPlayer {
     required this.last_update,
     this.status_text,
     this.expected_return,
+    this.alternative,
+    this.ligainsiderId,
+    this.imageUrl,
   });
 
   factory _$LigainsiderPlayerImpl.fromJson(Map<String, dynamic> json) =>
@@ -303,10 +347,18 @@ class _$LigainsiderPlayerImpl implements _LigainsiderPlayer {
   final String? status_text;
   @override
   final DateTime? expected_return;
+  @override
+  final String? alternative;
+  // Name der Alternative (für Lineup-Status)
+  @override
+  final String? ligainsiderId;
+  // Ligainsider ID (z.B. "nikola-vasilj_13866")
+  @override
+  final String? imageUrl;
 
   @override
   String toString() {
-    return 'LigainsiderPlayer(id: $id, name: $name, shortName: $shortName, teamName: $teamName, teamId: $teamId, position: $position, injury_status: $injury_status, injury_description: $injury_description, form_rating: $form_rating, last_update: $last_update, status_text: $status_text, expected_return: $expected_return)';
+    return 'LigainsiderPlayer(id: $id, name: $name, shortName: $shortName, teamName: $teamName, teamId: $teamId, position: $position, injury_status: $injury_status, injury_description: $injury_description, form_rating: $form_rating, last_update: $last_update, status_text: $status_text, expected_return: $expected_return, alternative: $alternative, ligainsiderId: $ligainsiderId, imageUrl: $imageUrl)';
   }
 
   @override
@@ -334,7 +386,13 @@ class _$LigainsiderPlayerImpl implements _LigainsiderPlayer {
             (identical(other.status_text, status_text) ||
                 other.status_text == status_text) &&
             (identical(other.expected_return, expected_return) ||
-                other.expected_return == expected_return));
+                other.expected_return == expected_return) &&
+            (identical(other.alternative, alternative) ||
+                other.alternative == alternative) &&
+            (identical(other.ligainsiderId, ligainsiderId) ||
+                other.ligainsiderId == ligainsiderId) &&
+            (identical(other.imageUrl, imageUrl) ||
+                other.imageUrl == imageUrl));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -353,6 +411,9 @@ class _$LigainsiderPlayerImpl implements _LigainsiderPlayer {
     last_update,
     status_text,
     expected_return,
+    alternative,
+    ligainsiderId,
+    imageUrl,
   );
 
   /// Create a copy of LigainsiderPlayer
@@ -386,6 +447,9 @@ abstract class _LigainsiderPlayer implements LigainsiderPlayer {
     required final DateTime last_update,
     final String? status_text,
     final DateTime? expected_return,
+    final String? alternative,
+    final String? ligainsiderId,
+    final String? imageUrl,
   }) = _$LigainsiderPlayerImpl;
 
   factory _LigainsiderPlayer.fromJson(Map<String, dynamic> json) =
@@ -415,6 +479,12 @@ abstract class _LigainsiderPlayer implements LigainsiderPlayer {
   String? get status_text;
   @override
   DateTime? get expected_return;
+  @override
+  String? get alternative; // Name der Alternative (für Lineup-Status)
+  @override
+  String? get ligainsiderId; // Ligainsider ID (z.B. "nikola-vasilj_13866")
+  @override
+  String? get imageUrl;
 
   /// Create a copy of LigainsiderPlayer
   /// with the given fields replaced by the non-null parameter values.
