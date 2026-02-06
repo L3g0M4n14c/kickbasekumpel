@@ -5,6 +5,7 @@
 /// ```dart
 /// import 'package:kickbasekumpel/data/providers/providers.dart';
 /// ```
+library;
 
 // API & Service Providers
 export 'kickbase_api_provider.dart';

@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kickbasekumpel/presentation/screens/dashboard/market_screen.dart';
-import 'package:kickbasekumpel/presentation/providers/market_providers.dart';
-import 'package:kickbasekumpel/data/providers/transfer_providers.dart';
-import 'package:kickbasekumpel/data/providers/league_providers.dart';
 
 void main() {
   group('MarketScreen', () {

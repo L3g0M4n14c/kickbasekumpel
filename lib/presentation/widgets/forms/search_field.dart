@@ -104,7 +104,7 @@ class _SearchFieldState extends State<SearchField> {
           borderSide: BorderSide.none,
         ),
         filled: true,
-        fillColor: colorScheme.surfaceVariant,
+        fillColor: colorScheme.surfaceContainerHighest,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 12,

@@ -130,7 +130,7 @@ class _PasswordInputFieldState extends State<PasswordInputField> {
       children: [
         LinearProgressIndicator(
           value: _strength,
-          backgroundColor: theme.colorScheme.surfaceVariant,
+          backgroundColor: theme.colorScheme.surfaceContainerHighest,
           color: color,
           minHeight: 4,
           borderRadius: BorderRadius.circular(2),

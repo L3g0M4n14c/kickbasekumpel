@@ -297,10 +297,10 @@ abstract class BaseRepository<T> {
         switch (operation.type) {
           case BatchOperationType.create:
           case BatchOperationType.set:
-            batch.set(docRef, toFirestore(operation.data!));
+            batch.set(docRef, toFirestore(operation.data as T));
             break;
           case BatchOperationType.update:
-            batch.update(docRef, toFirestore(operation.data!));
+            batch.update(docRef, toFirestore(operation.data as T));
             break;
           case BatchOperationType.delete:
             batch.delete(docRef);

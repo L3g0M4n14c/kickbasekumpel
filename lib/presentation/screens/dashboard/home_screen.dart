@@ -188,7 +188,7 @@ class _LeagueSelector extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField(
-              value: selectedLeague,
+              initialValue: selectedLeague,
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.emoji_events),
                 border: OutlineInputBorder(

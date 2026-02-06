@@ -57,7 +57,7 @@ class EmptyStateWidget extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(compact ? 20 : 32),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant,
+                color: colorScheme.surfaceContainerHighest,
                 shape: BoxShape.circle,
               ),
               child: Icon(

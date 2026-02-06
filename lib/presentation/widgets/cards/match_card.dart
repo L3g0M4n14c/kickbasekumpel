@@ -99,7 +99,7 @@ class MatchCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isLive
                           ? Colors.red.withOpacity(0.1)
-                          : colorScheme.surfaceVariant,
+                          : colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: homeScore != null && awayScore != null
