@@ -5,15 +5,21 @@ import 'package:kickbasekumpel/data/repositories/firestore_repositories.dart';
 import '../../helpers/matchers.dart';
 import '../../helpers/test_data.dart';
 import '../../helpers/result_extension.dart';
+import '../../helpers/mock_firebase.dart';
 
 void main() {
   group('TransferRepository', () {
     late FakeFirebaseFirestore fakeFirestore;
+    late MockKickbaseAPIClient mockApiClient;
     late TransferRepository repository;
 
     setUp(() {
       fakeFirestore = FakeFirebaseFirestore();
-      repository = TransferRepository(firestore: fakeFirestore);
+      mockApiClient = MockKickbaseAPIClient();
+      repository = TransferRepository(
+        firestore: fakeFirestore,
+        apiClient: mockApiClient,
+      );
     });
 
     group('getByLeague', () {
@@ -210,8 +216,14 @@ void main() {
     group('validateTransfer', () {
       test('validates transfer successfully', () async {
         // Arrange - Setup user budgets and player ownership
-        final userRepo = UserRepository(firestore: fakeFirestore);
-        final playerRepo = PlayerRepository(firestore: fakeFirestore);
+        final userRepo = UserRepository(
+          firestore: fakeFirestore,
+          apiClient: mockApiClient,
+        );
+        final playerRepo = PlayerRepository(
+          firestore: fakeFirestore,
+          apiClient: mockApiClient,
+        );
 
         final fromUser = TestData.createTestUser(
           id: 'user-1',

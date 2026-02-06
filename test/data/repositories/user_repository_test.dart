@@ -5,15 +5,21 @@ import 'package:kickbasekumpel/data/repositories/firestore_repositories.dart';
 import '../../helpers/matchers.dart';
 import '../../helpers/test_data.dart';
 import '../../helpers/result_extension.dart';
+import '../../helpers/mock_firebase.dart';
 
 void main() {
   group('UserRepository', () {
     late FakeFirebaseFirestore fakeFirestore;
+    late MockKickbaseAPIClient mockApiClient;
     late UserRepository repository;
 
     setUp(() {
       fakeFirestore = FakeFirebaseFirestore();
-      repository = UserRepository(firestore: fakeFirestore);
+      mockApiClient = MockKickbaseAPIClient();
+      repository = UserRepository(
+        firestore: fakeFirestore,
+        apiClient: mockApiClient,
+      );
     });
 
     group('getByEmail', () {

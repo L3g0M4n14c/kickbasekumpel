@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/http_client_wrapper.dart';
 import '../services/kickbase_api_client.dart';
@@ -83,55 +84,62 @@ final kickbaseApiClientProvider = Provider<KickbaseAPIClient>((ref) {
 /// Bietet Caching und Offline-Support.
 /// Nutzt httpClientProvider für HTTP-Anfragen.
 ///
+/// WICHTIG: Verwende ligainsiderServiceFutureProvider für async initialization
+///
 /// Verwendung:
 /// ```dart
-/// final service = ref.watch(ligainsiderServiceProvider);
-/// await service.fetchLineups();
-/// final status = service.getPlayerStatus('Max', 'Mustermann');
+/// final serviceAsync = ref.watch(ligainsiderServiceFutureProvider);
+/// serviceAsync.when(
+///   data: (service) => service.getPlayerStatus('Max', 'Mustermann'),
+///   loading: () => CircularProgressIndicator(),
+///   error: (err, stack) => Text('Error: $err'),
+/// );
 /// ```
-final ligainsiderServiceProvider = Provider<LigainsiderService>((ref) {
+final ligainsiderServiceFutureProvider = FutureProvider<LigainsiderService>((
+  ref,
+) async {
   final httpClient = ref.watch(httpClientProvider);
+  final prefs = await SharedPreferences.getInstance();
 
-  return LigainsiderService(httpClient: httpClient);
+  return LigainsiderService(httpClient: httpClient, prefs: prefs);
 });
 
 // ============================================================================
 // Services Provider Barrel Export
 // ============================================================================
 
-/// Barrel Provider für alle Services
+/// Barrel Provider für synchrone Services
 ///
-/// Ermöglicht einfachen Zugriff auf alle Service Provider über einen
-/// einzigen Import. Ideal für Riverpod.watch() in UI Components.
+/// Ermöglicht einfachen Zugriff auf synchron verfügbare Services.
+/// Für LigainsiderService verwende ligainsiderServiceFutureProvider separat.
 ///
 /// Verwendung:
 /// ```dart
-/// final services = ref.watch(servicesProvider);
+/// final services = ref.watch(syncServicesProvider);
 /// final apiClient = services.kickbaseApiClient;
-/// final ligainsider = services.ligainsider;
+///
+/// // Für LigainsiderService separat:
+/// final ligainsider = await ref.read(ligainsiderServiceFutureProvider.future);
 /// ```
-final servicesProvider = Provider<Services>((ref) {
-  return Services(
+final syncServicesProvider = Provider<SyncServices>((ref) {
+  return SyncServices(
     httpClient: ref.watch(httpClientProvider),
     httpClientWrapper: ref.watch(httpClientWrapperProvider),
     kickbaseApiClient: ref.watch(kickbaseApiClientProvider),
-    ligainsiderService: ref.watch(ligainsiderServiceProvider),
   );
 });
 
-/// Services Container Class
+/// Services Container Class für synchrone Services
 ///
-/// Container für alle Services, ermöglicht gebündelten Zugriff.
-class Services {
+/// Container für alle synchron verfügbaren Services.
+class SyncServices {
   final http.Client httpClient;
   final HttpClientWrapper httpClientWrapper;
   final KickbaseAPIClient kickbaseApiClient;
-  final LigainsiderService ligainsiderService;
 
-  const Services({
+  const SyncServices({
     required this.httpClient,
     required this.httpClientWrapper,
     required this.kickbaseApiClient,
-    required this.ligainsiderService,
   });
 }

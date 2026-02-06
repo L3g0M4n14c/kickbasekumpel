@@ -1,10 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/repositories/repository_interfaces.dart';
 import '../models/user_model.dart';
 import '../models/league_model.dart';
 import '../models/player_model.dart';
 import '../models/transfer_model.dart';
+import '../services/kickbase_api_client.dart';
+import '../providers/service_providers.dart';
 import 'base_repository.dart';
 
 // Firestore Provider
@@ -14,19 +17,31 @@ final firestoreProvider = Provider<FirebaseFirestore>((ref) {
 
 // Repository Providers
 final userRepositoryProvider = Provider<UserRepository>((ref) {
-  return UserRepository(firestore: ref.watch(firestoreProvider));
+  return UserRepository(
+    firestore: ref.watch(firestoreProvider),
+    apiClient: ref.watch(kickbaseApiClientProvider),
+  );
 });
 
 final leagueRepositoryProvider = Provider<LeagueRepository>((ref) {
-  return LeagueRepository(firestore: ref.watch(firestoreProvider));
+  return LeagueRepository(
+    firestore: ref.watch(firestoreProvider),
+    apiClient: ref.watch(kickbaseApiClientProvider),
+  );
 });
 
 final playerRepositoryProvider = Provider<PlayerRepository>((ref) {
-  return PlayerRepository(firestore: ref.watch(firestoreProvider));
+  return PlayerRepository(
+    firestore: ref.watch(firestoreProvider),
+    apiClient: ref.watch(kickbaseApiClientProvider),
+  );
 });
 
 final transferRepositoryProvider = Provider<TransferRepository>((ref) {
-  return TransferRepository(firestore: ref.watch(firestoreProvider));
+  return TransferRepository(
+    firestore: ref.watch(firestoreProvider),
+    apiClient: ref.watch(kickbaseApiClientProvider),
+  );
 });
 
 final recommendationRepositoryProvider = Provider<RecommendationRepository>((
@@ -41,7 +56,10 @@ final recommendationRepositoryProvider = Provider<RecommendationRepository>((
 
 class UserRepository extends BaseRepository<User>
     implements UserRepositoryInterface {
-  UserRepository({required super.firestore}) : super(collectionPath: 'users');
+  final KickbaseAPIClient apiClient;
+
+  UserRepository({required super.firestore, required this.apiClient})
+    : super(collectionPath: 'users');
 
   @override
   User fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -72,6 +90,27 @@ class UserRepository extends BaseRepository<User>
       'flags': user.f,
       'updatedAt': FieldValue.serverTimestamp(),
     };
+  }
+
+  /// Get current user with API-first pattern
+  Future<Result<User>> getCurrent() async {
+    try {
+      // 1. Fetch from Kickbase API
+      final user = await apiClient.getUser();
+
+      // 2. Cache in Firestore
+      await collection.doc(user.i).set(toFirestore(user));
+
+      return Success(user);
+    } catch (e) {
+      // 3. Fallback: Load from Firestore cache
+      debugPrint('⚠️ API error, falling back to Firestore cache: $e');
+      // Since we don't have user ID, this will fail - API is required
+      return Failure(
+        'Unable to get current user: $e',
+        exception: e as Exception?,
+      );
+    }
   }
 
   @override
@@ -161,7 +200,9 @@ class UserRepository extends BaseRepository<User>
 
 class LeagueRepository extends BaseRepository<League>
     implements LeagueRepositoryInterface {
-  LeagueRepository({required super.firestore})
+  final KickbaseAPIClient apiClient;
+
+  LeagueRepository({required super.firestore, required this.apiClient})
     : super(collectionPath: 'leagues');
 
   @override
@@ -193,6 +234,48 @@ class LeagueRepository extends BaseRepository<League>
       'currentUser': league.cu.toJson(),
       'updatedAt': FieldValue.serverTimestamp(),
     };
+  }
+
+  /// Get all leagues with API-first pattern
+  ///
+  /// 1. Fetch from Kickbase API
+  /// 2. Cache in Firestore
+  /// 3. Fallback to Firestore cache on error
+  @override
+  Future<Result<List<League>>> getAll() async {
+    try {
+      // 1. Fetch from Kickbase API
+      final leagues = await apiClient.getLeagues();
+
+      // 2. Cache in Firestore
+      for (final league in leagues) {
+        await collection.doc(league.i).set(toFirestore(league));
+      }
+
+      return Success(leagues);
+    } catch (e) {
+      // 3. Fallback: Load from Firestore cache
+      debugPrint('⚠️ API error, falling back to Firestore cache: $e');
+      return await super.getAll();
+    }
+  }
+
+  /// Get league by ID with API-first pattern
+  @override
+  Future<Result<League>> getById(String id) async {
+    try {
+      // 1. Fetch from Kickbase API
+      final league = await apiClient.getLeague(id);
+
+      // 2. Cache in Firestore
+      await collection.doc(league.i).set(toFirestore(league));
+
+      return Success(league);
+    } catch (e) {
+      // 3. Fallback: Load from Firestore cache
+      debugPrint('⚠️ API error, falling back to Firestore cache: $e');
+      return await super.getById(id);
+    }
   }
 
   @override
@@ -361,7 +444,9 @@ class LeagueRepository extends BaseRepository<League>
 
 class PlayerRepository extends BaseRepository<Player>
     implements PlayerRepositoryInterface {
-  PlayerRepository({required super.firestore})
+  final KickbaseAPIClient apiClient;
+
+  PlayerRepository({required super.firestore, required this.apiClient})
     : super(collectionPath: 'players');
 
   @override
@@ -409,6 +494,26 @@ class PlayerRepository extends BaseRepository<Player>
       'userOwnsPlayer': player.userOwnsPlayer,
       'updatedAt': FieldValue.serverTimestamp(),
     };
+  }
+
+  /// Get players by league with API-first pattern
+  /// Note: API method is getLeaguePlayers(leagueId)
+  Future<Result<List<Player>>> getByLeague(String leagueId) async {
+    try {
+      // 1. Fetch from Kickbase API
+      final players = await apiClient.getLeaguePlayers(leagueId);
+
+      // 2. Cache in Firestore
+      for (final player in players) {
+        await collection.doc(player.id).set(toFirestore(player));
+      }
+
+      return Success(players);
+    } catch (e) {
+      // 3. Fallback: Load from Firestore cache
+      debugPrint('⚠️ API error, falling back to Firestore cache: $e');
+      return await queryWhere(field: 'leagueId', value: leagueId);
+    }
   }
 
   @override
@@ -559,7 +664,9 @@ class PlayerRepository extends BaseRepository<Player>
 
 class TransferRepository extends BaseRepository<Transfer>
     implements TransferRepositoryInterface {
-  TransferRepository({required super.firestore})
+  final KickbaseAPIClient apiClient;
+
+  TransferRepository({required super.firestore, required this.apiClient})
     : super(collectionPath: 'transfers');
 
   @override
@@ -599,8 +706,11 @@ class TransferRepository extends BaseRepository<Transfer>
     };
   }
 
+  /// Get transfers by league with API-first pattern
   @override
   Future<Result<List<Transfer>>> getByLeague(String leagueId) async {
+    // Note: API method requires both leagueId and userId
+    // For now, use Firestore as primary source for league transfers
     return await complexQuery(
       conditions: [QueryCondition(field: 'leagueId', isEqualTo: leagueId)],
       orderByField: 'timestamp',
@@ -608,8 +718,12 @@ class TransferRepository extends BaseRepository<Transfer>
     );
   }
 
+  /// Get transfers by user with API-first pattern
   @override
   Future<Result<List<Transfer>>> getByUser(String userId) async {
+    // First try to get from API if we have a league context
+    // For now, use Firestore as we need leagueId for API call
+
     try {
       // Get transfers where user is sender or receiver
       final sentSnapshot = await collection
@@ -641,6 +755,36 @@ class TransferRepository extends BaseRepository<Transfer>
       );
     } catch (e) {
       return Failure('Unexpected error: $e', exception: e as Exception?);
+    }
+  }
+
+  /// Get transfers by league and user with API-first pattern
+  /// This method uses the API's getTransfers endpoint
+  Future<Result<List<Transfer>>> getByLeagueAndUser(
+    String leagueId,
+    String userId,
+  ) async {
+    try {
+      // 1. Fetch from Kickbase API
+      final transfers = await apiClient.getTransfers(leagueId, userId);
+
+      // 2. Cache in Firestore
+      for (final transfer in transfers) {
+        await collection.doc(transfer.id).set(toFirestore(transfer));
+      }
+
+      return Success(transfers);
+    } catch (e) {
+      // 3. Fallback: Load from Firestore cache
+      debugPrint('⚠️ API error, falling back to Firestore cache: $e');
+      return await complexQuery(
+        conditions: [
+          QueryCondition(field: 'leagueId', isEqualTo: leagueId),
+          QueryCondition(field: 'fromUserId', isEqualTo: userId),
+        ],
+        orderByField: 'timestamp',
+        descending: true,
+      );
     }
   }
 

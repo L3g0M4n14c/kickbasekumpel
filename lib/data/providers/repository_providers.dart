@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../repositories/firestore_repositories.dart';
 import '../repositories/auth_repository.dart';
+import 'service_providers.dart';
 
 // ============================================================================
 // FIREBASE INSTANCE PROVIDERS
@@ -25,31 +26,35 @@ final firebaseAuthProvider = Provider<firebase_auth.FirebaseAuth>((ref) {
 // ============================================================================
 
 /// User Repository Provider
-/// Manages all user-related Firestore operations
+/// Manages all user-related Firestore operations with API-first pattern
 final userRepositoryProvider = Provider<UserRepository>((ref) {
   final firestore = ref.watch(firestoreProvider);
-  return UserRepository(firestore: firestore);
+  final apiClient = ref.watch(kickbaseApiClientProvider);
+  return UserRepository(firestore: firestore, apiClient: apiClient);
 });
 
 /// League Repository Provider
-/// Manages all league-related Firestore operations
+/// Manages all league-related Firestore operations with API-first pattern
 final leagueRepositoryProvider = Provider<LeagueRepository>((ref) {
   final firestore = ref.watch(firestoreProvider);
-  return LeagueRepository(firestore: firestore);
+  final apiClient = ref.watch(kickbaseApiClientProvider);
+  return LeagueRepository(firestore: firestore, apiClient: apiClient);
 });
 
 /// Player Repository Provider
-/// Manages all player-related Firestore operations
+/// Manages all player-related Firestore operations with API-first pattern
 final playerRepositoryProvider = Provider<PlayerRepository>((ref) {
   final firestore = ref.watch(firestoreProvider);
-  return PlayerRepository(firestore: firestore);
+  final apiClient = ref.watch(kickbaseApiClientProvider);
+  return PlayerRepository(firestore: firestore, apiClient: apiClient);
 });
 
 /// Transfer Repository Provider
-/// Manages all transfer-related Firestore operations
+/// Manages all transfer-related Firestore operations with API-first pattern
 final transferRepositoryProvider = Provider<TransferRepository>((ref) {
   final firestore = ref.watch(firestoreProvider);
-  return TransferRepository(firestore: firestore);
+  final apiClient = ref.watch(kickbaseApiClientProvider);
+  return TransferRepository(firestore: firestore, apiClient: apiClient);
 });
 
 /// Recommendation Repository Provider

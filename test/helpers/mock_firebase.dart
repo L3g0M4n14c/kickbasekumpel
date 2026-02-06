@@ -1,6 +1,7 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:mocktail/mocktail.dart';
+import 'package:kickbasekumpel/data/services/kickbase_api_client.dart';
 
 // Mock classes for Firebase Auth
 class MockFirebaseAuth extends Mock implements auth.FirebaseAuth {}
@@ -8,6 +9,9 @@ class MockFirebaseAuth extends Mock implements auth.FirebaseAuth {}
 class MockUser extends Mock implements auth.User {}
 
 class MockUserCredential extends Mock implements auth.UserCredential {}
+
+// Mock class for Kickbase API Client
+class MockKickbaseAPIClient extends Mock implements KickbaseAPIClient {}
 
 /// Mock Firebase Setup for Testing
 class MockFirebaseSetup {
