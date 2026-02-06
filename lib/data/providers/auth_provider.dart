@@ -50,7 +50,7 @@ final currentUserResultProvider = FutureProvider<AuthResult<User?>>((
 });
 
 // ============================================================================
-// StateNotifier für Auth Operations
+// Notifier für Auth Operations (Riverpod 3.x)
 // ============================================================================
 
 /// State für Auth Operations
@@ -75,11 +75,12 @@ class AuthState {
   }
 }
 
-/// StateNotifier für Authentication Operations
-class AuthNotifier extends StateNotifier<AuthState> {
-  final AuthRepository _repository;
+/// Notifier für Authentication Operations (Riverpod 3.x)
+class AuthNotifier extends Notifier<AuthState> {
+  AuthRepository get _repository => ref.read(authRepositoryProvider);
 
-  AuthNotifier(this._repository) : super(const AuthState());
+  @override
+  AuthState build() => const AuthState();
 
   /// Sign up with email and password
   Future<bool> signUp({
@@ -224,12 +225,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 }
 
-/// Provider für AuthNotifier
-final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((
-  ref,
-) {
-  final repository = ref.watch(authRepositoryProvider);
-  return AuthNotifier(repository);
+/// Provider für AuthNotifier (Riverpod 3.x)
+final authNotifierProvider = NotifierProvider<AuthNotifier, AuthState>(() {
+  return AuthNotifier();
 });
 
 // ============================================================================

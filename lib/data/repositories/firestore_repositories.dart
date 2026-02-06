@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/repositories/repository_interfaces.dart';
 import '../models/user_model.dart';
 import '../models/league_model.dart';
