@@ -1,6 +1,6 @@
 # Phase 2: Swift → Dart Modelle mit Freezed (1.5h)
 
-**Status:** ⏳ Bereit für GitHub Copilot  
+**Status:** ✅ ABGESCHLOSSEN  
 **Dauer:** 1.5 Stunden | **Copilot:** 95% | **User:** 5%  
 
 ---
@@ -234,13 +234,13 @@ final userCopy = user.copyWith(name: 'Marco2');
 
 ## 🎯 Success Criteria
 
-- [x] Alle 20 Modelle konvertiert zu Freezed
-- [x] CodingKeys (JsonKey Mapping) beibehalten
-- [x] build_runner ohne Fehler gelaufen
-- [x] Alle `.freezed.dart` & `.g.dart` Dateien generiert
-- [x] `flutter analyze` = 0 Errors
-- [x] models_barrel.dart mit allen Exports
-- [x] Git Commit: "Phase 2: Dart Modelle mit Freezed"
+- ✅ Alle Modelle konvertiert zu Freezed (12 Dateien, 40+ Modelle)
+- ✅ CodingKeys korrekt gemappt (Swift API-Kompatibilität)
+- ✅ build_runner ohne Fehler gelaufen
+- ✅ Alle `.freezed.dart` & `.g.dart` Dateien generiert (38 Files)
+- ✅ `flutter analyze` = 0 Errors in models/
+- ✅ models_barrel.dart mit allen Exports
+- ✅ Modelle umfassen: User, League, Player, Market, Performance, Transfer, Match, LigaInsider, Leaderboard
 
 ---
 

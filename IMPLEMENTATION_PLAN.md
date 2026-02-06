@@ -5,8 +5,8 @@
 | Phase | Titel | Dauer | Copilot | User | Status |
 |-------|-------|-------|---------|------|--------|
 | 1 | Setup & Infrastruktur | 1.5h | 85% | 15% | ✅ Fertig |
-| 2 | Dart Modelle migrieren | 1.5h | 95% | 5% | ✅ Aktiv |
-| 3 | Firebase Backend | 3h | 70% | 30% | ⏳ Planung |
+| 2 | Dart Modelle migrieren | 1.5h | 95% | 5% | ✅ Fertig |
+| 3 | Firebase Backend | 3h | 70% | 30% | ⏳ Aktiv |
 | 4 | Services portieren | 2h | 70% | 30% | ⏳ Planung |
 | 5 | UI-Screens | 3h | 60% | 40% | ⏳ Planung |
 | 6 | Testing | 2.5h | 50% | 50% | ⏳ Planung |
@@ -40,11 +40,13 @@ Detaillierte Guides für jede Phase:
 - ✅ iOS Deployment Target 15.0
 - ✅ App auf echtem iPhone deployed
 
-### [Phase 2: Dart Modelle (1.5h)](./docs/PHASE_2_MODELS.md)
-- Swift Codable → Freezed Modelle
-- 20+ Modelle konvertieren
-- JSON Serialization Setup
-- build_runner Konfiguration
+### [Phase 2: Dart Modelle (1.5h)](./docs/PHASE_2_MODELS.md) ✅ **FERTIG**
+- ✅ Swift Codable → Freezed Modelle
+- ✅ 12 Modell-Dateien mit 40+ Modellen erstellt
+- ✅ JSON Serialization Setup
+- ✅ build_runner erfolgreich ausgeführt
+- ✅ Alle .freezed.dart & .g.dart generiert
+- ✅ models_barrel.dart für Exports
 
 ### [Phase 3: Firebase Backend (3h)](./docs/PHASE_3_FIREBASE.md)
 - Firebase Auth Integration
