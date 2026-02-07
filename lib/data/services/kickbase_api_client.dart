@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'token_storage.dart';
+
 import '../../domain/exceptions/kickbase_exceptions.dart';
 import '../models/league_model.dart';
 import '../models/lineup_model.dart';
@@ -13,6 +15,7 @@ import '../models/performance_model.dart';
 import '../models/player_model.dart';
 import '../models/transfer_model.dart';
 import '../models/user_model.dart';
+import '../utils/parsing_utils.dart';
 
 /// Kickbase API Client
 ///
@@ -23,26 +26,26 @@ import '../models/user_model.dart';
 class KickbaseAPIClient {
   static const String _baseUrl = 'https://api.kickbase.com';
   static const String _apiVersion = 'v4';
-  static const String _tokenKey = 'kickbase_token';
   static const String _userDataKey = 'kickbase_user_data';
   static const Duration _timeout = Duration(seconds: 30);
   static const int _maxRetries = 3;
   static const Duration _initialRetryDelay = Duration(milliseconds: 500);
 
   final http.Client _httpClient;
+  final TokenStorage _tokenStorage;
 
   String? _cachedToken;
 
-  KickbaseAPIClient({http.Client? httpClient})
-    : _httpClient = httpClient ?? http.Client();
+  KickbaseAPIClient({http.Client? httpClient, TokenStorage? tokenStorage})
+    : _httpClient = httpClient ?? http.Client(),
+      _tokenStorage = tokenStorage ?? SharedPreferencesTokenStorage();
 
   // MARK: - Token Management
 
   /// Set authentication token
   Future<void> setAuthToken(String token) async {
     _cachedToken = token;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, token);
+    await _tokenStorage.setToken(token);
     print('🔑 Auth token saved');
   }
 
@@ -51,8 +54,7 @@ class KickbaseAPIClient {
     if (_cachedToken != null) {
       return _cachedToken;
     }
-    final prefs = await SharedPreferences.getInstance();
-    _cachedToken = prefs.getString(_tokenKey);
+    _cachedToken = await _tokenStorage.getToken();
     return _cachedToken;
   }
 
@@ -65,9 +67,7 @@ class KickbaseAPIClient {
   /// Clear authentication token
   Future<void> clearAuthToken() async {
     _cachedToken = null;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
-    await prefs.remove(_userDataKey);
+    await _tokenStorage.clearToken();
     print('🗑️ Auth token and user data cleared');
   }
 
@@ -447,7 +447,9 @@ class KickbaseAPIClient {
     );
 
     final json = _parseJson(response.body);
-    final leaguesData = json['it'] as List<dynamic>?;
+    // Some endpoints use 'it', others 'leagues'
+    final leaguesData =
+        json['it'] as List<dynamic>? ?? json['leagues'] as List<dynamic>?;
 
     if (leaguesData == null) {
       throw const ParsingException('No leagues data in response');
@@ -456,7 +458,10 @@ class KickbaseAPIClient {
     print('🔍 Parsing ${leaguesData.length} leagues...');
     try {
       final leagues = leaguesData
-          .map((e) => League.fromJson(e as Map<String, dynamic>))
+          .map(
+            (e) =>
+                League.fromJson(normalizeLeagueJson(e as Map<String, dynamic>)),
+          )
           .toList();
       print('✅ Successfully parsed ${leagues.length} leagues');
       return leagues;
@@ -475,7 +480,10 @@ class KickbaseAPIClient {
       method: 'GET',
     );
 
-    return _processResponse(response, League.fromJson);
+    return _processResponse(
+      response,
+      (json) => League.fromJson(normalizeLeagueJson(json)),
+    );
   }
 
   /// Get all players in a league
@@ -494,7 +502,10 @@ class KickbaseAPIClient {
     }
 
     return playersData
-        .map((e) => Player.fromJson(e as Map<String, dynamic>))
+        .map(
+          (e) =>
+              Player.fromJson(normalizePlayerJson(e as Map<String, dynamic>)),
+        )
         .toList();
   }
 

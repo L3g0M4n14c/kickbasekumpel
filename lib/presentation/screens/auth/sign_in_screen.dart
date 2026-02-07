@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../data/providers/auth_provider.dart';
+import '../../widgets/common/app_logo.dart';
 
 /// Sign In Screen
 ///
@@ -79,10 +80,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Logo & Title
-                    Icon(
-                      Icons.sports_soccer,
+                    AppLogo(
                       size: isTablet ? 100 : 80,
-                      color: theme.colorScheme.primary,
+                      backgroundColor: theme.colorScheme.primary,
                     ),
                     const SizedBox(height: 24),
                     Text(

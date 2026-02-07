@@ -15,7 +15,7 @@ class League with _$League {
     String? c,
     String? s,
     int? md,
-    LeagueUser? cu,
+    required LeagueUser cu,
     // Additional fields from /v4/leagues/selection response
     int? b, // budget
     int? tv, // team value
@@ -33,7 +33,33 @@ class League with _$League {
     int? rnkm, // ?
   }) = _League;
 
-  factory League.fromJson(Map<String, dynamic> json) => _$LeagueFromJson(json);
+  factory League.fromJson(Map<String, dynamic> json) =>
+      _$LeagueFromJson(_ensureLeagueHasCu(json));
+}
+
+Map<String, dynamic> _ensureLeagueHasCu(Map<String, dynamic> json) {
+  if (json['cu'] == null) {
+    // Create a default LeagueUser representation
+    final defaultCu = {
+      'id': '',
+      'name': '',
+      'teamName': '',
+      'budget': 0,
+      'teamValue': 0,
+      'points': 0,
+      'placement': 0,
+      'won': 0,
+      'drawn': 0,
+      'lost': 0,
+      'se11': 0,
+      'ttm': 0,
+      'lp': <String>[],
+    };
+    final copy = Map<String, dynamic>.from(json);
+    copy['cu'] = defaultCu;
+    return copy;
+  }
+  return json;
 }
 
 /// League User - Extended User in League Context

@@ -4,6 +4,7 @@ import '../../../data/providers/player_providers.dart';
 import '../../../data/providers/league_providers.dart';
 import '../../../data/models/player_model.dart';
 import '../../widgets/loading_widget.dart';
+import '../../widgets/common/app_logo.dart';
 import '../../widgets/error_widget.dart';
 
 /// Lineup Screen
@@ -119,13 +120,23 @@ class LineupScreen extends ConsumerWidget {
                                     MainAxisAlignment.spaceAround,
                                 children: [
                                   _InfoChip(
-                                    icon: Icons.attach_money,
+                                    icon: Icon(
+                                      Icons.attach_money,
+                                      size: 20,
+                                      color:
+                                          theme.colorScheme.onPrimaryContainer,
+                                    ),
                                     label: 'Team-Wert',
                                     value:
                                         '${(selectedLeague.cu.teamValue / 1000000).toStringAsFixed(1)}M €',
                                   ),
                                   _InfoChip(
-                                    icon: Icons.people,
+                                    icon: Icon(
+                                      Icons.people,
+                                      size: 20,
+                                      color:
+                                          theme.colorScheme.onPrimaryContainer,
+                                    ),
                                     label: 'Spieler',
                                     value: '${ownedPlayers.length}',
                                   ),
@@ -140,28 +151,28 @@ class LineupScreen extends ConsumerWidget {
                       // Lineup sections
                       _LineupSection(
                         title: 'Torwart',
-                        icon: Icons.sports_handball,
+                        icon: AppLogo(size: 20, backgroundColor: Colors.yellow),
                         players: goalkeepers,
                         color: Colors.yellow,
                       ),
                       const SizedBox(height: 16),
                       _LineupSection(
                         title: 'Abwehr',
-                        icon: Icons.shield,
+                        icon: Icon(Icons.shield, size: 20, color: Colors.blue),
                         players: defenders,
                         color: Colors.blue,
                       ),
                       const SizedBox(height: 16),
                       _LineupSection(
                         title: 'Mittelfeld',
-                        icon: Icons.sports,
+                        icon: Icon(Icons.sports, size: 20, color: Colors.green),
                         players: midfielders,
                         color: Colors.green,
                       ),
                       const SizedBox(height: 16),
                       _LineupSection(
                         title: 'Sturm',
-                        icon: Icons.sports_soccer,
+                        icon: AppLogo(size: 20, backgroundColor: Colors.red),
                         players: forwards,
                         color: Colors.red,
                       ),
@@ -180,7 +191,7 @@ class LineupScreen extends ConsumerWidget {
 }
 
 class _InfoChip extends StatelessWidget {
-  final IconData icon;
+  final Widget icon;
   final String label;
   final String value;
 
@@ -196,7 +207,7 @@ class _InfoChip extends StatelessWidget {
 
     return Column(
       children: [
-        Icon(icon, color: theme.colorScheme.onPrimaryContainer, size: 20),
+        icon,
         const SizedBox(height: 4),
         Text(
           value,
@@ -218,7 +229,7 @@ class _InfoChip extends StatelessWidget {
 
 class _LineupSection extends StatelessWidget {
   final String title;
-  final IconData icon;
+  final Widget icon;
   final List<Player> players;
   final Color color;
 
@@ -238,7 +249,7 @@ class _LineupSection extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icon, color: color, size: 20),
+            icon,
             const SizedBox(width: 8),
             Text(
               title,

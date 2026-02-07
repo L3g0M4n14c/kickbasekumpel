@@ -302,6 +302,23 @@ final playerOwnershipProvider =
 // COMPUTED PROVIDERS
 // ============================================================================
 
+/// Owned Player IDs Provider
+/// Returns list of owned player ids for given league
+final ownedPlayerIdsProvider = FutureProvider.family<List<String>, String>((
+  ref,
+  leagueId,
+) async {
+  final playerRepo = ref.watch(playerRepositoryProvider);
+  final result = await playerRepo.getOwnedPlayerIds(leagueId);
+
+  if (result is Success<List<String>>) {
+    return result.data;
+  } else if (result is Failure<List<String>>) {
+    throw Exception((result).message);
+  }
+  throw Exception('Unknown error fetching owned player ids');
+});
+
 /// Available Players Provider
 /// Returns players not owned by current user in selected league
 final availablePlayersProvider = FutureProvider<List<Player>>((ref) async {
@@ -309,9 +326,9 @@ final availablePlayersProvider = FutureProvider<List<Player>>((ref) async {
   if (leagueId == null) return [];
 
   final players = await ref.watch(allPlayersProvider.future);
+  final ownedIds = await ref.watch(ownedPlayerIdsProvider(leagueId).future);
 
-  // Filter for players not owned by user
-  return players.where((player) => !player.userOwnsPlayer).toList();
+  return players.where((player) => !ownedIds.contains(player.id)).toList();
 });
 
 /// Affordable Players Provider

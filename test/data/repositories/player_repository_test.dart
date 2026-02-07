@@ -453,6 +453,45 @@ void main() {
         expect(deserialized.position, player.position);
         expect(deserialized.marketValue, player.marketValue);
       });
+
+      group('owned players', () {
+        test('getOwnedPlayerIds returns owned ids', () async {
+          final leagueId = 'league-1';
+          await fakeFirestore
+              .collection('leagues')
+              .doc(leagueId)
+              .collection('ownedPlayers')
+              .doc('player-1')
+              .set({'ownerId': 'user-1'});
+          await fakeFirestore
+              .collection('leagues')
+              .doc(leagueId)
+              .collection('ownedPlayers')
+              .doc('player-2')
+              .set({'ownerId': 'user-1'});
+
+          final result = await repository.getOwnedPlayerIds(leagueId);
+
+          expect(result, ResultMatchers.isSuccess());
+          result.when(
+            success: (data) {
+              expect(data, containsAll(['player-1', 'player-2']));
+            },
+            failure: (_) => fail('Should not fail'),
+          );
+        });
+
+        test('getOwnedPlayerIds returns empty list when none', () async {
+          final leagueId = 'league-empty';
+          final result = await repository.getOwnedPlayerIds(leagueId);
+
+          expect(result, ResultMatchers.isSuccess());
+          result.when(
+            success: (data) => expect(data, isEmpty),
+            failure: (_) => fail('Should not fail'),
+          );
+        });
+      });
     });
   });
 }

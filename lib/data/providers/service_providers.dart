@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/http_client_wrapper.dart';
 import '../services/kickbase_api_client.dart';
 import '../services/ligainsider_service.dart';
-import 'kickbase_api_provider.dart';
 
 // ============================================================================
 // Service Providers - Central Export

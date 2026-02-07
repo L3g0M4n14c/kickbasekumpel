@@ -118,6 +118,9 @@ class LeagueCard extends StatelessWidget {
   Widget _buildDetails(BuildContext context) {
     final theme = Theme.of(context);
     final user = league.cu;
+    final placement = user.placement;
+    final points = user.points;
+    final teamValue = user.teamValue;
 
     return Row(
       children: [
@@ -127,8 +130,8 @@ class LeagueCard extends StatelessWidget {
             context,
             icon: Icons.stars,
             label: 'Platz',
-            value: '#${user.placement}',
-            color: _getPlacementColor(user.placement),
+            value: '#$placement',
+            color: _getPlacementColor(placement),
           ),
         ),
 
@@ -138,7 +141,7 @@ class LeagueCard extends StatelessWidget {
             context,
             icon: Icons.emoji_events,
             label: 'Punkte',
-            value: '${user.points}',
+            value: '$points',
             color: theme.colorScheme.primary,
           ),
         ),
@@ -149,7 +152,7 @@ class LeagueCard extends StatelessWidget {
             context,
             icon: Icons.euro,
             label: 'Teamwert',
-            value: _formatCurrency(user.teamValue),
+            value: _formatCurrency(teamValue),
             color: theme.colorScheme.secondary,
           ),
         ),

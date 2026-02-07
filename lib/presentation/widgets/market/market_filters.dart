@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/market_providers.dart';
+import '../common/app_logo.dart';
 
 /// Market Filters Widget
 ///
@@ -94,7 +95,10 @@ class _MarketFiltersState extends ConsumerState<MarketFilters> {
                 // Position Filter Section
                 _FilterSection(
                   title: 'Position',
-                  icon: Icons.sports_soccer,
+                  icon: AppLogo(
+                    size: 20,
+                    backgroundColor: theme.colorScheme.primary,
+                  ),
                   child: Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -108,7 +112,7 @@ class _MarketFiltersState extends ConsumerState<MarketFilters> {
                       ),
                       _PositionChip(
                         label: 'Torwart',
-                        icon: Icons.sports_handball,
+                        icon: AppLogo(size: 16, backgroundColor: Colors.orange),
                         color: Colors.orange,
                         isSelected: _selectedPosition == 1,
                         onSelected: () {
@@ -117,7 +121,7 @@ class _MarketFiltersState extends ConsumerState<MarketFilters> {
                       ),
                       _PositionChip(
                         label: 'Abwehr',
-                        icon: Icons.shield,
+                        icon: Icon(Icons.shield),
                         color: Colors.blue,
                         isSelected: _selectedPosition == 2,
                         onSelected: () {
@@ -126,7 +130,13 @@ class _MarketFiltersState extends ConsumerState<MarketFilters> {
                       ),
                       _PositionChip(
                         label: 'Mittelfeld',
-                        icon: Icons.swap_horiz,
+                        icon: Icon(
+                          Icons.swap_horiz,
+                          size: 16,
+                          color: _selectedPosition == 3
+                              ? Colors.white
+                              : Colors.green,
+                        ),
                         color: Colors.green,
                         isSelected: _selectedPosition == 3,
                         onSelected: () {
@@ -135,7 +145,13 @@ class _MarketFiltersState extends ConsumerState<MarketFilters> {
                       ),
                       _PositionChip(
                         label: 'Sturm',
-                        icon: Icons.flash_on,
+                        icon: Icon(
+                          Icons.flash_on,
+                          size: 16,
+                          color: _selectedPosition == 4
+                              ? Colors.white
+                              : Colors.red,
+                        ),
                         color: Colors.red,
                         isSelected: _selectedPosition == 4,
                         onSelected: () {
@@ -150,7 +166,11 @@ class _MarketFiltersState extends ConsumerState<MarketFilters> {
                 // Price Range Filter Section
                 _FilterSection(
                   title: 'Preisspanne',
-                  icon: Icons.euro,
+                  icon: Icon(
+                    Icons.euro,
+                    size: 20,
+                    color: theme.colorScheme.primary,
+                  ),
                   child: Column(
                     children: [
                       // Price Range Display
@@ -294,7 +314,7 @@ class _MarketFiltersState extends ConsumerState<MarketFilters> {
 
 class _FilterSection extends StatelessWidget {
   final String title;
-  final IconData icon;
+  final Widget icon;
   final Widget child;
 
   const _FilterSection({
@@ -312,7 +332,7 @@ class _FilterSection extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icon, size: 20, color: theme.colorScheme.primary),
+            icon,
             const SizedBox(width: 8),
             Text(
               title,
@@ -335,7 +355,7 @@ class _FilterSection extends StatelessWidget {
 
 class _PositionChip extends StatelessWidget {
   final String label;
-  final IconData? icon;
+  final Widget? icon;
   final Color? color;
   final bool isSelected;
   final VoidCallback onSelected;
@@ -357,10 +377,7 @@ class _PositionChip extends StatelessWidget {
       label: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[
-            Icon(icon, size: 16, color: isSelected ? Colors.white : chipColor),
-            const SizedBox(width: 6),
-          ],
+          if (icon != null) ...[icon!, const SizedBox(width: 6)],
           Text(label),
         ],
       ),

@@ -39,6 +39,8 @@ class LeagueListTile extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final user = league.cu;
+    final placement = user.placement;
+    final points = user.points;
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -73,7 +75,7 @@ class LeagueListTile extends StatelessWidget {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: _getPlacementColor(user.placement).withOpacity(0.1),
+                    color: _getPlacementColor(placement).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -82,13 +84,13 @@ class LeagueListTile extends StatelessWidget {
                       Icon(
                         Icons.stars,
                         size: 12,
-                        color: _getPlacementColor(user.placement),
+                        color: _getPlacementColor(placement),
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'Platz ${user.placement}',
+                        'Platz $placement',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: _getPlacementColor(user.placement),
+                          color: _getPlacementColor(placement),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -101,7 +103,7 @@ class LeagueListTile extends StatelessWidget {
                 Icon(Icons.emoji_events, size: 14, color: colorScheme.primary),
                 const SizedBox(width: 4),
                 Text(
-                  '${user.points} Pkt',
+                  '$points Pkt',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: colorScheme.primary,
                     fontWeight: FontWeight.w600,

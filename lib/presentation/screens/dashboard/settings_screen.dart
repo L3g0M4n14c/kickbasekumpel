@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../data/providers/auth_provider.dart';
+import '../../widgets/common/app_logo.dart';
 import '../../../data/providers/user_providers.dart' as user_prov;
 
 /// Settings Screen
@@ -179,10 +180,7 @@ class SettingsScreen extends ConsumerWidget {
                       context: context,
                       applicationName: 'KickbaseKumpel',
                       applicationVersion: '1.0.0',
-                      applicationIcon: const Icon(
-                        Icons.sports_soccer,
-                        size: 48,
-                      ),
+                      applicationIcon: AppLogo(size: 48),
                       children: [
                         const Text(
                           'Dein smarter Transferberater für Kickbase.',

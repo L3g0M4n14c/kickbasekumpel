@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../config/screen_size.dart';
+import '../../widgets/common/app_logo.dart';
 
 /// Dashboard Shell mit responsiver Navigation
 /// - Mobile: BottomNavigationBar
@@ -80,13 +81,13 @@ class DashboardShell extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const DrawerHeader(
+            DrawerHeader(
               decoration: BoxDecoration(color: Colors.blue),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Icon(Icons.sports_soccer, size: 48, color: Colors.white),
+                  AppLogo(size: 48, backgroundColor: Colors.white),
                   SizedBox(height: 8),
                   Text(
                     'Kickbase Kumpel',
@@ -99,13 +100,13 @@ class DashboardShell extends StatelessWidget {
                 ],
               ),
             ),
-            _buildDrawerItem(context, 0, Icons.home, 'Home'),
-            _buildDrawerItem(context, 1, Icons.emoji_events, 'Ligen'),
-            _buildDrawerItem(context, 2, Icons.store, 'Markt'),
-            _buildDrawerItem(context, 3, Icons.people, 'Aufstellung'),
-            _buildDrawerItem(context, 4, Icons.swap_horiz, 'Transfers'),
+            _buildDrawerItem(context, 0, Icon(Icons.home), 'Home'),
+            _buildDrawerItem(context, 1, Icon(Icons.emoji_events), 'Ligen'),
+            _buildDrawerItem(context, 2, Icon(Icons.store), 'Markt'),
+            _buildDrawerItem(context, 3, Icon(Icons.people), 'Aufstellung'),
+            _buildDrawerItem(context, 4, Icon(Icons.swap_horiz), 'Transfers'),
             const Divider(),
-            _buildDrawerItem(context, 5, Icons.settings, 'Einstellungen'),
+            _buildDrawerItem(context, 5, Icon(Icons.settings), 'Einstellungen'),
           ],
         ),
       ),
@@ -122,9 +123,9 @@ class DashboardShell extends StatelessWidget {
             selectedIndex: navigationShell.currentIndex,
             onDestinationSelected: _onDestinationSelected,
             labelType: NavigationRailLabelType.all,
-            leading: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16.0),
-              child: Icon(Icons.sports_soccer, size: 48),
+            leading: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: AppLogo(size: 48),
             ),
             destinations: const [
               NavigationRailDestination(
@@ -169,12 +170,12 @@ class DashboardShell extends StatelessWidget {
   Widget _buildDrawerItem(
     BuildContext context,
     int index,
-    IconData icon,
+    Widget icon,
     String title,
   ) {
     final isSelected = navigationShell.currentIndex == index;
     return ListTile(
-      leading: Icon(icon),
+      leading: icon,
       title: Text(title),
       selected: isSelected,
       onTap: () {

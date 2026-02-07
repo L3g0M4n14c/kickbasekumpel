@@ -29,7 +29,7 @@ mixin _$League {
   String? get c => throw _privateConstructorUsedError;
   String? get s => throw _privateConstructorUsedError;
   int? get md => throw _privateConstructorUsedError;
-  LeagueUser? get cu =>
+  LeagueUser get cu =>
       throw _privateConstructorUsedError; // Additional fields from /v4/leagues/selection response
   int? get b => throw _privateConstructorUsedError; // budget
   int? get tv => throw _privateConstructorUsedError; // team value
@@ -69,7 +69,7 @@ abstract class $LeagueCopyWith<$Res> {
     String? c,
     String? s,
     int? md,
-    LeagueUser? cu,
+    LeagueUser cu,
     int? b,
     int? tv,
     int? pl,
@@ -86,7 +86,7 @@ abstract class $LeagueCopyWith<$Res> {
     int? rnkm,
   });
 
-  $LeagueUserCopyWith<$Res>? get cu;
+  $LeagueUserCopyWith<$Res> get cu;
 }
 
 /// @nodoc
@@ -112,7 +112,7 @@ class _$LeagueCopyWithImpl<$Res, $Val extends League>
     Object? c = freezed,
     Object? s = freezed,
     Object? md = freezed,
-    Object? cu = freezed,
+    Object? cu = null,
     Object? b = freezed,
     Object? tv = freezed,
     Object? pl = freezed,
@@ -162,10 +162,10 @@ class _$LeagueCopyWithImpl<$Res, $Val extends League>
                 ? _value.md
                 : md // ignore: cast_nullable_to_non_nullable
                       as int?,
-            cu: freezed == cu
+            cu: null == cu
                 ? _value.cu
                 : cu // ignore: cast_nullable_to_non_nullable
-                      as LeagueUser?,
+                      as LeagueUser,
             b: freezed == b
                 ? _value.b
                 : b // ignore: cast_nullable_to_non_nullable
@@ -231,12 +231,8 @@ class _$LeagueCopyWithImpl<$Res, $Val extends League>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $LeagueUserCopyWith<$Res>? get cu {
-    if (_value.cu == null) {
-      return null;
-    }
-
-    return $LeagueUserCopyWith<$Res>(_value.cu!, (value) {
+  $LeagueUserCopyWith<$Res> get cu {
+    return $LeagueUserCopyWith<$Res>(_value.cu, (value) {
       return _then(_value.copyWith(cu: value) as $Val);
     });
   }
@@ -259,7 +255,7 @@ abstract class _$$LeagueImplCopyWith<$Res> implements $LeagueCopyWith<$Res> {
     String? c,
     String? s,
     int? md,
-    LeagueUser? cu,
+    LeagueUser cu,
     int? b,
     int? tv,
     int? pl,
@@ -277,7 +273,7 @@ abstract class _$$LeagueImplCopyWith<$Res> implements $LeagueCopyWith<$Res> {
   });
 
   @override
-  $LeagueUserCopyWith<$Res>? get cu;
+  $LeagueUserCopyWith<$Res> get cu;
 }
 
 /// @nodoc
@@ -302,7 +298,7 @@ class __$$LeagueImplCopyWithImpl<$Res>
     Object? c = freezed,
     Object? s = freezed,
     Object? md = freezed,
-    Object? cu = freezed,
+    Object? cu = null,
     Object? b = freezed,
     Object? tv = freezed,
     Object? pl = freezed,
@@ -352,10 +348,10 @@ class __$$LeagueImplCopyWithImpl<$Res>
             ? _value.md
             : md // ignore: cast_nullable_to_non_nullable
                   as int?,
-        cu: freezed == cu
+        cu: null == cu
             ? _value.cu
             : cu // ignore: cast_nullable_to_non_nullable
-                  as LeagueUser?,
+                  as LeagueUser,
         b: freezed == b
             ? _value.b
             : b // ignore: cast_nullable_to_non_nullable
@@ -429,7 +425,7 @@ class _$LeagueImpl implements _League {
     this.c,
     this.s,
     this.md,
-    this.cu,
+    required this.cu,
     this.b,
     this.tv,
     this.pl,
@@ -467,7 +463,7 @@ class _$LeagueImpl implements _League {
   @override
   final int? md;
   @override
-  final LeagueUser? cu;
+  final LeagueUser cu;
   // Additional fields from /v4/leagues/selection response
   @override
   final int? b;
@@ -599,7 +595,7 @@ abstract class _League implements League {
     final String? c,
     final String? s,
     final int? md,
-    final LeagueUser? cu,
+    required final LeagueUser cu,
     final int? b,
     final int? tv,
     final int? pl,
@@ -635,7 +631,7 @@ abstract class _League implements League {
   @override
   int? get md;
   @override
-  LeagueUser? get cu; // Additional fields from /v4/leagues/selection response
+  LeagueUser get cu; // Additional fields from /v4/leagues/selection response
   @override
   int? get b; // budget
   @override

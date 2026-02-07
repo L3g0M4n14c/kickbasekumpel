@@ -219,7 +219,7 @@ final currentUserLeaguePositionProvider = Provider<int?>((ref) {
   final league = ref.watch(selectedLeagueProvider);
   if (league == null) return null;
 
-  return league.cu?.placement;
+  return league.cu.placement;
 });
 
 /// User's Best League Provider
@@ -229,15 +229,10 @@ final userBestLeagueProvider = FutureProvider<League?>((ref) async {
 
   if (leagues.isEmpty) return null;
 
-  // Filter leagues with valid cu data
-  final validLeagues = leagues.where((l) => l.cu != null).toList();
-  if (validLeagues.isEmpty) return null;
-
-  return validLeagues.reduce(
+  // All leagues have a non-null `cu` now
+  return leagues.reduce(
     (best, current) =>
-        (current.cu?.placement ?? 999) < (best.cu?.placement ?? 999)
-        ? current
-        : best,
+        current.cu.placement < best.cu.placement ? current : best,
   );
 });
 

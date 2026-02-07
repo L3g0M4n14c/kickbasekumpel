@@ -143,6 +143,9 @@ abstract class PlayerRepositoryInterface
     required String leagueId,
   });
 
+  /// Get owned player ids for league (batched)
+  Future<Result<List<String>>> getOwnedPlayerIds(String leagueId);
+
   /// Update player market value
   Future<Result<Player>> updateMarketValue({
     required String playerId,

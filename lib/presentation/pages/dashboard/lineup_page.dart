@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/screen_size.dart';
 import '../../widgets/responsive_layout.dart';
+import '../../widgets/common/app_logo.dart';
 
 class LineupPage extends ConsumerWidget {
   const LineupPage({super.key});
@@ -124,13 +125,16 @@ class LineupPage extends ConsumerWidget {
         ResponsiveCard(
           child: Column(
             children: [
-              _buildPlayerItem('Torwart', Icons.sports_handball),
+              _buildPlayerItem(
+                'Torwart',
+                AppLogo(size: 20, backgroundColor: Colors.orange),
+              ),
               const Divider(),
-              _buildPlayerItem('Abwehr', Icons.shield),
+              _buildPlayerItem('Abwehr', Icon(Icons.shield)),
               const Divider(),
-              _buildPlayerItem('Mittelfeld', Icons.sports_soccer),
+              _buildPlayerItem('Mittelfeld', AppLogo(size: 20)),
               const Divider(),
-              _buildPlayerItem('Sturm', Icons.offline_bolt),
+              _buildPlayerItem('Sturm', Icon(Icons.offline_bolt)),
             ],
           ),
         ),
@@ -138,9 +142,9 @@ class LineupPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildPlayerItem(String position, IconData icon) {
+  Widget _buildPlayerItem(String position, Widget icon) {
     return ListTile(
-      leading: Icon(icon),
+      leading: icon,
       title: Text(position),
       subtitle: const Text('0 Spieler'),
       trailing: const Icon(Icons.chevron_right),

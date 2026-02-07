@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../widgets/common/app_logo.dart';
 
 /// Dashboard Screen
 ///
@@ -92,10 +93,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Icon(
-                          Icons.sports_soccer,
+                        AppLogo(
                           size: 48,
-                          color: Theme.of(
+                          backgroundColor: Theme.of(
                             context,
                           ).colorScheme.onPrimaryContainer,
                         ),

@@ -15,9 +15,7 @@ _$LeagueImpl _$$LeagueImplFromJson(Map<String, dynamic> json) => _$LeagueImpl(
   c: json['c'] as String?,
   s: json['s'] as String?,
   md: (json['md'] as num?)?.toInt(),
-  cu: json['cu'] == null
-      ? null
-      : LeagueUser.fromJson(json['cu'] as Map<String, dynamic>),
+  cu: LeagueUser.fromJson(json['cu'] as Map<String, dynamic>),
   b: (json['b'] as num?)?.toInt(),
   tv: (json['tv'] as num?)?.toInt(),
   pl: (json['pl'] as num?)?.toInt(),

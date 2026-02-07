@@ -231,7 +231,7 @@ class LeagueRepository extends BaseRepository<League>
       'creator': league.c,
       'season': league.s,
       'matchday': league.md,
-      'currentUser': league.cu?.toJson(),
+      'currentUser': league.cu.toJson(),
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -623,6 +623,28 @@ class PlayerRepository extends BaseRepository<Player>
     } on FirebaseException catch (e) {
       return Failure(
         'Failed to check ownership: ${e.message}',
+        code: e.code,
+        exception: e,
+      );
+    } catch (e) {
+      return Failure('Unexpected error: $e', exception: e as Exception?);
+    }
+  }
+
+  @override
+  Future<Result<List<String>>> getOwnedPlayerIds(String leagueId) async {
+    try {
+      final snapshot = await firestore
+          .collection('leagues')
+          .doc(leagueId)
+          .collection('ownedPlayers')
+          .get();
+
+      final ids = snapshot.docs.map((d) => d.id).toList();
+      return Success(ids);
+    } on FirebaseException catch (e) {
+      return Failure(
+        'Failed to get owned player IDs: ${e.message}',
         code: e.code,
         exception: e,
       );

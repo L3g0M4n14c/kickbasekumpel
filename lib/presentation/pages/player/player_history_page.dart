@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/screen_size.dart';
 import '../../widgets/responsive_layout.dart';
+import '../../widgets/common/app_logo.dart';
 
 class PlayerHistoryPage extends ConsumerWidget {
   final String playerId;
@@ -82,7 +83,11 @@ class PlayerHistoryPage extends ConsumerWidget {
   Widget _buildTransferHistory(BuildContext context) {
     return _HistorySection(
       title: 'Transfer-Historie',
-      icon: Icons.swap_horiz,
+      icon: Icon(
+        Icons.swap_horiz,
+        size: 20,
+        color: Theme.of(context).colorScheme.primary,
+      ),
       children: List.generate(
         5,
         (index) => _HistoryItem(
@@ -90,7 +95,7 @@ class PlayerHistoryPage extends ConsumerWidget {
           title: 'Transfer ${index + 1}',
           subtitle: 'Manager A → Manager B',
           value: '${5000000 + (index * 100000)}€',
-          iconData: Icons.swap_horiz,
+          iconWidget: Icon(Icons.swap_horiz, size: 20),
         ),
       ),
     );
@@ -99,7 +104,11 @@ class PlayerHistoryPage extends ConsumerWidget {
   Widget _buildPerformanceHistory(BuildContext context) {
     return _HistorySection(
       title: 'Leistungs-Historie',
-      icon: Icons.trending_up,
+      icon: Icon(
+        Icons.trending_up,
+        size: 20,
+        color: Theme.of(context).colorScheme.primary,
+      ),
       children: List.generate(
         10,
         (index) => _HistoryItem(
@@ -108,7 +117,7 @@ class PlayerHistoryPage extends ConsumerWidget {
           subtitle:
               '${(index % 2 == 0) ? 'Sieg' : 'Niederlage'} • ${index % 3}:${(index + 1) % 3}',
           value: '${10 - index} Pkt',
-          iconData: Icons.sports_soccer,
+          iconWidget: AppLogo(size: 20),
         ),
       ),
     );
@@ -117,7 +126,11 @@ class PlayerHistoryPage extends ConsumerWidget {
   Widget _buildValueChart(BuildContext context) {
     return _HistorySection(
       title: 'Marktwert-Entwicklung',
-      icon: Icons.show_chart,
+      icon: Icon(
+        Icons.show_chart,
+        size: 20,
+        color: Theme.of(context).colorScheme.primary,
+      ),
       children: [
         ResponsiveCard(
           child: SizedBox(
@@ -144,7 +157,7 @@ class PlayerHistoryPage extends ConsumerWidget {
 
 class _HistorySection extends StatelessWidget {
   final String title;
-  final IconData icon;
+  final Widget icon;
   final List<Widget> children;
 
   const _HistorySection({
@@ -162,11 +175,7 @@ class _HistorySection extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
           child: Row(
             children: [
-              Icon(
-                icon,
-                size: 20,
-                color: Theme.of(context).colorScheme.primary,
-              ),
+              icon,
               const SizedBox(width: 8),
               Text(
                 title,
@@ -188,14 +197,14 @@ class _HistoryItem extends StatelessWidget {
   final String title;
   final String subtitle;
   final String value;
-  final IconData iconData;
+  final Widget iconWidget;
 
   const _HistoryItem({
     required this.date,
     required this.title,
     required this.subtitle,
     required this.value,
-    required this.iconData,
+    required this.iconWidget,
   });
 
   @override
@@ -203,7 +212,7 @@ class _HistoryItem extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8.0),
       child: ListTile(
-        leading: CircleAvatar(child: Icon(iconData, size: 20)),
+        leading: CircleAvatar(child: iconWidget),
         title: Text(title),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

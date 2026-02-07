@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:kickbasekumpel/data/services/token_storage.dart';
 
 import 'package:kickbasekumpel/data/services/kickbase_api_client.dart';
 import 'package:kickbasekumpel/domain/exceptions/kickbase_exceptions.dart';
@@ -14,18 +14,18 @@ import 'package:kickbasekumpel/data/models/league_model.dart';
 
 import 'kickbase_api_client_test.mocks.dart';
 
-@GenerateMocks([http.Client, FlutterSecureStorage])
+@GenerateMocks([http.Client, TokenStorage])
 void main() {
   late MockClient mockHttpClient;
-  late MockFlutterSecureStorage mockSecureStorage;
+  late MockTokenStorage mockTokenStorage;
   late KickbaseAPIClient apiClient;
 
   setUp(() {
     mockHttpClient = MockClient();
-    mockSecureStorage = MockFlutterSecureStorage();
+    mockTokenStorage = MockTokenStorage();
     apiClient = KickbaseAPIClient(
       httpClient: mockHttpClient,
-      secureStorage: mockSecureStorage,
+      tokenStorage: mockTokenStorage,
     );
   });
 
@@ -37,32 +37,24 @@ void main() {
     const testToken = 'test_token_12345';
 
     test('setAuthToken should store token', () async {
-      when(
-        mockSecureStorage.write(key: 'kickbase_token', value: testToken),
-      ).thenAnswer((_) async => {});
+      when(mockTokenStorage.setToken(testToken)).thenAnswer((_) async {});
 
       await apiClient.setAuthToken(testToken);
 
-      verify(
-        mockSecureStorage.write(key: 'kickbase_token', value: testToken),
-      ).called(1);
+      verify(mockTokenStorage.setToken(testToken)).called(1);
     });
 
     test('getAuthToken should retrieve stored token', () async {
-      when(
-        mockSecureStorage.read(key: 'kickbase_token'),
-      ).thenAnswer((_) async => testToken);
+      when(mockTokenStorage.getToken()).thenAnswer((_) async => testToken);
 
       final token = await apiClient.getAuthToken();
 
       expect(token, testToken);
-      verify(mockSecureStorage.read(key: 'kickbase_token')).called(1);
+      verify(mockTokenStorage.getToken()).called(1);
     });
 
     test('hasAuthToken should return true when token exists', () async {
-      when(
-        mockSecureStorage.read(key: 'kickbase_token'),
-      ).thenAnswer((_) async => testToken);
+      when(mockTokenStorage.getToken()).thenAnswer((_) async => testToken);
 
       final hasToken = await apiClient.hasAuthToken();
 
@@ -70,9 +62,7 @@ void main() {
     });
 
     test('hasAuthToken should return false when token is null', () async {
-      when(
-        mockSecureStorage.read(key: 'kickbase_token'),
-      ).thenAnswer((_) async => null);
+      when(mockTokenStorage.getToken()).thenAnswer((_) async => null);
 
       final hasToken = await apiClient.hasAuthToken();
 
@@ -80,13 +70,11 @@ void main() {
     });
 
     test('clearAuthToken should delete token', () async {
-      when(
-        mockSecureStorage.delete(key: 'kickbase_token'),
-      ).thenAnswer((_) async => {});
+      when(mockTokenStorage.clearToken()).thenAnswer((_) async => {});
 
       await apiClient.clearAuthToken();
 
-      verify(mockSecureStorage.delete(key: 'kickbase_token')).called(1);
+      verify(mockTokenStorage.clearToken()).called(1);
     });
   });
 
@@ -94,9 +82,7 @@ void main() {
     const testToken = 'test_token';
 
     setUp(() async {
-      when(
-        mockSecureStorage.read(key: 'kickbase_token'),
-      ).thenAnswer((_) async => testToken);
+      when(mockTokenStorage.getToken()).thenAnswer((_) async => testToken);
       await apiClient.setAuthToken(testToken);
     });
 
@@ -173,9 +159,7 @@ void main() {
     const testToken = 'test_token';
 
     setUp(() async {
-      when(
-        mockSecureStorage.read(key: 'kickbase_token'),
-      ).thenAnswer((_) async => testToken);
+      when(mockTokenStorage.getToken()).thenAnswer((_) async => testToken);
       await apiClient.setAuthToken(testToken);
     });
 
@@ -249,6 +233,74 @@ void main() {
       expect(leagues.first.i, 'league1');
     });
 
+    test('getLeaguePlayers supports compact player keys', () async {
+      final playersJson = {
+        'players': [
+          {
+            'id': 'player-1',
+            'fn': 'Max',
+            'ln': 'Mustermann',
+            'tn': 'Team A',
+            'position': 3,
+            'number': 8,
+            'averagePoints': 4.5,
+            'totalPoints': 45,
+            'marketValue': 1500000,
+            'marketValueTrend': 1,
+            'profileBigUrl': 'https://example.com/p1.png',
+            'userOwnsPlayer': false,
+          },
+        ],
+      };
+
+      final mockResponse = http.Response(jsonEncode(playersJson), 200);
+      when(mockHttpClient.send(any)).thenAnswer(
+        (_) async =>
+            http.StreamedResponse(Stream.value(mockResponse.bodyBytes), 200),
+      );
+
+      final players = await apiClient.getLeaguePlayers('league-1');
+
+      expect(players, isA<List>());
+      expect(players.length, 1);
+      expect(players.first.firstName, 'Max');
+      expect(players.first.lastName, 'Mustermann');
+    });
+
+    test('getLeaguePlayers supports expanded player keys', () async {
+      final playersJson = {
+        'players': [
+          {
+            'id': 'player-2',
+            'firstName': 'John',
+            'lastName': 'Doe',
+            'teamName': 'Team B',
+            'position': 2,
+            'number': 5,
+            'averagePoints': '3.2',
+            'totalPoints': '32',
+            'marketValue': '1200000',
+            'marketValueTrend': '0',
+            'profileBigUrl': 'https://example.com/p2.png',
+            'userOwnsPlayer': 'false',
+          },
+        ],
+      };
+
+      final mockResponse = http.Response(jsonEncode(playersJson), 200);
+      when(mockHttpClient.send(any)).thenAnswer(
+        (_) async =>
+            http.StreamedResponse(Stream.value(mockResponse.bodyBytes), 200),
+      );
+
+      final players = await apiClient.getLeaguePlayers('league-1');
+
+      expect(players, isA<List>());
+      expect(players.length, 1);
+      expect(players.first.firstName, 'John');
+      expect(players.first.totalPoints, 32);
+    });
+
     test('should include Bearer token in request headers', () async {
       final mockResponse = http.Response('{"i":"user1"}', 200);
       http.BaseRequest? capturedRequest;
@@ -267,9 +319,7 @@ void main() {
     });
 
     test('should throw AuthenticationException when no token', () async {
-      when(
-        mockSecureStorage.read(key: 'kickbase_token'),
-      ).thenAnswer((_) async => null);
+      when(mockTokenStorage.getToken()).thenAnswer((_) async => null);
       await apiClient.clearAuthToken();
 
       expect(
@@ -283,9 +333,7 @@ void main() {
     const testToken = 'test_token';
 
     setUp(() async {
-      when(
-        mockSecureStorage.read(key: 'kickbase_token'),
-      ).thenAnswer((_) async => testToken);
+      when(mockTokenStorage.getToken()).thenAnswer((_) async => testToken);
       await apiClient.setAuthToken(testToken);
     });
 

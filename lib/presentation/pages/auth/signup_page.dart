@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../widgets/common/app_logo.dart';
 
 class SignUpPage extends ConsumerStatefulWidget {
   const SignUpPage({super.key});
@@ -37,7 +38,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Logo
-                const Icon(Icons.sports_soccer, size: 80, color: Colors.blue),
+                AppLogo(size: 80, backgroundColor: Colors.blue),
                 const SizedBox(height: 32),
                 const Text(
                   'Registrierung',

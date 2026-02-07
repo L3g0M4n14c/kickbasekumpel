@@ -159,7 +159,7 @@ class LeaguesScreen extends ConsumerWidget {
                                 icon: Icons.attach_money,
                                 label: 'Budget',
                                 value:
-                                    '${(league.cu.budget / 1000000).toStringAsFixed(1)}M',
+                                    '${((league.cu.budget) / 1000000).toStringAsFixed(1)}M',
                                 color: Colors.green,
                               ),
                             ],
