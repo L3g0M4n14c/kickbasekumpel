@@ -3,6 +3,8 @@ import '../models/league_model.dart';
 import '../../domain/repositories/repository_interfaces.dart';
 import 'repository_providers.dart';
 import 'user_providers.dart';
+import 'service_providers.dart';
+import 'kickbase_auth_provider.dart';
 
 // ============================================================================
 // LEAGUE STREAM PROVIDERS
@@ -45,24 +47,20 @@ final userLeaguesStreamProvider = StreamProvider<List<League>>((ref) async* {
 });
 
 /// Leagues Provider (FutureProvider version)
-/// Fetches user's leagues once
-/// Prefer StreamProvider for real-time updates
+/// Fetches user's leagues from Kickbase API
 final userLeaguesProvider = FutureProvider<List<League>>((ref) async {
-  final userId = ref.watch(currentAuthUserIdProvider);
+  final isAuth = ref.watch(isKickbaseAuthenticatedProvider);
 
-  if (userId == null) {
+  if (!isAuth) {
     return [];
   }
 
-  final leagueRepo = ref.watch(leagueRepositoryProvider);
-  final result = await leagueRepo.getByUserId(userId);
-
-  if (result is Success<List<League>>) {
-    return result.data;
-  } else if (result is Failure<List<League>>) {
-    throw Exception((result).message);
+  final apiClient = ref.watch(kickbaseApiClientProvider);
+  try {
+    return await apiClient.getLeagues();
+  } catch (e) {
+    throw Exception('Fehler beim Laden der Ligen: $e');
   }
-  throw Exception('Unknown error fetching leagues');
 });
 
 // ============================================================================
@@ -221,7 +219,7 @@ final currentUserLeaguePositionProvider = Provider<int?>((ref) {
   final league = ref.watch(selectedLeagueProvider);
   if (league == null) return null;
 
-  return league.cu.placement;
+  return league.cu?.placement;
 });
 
 /// User's Best League Provider
@@ -231,9 +229,15 @@ final userBestLeagueProvider = FutureProvider<League?>((ref) async {
 
   if (leagues.isEmpty) return null;
 
-  return leagues.reduce(
+  // Filter leagues with valid cu data
+  final validLeagues = leagues.where((l) => l.cu != null).toList();
+  if (validLeagues.isEmpty) return null;
+
+  return validLeagues.reduce(
     (best, current) =>
-        current.cu.placement < best.cu.placement ? current : best,
+        (current.cu?.placement ?? 999) < (best.cu?.placement ?? 999)
+        ? current
+        : best,
   );
 });
 

@@ -21,6 +21,48 @@ class User with _$User {
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
 }
 
+/// Login User - User data from login response (different format)
+/// Maps from Kickbase API login response "u" field
+@freezed
+class LoginUser with _$LoginUser {
+  const LoginUser._();
+
+  const factory LoginUser({
+    required String id,
+    required String name,
+    required String email,
+    int? notifications,
+    String? cover,
+    int? flags,
+    String? proExpiry,
+    List<int>? perms,
+    int? trd,
+    String? sfb,
+    String? efb,
+    String? profile,
+    String? uim,
+    List<dynamic>? mfacp,
+  }) = _LoginUser;
+
+  factory LoginUser.fromJson(Map<String, dynamic> json) =>
+      _$LoginUserFromJson(json);
+
+  /// Convert LoginUser to User model
+  User toUser() {
+    return User(
+      i: id,
+      n: name,
+      tn: '', // Team name not provided in login response
+      em: email,
+      b: 0, // Budget not provided in login response
+      tv: 0, // Team value not provided in login response
+      p: 0, // Points not provided in login response
+      pl: 0, // Placement not provided in login response
+      f: flags ?? 0,
+    );
+  }
+}
+
 /// Login Request
 @freezed
 class LoginRequest with _$LoginRequest {
@@ -38,13 +80,18 @@ class LoginRequest with _$LoginRequest {
 /// Login Response
 @freezed
 class LoginResponse with _$LoginResponse {
+  const LoginResponse._();
+
   const factory LoginResponse({
     required String tkn,
-    User? user,
-    List<dynamic>? leagues,
+    @JsonKey(name: 'u') LoginUser? loginUser,
+    @JsonKey(name: 'srvl') List<dynamic>? leagues,
     String? userId,
   }) = _LoginResponse;
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) =>
       _$LoginResponseFromJson(json);
+
+  /// Get User from LoginResponse
+  User? get user => loginUser?.toUser();
 }

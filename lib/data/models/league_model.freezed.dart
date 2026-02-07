@@ -24,12 +24,27 @@ mixin _$League {
   String get i => throw _privateConstructorUsedError;
   String get cpi => throw _privateConstructorUsedError;
   String get n => throw _privateConstructorUsedError;
-  String get cn => throw _privateConstructorUsedError;
-  String get an => throw _privateConstructorUsedError;
-  String get c => throw _privateConstructorUsedError;
-  String get s => throw _privateConstructorUsedError;
-  int get md => throw _privateConstructorUsedError;
-  LeagueUser get cu => throw _privateConstructorUsedError;
+  String? get cn => throw _privateConstructorUsedError;
+  String? get an => throw _privateConstructorUsedError;
+  String? get c => throw _privateConstructorUsedError;
+  String? get s => throw _privateConstructorUsedError;
+  int? get md => throw _privateConstructorUsedError;
+  LeagueUser? get cu =>
+      throw _privateConstructorUsedError; // Additional fields from /v4/leagues/selection response
+  int? get b => throw _privateConstructorUsedError; // budget
+  int? get tv => throw _privateConstructorUsedError; // team value
+  int? get pl => throw _privateConstructorUsedError; // placement
+  int? get un => throw _privateConstructorUsedError; // ?
+  String? get f => throw _privateConstructorUsedError; // image/flag
+  int? get lpc => throw _privateConstructorUsedError; // ?
+  int? get bs => throw _privateConstructorUsedError; // ?
+  int? get vr => throw _privateConstructorUsedError; // ?
+  bool? get adm => throw _privateConstructorUsedError; // admin
+  bool? get idf => throw _privateConstructorUsedError; // ?
+  String? get lim => throw _privateConstructorUsedError; // league image
+  String? get cpim => throw _privateConstructorUsedError; // competition image
+  int? get gpm => throw _privateConstructorUsedError; // ?
+  int? get rnkm => throw _privateConstructorUsedError;
 
   /// Serializes this League to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -49,15 +64,29 @@ abstract class $LeagueCopyWith<$Res> {
     String i,
     String cpi,
     String n,
-    String cn,
-    String an,
-    String c,
-    String s,
-    int md,
-    LeagueUser cu,
+    String? cn,
+    String? an,
+    String? c,
+    String? s,
+    int? md,
+    LeagueUser? cu,
+    int? b,
+    int? tv,
+    int? pl,
+    int? un,
+    String? f,
+    int? lpc,
+    int? bs,
+    int? vr,
+    bool? adm,
+    bool? idf,
+    String? lim,
+    String? cpim,
+    int? gpm,
+    int? rnkm,
   });
 
-  $LeagueUserCopyWith<$Res> get cu;
+  $LeagueUserCopyWith<$Res>? get cu;
 }
 
 /// @nodoc
@@ -78,12 +107,26 @@ class _$LeagueCopyWithImpl<$Res, $Val extends League>
     Object? i = null,
     Object? cpi = null,
     Object? n = null,
-    Object? cn = null,
-    Object? an = null,
-    Object? c = null,
-    Object? s = null,
-    Object? md = null,
-    Object? cu = null,
+    Object? cn = freezed,
+    Object? an = freezed,
+    Object? c = freezed,
+    Object? s = freezed,
+    Object? md = freezed,
+    Object? cu = freezed,
+    Object? b = freezed,
+    Object? tv = freezed,
+    Object? pl = freezed,
+    Object? un = freezed,
+    Object? f = freezed,
+    Object? lpc = freezed,
+    Object? bs = freezed,
+    Object? vr = freezed,
+    Object? adm = freezed,
+    Object? idf = freezed,
+    Object? lim = freezed,
+    Object? cpim = freezed,
+    Object? gpm = freezed,
+    Object? rnkm = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -99,30 +142,86 @@ class _$LeagueCopyWithImpl<$Res, $Val extends League>
                 ? _value.n
                 : n // ignore: cast_nullable_to_non_nullable
                       as String,
-            cn: null == cn
+            cn: freezed == cn
                 ? _value.cn
                 : cn // ignore: cast_nullable_to_non_nullable
-                      as String,
-            an: null == an
+                      as String?,
+            an: freezed == an
                 ? _value.an
                 : an // ignore: cast_nullable_to_non_nullable
-                      as String,
-            c: null == c
+                      as String?,
+            c: freezed == c
                 ? _value.c
                 : c // ignore: cast_nullable_to_non_nullable
-                      as String,
-            s: null == s
+                      as String?,
+            s: freezed == s
                 ? _value.s
                 : s // ignore: cast_nullable_to_non_nullable
-                      as String,
-            md: null == md
+                      as String?,
+            md: freezed == md
                 ? _value.md
                 : md // ignore: cast_nullable_to_non_nullable
-                      as int,
-            cu: null == cu
+                      as int?,
+            cu: freezed == cu
                 ? _value.cu
                 : cu // ignore: cast_nullable_to_non_nullable
-                      as LeagueUser,
+                      as LeagueUser?,
+            b: freezed == b
+                ? _value.b
+                : b // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            tv: freezed == tv
+                ? _value.tv
+                : tv // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            pl: freezed == pl
+                ? _value.pl
+                : pl // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            un: freezed == un
+                ? _value.un
+                : un // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            f: freezed == f
+                ? _value.f
+                : f // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            lpc: freezed == lpc
+                ? _value.lpc
+                : lpc // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            bs: freezed == bs
+                ? _value.bs
+                : bs // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            vr: freezed == vr
+                ? _value.vr
+                : vr // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            adm: freezed == adm
+                ? _value.adm
+                : adm // ignore: cast_nullable_to_non_nullable
+                      as bool?,
+            idf: freezed == idf
+                ? _value.idf
+                : idf // ignore: cast_nullable_to_non_nullable
+                      as bool?,
+            lim: freezed == lim
+                ? _value.lim
+                : lim // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            cpim: freezed == cpim
+                ? _value.cpim
+                : cpim // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            gpm: freezed == gpm
+                ? _value.gpm
+                : gpm // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            rnkm: freezed == rnkm
+                ? _value.rnkm
+                : rnkm // ignore: cast_nullable_to_non_nullable
+                      as int?,
           )
           as $Val,
     );
@@ -132,8 +231,12 @@ class _$LeagueCopyWithImpl<$Res, $Val extends League>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $LeagueUserCopyWith<$Res> get cu {
-    return $LeagueUserCopyWith<$Res>(_value.cu, (value) {
+  $LeagueUserCopyWith<$Res>? get cu {
+    if (_value.cu == null) {
+      return null;
+    }
+
+    return $LeagueUserCopyWith<$Res>(_value.cu!, (value) {
       return _then(_value.copyWith(cu: value) as $Val);
     });
   }
@@ -151,16 +254,30 @@ abstract class _$$LeagueImplCopyWith<$Res> implements $LeagueCopyWith<$Res> {
     String i,
     String cpi,
     String n,
-    String cn,
-    String an,
-    String c,
-    String s,
-    int md,
-    LeagueUser cu,
+    String? cn,
+    String? an,
+    String? c,
+    String? s,
+    int? md,
+    LeagueUser? cu,
+    int? b,
+    int? tv,
+    int? pl,
+    int? un,
+    String? f,
+    int? lpc,
+    int? bs,
+    int? vr,
+    bool? adm,
+    bool? idf,
+    String? lim,
+    String? cpim,
+    int? gpm,
+    int? rnkm,
   });
 
   @override
-  $LeagueUserCopyWith<$Res> get cu;
+  $LeagueUserCopyWith<$Res>? get cu;
 }
 
 /// @nodoc
@@ -180,12 +297,26 @@ class __$$LeagueImplCopyWithImpl<$Res>
     Object? i = null,
     Object? cpi = null,
     Object? n = null,
-    Object? cn = null,
-    Object? an = null,
-    Object? c = null,
-    Object? s = null,
-    Object? md = null,
-    Object? cu = null,
+    Object? cn = freezed,
+    Object? an = freezed,
+    Object? c = freezed,
+    Object? s = freezed,
+    Object? md = freezed,
+    Object? cu = freezed,
+    Object? b = freezed,
+    Object? tv = freezed,
+    Object? pl = freezed,
+    Object? un = freezed,
+    Object? f = freezed,
+    Object? lpc = freezed,
+    Object? bs = freezed,
+    Object? vr = freezed,
+    Object? adm = freezed,
+    Object? idf = freezed,
+    Object? lim = freezed,
+    Object? cpim = freezed,
+    Object? gpm = freezed,
+    Object? rnkm = freezed,
   }) {
     return _then(
       _$LeagueImpl(
@@ -201,30 +332,86 @@ class __$$LeagueImplCopyWithImpl<$Res>
             ? _value.n
             : n // ignore: cast_nullable_to_non_nullable
                   as String,
-        cn: null == cn
+        cn: freezed == cn
             ? _value.cn
             : cn // ignore: cast_nullable_to_non_nullable
-                  as String,
-        an: null == an
+                  as String?,
+        an: freezed == an
             ? _value.an
             : an // ignore: cast_nullable_to_non_nullable
-                  as String,
-        c: null == c
+                  as String?,
+        c: freezed == c
             ? _value.c
             : c // ignore: cast_nullable_to_non_nullable
-                  as String,
-        s: null == s
+                  as String?,
+        s: freezed == s
             ? _value.s
             : s // ignore: cast_nullable_to_non_nullable
-                  as String,
-        md: null == md
+                  as String?,
+        md: freezed == md
             ? _value.md
             : md // ignore: cast_nullable_to_non_nullable
-                  as int,
-        cu: null == cu
+                  as int?,
+        cu: freezed == cu
             ? _value.cu
             : cu // ignore: cast_nullable_to_non_nullable
-                  as LeagueUser,
+                  as LeagueUser?,
+        b: freezed == b
+            ? _value.b
+            : b // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        tv: freezed == tv
+            ? _value.tv
+            : tv // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        pl: freezed == pl
+            ? _value.pl
+            : pl // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        un: freezed == un
+            ? _value.un
+            : un // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        f: freezed == f
+            ? _value.f
+            : f // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        lpc: freezed == lpc
+            ? _value.lpc
+            : lpc // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        bs: freezed == bs
+            ? _value.bs
+            : bs // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        vr: freezed == vr
+            ? _value.vr
+            : vr // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        adm: freezed == adm
+            ? _value.adm
+            : adm // ignore: cast_nullable_to_non_nullable
+                  as bool?,
+        idf: freezed == idf
+            ? _value.idf
+            : idf // ignore: cast_nullable_to_non_nullable
+                  as bool?,
+        lim: freezed == lim
+            ? _value.lim
+            : lim // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        cpim: freezed == cpim
+            ? _value.cpim
+            : cpim // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        gpm: freezed == gpm
+            ? _value.gpm
+            : gpm // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        rnkm: freezed == rnkm
+            ? _value.rnkm
+            : rnkm // ignore: cast_nullable_to_non_nullable
+                  as int?,
       ),
     );
   }
@@ -237,12 +424,26 @@ class _$LeagueImpl implements _League {
     required this.i,
     this.cpi = '1',
     required this.n,
-    required this.cn,
-    required this.an,
-    required this.c,
-    required this.s,
-    required this.md,
-    required this.cu,
+    this.cn,
+    this.an,
+    this.c,
+    this.s,
+    this.md,
+    this.cu,
+    this.b,
+    this.tv,
+    this.pl,
+    this.un,
+    this.f,
+    this.lpc,
+    this.bs,
+    this.vr,
+    this.adm,
+    this.idf,
+    this.lim,
+    this.cpim,
+    this.gpm,
+    this.rnkm,
   });
 
   factory _$LeagueImpl.fromJson(Map<String, dynamic> json) =>
@@ -256,21 +457,63 @@ class _$LeagueImpl implements _League {
   @override
   final String n;
   @override
-  final String cn;
+  final String? cn;
   @override
-  final String an;
+  final String? an;
   @override
-  final String c;
+  final String? c;
   @override
-  final String s;
+  final String? s;
   @override
-  final int md;
+  final int? md;
   @override
-  final LeagueUser cu;
+  final LeagueUser? cu;
+  // Additional fields from /v4/leagues/selection response
+  @override
+  final int? b;
+  // budget
+  @override
+  final int? tv;
+  // team value
+  @override
+  final int? pl;
+  // placement
+  @override
+  final int? un;
+  // ?
+  @override
+  final String? f;
+  // image/flag
+  @override
+  final int? lpc;
+  // ?
+  @override
+  final int? bs;
+  // ?
+  @override
+  final int? vr;
+  // ?
+  @override
+  final bool? adm;
+  // admin
+  @override
+  final bool? idf;
+  // ?
+  @override
+  final String? lim;
+  // league image
+  @override
+  final String? cpim;
+  // competition image
+  @override
+  final int? gpm;
+  // ?
+  @override
+  final int? rnkm;
 
   @override
   String toString() {
-    return 'League(i: $i, cpi: $cpi, n: $n, cn: $cn, an: $an, c: $c, s: $s, md: $md, cu: $cu)';
+    return 'League(i: $i, cpi: $cpi, n: $n, cn: $cn, an: $an, c: $c, s: $s, md: $md, cu: $cu, b: $b, tv: $tv, pl: $pl, un: $un, f: $f, lpc: $lpc, bs: $bs, vr: $vr, adm: $adm, idf: $idf, lim: $lim, cpim: $cpim, gpm: $gpm, rnkm: $rnkm)';
   }
 
   @override
@@ -286,12 +529,51 @@ class _$LeagueImpl implements _League {
             (identical(other.c, c) || other.c == c) &&
             (identical(other.s, s) || other.s == s) &&
             (identical(other.md, md) || other.md == md) &&
-            (identical(other.cu, cu) || other.cu == cu));
+            (identical(other.cu, cu) || other.cu == cu) &&
+            (identical(other.b, b) || other.b == b) &&
+            (identical(other.tv, tv) || other.tv == tv) &&
+            (identical(other.pl, pl) || other.pl == pl) &&
+            (identical(other.un, un) || other.un == un) &&
+            (identical(other.f, f) || other.f == f) &&
+            (identical(other.lpc, lpc) || other.lpc == lpc) &&
+            (identical(other.bs, bs) || other.bs == bs) &&
+            (identical(other.vr, vr) || other.vr == vr) &&
+            (identical(other.adm, adm) || other.adm == adm) &&
+            (identical(other.idf, idf) || other.idf == idf) &&
+            (identical(other.lim, lim) || other.lim == lim) &&
+            (identical(other.cpim, cpim) || other.cpim == cpim) &&
+            (identical(other.gpm, gpm) || other.gpm == gpm) &&
+            (identical(other.rnkm, rnkm) || other.rnkm == rnkm));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, i, cpi, n, cn, an, c, s, md, cu);
+  int get hashCode => Object.hashAll([
+    runtimeType,
+    i,
+    cpi,
+    n,
+    cn,
+    an,
+    c,
+    s,
+    md,
+    cu,
+    b,
+    tv,
+    pl,
+    un,
+    f,
+    lpc,
+    bs,
+    vr,
+    adm,
+    idf,
+    lim,
+    cpim,
+    gpm,
+    rnkm,
+  ]);
 
   /// Create a copy of League
   /// with the given fields replaced by the non-null parameter values.
@@ -312,12 +594,26 @@ abstract class _League implements League {
     required final String i,
     final String cpi,
     required final String n,
-    required final String cn,
-    required final String an,
-    required final String c,
-    required final String s,
-    required final int md,
-    required final LeagueUser cu,
+    final String? cn,
+    final String? an,
+    final String? c,
+    final String? s,
+    final int? md,
+    final LeagueUser? cu,
+    final int? b,
+    final int? tv,
+    final int? pl,
+    final int? un,
+    final String? f,
+    final int? lpc,
+    final int? bs,
+    final int? vr,
+    final bool? adm,
+    final bool? idf,
+    final String? lim,
+    final String? cpim,
+    final int? gpm,
+    final int? rnkm,
   }) = _$LeagueImpl;
 
   factory _League.fromJson(Map<String, dynamic> json) = _$LeagueImpl.fromJson;
@@ -329,17 +625,45 @@ abstract class _League implements League {
   @override
   String get n;
   @override
-  String get cn;
+  String? get cn;
   @override
-  String get an;
+  String? get an;
   @override
-  String get c;
+  String? get c;
   @override
-  String get s;
+  String? get s;
   @override
-  int get md;
+  int? get md;
   @override
-  LeagueUser get cu;
+  LeagueUser? get cu; // Additional fields from /v4/leagues/selection response
+  @override
+  int? get b; // budget
+  @override
+  int? get tv; // team value
+  @override
+  int? get pl; // placement
+  @override
+  int? get un; // ?
+  @override
+  String? get f; // image/flag
+  @override
+  int? get lpc; // ?
+  @override
+  int? get bs; // ?
+  @override
+  int? get vr; // ?
+  @override
+  bool? get adm; // admin
+  @override
+  bool? get idf; // ?
+  @override
+  String? get lim; // league image
+  @override
+  String? get cpim; // competition image
+  @override
+  int? get gpm; // ?
+  @override
+  int? get rnkm;
 
   /// Create a copy of League
   /// with the given fields replaced by the non-null parameter values.

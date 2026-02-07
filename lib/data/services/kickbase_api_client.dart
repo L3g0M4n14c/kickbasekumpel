@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/exceptions/kickbase_exceptions.dart';
 import '../models/league_model.dart';
@@ -24,28 +24,26 @@ class KickbaseAPIClient {
   static const String _baseUrl = 'https://api.kickbase.com';
   static const String _apiVersion = 'v4';
   static const String _tokenKey = 'kickbase_token';
+  static const String _userDataKey = 'kickbase_user_data';
   static const Duration _timeout = Duration(seconds: 30);
   static const int _maxRetries = 3;
   static const Duration _initialRetryDelay = Duration(milliseconds: 500);
 
   final http.Client _httpClient;
-  final FlutterSecureStorage _secureStorage;
 
   String? _cachedToken;
 
-  KickbaseAPIClient({
-    http.Client? httpClient,
-    FlutterSecureStorage? secureStorage,
-  }) : _httpClient = httpClient ?? http.Client(),
-       _secureStorage = secureStorage ?? const FlutterSecureStorage();
+  KickbaseAPIClient({http.Client? httpClient})
+    : _httpClient = httpClient ?? http.Client();
 
   // MARK: - Token Management
 
   /// Set authentication token
   Future<void> setAuthToken(String token) async {
     _cachedToken = token;
-    await _secureStorage.write(key: _tokenKey, value: token);
-    print('🔑 Auth token set for KickbaseAPIClient');
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_tokenKey, token);
+    print('🔑 Auth token saved');
   }
 
   /// Get authentication token
@@ -53,7 +51,8 @@ class KickbaseAPIClient {
     if (_cachedToken != null) {
       return _cachedToken;
     }
-    _cachedToken = await _secureStorage.read(key: _tokenKey);
+    final prefs = await SharedPreferences.getInstance();
+    _cachedToken = prefs.getString(_tokenKey);
     return _cachedToken;
   }
 
@@ -66,8 +65,32 @@ class KickbaseAPIClient {
   /// Clear authentication token
   Future<void> clearAuthToken() async {
     _cachedToken = null;
-    await _secureStorage.delete(key: _tokenKey);
-    print('🗑️ Auth token cleared');
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_tokenKey);
+    await prefs.remove(_userDataKey);
+    print('🗑️ Auth token and user data cleared');
+  }
+
+  /// Save user data
+  Future<void> saveUserData(User user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userDataKey, jsonEncode(user.toJson()));
+    print('💾 User data saved');
+  }
+
+  /// Get saved user data
+  Future<User?> getSavedUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userData = prefs.getString(_userDataKey);
+    if (userData != null) {
+      try {
+        return User.fromJson(jsonDecode(userData));
+      } catch (e) {
+        print('⚠️ Error loading user data: $e');
+        return null;
+      }
+    }
+    return null;
   }
 
   // MARK: - Generic API Request Methods
@@ -333,6 +356,75 @@ class KickbaseAPIClient {
     }
   }
 
+  // MARK: - Authentication
+
+  /// Login with Kickbase credentials
+  /// POST /v4/user/login
+  ///
+  /// Authenticates the user with Kickbase API and stores the token.
+  /// After successful login, the token is automatically stored in secure storage
+  /// and will be used for all subsequent API requests.
+  ///
+  /// Returns [LoginResponse] containing the auth token and user data.
+  /// Throws [AuthenticationException] if credentials are invalid.
+  /// Throws [NetworkException] if connection fails.
+  Future<LoginResponse> login(String email, String password) async {
+    print('🔐 Attempting Kickbase login for: $email');
+
+    final request = LoginRequest(
+      em: email,
+      pass: password,
+      loy: false,
+      rep: {},
+    );
+
+    try {
+      final response = await _makeRequest(
+        endpoint: '/$_apiVersion/user/login',
+        method: 'POST',
+        body: request.toJson(),
+        requiresAuth: false, // Login doesn't require existing token
+      );
+
+      // Check for success status
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final json = _parseJson(response.body);
+        final loginResponse = LoginResponse.fromJson(json);
+
+        // Store token for future requests
+        await setAuthToken(loginResponse.tkn);
+        print('✅ Login successful - Token stored');
+
+        return loginResponse;
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        throw const AuthenticationException(
+          'Ungültige E-Mail oder Passwort. Bitte überprüfen Sie Ihre Kickbase-Zugangsdaten.',
+        );
+      } else if (response.statusCode == 429) {
+        throw const RateLimitException(
+          'Zu viele Login-Versuche. Bitte warten Sie einen Moment.',
+        );
+      } else {
+        throw KickbaseException(
+          'Login fehlgeschlagen: HTTP ${response.statusCode}',
+          code: response.statusCode.toString(),
+        );
+      }
+    } on AuthenticationException {
+      rethrow;
+    } on RateLimitException {
+      rethrow;
+    } on NetworkException {
+      rethrow;
+    } catch (e) {
+      print('❌ Login error: $e');
+      throw KickbaseException(
+        'Login fehlgeschlagen: ${e.toString()}',
+        originalError: e,
+      );
+    }
+  }
+
   // MARK: - API Methods
 
   /// Get current user info
@@ -355,15 +447,24 @@ class KickbaseAPIClient {
     );
 
     final json = _parseJson(response.body);
-    final leaguesData = json['leagues'] as List<dynamic>?;
+    final leaguesData = json['it'] as List<dynamic>?;
 
     if (leaguesData == null) {
       throw const ParsingException('No leagues data in response');
     }
 
-    return leaguesData
-        .map((e) => League.fromJson(e as Map<String, dynamic>))
-        .toList();
+    print('🔍 Parsing ${leaguesData.length} leagues...');
+    try {
+      final leagues = leaguesData
+          .map((e) => League.fromJson(e as Map<String, dynamic>))
+          .toList();
+      print('✅ Successfully parsed ${leagues.length} leagues');
+      return leagues;
+    } catch (e, stack) {
+      print('❌ Error parsing leagues: $e');
+      print('Stack trace: $stack');
+      rethrow;
+    }
   }
 
   /// Get league details

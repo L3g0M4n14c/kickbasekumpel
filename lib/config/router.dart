@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/providers/auth_provider.dart';
+import '../data/providers/kickbase_auth_provider.dart';
 import '../presentation/pages/auth/signin_page.dart';
-import '../presentation/pages/auth/signup_page.dart';
-import '../presentation/pages/auth/forgot_password_page.dart';
-import '../presentation/pages/auth/verify_email_page.dart';
+// import '../presentation/pages/auth/signup_page.dart';
+// import '../presentation/pages/auth/forgot_password_page.dart';
+// import '../presentation/pages/auth/verify_email_page.dart';
 import '../presentation/pages/dashboard/dashboard_shell.dart';
 import '../presentation/pages/dashboard/home_page.dart';
 import '../presentation/pages/dashboard/leagues_page.dart';
@@ -26,9 +26,9 @@ import '../presentation/pages/error_page.dart';
 // ============================================================================
 
 /// GoRouter Provider mit Riverpod
-/// Managed Routing, Deep Linking und Authentication State
+/// Managed Routing, Deep Linking und Kickbase Authentication State
 final routerProvider = Provider<GoRouter>((ref) {
-  final isAuthenticated = ref.watch(isAuthenticatedProvider);
+  final isAuthenticated = ref.watch(isKickbaseAuthenticatedProvider);
 
   return GoRouter(
     debugLogDiagnostics: true,
@@ -60,7 +60,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // ======================================================================
-      // AUTH STACK
+      // AUTH STACK - Kickbase Login Only
       // ======================================================================
       GoRoute(
         path: '/auth',
@@ -73,24 +73,26 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) =>
             MaterialPage(key: state.pageKey, child: const SignInPage()),
       ),
-      GoRoute(
-        path: '/auth/signup',
-        name: 'signup',
-        pageBuilder: (context, state) =>
-            MaterialPage(key: state.pageKey, child: const SignUpPage()),
-      ),
-      GoRoute(
-        path: '/auth/forgot-password',
-        name: 'forgot-password',
-        pageBuilder: (context, state) =>
-            MaterialPage(key: state.pageKey, child: const ForgotPasswordPage()),
-      ),
-      GoRoute(
-        path: '/auth/verify',
-        name: 'verify',
-        pageBuilder: (context, state) =>
-            MaterialPage(key: state.pageKey, child: const VerifyEmailPage()),
-      ),
+      // SignUp, Forgot Password, and Verify Email are not available for Kickbase API
+      // Users must use kickbase.com to create accounts or reset passwords
+      // GoRoute(
+      //   path: '/auth/signup',
+      //   name: 'signup',
+      //   pageBuilder: (context, state) =>
+      //       MaterialPage(key: state.pageKey, child: const SignUpPage()),
+      // ),
+      // GoRoute(
+      //   path: '/auth/forgot-password',
+      //   name: 'forgot-password',
+      //   pageBuilder: (context, state) =>
+      //       MaterialPage(key: state.pageKey, child: const ForgotPasswordPage()),
+      // ),
+      // GoRoute(
+      //   path: '/auth/verify',
+      //   name: 'verify',
+      //   pageBuilder: (context, state) =>
+      //       MaterialPage(key: state.pageKey, child: const VerifyEmailPage()),
+      // ),
 
       // ======================================================================
       // DASHBOARD STACK - Mit StatefulShellRoute für BottomNavigationBar

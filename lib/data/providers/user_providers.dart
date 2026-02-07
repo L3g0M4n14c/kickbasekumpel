@@ -2,54 +2,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 import '../../domain/repositories/repository_interfaces.dart';
 import 'repository_providers.dart';
+import 'kickbase_auth_provider.dart';
 
 // ============================================================================
 // AUTH STATE PROVIDERS
 // ============================================================================
 
-/// Current Firebase Auth User Stream
-/// Provides real-time updates of authentication state
-/// Returns null when user is signed out
-final authUserStreamProvider = StreamProvider<String?>((ref) {
-  final authRepo = ref.watch(authRepositoryProvider);
-  return authRepo.authStateChanges.map((user) => user?.uid);
-});
-
-/// Current Firebase Auth User ID
-/// Synchronous access to current auth user ID
+/// Current Kickbase User ID
+/// Synchronous access to current Kickbase user ID
 /// Returns null if not authenticated
 final currentAuthUserIdProvider = Provider<String?>((ref) {
-  final authState = ref.watch(authUserStreamProvider);
-  return authState.when(
-    data: (userId) => userId,
-    loading: () => null,
-    error: (_, __) => null,
-  );
+  return ref.watch(kickbaseUserIdProvider);
 });
 
 // ============================================================================
 // USER DATA PROVIDERS
 // ============================================================================
 
-/// Current User Data Stream
-/// Provides real-time updates of the authenticated user's data
-/// AsyncValue handles loading and error states automatically
-final currentUserProvider = StreamProvider<User?>((ref) async* {
-  final userId = ref.watch(currentAuthUserIdProvider);
-
-  if (userId == null) {
-    yield null;
-    return;
-  }
-
-  final userRepo = ref.watch(userRepositoryProvider);
-  await for (final result in userRepo.watchById(userId)) {
-    if (result is Success<User>) {
-      yield result.data;
-    } else if (result is Failure<User>) {
-      throw Exception((result).message);
-    }
-  }
+/// Current User Data Provider
+/// Provides current Kickbase user data from auth state
+/// Wrapped in AsyncValue for consistency with UI widgets
+final currentUserProvider = FutureProvider<User?>((ref) async {
+  final user = ref.watch(currentKickbaseUserProvider);
+  return user;
 });
 
 /// User Data by ID Provider Family
@@ -72,7 +47,7 @@ final userDataProvider = FutureProvider.family<User, String>((
 
 /// Current User Data (synchronous access)
 /// Provides synchronous access to current user data
-/// Returns null during loading or if not authenticated
+/// Returns null if not authenticated
 final currentUserDataProvider = Provider<User?>((ref) {
   final userAsync = ref.watch(currentUserProvider);
   return userAsync.when(

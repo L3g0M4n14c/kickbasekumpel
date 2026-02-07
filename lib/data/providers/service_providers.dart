@@ -54,8 +54,8 @@ final httpClientWrapperProvider = Provider<HttpClientWrapper>((ref) {
 /// Kickbase API Client Provider (Lazy Loading)
 ///
 /// Verwaltet alle HTTP-Anfragen an die Kickbase API v4.
-/// Nutzt httpClientProvider und secureStorageProvider für Token-Management.
-/// Separater Token-Key 'kickbase_token', unabhängig von Firebase Auth.
+/// Nutzt SharedPreferences für Token-Storage (einfacher als Keychain).
+/// Token-Key 'kickbase_token'.
 ///
 /// Verwendung:
 /// ```dart
@@ -64,12 +64,8 @@ final httpClientWrapperProvider = Provider<HttpClientWrapper>((ref) {
 /// ```
 final kickbaseApiClientProvider = Provider<KickbaseAPIClient>((ref) {
   final httpClient = ref.watch(httpClientProvider);
-  final secureStorage = ref.watch(secureStorageProvider);
 
-  final client = KickbaseAPIClient(
-    httpClient: httpClient,
-    secureStorage: secureStorage,
-  );
+  final client = KickbaseAPIClient(httpClient: httpClient);
 
   ref.onDispose(() {
     client.dispose();

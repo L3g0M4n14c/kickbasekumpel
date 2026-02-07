@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import '../services/kickbase_api_client.dart';
@@ -7,12 +6,6 @@ import '../services/kickbase_api_client.dart';
 // ============================================================================
 // Kickbase API Client Provider
 // ============================================================================
-
-/// Provider für FlutterSecureStorage (shared instance)
-/// Wird sowohl von Firebase Auth als auch Kickbase API verwendet
-final secureStorageProvider = Provider<FlutterSecureStorage>((ref) {
-  return const FlutterSecureStorage();
-});
 
 /// Provider für HTTP Client (shared instance)
 final httpClientProvider = Provider<http.Client>((ref) {
@@ -22,8 +15,7 @@ final httpClientProvider = Provider<http.Client>((ref) {
 /// Provider für KickbaseAPIClient
 ///
 /// Der API Client verwaltet alle HTTP-Anfragen an die Kickbase API v4.
-/// Er nutzt einen separaten Token-Key 'kickbase_token' in FlutterSecureStorage,
-/// unabhängig von Firebase Auth.
+/// Nutzt SharedPreferences für Token-Storage.
 ///
 /// Verwendung:
 /// ```dart
@@ -32,12 +24,8 @@ final httpClientProvider = Provider<http.Client>((ref) {
 /// ```
 final kickbaseApiClientProvider = Provider<KickbaseAPIClient>((ref) {
   final httpClient = ref.watch(httpClientProvider);
-  final secureStorage = ref.watch(secureStorageProvider);
 
-  final client = KickbaseAPIClient(
-    httpClient: httpClient,
-    secureStorage: secureStorage,
-  );
+  final client = KickbaseAPIClient(httpClient: httpClient);
 
   // Cleanup when provider is disposed
   ref.onDispose(() {

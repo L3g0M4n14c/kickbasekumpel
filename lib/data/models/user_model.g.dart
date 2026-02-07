@@ -31,6 +31,44 @@ Map<String, dynamic> _$$UserImplToJson(_$UserImpl instance) =>
       'f': instance.f,
     };
 
+_$LoginUserImpl _$$LoginUserImplFromJson(Map<String, dynamic> json) =>
+    _$LoginUserImpl(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      email: json['email'] as String,
+      notifications: (json['notifications'] as num?)?.toInt(),
+      cover: json['cover'] as String?,
+      flags: (json['flags'] as num?)?.toInt(),
+      proExpiry: json['proExpiry'] as String?,
+      perms: (json['perms'] as List<dynamic>?)
+          ?.map((e) => (e as num).toInt())
+          .toList(),
+      trd: (json['trd'] as num?)?.toInt(),
+      sfb: json['sfb'] as String?,
+      efb: json['efb'] as String?,
+      profile: json['profile'] as String?,
+      uim: json['uim'] as String?,
+      mfacp: json['mfacp'] as List<dynamic>?,
+    );
+
+Map<String, dynamic> _$$LoginUserImplToJson(_$LoginUserImpl instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'name': instance.name,
+      'email': instance.email,
+      'notifications': instance.notifications,
+      'cover': instance.cover,
+      'flags': instance.flags,
+      'proExpiry': instance.proExpiry,
+      'perms': instance.perms,
+      'trd': instance.trd,
+      'sfb': instance.sfb,
+      'efb': instance.efb,
+      'profile': instance.profile,
+      'uim': instance.uim,
+      'mfacp': instance.mfacp,
+    };
+
 _$LoginRequestImpl _$$LoginRequestImplFromJson(Map<String, dynamic> json) =>
     _$LoginRequestImpl(
       em: json['em'] as String,
@@ -54,17 +92,17 @@ Map<String, dynamic> _$$LoginRequestImplToJson(_$LoginRequestImpl instance) =>
 _$LoginResponseImpl _$$LoginResponseImplFromJson(Map<String, dynamic> json) =>
     _$LoginResponseImpl(
       tkn: json['tkn'] as String,
-      user: json['user'] == null
+      loginUser: json['u'] == null
           ? null
-          : User.fromJson(json['user'] as Map<String, dynamic>),
-      leagues: json['leagues'] as List<dynamic>?,
+          : LoginUser.fromJson(json['u'] as Map<String, dynamic>),
+      leagues: json['srvl'] as List<dynamic>?,
       userId: json['userId'] as String?,
     );
 
 Map<String, dynamic> _$$LoginResponseImplToJson(_$LoginResponseImpl instance) =>
     <String, dynamic>{
       'tkn': instance.tkn,
-      'user': instance.user,
-      'leagues': instance.leagues,
+      'u': instance.loginUser,
+      'srvl': instance.leagues,
       'userId': instance.userId,
     };

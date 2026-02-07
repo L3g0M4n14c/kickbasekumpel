@@ -331,6 +331,463 @@ abstract class _User implements User {
       throw _privateConstructorUsedError;
 }
 
+LoginUser _$LoginUserFromJson(Map<String, dynamic> json) {
+  return _LoginUser.fromJson(json);
+}
+
+/// @nodoc
+mixin _$LoginUser {
+  String get id => throw _privateConstructorUsedError;
+  String get name => throw _privateConstructorUsedError;
+  String get email => throw _privateConstructorUsedError;
+  int? get notifications => throw _privateConstructorUsedError;
+  String? get cover => throw _privateConstructorUsedError;
+  int? get flags => throw _privateConstructorUsedError;
+  String? get proExpiry => throw _privateConstructorUsedError;
+  List<int>? get perms => throw _privateConstructorUsedError;
+  int? get trd => throw _privateConstructorUsedError;
+  String? get sfb => throw _privateConstructorUsedError;
+  String? get efb => throw _privateConstructorUsedError;
+  String? get profile => throw _privateConstructorUsedError;
+  String? get uim => throw _privateConstructorUsedError;
+  List<dynamic>? get mfacp => throw _privateConstructorUsedError;
+
+  /// Serializes this LoginUser to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of LoginUser
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $LoginUserCopyWith<LoginUser> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $LoginUserCopyWith<$Res> {
+  factory $LoginUserCopyWith(LoginUser value, $Res Function(LoginUser) then) =
+      _$LoginUserCopyWithImpl<$Res, LoginUser>;
+  @useResult
+  $Res call({
+    String id,
+    String name,
+    String email,
+    int? notifications,
+    String? cover,
+    int? flags,
+    String? proExpiry,
+    List<int>? perms,
+    int? trd,
+    String? sfb,
+    String? efb,
+    String? profile,
+    String? uim,
+    List<dynamic>? mfacp,
+  });
+}
+
+/// @nodoc
+class _$LoginUserCopyWithImpl<$Res, $Val extends LoginUser>
+    implements $LoginUserCopyWith<$Res> {
+  _$LoginUserCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of LoginUser
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = null,
+    Object? name = null,
+    Object? email = null,
+    Object? notifications = freezed,
+    Object? cover = freezed,
+    Object? flags = freezed,
+    Object? proExpiry = freezed,
+    Object? perms = freezed,
+    Object? trd = freezed,
+    Object? sfb = freezed,
+    Object? efb = freezed,
+    Object? profile = freezed,
+    Object? uim = freezed,
+    Object? mfacp = freezed,
+  }) {
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
+            name: null == name
+                ? _value.name
+                : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            email: null == email
+                ? _value.email
+                : email // ignore: cast_nullable_to_non_nullable
+                      as String,
+            notifications: freezed == notifications
+                ? _value.notifications
+                : notifications // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            cover: freezed == cover
+                ? _value.cover
+                : cover // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            flags: freezed == flags
+                ? _value.flags
+                : flags // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            proExpiry: freezed == proExpiry
+                ? _value.proExpiry
+                : proExpiry // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            perms: freezed == perms
+                ? _value.perms
+                : perms // ignore: cast_nullable_to_non_nullable
+                      as List<int>?,
+            trd: freezed == trd
+                ? _value.trd
+                : trd // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            sfb: freezed == sfb
+                ? _value.sfb
+                : sfb // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            efb: freezed == efb
+                ? _value.efb
+                : efb // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            profile: freezed == profile
+                ? _value.profile
+                : profile // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            uim: freezed == uim
+                ? _value.uim
+                : uim // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            mfacp: freezed == mfacp
+                ? _value.mfacp
+                : mfacp // ignore: cast_nullable_to_non_nullable
+                      as List<dynamic>?,
+          )
+          as $Val,
+    );
+  }
+}
+
+/// @nodoc
+abstract class _$$LoginUserImplCopyWith<$Res>
+    implements $LoginUserCopyWith<$Res> {
+  factory _$$LoginUserImplCopyWith(
+    _$LoginUserImpl value,
+    $Res Function(_$LoginUserImpl) then,
+  ) = __$$LoginUserImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({
+    String id,
+    String name,
+    String email,
+    int? notifications,
+    String? cover,
+    int? flags,
+    String? proExpiry,
+    List<int>? perms,
+    int? trd,
+    String? sfb,
+    String? efb,
+    String? profile,
+    String? uim,
+    List<dynamic>? mfacp,
+  });
+}
+
+/// @nodoc
+class __$$LoginUserImplCopyWithImpl<$Res>
+    extends _$LoginUserCopyWithImpl<$Res, _$LoginUserImpl>
+    implements _$$LoginUserImplCopyWith<$Res> {
+  __$$LoginUserImplCopyWithImpl(
+    _$LoginUserImpl _value,
+    $Res Function(_$LoginUserImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of LoginUser
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = null,
+    Object? name = null,
+    Object? email = null,
+    Object? notifications = freezed,
+    Object? cover = freezed,
+    Object? flags = freezed,
+    Object? proExpiry = freezed,
+    Object? perms = freezed,
+    Object? trd = freezed,
+    Object? sfb = freezed,
+    Object? efb = freezed,
+    Object? profile = freezed,
+    Object? uim = freezed,
+    Object? mfacp = freezed,
+  }) {
+    return _then(
+      _$LoginUserImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as String,
+        name: null == name
+            ? _value.name
+            : name // ignore: cast_nullable_to_non_nullable
+                  as String,
+        email: null == email
+            ? _value.email
+            : email // ignore: cast_nullable_to_non_nullable
+                  as String,
+        notifications: freezed == notifications
+            ? _value.notifications
+            : notifications // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        cover: freezed == cover
+            ? _value.cover
+            : cover // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        flags: freezed == flags
+            ? _value.flags
+            : flags // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        proExpiry: freezed == proExpiry
+            ? _value.proExpiry
+            : proExpiry // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        perms: freezed == perms
+            ? _value._perms
+            : perms // ignore: cast_nullable_to_non_nullable
+                  as List<int>?,
+        trd: freezed == trd
+            ? _value.trd
+            : trd // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        sfb: freezed == sfb
+            ? _value.sfb
+            : sfb // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        efb: freezed == efb
+            ? _value.efb
+            : efb // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        profile: freezed == profile
+            ? _value.profile
+            : profile // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        uim: freezed == uim
+            ? _value.uim
+            : uim // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        mfacp: freezed == mfacp
+            ? _value._mfacp
+            : mfacp // ignore: cast_nullable_to_non_nullable
+                  as List<dynamic>?,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$LoginUserImpl extends _LoginUser {
+  const _$LoginUserImpl({
+    required this.id,
+    required this.name,
+    required this.email,
+    this.notifications,
+    this.cover,
+    this.flags,
+    this.proExpiry,
+    final List<int>? perms,
+    this.trd,
+    this.sfb,
+    this.efb,
+    this.profile,
+    this.uim,
+    final List<dynamic>? mfacp,
+  }) : _perms = perms,
+       _mfacp = mfacp,
+       super._();
+
+  factory _$LoginUserImpl.fromJson(Map<String, dynamic> json) =>
+      _$$LoginUserImplFromJson(json);
+
+  @override
+  final String id;
+  @override
+  final String name;
+  @override
+  final String email;
+  @override
+  final int? notifications;
+  @override
+  final String? cover;
+  @override
+  final int? flags;
+  @override
+  final String? proExpiry;
+  final List<int>? _perms;
+  @override
+  List<int>? get perms {
+    final value = _perms;
+    if (value == null) return null;
+    if (_perms is EqualUnmodifiableListView) return _perms;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
+  @override
+  final int? trd;
+  @override
+  final String? sfb;
+  @override
+  final String? efb;
+  @override
+  final String? profile;
+  @override
+  final String? uim;
+  final List<dynamic>? _mfacp;
+  @override
+  List<dynamic>? get mfacp {
+    final value = _mfacp;
+    if (value == null) return null;
+    if (_mfacp is EqualUnmodifiableListView) return _mfacp;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
+  @override
+  String toString() {
+    return 'LoginUser(id: $id, name: $name, email: $email, notifications: $notifications, cover: $cover, flags: $flags, proExpiry: $proExpiry, perms: $perms, trd: $trd, sfb: $sfb, efb: $efb, profile: $profile, uim: $uim, mfacp: $mfacp)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$LoginUserImpl &&
+            (identical(other.id, id) || other.id == id) &&
+            (identical(other.name, name) || other.name == name) &&
+            (identical(other.email, email) || other.email == email) &&
+            (identical(other.notifications, notifications) ||
+                other.notifications == notifications) &&
+            (identical(other.cover, cover) || other.cover == cover) &&
+            (identical(other.flags, flags) || other.flags == flags) &&
+            (identical(other.proExpiry, proExpiry) ||
+                other.proExpiry == proExpiry) &&
+            const DeepCollectionEquality().equals(other._perms, _perms) &&
+            (identical(other.trd, trd) || other.trd == trd) &&
+            (identical(other.sfb, sfb) || other.sfb == sfb) &&
+            (identical(other.efb, efb) || other.efb == efb) &&
+            (identical(other.profile, profile) || other.profile == profile) &&
+            (identical(other.uim, uim) || other.uim == uim) &&
+            const DeepCollectionEquality().equals(other._mfacp, _mfacp));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(
+    runtimeType,
+    id,
+    name,
+    email,
+    notifications,
+    cover,
+    flags,
+    proExpiry,
+    const DeepCollectionEquality().hash(_perms),
+    trd,
+    sfb,
+    efb,
+    profile,
+    uim,
+    const DeepCollectionEquality().hash(_mfacp),
+  );
+
+  /// Create a copy of LoginUser
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$LoginUserImplCopyWith<_$LoginUserImpl> get copyWith =>
+      __$$LoginUserImplCopyWithImpl<_$LoginUserImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$LoginUserImplToJson(this);
+  }
+}
+
+abstract class _LoginUser extends LoginUser {
+  const factory _LoginUser({
+    required final String id,
+    required final String name,
+    required final String email,
+    final int? notifications,
+    final String? cover,
+    final int? flags,
+    final String? proExpiry,
+    final List<int>? perms,
+    final int? trd,
+    final String? sfb,
+    final String? efb,
+    final String? profile,
+    final String? uim,
+    final List<dynamic>? mfacp,
+  }) = _$LoginUserImpl;
+  const _LoginUser._() : super._();
+
+  factory _LoginUser.fromJson(Map<String, dynamic> json) =
+      _$LoginUserImpl.fromJson;
+
+  @override
+  String get id;
+  @override
+  String get name;
+  @override
+  String get email;
+  @override
+  int? get notifications;
+  @override
+  String? get cover;
+  @override
+  int? get flags;
+  @override
+  String? get proExpiry;
+  @override
+  List<int>? get perms;
+  @override
+  int? get trd;
+  @override
+  String? get sfb;
+  @override
+  String? get efb;
+  @override
+  String? get profile;
+  @override
+  String? get uim;
+  @override
+  List<dynamic>? get mfacp;
+
+  /// Create a copy of LoginUser
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$LoginUserImplCopyWith<_$LoginUserImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
 LoginRequest _$LoginRequestFromJson(Map<String, dynamic> json) {
   return _LoginRequest.fromJson(json);
 }
@@ -564,7 +1021,9 @@ LoginResponse _$LoginResponseFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$LoginResponse {
   String get tkn => throw _privateConstructorUsedError;
-  User? get user => throw _privateConstructorUsedError;
+  @JsonKey(name: 'u')
+  LoginUser? get loginUser => throw _privateConstructorUsedError;
+  @JsonKey(name: 'srvl')
   List<dynamic>? get leagues => throw _privateConstructorUsedError;
   String? get userId => throw _privateConstructorUsedError;
 
@@ -585,9 +1044,14 @@ abstract class $LoginResponseCopyWith<$Res> {
     $Res Function(LoginResponse) then,
   ) = _$LoginResponseCopyWithImpl<$Res, LoginResponse>;
   @useResult
-  $Res call({String tkn, User? user, List<dynamic>? leagues, String? userId});
+  $Res call({
+    String tkn,
+    @JsonKey(name: 'u') LoginUser? loginUser,
+    @JsonKey(name: 'srvl') List<dynamic>? leagues,
+    String? userId,
+  });
 
-  $UserCopyWith<$Res>? get user;
+  $LoginUserCopyWith<$Res>? get loginUser;
 }
 
 /// @nodoc
@@ -606,7 +1070,7 @@ class _$LoginResponseCopyWithImpl<$Res, $Val extends LoginResponse>
   @override
   $Res call({
     Object? tkn = null,
-    Object? user = freezed,
+    Object? loginUser = freezed,
     Object? leagues = freezed,
     Object? userId = freezed,
   }) {
@@ -616,10 +1080,10 @@ class _$LoginResponseCopyWithImpl<$Res, $Val extends LoginResponse>
                 ? _value.tkn
                 : tkn // ignore: cast_nullable_to_non_nullable
                       as String,
-            user: freezed == user
-                ? _value.user
-                : user // ignore: cast_nullable_to_non_nullable
-                      as User?,
+            loginUser: freezed == loginUser
+                ? _value.loginUser
+                : loginUser // ignore: cast_nullable_to_non_nullable
+                      as LoginUser?,
             leagues: freezed == leagues
                 ? _value.leagues
                 : leagues // ignore: cast_nullable_to_non_nullable
@@ -637,13 +1101,13 @@ class _$LoginResponseCopyWithImpl<$Res, $Val extends LoginResponse>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $UserCopyWith<$Res>? get user {
-    if (_value.user == null) {
+  $LoginUserCopyWith<$Res>? get loginUser {
+    if (_value.loginUser == null) {
       return null;
     }
 
-    return $UserCopyWith<$Res>(_value.user!, (value) {
-      return _then(_value.copyWith(user: value) as $Val);
+    return $LoginUserCopyWith<$Res>(_value.loginUser!, (value) {
+      return _then(_value.copyWith(loginUser: value) as $Val);
     });
   }
 }
@@ -657,10 +1121,15 @@ abstract class _$$LoginResponseImplCopyWith<$Res>
   ) = __$$LoginResponseImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String tkn, User? user, List<dynamic>? leagues, String? userId});
+  $Res call({
+    String tkn,
+    @JsonKey(name: 'u') LoginUser? loginUser,
+    @JsonKey(name: 'srvl') List<dynamic>? leagues,
+    String? userId,
+  });
 
   @override
-  $UserCopyWith<$Res>? get user;
+  $LoginUserCopyWith<$Res>? get loginUser;
 }
 
 /// @nodoc
@@ -678,7 +1147,7 @@ class __$$LoginResponseImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? tkn = null,
-    Object? user = freezed,
+    Object? loginUser = freezed,
     Object? leagues = freezed,
     Object? userId = freezed,
   }) {
@@ -688,10 +1157,10 @@ class __$$LoginResponseImplCopyWithImpl<$Res>
             ? _value.tkn
             : tkn // ignore: cast_nullable_to_non_nullable
                   as String,
-        user: freezed == user
-            ? _value.user
-            : user // ignore: cast_nullable_to_non_nullable
-                  as User?,
+        loginUser: freezed == loginUser
+            ? _value.loginUser
+            : loginUser // ignore: cast_nullable_to_non_nullable
+                  as LoginUser?,
         leagues: freezed == leagues
             ? _value._leagues
             : leagues // ignore: cast_nullable_to_non_nullable
@@ -707,13 +1176,14 @@ class __$$LoginResponseImplCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$LoginResponseImpl implements _LoginResponse {
+class _$LoginResponseImpl extends _LoginResponse {
   const _$LoginResponseImpl({
     required this.tkn,
-    this.user,
-    final List<dynamic>? leagues,
+    @JsonKey(name: 'u') this.loginUser,
+    @JsonKey(name: 'srvl') final List<dynamic>? leagues,
     this.userId,
-  }) : _leagues = leagues;
+  }) : _leagues = leagues,
+       super._();
 
   factory _$LoginResponseImpl.fromJson(Map<String, dynamic> json) =>
       _$$LoginResponseImplFromJson(json);
@@ -721,9 +1191,11 @@ class _$LoginResponseImpl implements _LoginResponse {
   @override
   final String tkn;
   @override
-  final User? user;
+  @JsonKey(name: 'u')
+  final LoginUser? loginUser;
   final List<dynamic>? _leagues;
   @override
+  @JsonKey(name: 'srvl')
   List<dynamic>? get leagues {
     final value = _leagues;
     if (value == null) return null;
@@ -737,7 +1209,7 @@ class _$LoginResponseImpl implements _LoginResponse {
 
   @override
   String toString() {
-    return 'LoginResponse(tkn: $tkn, user: $user, leagues: $leagues, userId: $userId)';
+    return 'LoginResponse(tkn: $tkn, loginUser: $loginUser, leagues: $leagues, userId: $userId)';
   }
 
   @override
@@ -746,7 +1218,8 @@ class _$LoginResponseImpl implements _LoginResponse {
         (other.runtimeType == runtimeType &&
             other is _$LoginResponseImpl &&
             (identical(other.tkn, tkn) || other.tkn == tkn) &&
-            (identical(other.user, user) || other.user == user) &&
+            (identical(other.loginUser, loginUser) ||
+                other.loginUser == loginUser) &&
             const DeepCollectionEquality().equals(other._leagues, _leagues) &&
             (identical(other.userId, userId) || other.userId == userId));
   }
@@ -756,7 +1229,7 @@ class _$LoginResponseImpl implements _LoginResponse {
   int get hashCode => Object.hash(
     runtimeType,
     tkn,
-    user,
+    loginUser,
     const DeepCollectionEquality().hash(_leagues),
     userId,
   );
@@ -775,13 +1248,14 @@ class _$LoginResponseImpl implements _LoginResponse {
   }
 }
 
-abstract class _LoginResponse implements LoginResponse {
+abstract class _LoginResponse extends LoginResponse {
   const factory _LoginResponse({
     required final String tkn,
-    final User? user,
-    final List<dynamic>? leagues,
+    @JsonKey(name: 'u') final LoginUser? loginUser,
+    @JsonKey(name: 'srvl') final List<dynamic>? leagues,
     final String? userId,
   }) = _$LoginResponseImpl;
+  const _LoginResponse._() : super._();
 
   factory _LoginResponse.fromJson(Map<String, dynamic> json) =
       _$LoginResponseImpl.fromJson;
@@ -789,8 +1263,10 @@ abstract class _LoginResponse implements LoginResponse {
   @override
   String get tkn;
   @override
-  User? get user;
+  @JsonKey(name: 'u')
+  LoginUser? get loginUser;
   @override
+  @JsonKey(name: 'srvl')
   List<dynamic>? get leagues;
   @override
   String? get userId;

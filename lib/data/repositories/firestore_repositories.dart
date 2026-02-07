@@ -231,7 +231,7 @@ class LeagueRepository extends BaseRepository<League>
       'creator': league.c,
       'season': league.s,
       'matchday': league.md,
-      'currentUser': league.cu.toJson(),
+      'currentUser': league.cu?.toJson(),
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
