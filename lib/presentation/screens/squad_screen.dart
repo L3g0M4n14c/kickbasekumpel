@@ -31,7 +31,7 @@ class SquadScreen extends ConsumerWidget {
       ),
       body: squadAsync.when(
         data: (squadData) {
-          final players = (squadData['pl'] as List?)
+          final players = (squadData['it'] as List?)
               ?.map((json) => Player.fromJson(json as Map<String, dynamic>))
               .toList() ?? [];
 
