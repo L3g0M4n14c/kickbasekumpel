@@ -20,6 +20,7 @@ import '../presentation/pages/league/league_players_page.dart';
 import '../presentation/pages/player/player_stats_page.dart';
 import '../presentation/pages/player/player_history_page.dart';
 import '../presentation/pages/error_page.dart';
+import '../presentation/screens/ligainsider/ligainsider_screen.dart';
 
 // ============================================================================
 // ROUTER PROVIDER
@@ -184,6 +185,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           final leagueId = state.pathParameters['leagueId'];
           return '/league/$leagueId/overview';
         },
+      ),
+
+      // ======================================================================
+      // LIGAINSIDER - Voraussichtliche Aufstellungen
+      // ======================================================================
+      GoRoute(
+        path: '/ligainsider/lineups',
+        name: 'ligainsider',
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const LigainsiderScreen()),
       ),
       GoRoute(
         path: '/league/:leagueId/overview',

@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/ligainsider_model.dart';
+import '../models/ligainsider_match_model.dart';
 import '../../domain/exceptions/kickbase_exceptions.dart';
 
 /// Ligainsider Service
@@ -22,6 +23,11 @@ class LigainsiderService {
   static const String _cacheKey = 'ligainsider_cache';
   static const String _cacheTimestampKey = 'ligainsider_cache_timestamp';
 
+  // Matches-specific cache keys
+  static const String _matchesCacheKey = 'ligainsider_cache_matches';
+  static const String _matchesCacheTimestampKey =
+      'ligainsider_cache_timestamp_matches';
+
   final http.Client _httpClient;
   final SharedPreferences _prefs;
   final Connectivity _connectivity;
@@ -30,6 +36,9 @@ class LigainsiderService {
   final Map<String, LigainsiderPlayer> _playerCache = {};
   final Set<String> _alternativeNames = {};
   final Set<String> _startingLineupIds = {};
+
+  // Matches cache (match-based lineups)
+  final List<LigainsiderMatch> _matches = [];
 
   bool _isReady = false;
 
@@ -243,6 +252,166 @@ class LigainsiderService {
 
     print('[Ligainsider] NOT FOUND: $firstName $lastName');
     return null;
+  }
+
+  /// Public access to parsed matches (may be empty until `fetchMatchLineups` is called)
+  List<LigainsiderMatch> get matches => List.unmodifiable(_matches);
+
+  /// Fetch match-based lineups and populate matches cache
+  ///
+  /// This uses the same overview page as player scraping and attempts to
+  /// parse match pages for home/away lineups. If parsing fails it will leave
+  /// the `_matches` list empty and fall back to player-based logic elsewhere.
+  Future<void> fetchMatchLineups() async {
+    print(
+      '🔄 Ligainsider: Fetching match lineups (overview + detail pages)...',
+    );
+
+    try {
+      // Try to fetch overview and parse basic match list
+      final response = await _httpClient.get(Uri.parse(_overviewUrl));
+      if (response.statusCode != 200) {
+        print('⚠️ Ligainsider: Failed to fetch overview for matches');
+        return;
+      }
+
+      final document = html_parser.parse(response.body);
+
+      // Simple heuristic: find match containers or links that look like matches
+      final matchLinks = <String>{};
+
+      // Common patterns: links that contain 'spiel' or '/spiel/' or '/spiele/'
+      final anchors = document.querySelectorAll('a[href]');
+      for (final a in anchors) {
+        final href = a.attributes['href'] ?? '';
+        if (href.contains('/spiel') || href.contains('/spiele')) {
+          var absolute = href;
+          if (!href.startsWith('http')) {
+            absolute = _baseUrl + (href.startsWith('/') ? href : '/$href');
+          }
+          matchLinks.add(absolute);
+        }
+      }
+
+      // If no links found, keep matches empty and return
+      if (matchLinks.isEmpty) {
+        print('ℹ️ Ligainsider: No match links found in overview');
+        return;
+      }
+
+      final parsedMatches = <LigainsiderMatch>[];
+
+      for (final link in matchLinks) {
+        try {
+          final detailResp = await _httpClient.get(Uri.parse(link));
+          if (detailResp.statusCode != 200) continue;
+
+          final detailDoc = html_parser.parse(detailResp.body);
+
+          // Heuristics to extract team names
+          String home =
+              detailDoc.querySelector('.team-home')?.text.trim() ??
+              detailDoc.querySelector('.home-team')?.text.trim() ??
+              detailDoc.querySelector('h1')?.text.trim() ??
+              'Heim';
+          String away =
+              detailDoc.querySelector('.team-away')?.text.trim() ??
+              detailDoc.querySelector('.away-team')?.text.trim() ??
+              'Gast';
+
+          // Logos (if present)
+          String? homeLogo = detailDoc
+              .querySelector('.team-home img')
+              ?.attributes['src'];
+          String? awayLogo = detailDoc
+              .querySelector('.team-away img')
+              ?.attributes['src'];
+
+          // Parse simple lineup rows: look for elements with class containing "aufstellung" or "lineup"
+          List<LineupRow> parseRows(String selectorRoot) {
+            final rows = <LineupRow>[];
+            final container = detailDoc.querySelector(selectorRoot);
+            if (container == null) return rows;
+
+            final rowElements = container.querySelectorAll(
+              '.row, .lineup-row, li',
+            );
+            if (rowElements.isEmpty) return rows;
+
+            for (final r in rowElements) {
+              final playerAnchors = r.querySelectorAll('a[href*="_"]');
+              if (playerAnchors.isEmpty) continue;
+              final players = <LineupPlayer>[];
+              for (final pa in playerAnchors) {
+                final name = pa.text.trim();
+                if (name.isEmpty) continue;
+                final img = pa.querySelector('img')?.attributes['src'];
+                String? alternative;
+                // detect alternative naming nearby
+                final siblings = pa.parent?.querySelectorAll('a[href*="_"]');
+                if (siblings != null && siblings.length > 1) {
+                  final idx = siblings.indexOf(pa);
+                  if (idx == 0 && siblings.length > 1) {
+                    alternative = siblings[1].text.trim();
+                  }
+                }
+                players.add(
+                  LineupPlayer(
+                    name: name,
+                    imageUrl: img,
+                    alternative: alternative,
+                  ),
+                );
+              }
+
+              if (players.isNotEmpty) {
+                rows.add(LineupRow(rowName: 'Row', players: players));
+              }
+            }
+            return rows;
+          }
+
+          // Try several selectors
+          final homeRows = parseRows('.aufstellung.home').isNotEmpty
+              ? parseRows('.aufstellung.home')
+              : parseRows('.lineup.home');
+          final awayRows = parseRows('.aufstellung.away').isNotEmpty
+              ? parseRows('.aufstellung.away')
+              : parseRows('.lineup.away');
+
+          // If still empty, try generic selectors per side
+          final genericHome = homeRows.isEmpty ? parseRows('.home') : homeRows;
+          final genericAway = awayRows.isEmpty ? parseRows('.away') : awayRows;
+
+          final matchId = link;
+
+          parsedMatches.add(
+            LigainsiderMatch(
+              id: matchId,
+              homeTeam: home,
+              awayTeam: away,
+              homeLogo: homeLogo,
+              awayLogo: awayLogo,
+              homeLineup: genericHome.isEmpty ? [] : genericHome,
+              awayLineup: genericAway.isEmpty ? [] : genericAway,
+            ),
+          );
+        } catch (e) {
+          // skip failures per match
+          continue;
+        }
+      }
+
+      _matches.clear();
+      _matches.addAll(parsedMatches);
+
+      // Save to cache
+      await _saveMatchesToCache(parsedMatches);
+
+      print('✅ Ligainsider: Parsed ${_matches.length} matches from HTML');
+    } catch (e) {
+      print('⚠️ Ligainsider: Failed to fetch match lineups: $e');
+    }
   }
 
   /// Get player status (starting XI, bench, alternative, out)
@@ -467,8 +636,47 @@ class LigainsiderService {
 
       _isReady = true;
       print('✅ Ligainsider: Loaded ${_playerCache.length} players from cache');
+
+      // Also try to load matches from cache
+      await _loadMatchesFromCache();
     } catch (e) {
       print('⚠️ Ligainsider: Failed to load cache: $e');
+    }
+  }
+
+  // Matches caching
+  Future<void> _saveMatchesToCache(List<LigainsiderMatch> matches) async {
+    try {
+      final data = matches.map((m) => m.toJson()).toList();
+      await _prefs.setString(_matchesCacheKey, jsonEncode(data));
+      await _prefs.setInt(
+        _matchesCacheTimestampKey,
+        DateTime.now().millisecondsSinceEpoch,
+      );
+      print('💾 Ligainsider: Saved ${matches.length} matches to cache');
+    } catch (e) {
+      print('⚠️ Ligainsider: Failed to save matches cache: $e');
+    }
+  }
+
+  Future<void> _loadMatchesFromCache() async {
+    try {
+      final cached = _prefs.getString(_matchesCacheKey);
+      final ts = _prefs.getInt(_matchesCacheTimestampKey);
+      if (cached == null || ts == null) return;
+      final age = DateTime.now().millisecondsSinceEpoch - ts;
+      if (age > _cacheTimeout.inMilliseconds) {
+        print('⏰ Ligainsider: Matches cache expired');
+        return;
+      }
+
+      final List<dynamic> data = jsonDecode(cached);
+      final matches = data.map((j) => LigainsiderMatch.fromJson(j)).toList();
+      _matches.clear();
+      _matches.addAll(matches);
+      print('✅ Ligainsider: Loaded ${_matches.length} matches from cache');
+    } catch (e) {
+      print('⚠️ Ligainsider: Failed to load matches cache: $e');
     }
   }
 

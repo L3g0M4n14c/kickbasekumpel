@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../config/screen_size.dart';
 import '../../widgets/responsive_layout.dart';
 import '../../widgets/common/app_logo.dart';
@@ -14,6 +15,13 @@ class LineupPage extends ConsumerWidget {
           ? AppBar(
               title: const Text('Aufstellung'),
               actions: [
+                IconButton(
+                  icon: const Icon(Icons.sports_soccer),
+                  onPressed: () {
+                    // Open Ligainsider lineups screen
+                    context.go('/ligainsider/lineups');
+                  },
+                ),
                 IconButton(
                   icon: const Icon(Icons.edit),
                   onPressed: () {

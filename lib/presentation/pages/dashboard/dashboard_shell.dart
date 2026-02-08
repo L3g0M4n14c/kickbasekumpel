@@ -105,6 +105,15 @@ class DashboardShell extends StatelessWidget {
             _buildDrawerItem(context, 2, Icon(Icons.store), 'Markt'),
             _buildDrawerItem(context, 3, Icon(Icons.people), 'Aufstellung'),
             _buildDrawerItem(context, 4, Icon(Icons.swap_horiz), 'Transfers'),
+            ListTile(
+              leading: Icon(Icons.sports_soccer),
+              title: Text('Voraussichtliche Aufstellungen'),
+              onTap: () {
+                Navigator.pop(context);
+                // Navigate to Ligainsider screen
+                context.go('/ligainsider/lineups');
+              },
+            ),
             const Divider(),
             _buildDrawerItem(context, 5, Icon(Icons.settings), 'Einstellungen'),
           ],

@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/ligainsider_service.dart';
-import 'kickbase_api_provider.dart';
+import '../models/ligainsider_match_model.dart';
+
+import 'service_providers.dart';
+// 'kickbase_api_provider.dart' is not required here and would conflict with imports
 
 // ============================================================================
 // Ligainsider Service Provider
@@ -75,6 +78,23 @@ final ligainsiderCacheCountProvider = Provider<int>((ref) {
 /// ref.watch(ligainsiderInitProvider); // Triggers fetch
 /// ```
 final ligainsiderInitProvider = FutureProvider<void>((ref) async {
-  final service = ref.watch(ligainsiderServiceProvider);
+  // Use the async provider that initializes SharedPreferences internally
+  final service = await ref.watch(ligainsiderServiceFutureProvider.future);
   await service.fetchLineups();
+  // Also try to fetch match lineups in background
+  service.fetchMatchLineups();
+});
+
+/// Provider exposing parsed match lineups
+final ligainsiderMatchesProvider = FutureProvider<List<LigainsiderMatch>>((
+  ref,
+) async {
+  // Use async service provider to ensure SharedPreferences is available
+  final service = await ref.watch(ligainsiderServiceFutureProvider.future);
+  // Ensure initial player fetch is triggered
+  await ref.watch(ligainsiderInitProvider.future);
+
+  // Try to fetch matches (may be cached)
+  await service.fetchMatchLineups();
+  return service.matches;
 });
