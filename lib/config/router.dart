@@ -21,6 +21,7 @@ import '../presentation/pages/player/player_stats_page.dart';
 import '../presentation/pages/player/player_history_page.dart';
 import '../presentation/pages/error_page.dart';
 import '../presentation/screens/ligainsider/ligainsider_screen.dart';
+import '../presentation/screens/live_screen.dart';
 
 // ============================================================================
 // ROUTER PROVIDER
@@ -114,6 +115,17 @@ final routerProvider = Provider<GoRouter>((ref) {
                 name: 'dashboard',
                 pageBuilder: (context, state) =>
                     const NoTransitionPage(child: HomePage()),
+              ),
+            ],
+          ),
+          // Live Tab
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/dashboard/live',
+                name: 'live',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: LiveScreen()),
               ),
             ],
           ),
@@ -298,6 +310,7 @@ extension GoRouterExtensions on BuildContext {
 
   // Dashboard Routes
   void goToDashboard() => go('/dashboard');
+  void goToLive() => go('/dashboard/live');
   void goToLeagues() => go('/dashboard/leagues');
   void goToMarket() => go('/dashboard/market');
   void goToLineup() => go('/dashboard/lineup');
@@ -334,6 +347,7 @@ class RouterKeys {
   static const forgotPassword = 'forgot-password';
   static const verify = 'verify';
   static const dashboard = 'dashboard';
+  static const live = 'live';
   static const leagues = 'leagues';
   static const market = 'market';
   static const lineup = 'lineup';

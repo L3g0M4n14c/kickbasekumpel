@@ -2,9 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/providers/kickbase_auth_provider.dart';
+import '../../../data/providers/live_providers.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
+
+  Future<void> _collectBonus(BuildContext context, WidgetRef ref) async {
+    try {
+      // Bonus sammeln via Provider
+      final result = await ref.read(collectBonusProvider.future);
+      
+      if (context.mounted) {
+        final amount = result['a'] ?? 0;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Bonus erfolgreich gesammelt: ${amount / 1000}k€'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fehler beim Bonus sammeln: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   Future<void> _showLogoutDialog(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
@@ -69,6 +96,22 @@ class SettingsPage extends ConsumerWidget {
           ),
 
           // Settings Sections
+          // Bonus Section
+          _SettingsSection(
+            title: 'Kickbase',
+            children: [
+              ListTile(
+                leading: const Icon(Icons.card_giftcard),
+                title: const Text('Täglicher Bonus'),
+                subtitle: const Text('Sammle deinen täglichen Bonus'),
+                trailing: FilledButton(
+                  onPressed: () => _collectBonus(context, ref),
+                  child: const Text('Sammeln'),
+                ),
+              ),
+            ],
+          ),
+
           _SettingsSection(
             title: 'Allgemein',
             children: [
