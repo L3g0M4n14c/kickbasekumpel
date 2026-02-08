@@ -17,6 +17,7 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   String? selectedLeagueId;
+  bool _hasAutoSelected = false;
 
   @override
   void initState() {
@@ -28,18 +29,21 @@ class _HomePageState extends ConsumerState<HomePage> {
     final userAsync = ref.watch(currentUserProvider);
     final leaguesAsync = ref.watch(userLeaguesProvider);
 
-    // Auto-select first league when leagues load
-    leaguesAsync.whenData((leagues) {
-      if (leagues.isNotEmpty && selectedLeagueId == null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && selectedLeagueId == null) {
-            setState(() {
-              selectedLeagueId = leagues[0].i;
-            });
-          }
-        });
-      }
-    });
+    // Auto-select first league when leagues load (only once)
+    if (!_hasAutoSelected) {
+      leaguesAsync.whenData((leagues) {
+        if (leagues.isNotEmpty && selectedLeagueId == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && selectedLeagueId == null && !_hasAutoSelected) {
+              setState(() {
+                selectedLeagueId = leagues[0].i;
+                _hasAutoSelected = true;
+              });
+            }
+          });
+        }
+      });
+    }
 
     return Scaffold(
       appBar: ScreenSize.isMobile(context)
