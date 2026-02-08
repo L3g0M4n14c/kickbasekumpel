@@ -47,10 +47,12 @@ class _PlayerDetailScreenState extends ConsumerState<PlayerDetailScreen>
     final size = MediaQuery.of(context).size;
     final isTablet = size.width > 600;
 
-    final playerAsync = ref.watch(playerDetailsProvider((
-      leagueId: widget.leagueId,
-      playerId: widget.playerId,
-    )));
+    final playerAsync = ref.watch(
+      playerDetailsProvider((
+        leagueId: widget.leagueId,
+        playerId: widget.playerId,
+      )),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -87,10 +89,12 @@ class _PlayerDetailScreenState extends ConsumerState<PlayerDetailScreen>
         loading: () => const LoadingWidget(),
         error: (error, stack) => ErrorWidgetCustom(
           error: error,
-          onRetry: () => ref.invalidate(playerDetailsProvider((
-            leagueId: widget.leagueId,
-            playerId: widget.playerId,
-          ))),
+          onRetry: () => ref.invalidate(
+            playerDetailsProvider((
+              leagueId: widget.leagueId,
+              playerId: widget.playerId,
+            )),
+          ),
         ),
       ),
     );
@@ -371,7 +375,9 @@ class _PerformanceTab extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return FutureBuilder<PlayerPerformanceResponse>(
-      future: ref.read(kickbaseApiClientProvider).getPlayerStats(leagueId, playerId),
+      future: ref
+          .read(kickbaseApiClientProvider)
+          .getPlayerStats(leagueId, playerId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const LoadingWidget();
@@ -400,10 +406,12 @@ class _PerformanceTab extends ConsumerWidget {
         final currentSeason = performanceData.it.first;
         final points = currentSeason.ph
             .where((match) => match.p != null)
-            .map((match) => PerformancePoint(
-                  matchDay: match.day,
-                  points: match.p!.toDouble(),
-                ))
+            .map(
+              (match) => PerformancePoint(
+                matchDay: match.day,
+                points: match.p!.toDouble(),
+              ),
+            )
             .toList();
 
         if (points.isEmpty) {
@@ -451,19 +459,20 @@ class _MarketValueTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final marketValueAsync = ref.watch(playerMarketValueYearProvider((
-      leagueId: leagueId,
-      playerId: playerId,
-    )));
+    final marketValueAsync = ref.watch(
+      playerMarketValueYearProvider((leagueId: leagueId, playerId: playerId)),
+    );
 
     return marketValueAsync.when(
       data: (data) {
-        final marketValues = (data['mv'] as List?)?.map((item) {
-          return PricePoint(
-            date: DateTime.parse(item['d'] as String),
-            price: item['m'] as int,
-          );
-        }).toList() ?? [];
+        final marketValues =
+            (data['mv'] as List?)?.map((item) {
+              return PricePoint(
+                date: DateTime.parse(item['d'] as String),
+                price: item['m'] as int,
+              );
+            }).toList() ??
+            [];
 
         if (marketValues.isEmpty) {
           return Center(
@@ -506,7 +515,7 @@ class _MarketValueTab extends ConsumerWidget {
 
   Widget _buildMarketValueStats(BuildContext context, List<PricePoint> data) {
     final theme = Theme.of(context);
-    
+
     if (data.isEmpty) return const SizedBox.shrink();
 
     final currentValue = data.last.price;
@@ -537,9 +546,14 @@ class _MarketValueTab extends ConsumerWidget {
             const Divider(),
             _StatRow(
               label: 'Veränderung',
-              value: '${change > 0 ? '+' : ''}${_formatCurrency(change)} (${changePercent.toStringAsFixed(1)}%)',
+              value:
+                  '${change > 0 ? '+' : ''}${_formatCurrency(change)} (${changePercent.toStringAsFixed(1)}%)',
               icon: Icons.trending_up,
-              valueColor: change > 0 ? Colors.green : change < 0 ? Colors.red : null,
+              valueColor: change > 0
+                  ? Colors.green
+                  : change < 0
+                  ? Colors.red
+                  : null,
             ),
             const Divider(),
             _StatRow(
@@ -569,6 +583,7 @@ class _MarketValueTab extends ConsumerWidget {
   }
 }
 
+// ignore: unused_element
 class _StatsTab extends StatelessWidget {
   final Player player;
   final bool isTablet;

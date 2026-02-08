@@ -12,18 +12,22 @@ class LeagueStandingsPage extends ConsumerStatefulWidget {
   const LeagueStandingsPage({required this.leagueId, super.key});
 
   @override
-  ConsumerState<LeagueStandingsPage> createState() => _LeagueStandingsPageState();
+  ConsumerState<LeagueStandingsPage> createState() =>
+      _LeagueStandingsPageState();
 }
 
 class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
   int? selectedMatchDay;
-  
+
   static const int maxMatchDays = 34; // Bundesliga season has 34 matchdays
 
   @override
   Widget build(BuildContext context) {
     final rankingAsync = ref.watch(
-      leagueRankingProvider((leagueId: widget.leagueId, matchDay: selectedMatchDay)),
+      leagueRankingProvider((
+        leagueId: widget.leagueId,
+        matchDay: selectedMatchDay,
+      )),
     );
 
     return Scaffold(
@@ -34,7 +38,10 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
             icon: const Icon(Icons.refresh),
             onPressed: () {
               ref.invalidate(
-                leagueRankingProvider((leagueId: widget.leagueId, matchDay: selectedMatchDay)),
+                leagueRankingProvider((
+                  leagueId: widget.leagueId,
+                  matchDay: selectedMatchDay,
+                )),
               );
             },
           ),
@@ -47,9 +54,24 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
           final currentUserAsync = ref.watch(currentUserProvider);
 
           return ResponsiveLayout(
-            mobile: _buildMobileLayout(context, currentUserAsync, users, matchDay),
-            tablet: _buildTabletLayout(context, currentUserAsync, users, matchDay),
-            desktop: _buildDesktopLayout(context, currentUserAsync, users, matchDay),
+            mobile: _buildMobileLayout(
+              context,
+              currentUserAsync,
+              users,
+              matchDay,
+            ),
+            tablet: _buildTabletLayout(
+              context,
+              currentUserAsync,
+              users,
+              matchDay,
+            ),
+            desktop: _buildDesktopLayout(
+              context,
+              currentUserAsync,
+              users,
+              matchDay,
+            ),
           );
         },
         loading: () => const Center(child: LoadingWidget()),
@@ -57,7 +79,10 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
           child: ErrorWidgetCustom(
             error: error,
             onRetry: () => ref.invalidate(
-              leagueRankingProvider((leagueId: widget.leagueId, matchDay: selectedMatchDay)),
+              leagueRankingProvider((
+                leagueId: widget.leagueId,
+                matchDay: selectedMatchDay,
+              )),
             ),
           ),
         ),
@@ -80,7 +105,8 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
             itemCount: users.length,
             itemBuilder: (context, index) {
               final user = users[index];
-              final isCurrentUser = currentUserAsync.value != null &&
+              final isCurrentUser =
+                  currentUserAsync.value != null &&
                   user['i'] == currentUserAsync.value!.i;
 
               return _buildUserCard(context, user, isCurrentUser);
@@ -108,7 +134,8 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
               itemCount: users.length,
               itemBuilder: (context, index) {
                 final user = users[index];
-                final isCurrentUser = currentUserAsync.value != null &&
+                final isCurrentUser =
+                    currentUserAsync.value != null &&
                     user['i'] == currentUserAsync.value!.i;
                 return _buildStandingCard(context, user, isCurrentUser);
               },
@@ -148,13 +175,16 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
                     final teamName = user['tn'] ?? '';
                     final points = user['p'] ?? 0;
                     final teamValue = user['tv'] ?? 0;
-                    final isCurrentUser = currentUserAsync.value != null &&
+                    final isCurrentUser =
+                        currentUserAsync.value != null &&
                         user['i'] == currentUserAsync.value!.i;
 
                     return DataRow(
                       color: isCurrentUser
                           ? WidgetStateProperty.all(
-                              Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+                              Theme.of(
+                                context,
+                              ).colorScheme.primaryContainer.withOpacity(0.3),
                             )
                           : null,
                       cells: [
@@ -170,7 +200,9 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
                         DataCell(Text(name)),
                         DataCell(Text(teamName)),
                         DataCell(Text('$points')),
-                        DataCell(Text('${(teamValue / 1000000).toStringAsFixed(1)}M€')),
+                        DataCell(
+                          Text('${(teamValue / 1000000).toStringAsFixed(1)}M€'),
+                        ),
                       ],
                     );
                   }).toList(),
@@ -195,10 +227,7 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
             value: selectedMatchDay,
             hint: const Text('Aktuell'),
             items: [
-              const DropdownMenuItem(
-                value: null,
-                child: Text('Aktuell'),
-              ),
+              const DropdownMenuItem(value: null, child: Text('Aktuell')),
               ...List.generate(maxMatchDays, (index) {
                 final day = index + 1;
                 return DropdownMenuItem(
@@ -218,7 +247,11 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
     );
   }
 
-  Widget _buildUserCard(BuildContext context, Map<String, dynamic> user, bool isCurrentUser) {
+  Widget _buildUserCard(
+    BuildContext context,
+    Map<String, dynamic> user,
+    bool isCurrentUser,
+  ) {
     final position = user['pl'] ?? 0;
     final name = user['n'] ?? 'Unbekannt';
     final teamName = user['tn'] ?? '';
@@ -262,16 +295,13 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
           children: [
             Text(
               '$points Pkt',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             Text(
               '${(teamValue / 1000000).toStringAsFixed(1)}M€',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Colors.grey),
             ),
           ],
         ),
@@ -279,7 +309,11 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
     );
   }
 
-  Widget _buildStandingCard(BuildContext context, Map<String, dynamic> user, bool isCurrentUser) {
+  Widget _buildStandingCard(
+    BuildContext context,
+    Map<String, dynamic> user,
+    bool isCurrentUser,
+  ) {
     final position = user['pl'] ?? 0;
     final name = user['n'] ?? 'Unbekannt';
     final teamName = user['tn'] ?? '';
@@ -320,13 +354,12 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
                   Text(
                     name,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: isCurrentUser ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: isCurrentUser
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                     ),
                   ),
-                  Text(
-                    teamName,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+                  Text(teamName, style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
             ),
@@ -353,5 +386,4 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
       ),
     );
   }
-}
 }

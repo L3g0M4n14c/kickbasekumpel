@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../data/models/market_model.dart';
-import '../../providers/market_providers.dart';
 
 /// Player Market Card Widget
 ///

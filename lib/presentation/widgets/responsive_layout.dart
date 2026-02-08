@@ -202,12 +202,14 @@ class ResponsiveCard extends StatelessWidget {
   final Widget child;
   final EdgeInsets? padding;
   final double? elevation;
+  final Color? color;
 
   const ResponsiveCard({
     super.key,
     required this.child,
     this.padding,
     this.elevation,
+    this.color,
   });
 
   @override
@@ -216,6 +218,7 @@ class ResponsiveCard extends StatelessWidget {
         padding ?? EdgeInsets.all(ScreenSize.isMobile(context) ? 12.0 : 16.0);
 
     return Card(
+      color: color,
       elevation: elevation ?? (ScreenSize.isMobile(context) ? 2.0 : 4.0),
       child: Padding(padding: cardPadding, child: child),
     );

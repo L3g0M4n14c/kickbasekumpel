@@ -245,6 +245,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ======================================================================
       // LEAGUE DETAIL STACK
       // ======================================================================
+      GoRoute(
         path: '/league/:leagueId/overview',
         name: 'league-overview',
         pageBuilder: (context, state) {
@@ -370,7 +371,8 @@ extension GoRouterExtensions on BuildContext {
   void goToPlayerHistory(String playerId) => go('/player/$playerId/history');
 
   // Manager Routes
-  void goToManager(String leagueId, String userId) => go('/manager/$leagueId/$userId');
+  void goToManager(String leagueId, String userId) =>
+      go('/manager/$leagueId/$userId');
 
   // Competition Routes
   void goToTable(String competitionId) => go('/table/$competitionId');

@@ -25,7 +25,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
     // Auto-Refresh alle 60 Sekunden starten
     _refreshTimer = Timer.periodic(const Duration(seconds: 60), (_) {
       if (mounted && _selectedLeagueId != null) {
-        ref.refresh(myElevenProvider(_selectedLeagueId!));
+        final _ = ref.refresh(myElevenProvider(_selectedLeagueId!));
       }
     });
   }
@@ -48,7 +48,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
             icon: const Icon(Icons.refresh),
             onPressed: () {
               if (_selectedLeagueId != null) {
-                ref.refresh(myElevenProvider(_selectedLeagueId!));
+                final _ = ref.refresh(myElevenProvider(_selectedLeagueId!));
               }
             },
           ),
@@ -99,9 +99,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
                 ),
               // Live-Punkte Anzeige
               if (_selectedLeagueId != null)
-                Expanded(
-                  child: _buildLiveView(context, _selectedLeagueId!),
-                ),
+                Expanded(child: _buildLiveView(context, _selectedLeagueId!)),
             ],
           );
         },
@@ -121,14 +119,15 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
 
     return RefreshIndicator(
       onRefresh: () async {
-        ref.refresh(myElevenProvider(leagueId));
+        final _ = ref.refresh(myElevenProvider(leagueId));
         // Kurze Verzögerung für besseres UX
         await Future.delayed(const Duration(milliseconds: 500));
       },
       child: myElevenAsync.when(
         data: (data) {
-          final players = (data['it'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-          
+          final players =
+              (data['it'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+
           if (players.isEmpty) {
             return _buildNoPlayersState(context);
           }
@@ -145,7 +144,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
               // Gesamtpunktzahl
               _buildTotalPointsCard(context, totalPoints),
               const SizedBox(height: 16),
-              
+
               // Spieler nach Position gruppiert
               _buildPlayersByPosition(context, players),
             ],
@@ -196,10 +195,13 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
     );
   }
 
-  Widget _buildPlayersByPosition(BuildContext context, List<Map<String, dynamic>> players) {
+  Widget _buildPlayersByPosition(
+    BuildContext context,
+    List<Map<String, dynamic>> players,
+  ) {
     // Gruppiere Spieler nach Position
     final Map<int, List<Map<String, dynamic>>> playersByPosition = {};
-    
+
     for (final player in players) {
       final position = player['ps'] as int? ?? 0;
       playersByPosition.putIfAbsent(position, () => []);
@@ -236,9 +238,9 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
               const SizedBox(width: 8),
               Text(
                 positionName,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -269,9 +271,17 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
     // Status-Icon (0 = nicht gespielt, 1 = spielt gerade, 2 = gespielt)
     Widget? statusIcon;
     if (status == 1) {
-      statusIcon = const Icon(Icons.play_circle, color: Colors.orange, size: 20);
+      statusIcon = const Icon(
+        Icons.play_circle,
+        color: Colors.orange,
+        size: 20,
+      );
     } else if (status == 2) {
-      statusIcon = const Icon(Icons.check_circle, color: Colors.green, size: 20);
+      statusIcon = const Icon(
+        Icons.check_circle,
+        color: Colors.green,
+        size: 20,
+      );
     }
 
     return Card(
@@ -281,10 +291,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
           backgroundColor: pointsColor.withOpacity(0.2),
           child: Text(
             '$points',
-            style: TextStyle(
-              color: pointsColor,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: pointsColor, fontWeight: FontWeight.bold),
           ),
         ),
         title: Text(
@@ -302,11 +309,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.emoji_events_outlined,
-            size: 80,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.emoji_events_outlined, size: 80, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
             'Noch keine Ligen',
@@ -315,9 +318,9 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
           const SizedBox(height: 8),
           Text(
             'Tritt einer Liga bei',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.grey,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
           ),
         ],
       ),
@@ -329,11 +332,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.people_outline,
-            size: 80,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.people_outline, size: 80, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
             'Keine Aufstellung',
@@ -342,9 +341,9 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
           const SizedBox(height: 8),
           Text(
             'Stelle deine Mannschaft auf',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.grey,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
           ),
         ],
       ),

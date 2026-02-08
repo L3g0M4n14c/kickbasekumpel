@@ -17,13 +17,13 @@ export 'repository_providers.dart';
 // Domain Providers
 export 'user_providers.dart';
 export 'league_providers.dart';
-export 'player_providers.dart';
+export 'player_providers.dart' hide playerDetailsProvider;
 export 'transfer_providers.dart';
 export 'recommendation_providers.dart';
 
 // New Providers - Schritt 5 (Migration Plan)
 export 'league_detail_providers.dart';
-export 'player_detail_providers.dart';
+export 'player_detail_providers.dart' hide playerTransfersProvider;
 export 'manager_providers.dart';
 export 'live_providers.dart';
 export 'scouted_players_providers.dart';

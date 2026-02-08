@@ -261,7 +261,7 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(48),
                   ),
-                  child: const Text('Zur Beobachtungsliste'),
+                  label: const Text('Zur Beobachtungsliste'),
                 ),
                 const SizedBox(height: 12),
 
@@ -336,9 +336,9 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
     try {
       final leagueId = ref.read(selectedLeagueIdProvider);
       if (leagueId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Keine Liga ausgewählt')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Keine Liga ausgewählt')));
         return;
       }
 
@@ -366,14 +366,14 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
 
         // Refresh watchlist
         ref.invalidate(watchlistPlayersProvider);
-        
+
         Navigator.pop(context);
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Fehler: $e')));
       }
     }
   }

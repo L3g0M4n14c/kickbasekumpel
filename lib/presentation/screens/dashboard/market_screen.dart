@@ -108,7 +108,10 @@ class _MarketScreenState extends ConsumerState<MarketScreen>
                 tabs: const [
                   Tab(text: 'Verfügbar', icon: Icon(Icons.shopping_cart)),
                   Tab(text: 'Meine Angebote', icon: Icon(Icons.sell)),
-                  Tab(text: 'Erhaltene Angebote', icon: Icon(Icons.local_offer)),
+                  Tab(
+                    text: 'Erhaltene Angebote',
+                    icon: Icon(Icons.local_offer),
+                  ),
                   Tab(text: 'Beobachtungsliste', icon: Icon(Icons.bookmark)),
                 ],
               ),
@@ -328,6 +331,7 @@ class _MyOffersTab extends ConsumerWidget {
 // RECENT TRANSFERS TAB
 // ============================================================================
 
+// ignore: unused_element
 class _RecentTransfersTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -493,9 +497,9 @@ class _PlayerList extends ConsumerWidget {
       ref.invalidate(marketPlayersProvider);
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Fehler: $e')));
       }
     }
   }
@@ -533,9 +537,9 @@ class _PlayerList extends ConsumerWidget {
       ref.invalidate(marketPlayersProvider);
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Fehler: $e')));
       }
     }
   }
@@ -561,9 +565,9 @@ class _PlayerList extends ConsumerWidget {
       ref.invalidate(watchlistPlayersProvider);
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Fehler: $e')));
       }
     }
   }
