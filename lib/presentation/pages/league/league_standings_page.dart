@@ -16,10 +16,11 @@ class LeagueStandingsPage extends ConsumerStatefulWidget {
 
 class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
   int? selectedMatchDay;
+  
+  static const int maxMatchDays = 34; // Bundesliga season has 34 matchdays
 
   @override
   Widget build(BuildContext context) {
-    final currentUserAsync = ref.watch(currentUserProvider);
     final rankingAsync = ref.watch(
       leagueRankingProvider((leagueId: widget.leagueId, matchDay: selectedMatchDay)),
     );
@@ -42,6 +43,7 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
         data: (rankingData) {
           final users = rankingData['u'] as List? ?? [];
           final matchDay = rankingData['md'] as int?;
+          final currentUserAsync = ref.watch(currentUserProvider);
 
           return ResponsiveLayout(
             mobile: _buildMobileLayout(context, currentUserAsync, users, matchDay),
@@ -196,7 +198,7 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
                 value: null,
                 child: Text('Aktuell'),
               ),
-              ...List.generate(34, (index) {
+              ...List.generate(maxMatchDays, (index) {
                 final day = index + 1;
                 return DropdownMenuItem(
                   value: day,

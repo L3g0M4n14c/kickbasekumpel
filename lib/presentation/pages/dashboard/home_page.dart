@@ -19,6 +19,22 @@ class _HomePageState extends ConsumerState<HomePage> {
   String? selectedLeagueId;
 
   @override
+  void initState() {
+    super.initState();
+    // Auto-select first league after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final leaguesAsync = ref.read(userLeaguesProvider);
+      if (leaguesAsync.value != null && leaguesAsync.value!.isNotEmpty) {
+        if (selectedLeagueId == null) {
+          setState(() {
+            selectedLeagueId = leaguesAsync.value![0].i;
+          });
+        }
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(currentUserProvider);
     final leaguesAsync = ref.watch(userLeaguesProvider);
@@ -53,11 +69,6 @@ class _HomePageState extends ConsumerState<HomePage> {
               data: (leagues) {
                 if (leagues.isEmpty) {
                   return _buildEmptyState(context);
-                }
-                
-                // Auto-select first league if none selected
-                if (selectedLeagueId == null && leagues.isNotEmpty) {
-                  selectedLeagueId = leagues[0].i;
                 }
 
                 return ResponsiveLayout(
@@ -345,6 +356,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             squadAsync.when(
               data: (squadData) {
                 final players = squadData['it'] as List? ?? [];
+                // tp = total points (Gesamtpunkte des Spielers)
                 final totalPoints = players.fold<int>(
                   0,
                   (sum, player) => sum + (player['tp'] as int? ?? 0),
