@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../data/providers/player_providers.dart';
+import '../../../data/providers/player_detail_providers.dart';
+import '../../../data/providers/kickbase_api_provider.dart';
 import '../../../data/models/player_model.dart';
+import '../../../data/models/performance_model.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/error_widget.dart';
+import '../../widgets/charts/performance_line_chart.dart';
+import '../../widgets/charts/price_chart.dart';
 
 /// Player Detail Screen
 ///
 /// Zeigt detaillierte Informationen zu einem Spieler an.
 class PlayerDetailScreen extends ConsumerStatefulWidget {
   final String playerId;
+  final String leagueId;
 
-  const PlayerDetailScreen({required this.playerId, super.key});
+  const PlayerDetailScreen({
+    required this.playerId,
+    required this.leagueId,
+    super.key,
+  });
 
   @override
   ConsumerState<PlayerDetailScreen> createState() => _PlayerDetailScreenState();
@@ -24,7 +33,7 @@ class _PlayerDetailScreenState extends ConsumerState<PlayerDetailScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -38,7 +47,10 @@ class _PlayerDetailScreenState extends ConsumerState<PlayerDetailScreen>
     final size = MediaQuery.of(context).size;
     final isTablet = size.width > 600;
 
-    final playerAsync = ref.watch(playerDetailsProvider(widget.playerId));
+    final playerAsync = ref.watch(playerDetailsProvider((
+      leagueId: widget.leagueId,
+      playerId: widget.playerId,
+    )));
 
     return Scaffold(
       appBar: AppBar(
@@ -47,24 +59,62 @@ class _PlayerDetailScreenState extends ConsumerState<PlayerDetailScreen>
           controller: _tabController,
           tabs: const [
             Tab(text: 'Übersicht', icon: Icon(Icons.info_outline)),
-            Tab(text: 'Statistiken', icon: Icon(Icons.bar_chart)),
+            Tab(text: 'Performance', icon: Icon(Icons.bar_chart)),
+            Tab(text: 'Marktwert', icon: Icon(Icons.trending_up)),
           ],
         ),
       ),
       body: playerAsync.when(
-        data: (player) => TabBarView(
-          controller: _tabController,
-          children: [
-            _OverviewTab(player: player, isTablet: isTablet),
-            _StatsTab(player: player, isTablet: isTablet),
-          ],
-        ),
+        data: (playerData) {
+          final player = _parsePlayer(playerData);
+          return TabBarView(
+            controller: _tabController,
+            children: [
+              _OverviewTab(player: player, isTablet: isTablet),
+              _PerformanceTab(
+                leagueId: widget.leagueId,
+                playerId: widget.playerId,
+                isTablet: isTablet,
+              ),
+              _MarketValueTab(
+                leagueId: widget.leagueId,
+                playerId: widget.playerId,
+                isTablet: isTablet,
+              ),
+            ],
+          );
+        },
         loading: () => const LoadingWidget(),
         error: (error, stack) => ErrorWidgetCustom(
           error: error,
-          onRetry: () => ref.invalidate(playerDetailsProvider(widget.playerId)),
+          onRetry: () => ref.invalidate(playerDetailsProvider((
+            leagueId: widget.leagueId,
+            playerId: widget.playerId,
+          ))),
         ),
       ),
+    );
+  }
+
+  Player _parsePlayer(Map<String, dynamic> data) {
+    return Player(
+      id: data['id'] ?? '',
+      firstName: data['fn'] ?? '',
+      lastName: data['ln'] ?? '',
+      profileBigUrl: data['profileBigUrl'] ?? '',
+      teamName: data['tn'] ?? '',
+      teamId: data['teamId'] ?? '',
+      position: data['position'] ?? 0,
+      number: data['number'] ?? 0,
+      averagePoints: (data['averagePoints'] ?? 0).toDouble(),
+      totalPoints: data['totalPoints'] ?? 0,
+      marketValue: data['marketValue'] ?? 0,
+      marketValueTrend: data['marketValueTrend'] ?? 0,
+      tfhmvt: data['tfhmvt'] ?? 0,
+      prlo: data['prlo'] ?? 0,
+      stl: data['stl'] ?? 0,
+      status: data['status'] ?? 0,
+      userOwnsPlayer: data['userOwnsPlayer'] ?? false,
     );
   }
 }
@@ -305,6 +355,220 @@ class _OverviewTab extends StatelessWidget {
   }
 }
 
+class _PerformanceTab extends ConsumerWidget {
+  final String leagueId;
+  final String playerId;
+  final bool isTablet;
+
+  const _PerformanceTab({
+    required this.leagueId,
+    required this.playerId,
+    required this.isTablet,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
+    return FutureBuilder<PlayerPerformanceResponse>(
+      future: ref.read(kickbaseApiClientProvider).getPlayerStats(leagueId, playerId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const LoadingWidget();
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              'Fehler beim Laden der Performance-Daten',
+              style: theme.textTheme.bodyMedium,
+            ),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.it.isEmpty) {
+          return Center(
+            child: Text(
+              'Keine Performance-Daten verfügbar',
+              style: theme.textTheme.bodyMedium,
+            ),
+          );
+        }
+
+        final performanceData = snapshot.data!;
+        // Nimm die erste Saison (aktuelle Saison)
+        final currentSeason = performanceData.it.first;
+        final points = currentSeason.ph
+            .where((match) => match.p != null)
+            .map((match) => PerformancePoint(
+                  matchDay: match.day,
+                  points: match.p!.toDouble(),
+                ))
+            .toList();
+
+        if (points.isEmpty) {
+          return Center(
+            child: Text(
+              'Keine Performance-Daten verfügbar',
+              style: theme.textTheme.bodyMedium,
+            ),
+          );
+        }
+
+        return ListView(
+          padding: EdgeInsets.all(isTablet ? 24.0 : 16.0),
+          children: [
+            Text(
+              'Leistungsverlauf',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            PerformanceLineChart(
+              data: points,
+              title: 'Punkte pro Spieltag',
+              height: 300,
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _MarketValueTab extends ConsumerWidget {
+  final String leagueId;
+  final String playerId;
+  final bool isTablet;
+
+  const _MarketValueTab({
+    required this.leagueId,
+    required this.playerId,
+    required this.isTablet,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final marketValueAsync = ref.watch(playerMarketValueYearProvider((
+      leagueId: leagueId,
+      playerId: playerId,
+    )));
+
+    return marketValueAsync.when(
+      data: (data) {
+        final marketValues = (data['mv'] as List?)?.map((item) {
+          return PricePoint(
+            date: DateTime.parse(item['d'] as String),
+            price: item['m'] as int,
+          );
+        }).toList() ?? [];
+
+        if (marketValues.isEmpty) {
+          return Center(
+            child: Text(
+              'Keine Marktwert-Daten verfügbar',
+              style: theme.textTheme.bodyMedium,
+            ),
+          );
+        }
+
+        return ListView(
+          padding: EdgeInsets.all(isTablet ? 24.0 : 16.0),
+          children: [
+            Text(
+              'Marktwert-Entwicklung',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            PriceChart(
+              data: marketValues,
+              title: 'Marktwert (365 Tage)',
+              height: 300,
+            ),
+            const SizedBox(height: 24),
+            _buildMarketValueStats(context, marketValues),
+          ],
+        );
+      },
+      loading: () => const LoadingWidget(),
+      error: (error, stack) => Center(
+        child: Text(
+          'Fehler beim Laden der Marktwert-Daten',
+          style: theme.textTheme.bodyMedium,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMarketValueStats(BuildContext context, List<PricePoint> data) {
+    final theme = Theme.of(context);
+    
+    if (data.isEmpty) return const SizedBox.shrink();
+
+    final currentValue = data.last.price;
+    final oldestValue = data.first.price;
+    final change = currentValue - oldestValue;
+    final changePercent = (change / oldestValue * 100);
+    final maxValue = data.map((p) => p.price).reduce((a, b) => a > b ? a : b);
+    final minValue = data.map((p) => p.price).reduce((a, b) => a < b ? a : b);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Statistiken',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _StatRow(
+              label: 'Aktueller Wert',
+              value: _formatCurrency(currentValue),
+              icon: Icons.attach_money,
+            ),
+            const Divider(),
+            _StatRow(
+              label: 'Veränderung',
+              value: '${change > 0 ? '+' : ''}${_formatCurrency(change)} (${changePercent.toStringAsFixed(1)}%)',
+              icon: Icons.trending_up,
+              valueColor: change > 0 ? Colors.green : change < 0 ? Colors.red : null,
+            ),
+            const Divider(),
+            _StatRow(
+              label: 'Maximum',
+              value: _formatCurrency(maxValue),
+              icon: Icons.arrow_upward,
+            ),
+            const Divider(),
+            _StatRow(
+              label: 'Minimum',
+              value: _formatCurrency(minValue),
+              icon: Icons.arrow_downward,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatCurrency(int value) {
+    if (value >= 1000000) {
+      return '${(value / 1000000).toStringAsFixed(2)} M €';
+    } else if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(0)} K €';
+    }
+    return '$value €';
+  }
+}
+
 class _StatsTab extends StatelessWidget {
   final Player player;
   final bool isTablet;
@@ -318,57 +582,6 @@ class _StatsTab extends StatelessWidget {
     return ListView(
       padding: EdgeInsets.all(isTablet ? 24.0 : 16.0),
       children: [
-        Text(
-          'Leistungsdaten',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Performance Stats
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                _StatRow(
-                  label: 'Durchschnittspunkte',
-                  value: player.averagePoints.toStringAsFixed(2),
-                  icon: Icons.stars,
-                ),
-                const Divider(),
-                _StatRow(
-                  label: 'Gesamtpunkte',
-                  value: '${player.totalPoints}',
-                  icon: Icons.event,
-                ),
-                const Divider(),
-                _StatRow(
-                  label: 'Marktwert',
-                  value:
-                      '${(player.marketValue / 1000000).toStringAsFixed(2)}M €',
-                  icon: Icons.attach_money,
-                ),
-                const Divider(),
-                _StatRow(
-                  label: 'Trend',
-                  value:
-                      '${player.marketValueTrend > 0 ? '+' : ''}${(player.marketValueTrend / 1000).toStringAsFixed(0)}k',
-                  icon: Icons.trending_up,
-                  valueColor: player.marketValueTrend > 0
-                      ? Colors.green
-                      : player.marketValueTrend < 0
-                      ? Colors.red
-                      : Colors.grey,
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Additional Info
         Text(
           'Weitere Informationen',
           style: theme.textTheme.titleLarge?.copyWith(
@@ -397,6 +610,18 @@ class _StatsTab extends StatelessWidget {
                   label: 'Trikotnummer',
                   value: '${player.number}',
                   icon: Icons.confirmation_number,
+                ),
+                const Divider(),
+                _StatRow(
+                  label: 'Durchschnittspunkte',
+                  value: player.averagePoints.toStringAsFixed(2),
+                  icon: Icons.stars,
+                ),
+                const Divider(),
+                _StatRow(
+                  label: 'Gesamtpunkte',
+                  value: '${player.totalPoints}',
+                  icon: Icons.event,
                 ),
               ],
             ),
