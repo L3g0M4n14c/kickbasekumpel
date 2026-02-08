@@ -182,4 +182,4 @@ Dieser Plan enthält:
 - Feature-Vergleich Swift vs. Flutter
 - Geschätzte Aufwände pro Schritt
 
-**Let's go! 🚀 Starte mit [Phase 1b](./docs/PHASE_1_SETUP.md)!**
+**Let's go! 🚀 Starte mit [Schritt 1 im Migrationsplan](./MIGRATION_PLAN.md#schritt-1-api-client-vervollständigen--liga--user-endpoints)!**
