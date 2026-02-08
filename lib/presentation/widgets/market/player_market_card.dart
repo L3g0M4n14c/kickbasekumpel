@@ -16,22 +16,27 @@ class PlayerMarketCard extends ConsumerWidget {
   final MarketPlayer player;
   final VoidCallback onTap;
   final bool showSellOptions;
-  final bool showWatchlistIcon;
+  final bool showOfferOptions;
+  final bool showWatchlistRemove;
+  final VoidCallback? onRemoveFromMarket;
+  final VoidCallback? onAcceptKickbaseOffer;
+  final VoidCallback? onRemoveFromWatchlist;
 
   const PlayerMarketCard({
     super.key,
     required this.player,
     required this.onTap,
     this.showSellOptions = false,
-    this.showWatchlistIcon = true,
+    this.showOfferOptions = false,
+    this.showWatchlistRemove = false,
+    this.onRemoveFromMarket,
+    this.onAcceptKickbaseOffer,
+    this.onRemoveFromWatchlist,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final isWatched = ref.watch(
-      watchlistProvider.select((set) => set.contains(player.id)),
-    );
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -99,34 +104,6 @@ class PlayerMarketCard extends ConsumerWidget {
                         price: player.price,
                         trend: player.marketValueTrend,
                       ),
-                      const SizedBox(height: 8),
-
-                      // Watchlist Icon
-                      if (showWatchlistIcon)
-                        IconButton(
-                          icon: Icon(
-                            isWatched ? Icons.bookmark : Icons.bookmark_border,
-                            color: isWatched
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.outline,
-                          ),
-                          onPressed: () {
-                            ref
-                                .read(watchlistProvider.notifier)
-                                .togglePlayer(player.id);
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  isWatched
-                                      ? 'Von Merkliste entfernt'
-                                      : 'Zur Merkliste hinzugefügt',
-                                ),
-                                duration: const Duration(seconds: 2),
-                              ),
-                            );
-                          },
-                        ),
                     ],
                   ),
                 ],
@@ -165,7 +142,7 @@ class PlayerMarketCard extends ConsumerWidget {
                 ),
               ],
 
-              // Sell Options
+              // Sell Options (Meine Verkäufe)
               if (showSellOptions) ...[
                 const SizedBox(height: 8),
                 const Divider(),
@@ -173,24 +150,52 @@ class PlayerMarketCard extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton.icon(
-                      icon: const Icon(Icons.edit),
-                      label: const Text('Preis ändern'),
-                      onPressed: () {
-                        // TODO: Implement edit price
-                      },
+                      icon: const Icon(Icons.store),
+                      label: const Text('An Kickbase'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: theme.colorScheme.primary,
+                      ),
+                      onPressed: onAcceptKickbaseOffer,
                     ),
                     const SizedBox(width: 8),
                     TextButton.icon(
                       icon: const Icon(Icons.cancel),
-                      label: const Text('Abbrechen'),
+                      label: const Text('Vom Markt nehmen'),
                       style: TextButton.styleFrom(
                         foregroundColor: theme.colorScheme.error,
                       ),
-                      onPressed: () {
-                        // TODO: Implement cancel sale
-                      },
+                      onPressed: onRemoveFromMarket,
                     ),
                   ],
+                ),
+              ],
+
+              // Offer Options (Erhaltene Angebote)
+              if (showOfferOptions) ...[
+                const SizedBox(height: 8),
+                const Divider(),
+                Text(
+                  'Angebote anzeigen und annehmen/ablehnen',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+
+              // Watchlist Remove Option
+              if (showWatchlistRemove) ...[
+                const SizedBox(height: 8),
+                const Divider(),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.remove_circle_outline),
+                    label: const Text('Entfernen'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: theme.colorScheme.error,
+                    ),
+                    onPressed: onRemoveFromWatchlist,
+                  ),
                 ),
               ],
             ],

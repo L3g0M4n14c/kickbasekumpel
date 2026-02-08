@@ -4,6 +4,7 @@ import '../../../data/models/market_model.dart';
 import '../../../data/models/transfer_model.dart';
 import '../../../data/providers/league_providers.dart';
 import '../../../data/providers/transfer_providers.dart';
+import '../../../data/providers/service_providers.dart';
 import '../../providers/market_providers.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/error_widget.dart';
@@ -106,9 +107,9 @@ class _MarketScreenState extends ConsumerState<MarketScreen>
                 isScrollable: !isTablet,
                 tabs: const [
                   Tab(text: 'Verfügbar', icon: Icon(Icons.shopping_cart)),
-                  Tab(text: 'Meine Verkäufe', icon: Icon(Icons.sell)),
-                  Tab(text: 'Transfers', icon: Icon(Icons.swap_horiz)),
-                  Tab(text: 'Merkliste', icon: Icon(Icons.bookmark)),
+                  Tab(text: 'Meine Angebote', icon: Icon(Icons.sell)),
+                  Tab(text: 'Erhaltene Angebote', icon: Icon(Icons.local_offer)),
+                  Tab(text: 'Beobachtungsliste', icon: Icon(Icons.bookmark)),
                 ],
               ),
             ],
@@ -202,7 +203,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen>
         children: [
           _AvailablePlayersTab(),
           _MySellingPlayersTab(),
-          _RecentTransfersTab(),
+          _MyOffersTab(),
           _WatchlistTab(),
         ],
       ),
@@ -289,6 +290,41 @@ class _MySellingPlayersTab extends ConsumerWidget {
 }
 
 // ============================================================================
+// MY OFFERS TAB (Erhaltene Angebote)
+// ============================================================================
+
+class _MyOffersTab extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final playersAsync = ref.watch(myOffersPlayersProvider);
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(myOffersPlayersProvider);
+      },
+      child: playersAsync.when(
+        data: (players) {
+          if (players.isEmpty) {
+            return _EmptyState(
+              icon: Icons.local_offer_outlined,
+              message: 'Keine Angebote erhalten',
+              subtitle: 'Du hast aktuell keine Angebote für deine Spieler',
+            );
+          }
+
+          return _PlayerList(players: players, showOfferOptions: true);
+        },
+        loading: () => const Center(child: LoadingWidget()),
+        error: (error, stack) => ErrorWidgetCustom(
+          error: error,
+          onRetry: () => ref.invalidate(myOffersPlayersProvider),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
 // RECENT TRANSFERS TAB
 // ============================================================================
 
@@ -347,13 +383,13 @@ class _WatchlistTab extends ConsumerWidget {
           if (players.isEmpty) {
             return _EmptyState(
               icon: Icons.bookmark_outline,
-              message: 'Keine Spieler auf der Merkliste',
+              message: 'Keine Spieler beobachtet',
               subtitle:
-                  'Füge Spieler zur Merkliste hinzu, um sie hier zu sehen',
+                  'Füge Spieler zur Beobachtungsliste hinzu, um sie hier zu sehen',
             );
           }
 
-          return _PlayerList(players: players, showWatchlistIcon: false);
+          return _PlayerList(players: players, showWatchlistRemove: true);
         },
         loading: () => const Center(child: LoadingWidget()),
         error: (error, stack) => ErrorWidgetCustom(
@@ -372,12 +408,14 @@ class _WatchlistTab extends ConsumerWidget {
 class _PlayerList extends ConsumerWidget {
   final List<MarketPlayer> players;
   final bool showSellOptions;
-  final bool showWatchlistIcon;
+  final bool showOfferOptions;
+  final bool showWatchlistRemove;
 
   const _PlayerList({
     required this.players,
     this.showSellOptions = false,
-    this.showWatchlistIcon = true,
+    this.showOfferOptions = false,
+    this.showWatchlistRemove = false,
   });
 
   @override
@@ -390,8 +428,18 @@ class _PlayerList extends ConsumerWidget {
         return PlayerMarketCard(
           player: player,
           showSellOptions: showSellOptions,
-          showWatchlistIcon: showWatchlistIcon,
+          showOfferOptions: showOfferOptions,
+          showWatchlistRemove: showWatchlistRemove,
           onTap: () => _showBuyBottomSheet(context, ref, player),
+          onRemoveFromMarket: showSellOptions
+              ? () => _handleRemoveFromMarket(context, ref, player)
+              : null,
+          onAcceptKickbaseOffer: showSellOptions
+              ? () => _handleAcceptKickbaseOffer(context, ref, player)
+              : null,
+          onRemoveFromWatchlist: showWatchlistRemove
+              ? () => _handleRemoveFromWatchlist(context, ref, player)
+              : null,
         );
       },
     );
@@ -410,6 +458,147 @@ class _PlayerList extends ConsumerWidget {
       isScrollControlled: true,
       builder: (context) => BuyPlayerBottomSheet(player: player),
     );
+  }
+
+  Future<void> _handleRemoveFromMarket(
+    BuildContext context,
+    WidgetRef ref,
+    MarketPlayer player,
+  ) async {
+    final confirmed = await _showConfirmationDialog(
+      context,
+      title: 'Vom Markt nehmen',
+      message:
+          'Möchtest du ${player.firstName} ${player.lastName} wirklich vom Markt nehmen?',
+      confirmText: 'Ja, entfernen',
+      isDangerous: false,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      final leagueId = ref.read(selectedLeagueIdProvider);
+      if (leagueId == null) return;
+
+      final apiClient = ref.read(kickbaseApiClientProvider);
+      await apiClient.removePlayerFromMarket(leagueId, player.id);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Spieler vom Markt genommen')),
+        );
+      }
+
+      ref.invalidate(mySellingPlayersProvider);
+      ref.invalidate(marketPlayersProvider);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fehler: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleAcceptKickbaseOffer(
+    BuildContext context,
+    WidgetRef ref,
+    MarketPlayer player,
+  ) async {
+    final confirmed = await _showConfirmationDialog(
+      context,
+      title: 'An Kickbase verkaufen',
+      message:
+          'Möchtest du ${player.firstName} ${player.lastName} wirklich an Kickbase verkaufen?\n\nVerkaufspreis: ${(player.marketValue / 1000000).toStringAsFixed(2)}M €',
+      confirmText: 'Ja, verkaufen',
+      isDangerous: true,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      final leagueId = ref.read(selectedLeagueIdProvider);
+      if (leagueId == null) return;
+
+      final apiClient = ref.read(kickbaseApiClientProvider);
+      await apiClient.acceptKickbaseOffer(leagueId, player.id);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Spieler an Kickbase verkauft')),
+        );
+      }
+
+      ref.invalidate(mySellingPlayersProvider);
+      ref.invalidate(marketPlayersProvider);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fehler: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleRemoveFromWatchlist(
+    BuildContext context,
+    WidgetRef ref,
+    MarketPlayer player,
+  ) async {
+    try {
+      final leagueId = ref.read(selectedLeagueIdProvider);
+      if (leagueId == null) return;
+
+      final apiClient = ref.read(kickbaseApiClientProvider);
+      await apiClient.removeScoutedPlayer(leagueId, player.id);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Von Beobachtungsliste entfernt')),
+        );
+      }
+
+      ref.invalidate(watchlistPlayersProvider);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fehler: $e')),
+        );
+      }
+    }
+  }
+
+  Future<bool> _showConfirmationDialog(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required String confirmText,
+    required bool isDangerous,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: isDangerous
+                ? FilledButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                  )
+                : null,
+            child: Text(confirmText),
+          ),
+        ],
+      ),
+    );
+
+    return result ?? false;
   }
 }
 
