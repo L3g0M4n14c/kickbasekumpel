@@ -167,4 +167,19 @@ Jede Phase kann unabhängig geplant werden. Phases 2-4 können teilweise paralle
 
 ---
 
-**Let's go! 🚀 Starte mit [Phase 1b](./docs/PHASE_1_SETUP.md)!**
+---
+
+## 🔄 Neuer Migrationsplan (Feature-Parität mit Swift)
+
+Die ursprünglichen Phasen 1-2 sind abgeschlossen. Login und Basis-Userdaten funktionieren.
+Für die vollständige Feature-Parität mit dem Swift-Projekt (Kickbasehelper) gibt es jetzt einen detaillierten Schritt-für-Schritt-Plan:
+
+### [→ MIGRATION_PLAN.md](./MIGRATION_PLAN.md)
+
+Dieser Plan enthält:
+- 10 kleine, unabhängige Arbeitspakete
+- Copy-Paste-Prompts für Copilot Agent
+- Feature-Vergleich Swift vs. Flutter
+- Geschätzte Aufwände pro Schritt
+
+**Let's go! 🚀 Starte mit [Schritt 1 im Migrationsplan](./MIGRATION_PLAN.md#schritt-1-api-client-vervollständigen--liga--user-endpoints)!**
