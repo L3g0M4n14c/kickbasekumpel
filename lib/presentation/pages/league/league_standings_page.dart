@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/providers/providers.dart';
+import '../../../config/router.dart';
 import '../../widgets/responsive_layout.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/error_widget.dart';
@@ -223,6 +224,7 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
     final teamName = user['tn'] ?? '';
     final points = user['p'] ?? 0;
     final teamValue = user['tv'] ?? 0;
+    final userId = user['i'] ?? '';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8.0),
@@ -230,6 +232,11 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
           ? Theme.of(context).colorScheme.primaryContainer
           : null,
       child: ListTile(
+        onTap: () {
+          if (userId.isNotEmpty) {
+            context.goToManager(widget.leagueId, userId);
+          }
+        },
         leading: CircleAvatar(
           backgroundColor: position <= 3
               ? Colors.amber
@@ -278,64 +285,73 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
     final teamName = user['tn'] ?? '';
     final points = user['p'] ?? 0;
     final teamValue = user['tv'] ?? 0;
+    final userId = user['i'] ?? '';
 
     return ResponsiveCard(
       color: isCurrentUser
           ? Theme.of(context).colorScheme.primaryContainer
           : null,
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: position <= 3
-                ? Colors.amber
-                : Theme.of(context).colorScheme.primaryContainer,
-            child: Text(
-              '$position',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: position <= 3 ? Colors.white : null,
+      child: InkWell(
+        onTap: () {
+          if (userId.isNotEmpty) {
+            context.goToManager(widget.leagueId, userId);
+          }
+        },
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: position <= 3
+                  ? Colors.amber
+                  : Theme.of(context).colorScheme.primaryContainer,
+              child: Text(
+                '$position',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: position <= 3 ? Colors.white : null,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: isCurrentUser ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                  Text(
+                    teamName,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  name,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: isCurrentUser ? FontWeight.bold : FontWeight.normal,
+                  '$points Pkt',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
                   ),
                 ),
                 Text(
-                  teamName,
-                  style: Theme.of(context).textTheme.bodySmall,
+                  '${(teamValue / 1000000).toStringAsFixed(1)}M€',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: Colors.grey),
                 ),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '$points Pkt',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-              Text(
-                '${(teamValue / 1000000).toStringAsFixed(1)}M€',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: Colors.grey),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+}
 }

@@ -22,6 +22,8 @@ import '../presentation/pages/player/player_history_page.dart';
 import '../presentation/pages/error_page.dart';
 import '../presentation/screens/ligainsider/ligainsider_screen.dart';
 import '../presentation/screens/live_screen.dart';
+import '../presentation/screens/manager_detail_screen.dart';
+import '../presentation/screens/league_table_screen.dart';
 
 // ============================================================================
 // ROUTER PROVIDER
@@ -208,7 +210,41 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) =>
             MaterialPage(key: state.pageKey, child: const LigainsiderScreen()),
       ),
+
+      // ======================================================================
+      // MANAGER DETAIL - Manager Profile & Squad
+      // ======================================================================
       GoRoute(
+        path: '/manager/:leagueId/:userId',
+        name: 'manager-detail',
+        pageBuilder: (context, state) {
+          final leagueId = state.pathParameters['leagueId']!;
+          final userId = state.pathParameters['userId']!;
+          return MaterialPage(
+            key: state.pageKey,
+            child: ManagerDetailScreen(leagueId: leagueId, userId: userId),
+          );
+        },
+      ),
+
+      // ======================================================================
+      // COMPETITION TABLE - Bundesliga Tabelle
+      // ======================================================================
+      GoRoute(
+        path: '/table/:competitionId',
+        name: 'competition-table',
+        pageBuilder: (context, state) {
+          final competitionId = state.pathParameters['competitionId']!;
+          return MaterialPage(
+            key: state.pageKey,
+            child: LeagueTableScreen(competitionId: competitionId),
+          );
+        },
+      ),
+
+      // ======================================================================
+      // LEAGUE DETAIL STACK
+      // ======================================================================
         path: '/league/:leagueId/overview',
         name: 'league-overview',
         pageBuilder: (context, state) {
@@ -332,6 +368,13 @@ extension GoRouterExtensions on BuildContext {
   // Player Routes
   void goToPlayer(String playerId) => go('/player/$playerId/stats');
   void goToPlayerHistory(String playerId) => go('/player/$playerId/history');
+
+  // Manager Routes
+  void goToManager(String leagueId, String userId) => go('/manager/$leagueId/$userId');
+
+  // Competition Routes
+  void goToTable(String competitionId) => go('/table/$competitionId');
+  void goToBundesligaTable() => go('/table/1');
 }
 
 // ============================================================================
@@ -360,4 +403,6 @@ class RouterKeys {
   static const player = 'player';
   static const playerStats = 'player-stats';
   static const playerHistory = 'player-history';
+  static const managerDetail = 'manager-detail';
+  static const competitionTable = 'competition-table';
 }

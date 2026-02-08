@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../config/router.dart';
 
 class LeaguesPage extends ConsumerWidget {
   const LeaguesPage({super.key});
@@ -10,6 +11,13 @@ class LeaguesPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Meine Ligen'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.table_chart),
+            tooltip: 'Bundesliga-Tabelle',
+            onPressed: () {
+              context.goToBundesligaTable();
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () {
