@@ -20,11 +20,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   bool _hasAutoSelected = false;
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(currentUserProvider);
     final leaguesAsync = ref.watch(userLeaguesProvider);
