@@ -6,6 +6,9 @@ import '../../data/providers/providers.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/error_widget.dart';
 
+// Sortier-Modus für Live-Ansicht
+enum _SortMode { position, pointsDesc, nameAsc }
+
 /// Live-Spieltag Screen
 /// Zeigt die aktuelle Aufstellung mit Live-Punkten und Auto-Refresh
 class LiveScreen extends ConsumerStatefulWidget {
@@ -18,6 +21,7 @@ class LiveScreen extends ConsumerStatefulWidget {
 class _LiveScreenState extends ConsumerState<LiveScreen> {
   Timer? _refreshTimer;
   String? _selectedLeagueId;
+  _SortMode _sortMode = _SortMode.position;
 
   @override
   void initState() {
@@ -44,6 +48,51 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
       appBar: AppBar(
         title: const Text('Live-Spieltag'),
         actions: [
+          // Current sort mode label + menu
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Text(
+                    _sortMode == _SortMode.position
+                        ? 'Position'
+                        : _sortMode == _SortMode.pointsDesc
+                        ? 'Punkte'
+                        : 'Name',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+                PopupMenuButton<_SortMode>(
+                  tooltip: 'Sortieren',
+                  icon: const Icon(Icons.sort),
+                  onSelected: (mode) {
+                    setState(() {
+                      _sortMode = mode;
+                    });
+                  },
+                  itemBuilder: (context) => [
+                    CheckedPopupMenuItem(
+                      value: _SortMode.position,
+                      checked: _sortMode == _SortMode.position,
+                      child: const Text('Nach Position'),
+                    ),
+                    CheckedPopupMenuItem(
+                      value: _SortMode.pointsDesc,
+                      checked: _sortMode == _SortMode.pointsDesc,
+                      child: const Text('Nach Punkten (absteigend)'),
+                    ),
+                    CheckedPopupMenuItem(
+                      value: _SortMode.nameAsc,
+                      checked: _sortMode == _SortMode.nameAsc,
+                      child: const Text('Nach Name (A-Z)'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
@@ -125,8 +174,63 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
       },
       child: myElevenAsync.when(
         data: (data) {
-          final players =
-              (data['it'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+          // Support different API response shapes:
+          // - GET /v4/leagues/{leagueId}/lineup returns 'it' (lineup items)
+          // - GET /v4/leagues/{leagueId}/teamcenter/myeleven returns 'lp' (live players)
+          final rawPlayers =
+              (data['it'] as List?) ??
+              (data['lp'] as List?) ??
+              (data['players'] as List?) ??
+              [];
+
+          final players = rawPlayers.map<Map<String, dynamic>>((raw) {
+            final p = Map<String, dynamic>.from(raw as Map<String, dynamic>);
+
+            // Names: prefer fn/ln, fall back to full name 'n'
+            String firstName = (p['fn'] as String?) ?? '';
+            String lastName = (p['ln'] as String?) ?? '';
+            final fullName = (p['n'] as String?) ?? '';
+            if (firstName.isEmpty && fullName.isNotEmpty) {
+              final parts = fullName.split(' ');
+              firstName = parts.isNotEmpty ? parts.first : fullName;
+              lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+            }
+
+            final teamName = (p['tn'] as String?) ?? '';
+
+            // Points
+            final points = p['p'] is int
+                ? p['p'] as int
+                : int.tryParse('${p['p']}') ?? 0;
+
+            // Status (s or st)
+            final status = p['s'] is int
+                ? p['s'] as int
+                : (p['st'] is int
+                      ? p['st'] as int
+                      : int.tryParse('${p['st']}') ?? 0);
+
+            // Position: ps, pos or position
+            final posVal = p['ps'] ?? p['pos'] ?? p['position'] ?? 0;
+            final position = posVal is int
+                ? posVal
+                : int.tryParse('$posVal') ?? 0;
+
+            // Player IDs (possible keys: i or mi) and team id (tid)
+            final playerId = (p['i'] ?? p['mi'])?.toString() ?? '';
+            final teamId = (p['tid'] ?? p['teamId'])?.toString() ?? '';
+
+            return {
+              'i': playerId,
+              'fn': firstName,
+              'ln': lastName,
+              'tn': teamName,
+              'tid': teamId,
+              'p': points,
+              's': status,
+              'ps': position,
+            };
+          }).toList();
 
           if (players.isEmpty) {
             return _buildNoPlayersState(context);
@@ -199,23 +303,61 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
     BuildContext context,
     List<Map<String, dynamic>> players,
   ) {
-    // Gruppiere Spieler nach Position
-    final Map<int, List<Map<String, dynamic>>> playersByPosition = {};
+    // Position-mode: gruppierte Anzeige
+    if (_sortMode == _SortMode.position) {
+      final Map<int, List<Map<String, dynamic>>> playersByPosition = {};
 
-    for (final player in players) {
-      final position = player['ps'] as int? ?? 0;
-      playersByPosition.putIfAbsent(position, () => []);
-      playersByPosition[position]!.add(player);
+      for (final player in players) {
+        final position = player['ps'] as int? ?? 0;
+        playersByPosition.putIfAbsent(position, () => []);
+        playersByPosition[position]!.add(player);
+      }
+
+      // Sortiere Positionen (1=TW, 2=ABW, 3=MIT, 4=STU)
+      final sortedPositions = playersByPosition.keys.toList()..sort();
+
+      return Column(
+        children: sortedPositions.map((position) {
+          final positionPlayers = playersByPosition[position]!;
+          return _buildPositionSection(context, position, positionPlayers);
+        }).toList(),
+      );
     }
 
-    // Sortiere Positionen (1=TW, 2=ABW, 3=MIT, 4=STU)
-    final sortedPositions = playersByPosition.keys.toList()..sort();
+    // Global-mode: flache Liste, global sortiert
+    final allPlayers = List<Map<String, dynamic>>.from(players);
+
+    if (_sortMode == _SortMode.pointsDesc) {
+      allPlayers.sort(
+        (a, b) => ((b['p'] as int?) ?? 0).compareTo((a['p'] as int?) ?? 0),
+      );
+    } else if (_sortMode == _SortMode.nameAsc) {
+      allPlayers.sort((a, b) {
+        final aName = '${a['ln'] ?? ''} ${a['fn'] ?? ''}'.trim();
+        final bName = '${b['ln'] ?? ''} ${b['fn'] ?? ''}'.trim();
+        return aName.compareTo(bName);
+      });
+    }
+
+    final header = _sortMode == _SortMode.pointsDesc
+        ? 'Nach Punkten'
+        : 'Nach Name';
 
     return Column(
-      children: sortedPositions.map((position) {
-        final positionPlayers = playersByPosition[position]!;
-        return _buildPositionSection(context, position, positionPlayers);
-      }).toList(),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Text(
+            header,
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+        ),
+        ...allPlayers.map((player) => _buildPlayerCard(context, player)),
+        const SizedBox(height: 16),
+      ],
     );
   }
 
@@ -287,6 +429,8 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 8.0),
       child: ListTile(
+        onTap: () =>
+            _showPlayerEventsDialog(context, player, _selectedLeagueId),
         leading: CircleAvatar(
           backgroundColor: pointsColor.withOpacity(0.2),
           child: Text(
@@ -378,5 +522,287 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
       default:
         return Icons.person;
     }
+  }
+
+  String _formatEventMinute(Map<String, dynamic> event) {
+    // Only use 'mt' (match time) as source for event minute
+    final value = event['mt'];
+
+    int? minute;
+    if (value is int) {
+      minute = value;
+    } else if (value is double) {
+      minute = value.toInt();
+    } else if (value is String) {
+      minute = int.tryParse(value);
+    }
+
+    if (minute != null) {
+      return "${minute}'"; // e.g. 45'
+    }
+
+    // No minute info available
+    return '-';
+  }
+
+  Widget _buildEventsListSection(
+    BuildContext context,
+    BuildContext dialogCtx,
+    Map<String, dynamic> player,
+    AsyncValue<Map<String, dynamic>> eventsAsync,
+    AsyncValue<Map<String, dynamic>> eventTypesAsync,
+  ) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '${player['fn'] ?? ''} ${player['ln'] ?? ''}',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 12),
+        eventsAsync.when(
+          data: (data) {
+            final events =
+                (data['events'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+
+            // Build a map of event type id => title
+            final Map<int, String> etiToTitle = {};
+            eventTypesAsync.maybeWhen(
+              data: (etData) {
+                final itList =
+                    (etData['it'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+                for (final item in itList) {
+                  final id = item['i'];
+                  final title = item['ti'] as String? ?? '';
+                  if (id is int) etiToTitle[id] = title;
+                }
+              },
+              orElse: () {},
+            );
+
+            // Filter out events without a meaningful name (remove numeric IDs like "0")
+            final filteredEvents = events.where((ev) {
+              final eti = ev['eti'] is int
+                  ? ev['eti'] as int
+                  : int.tryParse('${ev['eti']}') ?? 0;
+
+              final titleFromEti = (etiToTitle[eti] ?? '').toString().trim();
+              final eiRaw = ev['ei'];
+              final ei = (eiRaw is String)
+                  ? eiRaw.trim()
+                  : (eiRaw?.toString().trim() ?? '');
+              final pn = (ev['pn'] as String?)?.trim();
+
+              // If the eti mapping provides a non-empty title, keep event
+              if (titleFromEti.isNotEmpty) return true;
+
+              // Keep events that have a textual 'ei' (not just numeric IDs)
+              final eiIsNumeric =
+                  ei.isNotEmpty && RegExp(r'^\d+$').hasMatch(ei);
+              if (ei.isNotEmpty && !eiIsNumeric) return true;
+
+              // Keep if we have a player name or other textual field
+              if (pn != null && pn.isNotEmpty) return true;
+
+              // Otherwise drop (this removes events shown only as numbers like '0')
+              return false;
+            }).toList();
+
+            if (filteredEvents.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24.0),
+                child: Text('Keine Ereignisse für diesen Spieler'),
+              );
+            }
+
+            return SizedBox(
+              width: 500,
+              height: 380,
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: filteredEvents.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (ctx, idx) {
+                  final ev = filteredEvents[idx];
+                  final minuteLabel = _formatEventMinute(ev);
+                  final eti = ev['eti'] is int
+                      ? ev['eti'] as int
+                      : int.tryParse('${ev['eti']}') ?? 0;
+
+                  // Resolve title: prefer eti mapping, then 'ei' or 'pn'
+                  String evTitle = etiToTitle[eti] ?? '';
+                  if (evTitle.isEmpty) {
+                    evTitle =
+                        (ev['ei'] as String?) ?? (ev['pn'] as String?) ?? '';
+                  }
+                  final evPointsNum = ev['p'] is int
+                      ? ev['p'] as int
+                      : int.tryParse('${ev['p']}') ?? 0;
+                  final evPointsStr = evPointsNum >= 0
+                      ? '+${evPointsNum}'
+                      : '-${evPointsNum.abs()}';
+                  final pointsColor = evPointsNum > 0
+                      ? Colors.green
+                      : evPointsNum < 0
+                      ? Colors.red
+                      : Colors.grey;
+
+                  return ListTile(
+                    leading: CircleAvatar(
+                      radius: 16,
+                      child: Text(
+                        minuteLabel,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                    title: Text(evTitle),
+                    trailing: Text(
+                      evPointsStr,
+                      style: TextStyle(
+                        color: pointsColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+          loading: () => const SizedBox(
+            height: 80,
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (err, st) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24.0),
+            child: Text('Fehler beim Laden: $err'),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(),
+            child: const Text('Schließen'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showPlayerEventsDialog(
+    BuildContext context,
+    Map<String, dynamic> player,
+    String? leagueId,
+  ) async {
+    final playerId = (player['i'] ?? '') as String;
+
+    await showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return Dialog(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Consumer(
+              builder: (ctx, dialogRef, _) {
+                // Resolve competitionId robustly:
+                final selectedLeague = dialogRef.watch(selectedLeagueProvider);
+                final userLeaguesAsync = dialogRef.watch(userLeaguesProvider);
+
+                String? competitionId;
+                if (selectedLeague != null) {
+                  competitionId = selectedLeague.cpi;
+                } else if (leagueId != null) {
+                  // Try to find league in cached user leagues
+                  userLeaguesAsync.maybeWhen(
+                    data: (leagues) {
+                      try {
+                        final found = leagues.firstWhere(
+                          (l) => l.i == leagueId,
+                        );
+                        competitionId = found.cpi;
+                      } catch (_) {
+                        // not found
+                      }
+                    },
+                    orElse: () {},
+                  );
+                }
+
+                if (competitionId == null && leagueId != null) {
+                  // Fallback: fetch league details
+                  final leagueDetailsAsync = dialogRef.watch(
+                    leagueDetailsProvider(leagueId),
+                  );
+
+                  return leagueDetailsAsync.when(
+                    data: (leagueDetail) {
+                      final compId = leagueDetail.cpi;
+                      final eventsAsync = dialogRef.watch(
+                        currentPlayerEventHistoryProvider((
+                          competitionId: compId,
+                          playerId: playerId,
+                        )),
+                      );
+                      final eventTypesAsync = dialogRef.watch(
+                        liveEventTypesProvider,
+                      );
+
+                      return _buildEventsListSection(
+                        context,
+                        dialogCtx,
+                        player,
+                        eventsAsync,
+                        eventTypesAsync,
+                      );
+                    },
+                    loading: () => const SizedBox(
+                      height: 80,
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                    error: (err, st) => Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Fehler beim Laden der Ligendaten: $err'),
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () => Navigator.of(dialogCtx).pop(),
+                            child: const Text('Schließen'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                if (competitionId == null) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [Text('Keine Liga ausgewählt')],
+                  );
+                }
+
+                final eventsAsync = dialogRef.watch(
+                  currentPlayerEventHistoryProvider((
+                    competitionId: competitionId!,
+                    playerId: playerId,
+                  )),
+                );
+                final eventTypesAsync = dialogRef.watch(liveEventTypesProvider);
+
+                return _buildEventsListSection(
+                  context,
+                  dialogCtx,
+                  player,
+                  eventsAsync,
+                  eventTypesAsync,
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
   }
 }
