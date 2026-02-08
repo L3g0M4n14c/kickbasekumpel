@@ -192,7 +192,7 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
           const SizedBox(width: 8),
           DropdownButton<int?>(
             value: selectedMatchDay,
-            hint: Text('Aktuell${currentMatchDay != null ? " ($currentMatchDay)" : ""}'),
+            hint: const Text('Aktuell'),
             items: [
               const DropdownMenuItem(
                 value: null,

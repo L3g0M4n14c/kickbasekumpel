@@ -21,23 +21,25 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
-    // Auto-select first league after the first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final leaguesAsync = ref.read(userLeaguesProvider);
-      if (leaguesAsync.value != null && leaguesAsync.value!.isNotEmpty) {
-        if (selectedLeagueId == null) {
-          setState(() {
-            selectedLeagueId = leaguesAsync.value![0].i;
-          });
-        }
-      }
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(currentUserProvider);
     final leaguesAsync = ref.watch(userLeaguesProvider);
+
+    // Auto-select first league when leagues load
+    leaguesAsync.whenData((leagues) {
+      if (leagues.isNotEmpty && selectedLeagueId == null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && selectedLeagueId == null) {
+            setState(() {
+              selectedLeagueId = leagues[0].i;
+            });
+          }
+        });
+      }
+    });
 
     return Scaffold(
       appBar: ScreenSize.isMobile(context)
