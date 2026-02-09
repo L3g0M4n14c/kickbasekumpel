@@ -7,7 +7,7 @@ import '../models/league_model.dart';
 import '../models/player_model.dart';
 import '../models/transfer_model.dart';
 import '../services/kickbase_api_client.dart';
-import '../providers/service_providers.dart';
+import '../providers/kickbase_api_provider.dart';
 import 'base_repository.dart';
 
 // Firestore Provider

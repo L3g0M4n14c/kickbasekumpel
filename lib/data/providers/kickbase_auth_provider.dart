@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 import '../services/kickbase_api_client.dart';
-import 'service_providers.dart';
+import 'kickbase_api_provider.dart';
 
 // ============================================================================
 // Kickbase Authentication State Management

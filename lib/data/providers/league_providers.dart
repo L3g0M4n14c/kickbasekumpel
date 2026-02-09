@@ -3,8 +3,8 @@ import '../models/league_model.dart';
 import '../../domain/repositories/repository_interfaces.dart';
 import 'repository_providers.dart';
 import 'user_providers.dart';
-import 'service_providers.dart';
 import 'kickbase_auth_provider.dart';
+import 'kickbase_api_provider.dart';
 
 // ============================================================================
 // LEAGUE STREAM PROVIDERS

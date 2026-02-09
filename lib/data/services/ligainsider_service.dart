@@ -5,6 +5,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/ligainsider_model.dart';
 import '../models/ligainsider_match_model.dart';
@@ -21,6 +22,12 @@ class LigainsiderService {
   static const String _overviewUrl = '$_baseUrl/bundesliga/spieltage/';
   static const Duration _cacheTimeout = Duration(hours: 1);
   static const String _cacheKey = 'ligainsider_cache';
+  // Optional proxy URL used for web builds to avoid CORS issues. Set via
+  // `--dart-define=LIGAINSIDER_PROXY_URL=https://your-proxy.example/ligainsider`.
+  static const String _proxyUrl = String.fromEnvironment(
+    'LIGAINSIDER_PROXY_URL',
+    defaultValue: '',
+  );
   static const String _cacheTimestampKey = 'ligainsider_cache_timestamp';
 
   // Matches-specific cache keys
@@ -39,6 +46,9 @@ class LigainsiderService {
 
   // Matches cache (match-based lineups)
   final List<LigainsiderMatch> _matches = [];
+
+  // Track last fetch to avoid noisy repeated requests (esp. on web reloads)
+  DateTime? _lastFetch;
 
   bool _isReady = false;
 
@@ -62,10 +72,77 @@ class LigainsiderService {
   Future<void> fetchLineups() async {
     print('🔄 Ligainsider: Starting lineup fetch...');
 
+    // Avoid noisy repeated fetches
+    if (_lastFetch != null &&
+        DateTime.now().difference(_lastFetch!) < const Duration(seconds: 15)) {
+      print(
+        '⚠️ Ligainsider: Recent fetch in last 15s detected, skipping redundant fetch',
+      );
+      return;
+    }
+    _lastFetch = DateTime.now();
+
     // Check connectivity
     final connectivityResult = await _connectivity.checkConnectivity();
     if (connectivityResult.contains(ConnectivityResult.none)) {
       print('⚠️ Ligainsider: No internet connection, loading from cache');
+      await _loadFromCache();
+      return;
+    }
+
+    // On Web builds, browser CORS prevents scraping ligainsider.de directly.
+    // If a proxy URL is provided via dart-define, try to fetch JSON from it.
+    if (kIsWeb) {
+      if (_proxyUrl.isNotEmpty) {
+        try {
+          print('ℹ️ Ligainsider: Running on Web - trying proxy: $_proxyUrl');
+          final resp = await _httpClient.get(Uri.parse(_proxyUrl));
+          if (resp.statusCode == 200) {
+            final List<dynamic> data = jsonDecode(resp.body);
+            final players = data
+                .map(
+                  (j) => LigainsiderPlayer.fromJson(j as Map<String, dynamic>),
+                )
+                .toList();
+
+            // Populate caches
+            _playerCache.clear();
+            _alternativeNames.clear();
+            _startingLineupIds.clear();
+
+            for (final player in players) {
+              if (player.ligainsiderId != null) {
+                _playerCache[player.ligainsiderId!] = player;
+                _startingLineupIds.add(player.ligainsiderId!);
+                if (player.alternative != null) {
+                  _alternativeNames.add(_normalize(player.alternative!));
+                }
+              }
+            }
+
+            print(
+              '✅ Ligainsider: Loaded ${_playerCache.length} players from proxy',
+            );
+            _isReady = true;
+            await _saveToCache(players);
+            return;
+          } else {
+            print(
+              '⚠️ Ligainsider: Proxy responded with ${resp.statusCode}, falling back to cache',
+            );
+            await _loadFromCache();
+            return;
+          }
+        } catch (e) {
+          print('⚠️ Ligainsider: Proxy fetch failed: $e');
+          await _loadFromCache();
+          return;
+        }
+      }
+
+      print(
+        '⚠️ Ligainsider: Running on Web platform — scraping blocked by CORS. Loading from cache only.',
+      );
       await _loadFromCache();
       return;
     }
@@ -96,6 +173,14 @@ class LigainsiderService {
       );
       print('   - Starting lineup IDs: ${_startingLineupIds.length}');
       print('   - Alternative names: ${_alternativeNames.length}');
+
+      // Debug: Dump cached players with image URLs
+      for (final entry in _playerCache.entries) {
+        final p = entry.value;
+        print(
+          '🔎 Ligainsider: CacheEntry - id=${entry.key}, name=${p.name}, imageUrl=${p.imageUrl ?? 'null'}',
+        );
+      }
 
       _isReady = true;
 
@@ -519,7 +604,61 @@ class LigainsiderService {
 
       // Extract image URL if available
       final img = link.querySelector('img');
-      final imageUrl = img?.attributes['src'];
+      String? imageUrl = img?.attributes['src'];
+
+      // Discard accidental overview URLs being used as images
+      if (imageUrl != null && imageUrl.contains('spieltage')) {
+        print(
+          '⚠️ Ligainsider: Ignoring non-image URL found in anchor for $name: $imageUrl',
+        );
+        imageUrl = null;
+      }
+
+      // If no image found in the anchor, try the player detail page as fallback
+      if (imageUrl == null) {
+        try {
+          final detailHref = href.startsWith('http')
+              ? href
+              : (_baseUrl + (href.startsWith('/') ? href : '/$href'));
+          final detailResp = await _httpClient.get(Uri.parse(detailHref));
+          if (detailResp.statusCode == 200) {
+            final detailDoc = html_parser.parse(detailResp.body);
+
+            // Try several selectors in order of preference
+            final metaOg = detailDoc
+                .querySelector('meta[property="og:image"]')
+                ?.attributes['content'];
+            final playerImg = detailDoc
+                .querySelector('img[class*="player"]')
+                ?.attributes['src'];
+            final spielerImg = detailDoc
+                .querySelector('img[class*="spieler"]')
+                ?.attributes['src'];
+            final genericImg =
+                detailDoc.querySelector('.player img')?.attributes['src'] ??
+                detailDoc.querySelector('.person img')?.attributes['src'] ??
+                detailDoc
+                    .querySelector('img[src*="/player/"]')
+                    ?.attributes['src'];
+
+            final candidate = metaOg ?? playerImg ?? spielerImg ?? genericImg;
+            if (candidate != null && candidate.isNotEmpty) {
+              if (candidate.contains('spieltage')) {
+                print(
+                  '⚠️ Ligainsider: Ignoring non-image URL from detail page for $name: $candidate',
+                );
+              } else {
+                imageUrl = candidate;
+                print(
+                  'ℹ️ Ligainsider: Found detail image for $name -> $imageUrl',
+                );
+              }
+            }
+          }
+        } catch (e) {
+          print('⚠️ Ligainsider: Failed to fetch detail page for $href: $e');
+        }
+      }
 
       // Check for alternative player
       String? alternative;
@@ -531,8 +670,22 @@ class LigainsiderService {
         }
       }
 
+      // Normalize image URL (make absolute if needed)
+      if (imageUrl != null && imageUrl.isNotEmpty) {
+        if (imageUrl.startsWith('//')) {
+          imageUrl = 'https:$imageUrl';
+        } else if (imageUrl.startsWith('/')) {
+          imageUrl = '$_baseUrl$imageUrl';
+        }
+      }
+
       // Skip duplicates
       if (players.any((p) => p.ligainsiderId == slug)) continue;
+
+      // Debug log for each parsed player
+      print(
+        '🔍 Ligainsider: Parsed player -> name: $name, id: $slug, imageUrl: ${imageUrl ?? 'null'}',
+      );
 
       players.add(
         LigainsiderPlayer(
@@ -636,6 +789,14 @@ class LigainsiderService {
 
       _isReady = true;
       print('✅ Ligainsider: Loaded ${_playerCache.length} players from cache');
+
+      // Debug: Dump cache entries loaded from persistent cache
+      for (final entry in _playerCache.entries) {
+        final p = entry.value;
+        print(
+          '🔎 Ligainsider (cache load): id=${entry.key}, name=${p.name}, imageUrl=${p.imageUrl ?? 'null'}',
+        );
+      }
 
       // Also try to load matches from cache
       await _loadMatchesFromCache();

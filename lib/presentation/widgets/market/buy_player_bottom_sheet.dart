@@ -5,7 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../data/models/market_model.dart';
 import '../../../data/providers/league_providers.dart';
 import '../../../data/providers/user_providers.dart';
-import '../../../data/providers/service_providers.dart';
+import '../../../data/providers/kickbase_api_provider.dart';
 import '../../providers/market_providers.dart';
 
 /// Buy Player Bottom Sheet

@@ -7,15 +7,18 @@ import '../widgets/error_widget.dart';
 class ManagerDetailScreen extends ConsumerStatefulWidget {
   final String leagueId;
   final String userId;
+  final int? matchDay;
 
   const ManagerDetailScreen({
     required this.leagueId,
     required this.userId,
+    this.matchDay,
     super.key,
   });
 
   @override
-  ConsumerState<ManagerDetailScreen> createState() => _ManagerDetailScreenState();
+  ConsumerState<ManagerDetailScreen> createState() =>
+      _ManagerDetailScreenState();
 }
 
 class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
@@ -37,7 +40,10 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
   @override
   Widget build(BuildContext context) {
     final dashboardAsync = ref.watch(
-      managerDashboardProvider((leagueId: widget.leagueId, userId: widget.userId)),
+      managerDashboardProvider((
+        leagueId: widget.leagueId,
+        userId: widget.userId,
+      )),
     );
 
     return Scaffold(
@@ -73,7 +79,10 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
           child: ErrorWidgetCustom(
             error: error,
             onRetry: () => ref.invalidate(
-              managerDashboardProvider((leagueId: widget.leagueId, userId: widget.userId)),
+              managerDashboardProvider((
+                leagueId: widget.leagueId,
+                userId: widget.userId,
+              )),
             ),
           ),
         ),
@@ -81,8 +90,12 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
     );
   }
 
-  Widget _buildManagerHeader(BuildContext context, Map<String, dynamic> dashboardData) {
-    final name = dashboardData['userName'] ?? dashboardData['name'] ?? 'Unbekannt';
+  Widget _buildManagerHeader(
+    BuildContext context,
+    Map<String, dynamic> dashboardData,
+  ) {
+    final name =
+        dashboardData['userName'] ?? dashboardData['name'] ?? 'Unbekannt';
     final teamValue = dashboardData['teamValue'] ?? dashboardData['tv'] ?? 0;
     final budget = dashboardData['budget'] ?? dashboardData['b'] ?? 0;
     final points = dashboardData['points'] ?? dashboardData['p'] ?? 0;
@@ -116,9 +129,9 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
           const SizedBox(height: 12),
           Text(
             name,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Row(
@@ -136,12 +149,7 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
                 '${(budget / 1000000).toStringAsFixed(2)}M€',
                 Icons.account_balance_wallet,
               ),
-              _buildStatCard(
-                context,
-                'Punkte',
-                '$points',
-                Icons.emoji_events,
-              ),
+              _buildStatCard(context, 'Punkte', '$points', Icons.emoji_events),
             ],
           ),
         ],
@@ -149,44 +157,49 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
     );
   }
 
-  Widget _buildStatCard(BuildContext context, String label, String value, IconData icon) {
+  Widget _buildStatCard(
+    BuildContext context,
+    String label,
+    String value,
+    IconData icon,
+  ) {
     return Column(
       children: [
-        Icon(
-          icon,
-          size: 24,
-          color: Theme.of(context).colorScheme.primary,
-        ),
+        Icon(icon, size: 24, color: Theme.of(context).colorScheme.primary),
         const SizedBox(height: 4),
         Text(
           value,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         Text(
           label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Colors.grey,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: Colors.grey),
         ),
       ],
     );
   }
 
   Widget _buildSquadTab(BuildContext context) {
+    // Bei Spieltag anzeigen wir die Startelf, ansonsten den ganzen Kader
+    if (widget.matchDay != null) {
+      return _buildMatchDayStartingEleven(context);
+    }
+
     final squadAsync = ref.watch(
       managerSquadProvider((leagueId: widget.leagueId, userId: widget.userId)),
     );
 
     return squadAsync.when(
       data: (squadData) {
-        final players = squadData['p'] as List? ?? squadData['players'] as List? ?? [];
+        final players =
+            squadData['p'] as List? ?? squadData['players'] as List? ?? [];
 
         if (players.isEmpty) {
-          return const Center(
-            child: Text('Keine Spieler im Kader'),
-          );
+          return const Center(child: Text('Keine Spieler im Kader'));
         }
 
         return ListView.builder(
@@ -203,7 +216,102 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
         child: ErrorWidgetCustom(
           error: error,
           onRetry: () => ref.invalidate(
-            managerSquadProvider((leagueId: widget.leagueId, userId: widget.userId)),
+            managerSquadProvider((
+              leagueId: widget.leagueId,
+              userId: widget.userId,
+            )),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMatchDayStartingEleven(BuildContext context) {
+    // Fetch squad to display players
+    final squadAsync = ref.watch(
+      managerSquadProvider((leagueId: widget.leagueId, userId: widget.userId)),
+    );
+
+    // Fetch ranking with matchDay to get starting XI IDs (lp field)
+    final rankingAsync = ref.watch(
+      leagueRankingProvider((
+        leagueId: widget.leagueId,
+        matchDay: widget.matchDay,
+      )),
+    );
+
+    return squadAsync.when(
+      data: (squadData) {
+        final players =
+            squadData['p'] as List? ?? squadData['players'] as List? ?? [];
+
+        if (players.isEmpty) {
+          return const Center(child: Text('Keine Spieler im Kader'));
+        }
+
+        // Get starting XI IDs from ranking
+        return rankingAsync.when(
+          data: (rankingData) {
+            final users = (rankingData['us'] as List? ?? [])
+                .whereType<Map<String, dynamic>>()
+                .toList();
+
+            final currentUser = users.firstWhere(
+              (u) => u['i'] == widget.userId,
+              orElse: () => <String, dynamic>{},
+            );
+
+            // lp ist ein Array von IDs oder null
+            final startingXIIds = (currentUser['lp'] as List? ?? [])
+                .whereType<int>()
+                .toSet();
+
+            // Filter players: show only starting XI
+            final startingElevenPlayers = players.where((player) {
+              final playerId = (player['i'] ?? player['id'])?.toString() ?? '';
+              return startingXIIds.any((id) => id.toString() == playerId);
+            }).toList();
+
+            if (startingElevenPlayers.isEmpty) {
+              return Center(
+                child: Text(
+                  'Keine Startelf für Spieltag ${widget.matchDay} verfügbar',
+                ),
+              );
+            }
+
+            return ListView.builder(
+              padding: const EdgeInsets.all(16.0),
+              itemCount: startingElevenPlayers.length,
+              itemBuilder: (context, index) {
+                final player = startingElevenPlayers[index];
+                return _buildPlayerCard(context, player);
+              },
+            );
+          },
+          loading: () => const Center(child: LoadingWidget()),
+          error: (error, stack) => Center(
+            child: ErrorWidgetCustom(
+              error: error,
+              onRetry: () => ref.invalidate(
+                leagueRankingProvider((
+                  leagueId: widget.leagueId,
+                  matchDay: widget.matchDay,
+                )),
+              ),
+            ),
+          ),
+        );
+      },
+      loading: () => const Center(child: LoadingWidget()),
+      error: (error, stack) => Center(
+        child: ErrorWidgetCustom(
+          error: error,
+          onRetry: () => ref.invalidate(
+            managerSquadProvider((
+              leagueId: widget.leagueId,
+              userId: widget.userId,
+            )),
           ),
         ),
       ),
@@ -216,7 +324,8 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
     final name = '$firstName $lastName'.trim();
     final position = player['position'] ?? player['pos'] ?? '';
     final marketValue = player['marketValue'] ?? player['mv'] ?? 0;
-    final points = player['totalPoints'] ?? player['points'] ?? player['p'] ?? 0;
+    final points =
+        player['totalPoints'] ?? player['points'] ?? player['p'] ?? 0;
     final teamName = player['teamName'] ?? player['t'] ?? '';
 
     return Card(
@@ -233,10 +342,7 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
             ),
           ),
         ),
-        title: Text(
-          name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(teamName),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -244,16 +350,13 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
           children: [
             Text(
               '${(marketValue / 1000000).toStringAsFixed(1)}M€',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             Text(
               '$points Pkt',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Colors.grey),
             ),
           ],
         ),
@@ -263,7 +366,10 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
 
   Widget _buildPerformanceTab(BuildContext context) {
     final performanceAsync = ref.watch(
-      managerPerformanceProvider((leagueId: widget.leagueId, userId: widget.userId)),
+      managerPerformanceProvider((
+        leagueId: widget.leagueId,
+        userId: widget.userId,
+      )),
     );
 
     return performanceAsync.when(
@@ -271,9 +377,7 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
         final performances = performanceData['performances'] as List? ?? [];
 
         if (performances.isEmpty) {
-          return const Center(
-            child: Text('Keine Performance-Daten verfügbar'),
-          );
+          return const Center(child: Text('Keine Performance-Daten verfügbar'));
         }
 
         return ListView.builder(
@@ -290,7 +394,10 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
         child: ErrorWidgetCustom(
           error: error,
           onRetry: () => ref.invalidate(
-            managerPerformanceProvider((leagueId: widget.leagueId, userId: widget.userId)),
+            managerPerformanceProvider((
+              leagueId: widget.leagueId,
+              userId: widget.userId,
+            )),
           ),
         ),
       ),
@@ -327,16 +434,13 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
           children: [
             Text(
               '$points Pkt',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             Text(
               '${(teamValue / 1000000).toStringAsFixed(1)}M€',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Colors.grey),
             ),
           ],
         ),

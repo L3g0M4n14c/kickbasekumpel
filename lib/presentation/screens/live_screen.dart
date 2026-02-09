@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/providers/live_providers.dart';
 import '../../data/providers/providers.dart';
+import '../../data/models/ligainsider_model.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/error_widget.dart';
+import 'package:flutter/foundation.dart';
 
 // Sortier-Modus für Live-Ansicht
 enum _SortMode { position, pointsDesc, nameAsc }
@@ -43,6 +44,8 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
   @override
   Widget build(BuildContext context) {
     final leaguesAsync = ref.watch(userLeaguesProvider);
+    // Ensure Ligainsider data is initialized (fetches in background if needed)
+    ref.watch(ligainsiderInitProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -143,6 +146,31 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
                           _selectedLeagueId = value;
                         });
                       },
+                    ),
+                  ),
+                ),
+              // Hinweis: Wenn Web + kein Ligainsider-Cache vorhanden
+              if (kIsWeb &&
+                  (ref.watch(ligainsiderCacheCountProvider).asData?.value ??
+                          0) ==
+                      0)
+                Card(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
+                  color: Colors.yellow[50],
+                  child: ListTile(
+                    leading: const Icon(Icons.info_outline),
+                    title: const Text(
+                      'Ligainsider-Bilder nicht verfügbar (Web / CORS)',
+                    ),
+                    subtitle: const Text(
+                      'Setze LIGAINSIDER_PROXY_URL oder starte App nativ.',
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.refresh),
+                      onPressed: () => ref.refresh(ligainsiderInitProvider),
                     ),
                   ),
                 ),
@@ -426,24 +454,79 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
       );
     }
 
+    // Resolve Ligainsider image (if available)
+    final ligainsiderAsync = ref.watch(ligainsiderServiceFutureProvider);
+    LigainsiderPlayer? ligPlayer;
+    ligainsiderAsync.maybeWhen(
+      data: (service) =>
+          ligPlayer = service.getLigainsiderPlayer(firstName, lastName),
+      orElse: () {},
+    );
+
+    final ligImageRaw = ligPlayer?.imageUrl;
+    final String? ligImage = (ligImageRaw != null && ligImageRaw.isNotEmpty)
+        ? (ligImageRaw.startsWith('/')
+              ? 'https://www.ligainsider.de$ligImageRaw'
+              : ligImageRaw)
+        : null;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8.0),
       child: ListTile(
         onTap: () =>
             _showPlayerEventsDialog(context, player, _selectedLeagueId),
-        leading: CircleAvatar(
-          backgroundColor: pointsColor.withOpacity(0.2),
-          child: Text(
-            '$points',
-            style: TextStyle(color: pointsColor, fontWeight: FontWeight.bold),
-          ),
+        leading: SizedBox(
+          width: 40,
+          height: 40,
+          child: ligImage != null
+              ? (() {
+                  final displayImage = kIsWeb
+                      ? 'https://images.weserv.nl/?url=${Uri.encodeComponent(ligImage.replaceFirst(RegExp(r'^https?:\/\/'), ''))}&w=80&h=80&fit=cover'
+                      : ligImage;
+                  return ClipOval(
+                    child: Image.network(
+                      displayImage,
+                      width: 40,
+                      height: 40,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => CircleAvatar(
+                        child: Text(
+                          firstName.isNotEmpty ? firstName[0] : '?',
+                          style: TextStyle(
+                            color: pointsColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }())
+              : CircleAvatar(
+                  backgroundColor: pointsColor.withOpacity(0.2),
+                  child: Text(
+                    firstName.isNotEmpty ? firstName[0] : '?',
+                    style: TextStyle(
+                      color: pointsColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
         ),
         title: Text(
           '$firstName $lastName',
           style: const TextStyle(fontWeight: FontWeight.w500),
         ),
         subtitle: Text(teamName),
-        trailing: statusIcon,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              points >= 0 ? '+$points' : '-${points.abs()}',
+              style: TextStyle(color: pointsColor, fontWeight: FontWeight.bold),
+            ),
+            if (statusIcon != null) ...[const SizedBox(width: 8), statusIcon],
+          ],
+        ),
       ),
     );
   }
@@ -538,7 +621,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
     }
 
     if (minute != null) {
-      return "${minute}'"; // e.g. 45'
+      return "$minute'"; // e.g. 45'
     }
 
     // No minute info available
@@ -639,7 +722,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
                       ? ev['p'] as int
                       : int.tryParse('${ev['p']}') ?? 0;
                   final evPointsStr = evPointsNum >= 0
-                      ? '+${evPointsNum}'
+                      ? '+$evPointsNum'
                       : '-${evPointsNum.abs()}';
                   final pointsColor = evPointsNum > 0
                       ? Colors.green

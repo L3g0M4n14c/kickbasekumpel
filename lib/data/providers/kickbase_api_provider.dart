@@ -1,16 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
 
 import '../services/kickbase_api_client.dart';
+import 'service_providers.dart';
 
 // ============================================================================
 // Kickbase API Client Provider
 // ============================================================================
-
-/// Provider für HTTP Client (shared instance)
-final httpClientProvider = Provider<http.Client>((ref) {
-  return http.Client();
-});
 
 /// Provider für KickbaseAPIClient
 ///
@@ -27,7 +22,6 @@ final kickbaseApiClientProvider = Provider<KickbaseAPIClient>((ref) {
 
   final client = KickbaseAPIClient(httpClient: httpClient);
 
-  // Cleanup when provider is disposed
   ref.onDispose(() {
     client.dispose();
   });

@@ -8,6 +8,7 @@
 library;
 
 // API & Service Providers
+export 'service_providers.dart';
 export 'kickbase_api_provider.dart';
 export 'ligainsider_provider.dart';
 

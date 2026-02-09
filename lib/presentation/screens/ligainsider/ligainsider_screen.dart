@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../data/providers/ligainsider_provider.dart';
 import '../../../data/models/ligainsider_match_model.dart';
@@ -100,7 +101,9 @@ class _MatchTileState extends State<_MatchTile> {
           onTap: () => setState(() => isExpanded = !isExpanded),
           leading: m.homeLogo != null
               ? Image.network(
-                  m.homeLogo!,
+                  (kIsWeb
+                      ? 'https://images.weserv.nl/?url=${Uri.encodeComponent(m.homeLogo!.replaceFirst(RegExp(r'^https?:\/\/'), ''))}&w=60&h=60&fit=cover'
+                      : m.homeLogo!),
                   width: 30,
                   height: 30,
                   fit: BoxFit.cover,
@@ -197,10 +200,15 @@ class _PlayerPill extends StatelessWidget {
           if (player.imageUrl != null)
             ClipOval(
               child: Image.network(
-                player.imageUrl!,
+                (kIsWeb
+                    ? 'https://images.weserv.nl/?url=${Uri.encodeComponent(player.imageUrl!.replaceFirst(RegExp(r'^https?:\/\/'), ''))}&w=72&h=72&fit=cover'
+                    : player.imageUrl!),
                 width: 36,
                 height: 36,
                 fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => CircleAvatar(
+                  child: Text(player.name.isNotEmpty ? player.name[0] : '?'),
+                ),
               ),
             )
           else

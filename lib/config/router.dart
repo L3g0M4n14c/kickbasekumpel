@@ -220,9 +220,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) {
           final leagueId = state.pathParameters['leagueId']!;
           final userId = state.pathParameters['userId']!;
+          final matchDayStr = state.uri.queryParameters['matchDay'];
+          final matchDay = matchDayStr != null
+              ? int.tryParse(matchDayStr)
+              : null;
           return MaterialPage(
             key: state.pageKey,
-            child: ManagerDetailScreen(leagueId: leagueId, userId: userId),
+            child: ManagerDetailScreen(
+              leagueId: leagueId,
+              userId: userId,
+              matchDay: matchDay,
+            ),
           );
         },
       ),

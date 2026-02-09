@@ -51,6 +51,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                     // TODO: Notifications
                   },
                 ),
+                IconButton(
+                  tooltip: 'Ligainsider',
+                  icon: const Icon(Icons.insights),
+                  onPressed: () {
+                    // Open Ligainsider lineups screen
+                    context.push('/ligainsider/lineups');
+                  },
+                ),
               ],
             )
           : null,
@@ -104,11 +112,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.emoji_events_outlined,
-            size: 80,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.emoji_events_outlined, size: 80, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
             'Noch keine Ligen',
@@ -117,9 +121,9 @@ class _HomePageState extends ConsumerState<HomePage> {
           const SizedBox(height: 8),
           Text(
             'Tritt einer Liga bei',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.grey,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
           ),
         ],
       ),
@@ -127,7 +131,12 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   /// Mobile: Single Column Layout
-  Widget _buildMobileLayout(BuildContext context, WidgetRef ref, user, leagues) {
+  Widget _buildMobileLayout(
+    BuildContext context,
+    WidgetRef ref,
+    user,
+    leagues,
+  ) {
     return ListView(
       padding: const EdgeInsets.all(16.0),
       children: [
@@ -147,7 +156,12 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   /// Tablet: Split View with larger cards
-  Widget _buildTabletLayout(BuildContext context, WidgetRef ref, user, leagues) {
+  Widget _buildTabletLayout(
+    BuildContext context,
+    WidgetRef ref,
+    user,
+    leagues,
+  ) {
     return Row(
       children: [
         Expanded(
@@ -182,7 +196,12 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   /// Desktop: Multi-column Layout
-  Widget _buildDesktopLayout(BuildContext context, WidgetRef ref, user, leagues) {
+  Widget _buildDesktopLayout(
+    BuildContext context,
+    WidgetRef ref,
+    user,
+    leagues,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32.0),
       child: ResponsiveContainer(
@@ -218,29 +237,27 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildLeagueSelector(BuildContext context, WidgetRef ref, List<League> leagues) {
+  Widget _buildLeagueSelector(
+    BuildContext context,
+    WidgetRef ref,
+    List<League> leagues,
+  ) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Meine Ligen',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text('Meine Ligen', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: selectedLeagueId,
+              initialValue: selectedLeagueId,
               decoration: const InputDecoration(
                 labelText: 'Liga auswählen',
                 border: OutlineInputBorder(),
               ),
               items: leagues.map((league) {
-                return DropdownMenuItem(
-                  value: league.i,
-                  child: Text(league.n),
-                );
+                return DropdownMenuItem(value: league.i, child: Text(league.n));
               }).toList(),
               onChanged: (value) {
                 setState(() {
@@ -254,7 +271,11 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildLeagueStats(BuildContext context, WidgetRef ref, String leagueId) {
+  Widget _buildLeagueStats(
+    BuildContext context,
+    WidgetRef ref,
+    String leagueId,
+  ) {
     final leagueMeAsync = ref.watch(leagueMeProvider(leagueId));
     final budgetAsync = ref.watch(myBudgetProvider(leagueId));
 
@@ -296,13 +317,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                         _StatCard(
                           title: 'Verfügbar',
-                          value: '${(availableBudget / 1000000).toStringAsFixed(1)}M€',
+                          value:
+                              '${(availableBudget / 1000000).toStringAsFixed(1)}M€',
                           icon: Icons.euro,
                           color: Colors.teal,
                         ),
                         _StatCard(
                           title: 'Team-Wert',
-                          value: '${(teamValue / 1000000).toStringAsFixed(1)}M€',
+                          value:
+                              '${(teamValue / 1000000).toStringAsFixed(1)}M€',
                           icon: Icons.trending_up,
                           color: Colors.blue,
                         ),
@@ -324,7 +347,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                   loading: () => const Center(child: LoadingWidget()),
                   error: (error, stack) => Text(
                     'Budget-Fehler: ${error.toString()}',
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                   ),
                 );
               },
@@ -340,7 +365,11 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildSquadOverview(BuildContext context, WidgetRef ref, String leagueId) {
+  Widget _buildSquadOverview(
+    BuildContext context,
+    WidgetRef ref,
+    String leagueId,
+  ) {
     final squadAsync = ref.watch(mySquadProvider(leagueId));
 
     return Card(
@@ -349,10 +378,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Mein Kader',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text('Mein Kader', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             squadAsync.when(
               data: (squadData) {
@@ -362,8 +388,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                   0,
                   (sum, player) => sum + (player['tp'] as int? ?? 0),
                 );
-                final avgPoints = players.isEmpty 
-                    ? 0.0 
+                final avgPoints = players.isEmpty
+                    ? 0.0
                     : totalPoints / players.length;
 
                 return Column(
@@ -415,22 +441,27 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildSquadStat(BuildContext context, String label, String value, IconData icon) {
+  Widget _buildSquadStat(
+    BuildContext context,
+    String label,
+    String value,
+    IconData icon,
+  ) {
     return Column(
       children: [
         Icon(icon, size: 32, color: Theme.of(context).colorScheme.primary),
         const SizedBox(height: 8),
         Text(
           value,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         Text(
           label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Colors.grey,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: Colors.grey),
         ),
       ],
     );
@@ -493,6 +524,12 @@ class _HomePageState extends ConsumerState<HomePage> {
             title: const Text('Transfers verwalten'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/dashboard/transfers'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.insights),
+            title: const Text('Ligainsider (Aufstellungen)'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/ligainsider/lineups'),
           ),
         ],
       ),
