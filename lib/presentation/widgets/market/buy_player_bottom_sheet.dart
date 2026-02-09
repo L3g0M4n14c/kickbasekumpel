@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../data/models/market_model.dart';
 import '../../../data/providers/league_providers.dart';
 import '../../../data/providers/user_providers.dart';
+import '../../../data/providers/kickbase_api_provider.dart';
 import '../../providers/market_providers.dart';
 
 /// Buy Player Bottom Sheet
@@ -253,6 +254,17 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
                 ),
                 const SizedBox(height: 12),
 
+                // Watch Button
+                OutlinedButton.icon(
+                  onPressed: () => _handleAddToWatchlist(context, ref),
+                  icon: const Icon(Icons.bookmark_add),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                  label: const Text('Zur Beobachtungsliste'),
+                ),
+                const SizedBox(height: 12),
+
                 // Cancel Button
                 OutlinedButton(
                   onPressed: () => Navigator.pop(context),
@@ -318,6 +330,52 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
     // Reset buy state and close
     ref.read(buyPlayerProvider.notifier).reset();
     Navigator.pop(context);
+  }
+
+  void _handleAddToWatchlist(BuildContext context, WidgetRef ref) async {
+    try {
+      final leagueId = ref.read(selectedLeagueIdProvider);
+      if (leagueId == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Keine Liga ausgewählt')));
+        return;
+      }
+
+      final apiClient = ref.read(kickbaseApiClientProvider);
+      await apiClient.addScoutedPlayer(leagueId, widget.player.id);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.bookmark_added, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '${widget.player.firstName} ${widget.player.lastName} zur Beobachtungsliste hinzugefügt!',
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        // Refresh watchlist
+        ref.invalidate(watchlistPlayersProvider);
+
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Fehler: $e')));
+      }
+    }
   }
 }
 

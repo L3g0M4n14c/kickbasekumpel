@@ -1,6 +1,5 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/ligainsider_service.dart';
 import '../models/ligainsider_match_model.dart';
@@ -24,28 +23,19 @@ final connectivityProvider = Provider<Connectivity>((ref) {
 ///
 /// Verwendung:
 /// ```dart
-/// final service = ref.watch(ligainsiderServiceProvider);
-/// await service.fetchLineups();
-/// final player = service.getLigainsiderPlayer('Max', 'Mustermann');
-/// final status = service.getPlayerStatus('Max', 'Mustermann');
+/// final serviceAsync = await ref.watch(ligainsiderServiceFutureProvider.future);
+/// await serviceAsync.fetchLineups();
+/// final player = serviceAsync.getLigainsiderPlayer('Max', 'Mustermann');
+/// final status = serviceAsync.getPlayerStatus('Max', 'Mustermann');
 /// ```
+///
+/// Note: This provider uses async initialization. Use ligainsiderServiceFutureProvider instead.
+@Deprecated(
+  'Use ligainsiderServiceFutureProvider for proper async initialization',
+)
 final ligainsiderServiceProvider = Provider<LigainsiderService>((ref) {
-  // Reuse shared providers
-  final httpClient = ref.watch(httpClientProvider);
-  final sharedPrefs = ref.watch(sharedPreferencesProvider);
-  final connectivity = ref.watch(connectivityProvider);
-
-  return LigainsiderService(
-    httpClient: httpClient,
-    prefs: sharedPrefs,
-    connectivity: connectivity,
-  );
-});
-
-/// Provider for SharedPreferences (shared instance)
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError(
-    'sharedPreferencesProvider must be overridden with a real instance',
+    'Use ligainsiderServiceFutureProvider instead for proper async initialization',
   );
 });
 
@@ -53,19 +43,21 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
 ///
 /// Verwendung:
 /// ```dart
-/// final isReady = ref.watch(ligainsiderReadyProvider);
-/// if (isReady) {
-///   // Use service
-/// }
+/// final isReadyAsync = ref.watch(ligainsiderReadyProvider);
+/// isReadyAsync.when(
+///   data: (isReady) => ...,
+///   loading: () => ...,
+///   error: (err, stack) => ...,
+/// );
 /// ```
-final ligainsiderReadyProvider = Provider<bool>((ref) {
-  final service = ref.watch(ligainsiderServiceProvider);
+final ligainsiderReadyProvider = FutureProvider<bool>((ref) async {
+  final service = await ref.watch(ligainsiderServiceFutureProvider.future);
   return service.isReady;
 });
 
 /// Provider to get player cache count (for debugging)
-final ligainsiderCacheCountProvider = Provider<int>((ref) {
-  final service = ref.watch(ligainsiderServiceProvider);
+final ligainsiderCacheCountProvider = FutureProvider<int>((ref) async {
+  final service = await ref.watch(ligainsiderServiceFutureProvider.future);
   return service.playerCacheCount;
 });
 

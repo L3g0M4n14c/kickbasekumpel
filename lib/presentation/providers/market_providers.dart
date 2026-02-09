@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/market_model.dart';
 import '../../data/models/transfer_model.dart';
-import '../../data/providers/service_providers.dart';
+import '../../data/providers/kickbase_api_provider.dart';
 import '../../data/providers/league_providers.dart';
 import '../../data/providers/user_providers.dart';
 
@@ -334,55 +334,56 @@ final mySellingPlayersProvider = FutureProvider.autoDispose<List<MarketPlayer>>(
 );
 
 // ============================================================================
-// WATCHLIST PROVIDER
+// WATCHLIST PROVIDER (using API)
 // ============================================================================
 
-/// Simple watchlist stored in StateNotifier
-class WatchlistNotifier extends Notifier<Set<String>> {
-  @override
-  Set<String> build() => {};
-
-  void addPlayer(String playerId) {
-    state = {...state, playerId};
-  }
-
-  void removePlayer(String playerId) {
-    state = {...state}..remove(playerId);
-  }
-
-  bool isWatched(String playerId) {
-    return state.contains(playerId);
-  }
-
-  void togglePlayer(String playerId) {
-    if (state.contains(playerId)) {
-      removePlayer(playerId);
-    } else {
-      addPlayer(playerId);
-    }
-  }
-}
-
-final watchlistProvider = NotifierProvider<WatchlistNotifier, Set<String>>(
-  () => WatchlistNotifier(),
-);
-
-/// Get watchlist players from current market
+/// Get watchlist players from API
 final watchlistPlayersProvider = FutureProvider.autoDispose<List<MarketPlayer>>(
   (ref) async {
-    final watchlist = ref.watch(watchlistProvider);
-    if (watchlist.isEmpty) return [];
-
     final leagueId = ref.watch(selectedLeagueIdProvider);
     if (leagueId == null) return [];
 
     final apiClient = ref.watch(kickbaseApiClientProvider);
 
     try {
-      final allPlayers = await apiClient.getMarketAvailable(leagueId);
-      return allPlayers.where((p) => watchlist.contains(p.id)).toList();
+      final response = await apiClient.getScoutedPlayers(leagueId);
+      final playersList = response['players'] as List?;
+
+      if (playersList == null || playersList.isEmpty) return [];
+
+      return playersList
+          .map((p) => MarketPlayer.fromJson(p as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       throw Exception('Failed to load watchlist: $e');
     }
   },
 );
+
+// ============================================================================
+// MY OFFERS PROVIDER (Players with bids from others)
+// ============================================================================
+
+/// Get players where the user is the seller and has received offers
+final myOffersPlayersProvider = FutureProvider.autoDispose<List<MarketPlayer>>((
+  ref,
+) async {
+  final leagueId = ref.watch(selectedLeagueIdProvider);
+  if (leagueId == null) return [];
+
+  final apiClient = ref.watch(kickbaseApiClientProvider);
+  final currentUser = ref.watch(currentUserProvider).value;
+
+  if (currentUser == null) return [];
+
+  try {
+    final allPlayers = await apiClient.getMarketAvailable(leagueId);
+
+    // Filter for players being sold by current user WITH offers
+    return allPlayers
+        .where((p) => p.seller.id == currentUser.i && p.offers > 0)
+        .toList();
+  } catch (e) {
+    throw Exception('Failed to load offers: $e');
+  }
+});

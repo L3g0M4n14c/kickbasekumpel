@@ -174,6 +174,51 @@ void main() {
 
       expect(service.playerCacheCount, 1);
     });
+
+    test(
+      'should fetch image from player detail page when missing in overview',
+      () async {
+        when(
+          mockConnectivity.checkConnectivity(),
+        ).thenAnswer((_) async => [ConnectivityResult.wifi]);
+
+        final mockOverviewHtml = '''
+        <html>
+          <body>
+            <a href="/max-mustermann_12345/">Max Mustermann</a>
+          </body>
+        </html>
+      ''';
+
+        final mockPlayerDetail = '''
+        <html>
+          <head>
+            <meta property="og:image" content="/images/max.jpg">
+          </head>
+          <body>
+            <h1>Max Mustermann</h1>
+            <img class="player-photo" src="/images/max.jpg" />
+          </body>
+        </html>
+      ''';
+
+        when(mockHttpClient.get(any)).thenAnswer((invocation) async {
+          final uri = invocation.positionalArguments[0] as Uri;
+          if (uri.path.contains('spieltage')) {
+            return http.Response(mockOverviewHtml, 200);
+          } else if (uri.path.contains('12345')) {
+            return http.Response(mockPlayerDetail, 200);
+          }
+          return http.Response('', 404);
+        });
+
+        await service.fetchLineups();
+
+        final player = service.getLigainsiderPlayer('Max', 'Mustermann');
+        expect(player, isNotNull);
+        expect(player!.imageUrl, 'https://www.ligainsider.de/images/max.jpg');
+      },
+    );
   });
 
   group('Player Matching', () {

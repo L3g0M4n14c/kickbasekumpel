@@ -3,12 +3,25 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/http_client_wrapper.dart';
-import '../services/kickbase_api_client.dart';
 import '../services/ligainsider_service.dart';
 
 // ============================================================================
 // Service Providers - Central Export
 // ============================================================================
+
+/// SharedPreferences Provider (Singleton)
+///
+/// Stellt eine shared SharedPreferences-Instanz für alle Services bereit.
+///
+/// Verwendung:
+/// ```dart
+/// final prefs = await ref.watch(sharedPreferencesProvider.future);
+/// ```
+final sharedPreferencesProvider = FutureProvider<SharedPreferences>((
+  ref,
+) async {
+  return await SharedPreferences.getInstance();
+});
 
 /// HTTP Client Provider (Singleton)
 ///
@@ -18,21 +31,23 @@ import '../services/ligainsider_service.dart';
 /// Verwendung:
 /// ```dart
 /// final client = ref.watch(httpClientProvider);
+/// final response = await client.get(Uri.parse('https://...'));
 /// ```
 final httpClientProvider = Provider<http.Client>((ref) {
-  final client = http.Client();
+  final httpClient = http.Client();
 
   ref.onDispose(() {
-    client.close();
+    httpClient.close();
   });
 
-  return client;
+  return httpClient;
 });
 
-/// HTTP Client Wrapper Provider (with retry logic)
+/// HTTP Client Wrapper Provider (Singleton)
 ///
-/// Wraps http.Client mit Retry-Logik, Timeout und Error Handling.
-/// Nutzt httpClientProvider als Basis.
+/// Stellt einen shared HttpClientWrapper für alle Services bereit.
+/// Bietet zusätzliches Error-Handling und Retry-Logik.
+/// Wird automatisch beim Dispose geschlossen.
 ///
 /// Verwendung:
 /// ```dart
@@ -40,7 +55,11 @@ final httpClientProvider = Provider<http.Client>((ref) {
 /// final response = await wrapper.get(Uri.parse('https://...'));
 /// ```
 final httpClientWrapperProvider = Provider<HttpClientWrapper>((ref) {
-  final httpClient = ref.watch(httpClientProvider);
+  final httpClient = http.Client();
+
+  ref.onDispose(() {
+    httpClient.close();
+  });
 
   return HttpClientWrapper(
     httpClient: httpClient,
@@ -50,36 +69,11 @@ final httpClientWrapperProvider = Provider<HttpClientWrapper>((ref) {
   );
 });
 
-/// Kickbase API Client Provider (Lazy Loading)
-///
-/// Verwaltet alle HTTP-Anfragen an die Kickbase API v4.
-/// Nutzt SharedPreferences für Token-Storage (einfacher als Keychain).
-/// Token-Key 'kickbase_token'.
-///
-/// Verwendung:
-/// ```dart
-/// final apiClient = ref.watch(kickbaseApiClientProvider);
-/// final user = await apiClient.getUser();
-/// ```
-final kickbaseApiClientProvider = Provider<KickbaseAPIClient>((ref) {
-  final httpClient = ref.watch(httpClientProvider);
-
-  final client = KickbaseAPIClient(httpClient: httpClient);
-
-  ref.onDispose(() {
-    client.dispose();
-  });
-
-  return client;
-});
-
 /// Ligainsider Service Provider (Lazy Loading)
 ///
 /// Scraped ligainsider.de für Spieler Verletzungen und Aufstellungen.
 /// Bietet Caching und Offline-Support.
-/// Nutzt httpClientProvider für HTTP-Anfragen.
-///
-/// WICHTIG: Verwende ligainsiderServiceFutureProvider für async initialization
+/// Nutzt shared preferences für Basis-Services.
 ///
 /// Verwendung:
 /// ```dart
@@ -93,8 +87,12 @@ final kickbaseApiClientProvider = Provider<KickbaseAPIClient>((ref) {
 final ligainsiderServiceFutureProvider = FutureProvider<LigainsiderService>((
   ref,
 ) async {
-  final httpClient = ref.watch(httpClientProvider);
-  final prefs = await SharedPreferences.getInstance();
+  final httpClient = http.Client();
+  final prefs = await ref.watch(sharedPreferencesProvider.future);
+
+  ref.onDispose(() {
+    httpClient.close();
+  });
 
   return LigainsiderService(httpClient: httpClient, prefs: prefs);
 });
@@ -111,16 +109,15 @@ final ligainsiderServiceFutureProvider = FutureProvider<LigainsiderService>((
 /// Verwendung:
 /// ```dart
 /// final services = ref.watch(syncServicesProvider);
-/// final apiClient = services.kickbaseApiClient;
+/// final httpClientWrapper = services.httpClientWrapper;
 ///
 /// // Für LigainsiderService separat:
 /// final ligainsider = await ref.read(ligainsiderServiceFutureProvider.future);
 /// ```
 final syncServicesProvider = Provider<SyncServices>((ref) {
   return SyncServices(
-    httpClient: ref.watch(httpClientProvider),
+    httpClient: http.Client(),
     httpClientWrapper: ref.watch(httpClientWrapperProvider),
-    kickbaseApiClient: ref.watch(kickbaseApiClientProvider),
   );
 });
 
@@ -130,11 +127,9 @@ final syncServicesProvider = Provider<SyncServices>((ref) {
 class SyncServices {
   final http.Client httpClient;
   final HttpClientWrapper httpClientWrapper;
-  final KickbaseAPIClient kickbaseApiClient;
 
   const SyncServices({
     required this.httpClient,
     required this.httpClientWrapper,
-    required this.kickbaseApiClient,
   });
 }

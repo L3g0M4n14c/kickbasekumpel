@@ -623,6 +623,451 @@ class KickbaseAPIClient {
         .toList();
   }
 
+  // MARK: - Schritt 1: Liga & User Endpoints
+
+  /// Get user settings
+  /// GET /v4/user/settings
+  Future<Map<String, dynamic>> getUserSettings() async {
+    print('⚙️ Getting user settings...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/user/settings',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ User settings retrieved');
+    return json;
+  }
+
+  /// Get league me (own stats in league)
+  /// GET /v4/leagues/{leagueId}/me
+  Future<Map<String, dynamic>> getLeagueMe(String leagueId) async {
+    print('👤 Getting league me for league $leagueId...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/me',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ League me retrieved');
+    return json;
+  }
+
+  /// Get my budget in league
+  /// GET /v4/leagues/{leagueId}/me/budget
+  Future<Map<String, dynamic>> getMyBudget(String leagueId) async {
+    print('💰 Getting budget for league $leagueId...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/me/budget',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ Budget retrieved');
+    return json;
+  }
+
+  /// Get my squad (own players)
+  /// GET /v4/leagues/{leagueId}/squad
+  Future<Map<String, dynamic>> getMySquad(String leagueId) async {
+    print('👥 Getting squad for league $leagueId...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/squad',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ Squad retrieved (${(json['it'] as List?)?.length ?? 0} players)');
+    return json;
+  }
+
+  /// Get league ranking
+  /// GET /v4/leagues/{leagueId}/ranking
+  Future<Map<String, dynamic>> getLeagueRanking(
+    String leagueId, {
+    int? matchDay,
+  }) async {
+    final dayParam = matchDay != null ? '?dayNumber=$matchDay' : '';
+    print('🏆 Getting league ranking for league $leagueId$dayParam...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/ranking$dayParam',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ League ranking retrieved');
+    return json;
+  }
+
+  /// Collect daily bonus
+  /// GET /v4/bonus/collect
+  Future<Map<String, dynamic>> collectBonus() async {
+    print('🎁 Collecting daily bonus...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/bonus/collect',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ Bonus collected!');
+    return json;
+  }
+
+  // MARK: - Schritt 2: Spieler-Detail-Endpoints
+
+  /// Get player details
+  /// GET /v4/leagues/{leagueId}/players/{playerId}
+  Future<Map<String, dynamic>> getPlayerDetails(
+    String leagueId,
+    String playerId,
+  ) async {
+    print('⚽ Getting player details for player $playerId in league $leagueId...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/players/$playerId',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ Player details retrieved');
+    return json;
+  }
+
+  /// Get player market value history
+  /// GET /v4/leagues/{leagueId}/players/{playerId}/marketvalue/{timeframe}
+  Future<Map<String, dynamic>> getPlayerMarketValue(
+    String leagueId,
+    String playerId, {
+    int timeframe = 365,
+  }) async {
+    print('📈 Getting market value for player $playerId (timeframe: $timeframe days)...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/players/$playerId/marketvalue/$timeframe',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ Market value history retrieved');
+    return json;
+  }
+
+  /// Get player transfer history
+  /// GET /v4/leagues/{leagueId}/players/{playerId}/transferHistory
+  Future<Map<String, dynamic>> getPlayerTransferHistory(
+    String leagueId,
+    String playerId, {
+    int? matchDay,
+  }) async {
+    final dayParam = matchDay != null ? '?matchDay=$matchDay' : '';
+    print('🔄 Getting transfer history for player $playerId...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/players/$playerId/transferHistory$dayParam',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ Transfer history retrieved');
+    return json;
+  }
+
+  /// Get player transfers
+  /// GET /v4/leagues/{leagueId}/players/{playerId}/transfers
+  Future<Map<String, dynamic>> getPlayerTransfers(
+    String leagueId,
+    String playerId,
+  ) async {
+    print('🔄 Getting transfers for player $playerId...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/players/$playerId/transfers',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ Player transfers retrieved');
+    return json;
+  }
+
+  // MARK: - Schritt 3: Manager & Transfermarkt-Endpoints
+
+  /// Get manager dashboard
+  /// GET /v4/leagues/{leagueId}/managers/{userId}/dashboard
+  Future<Map<String, dynamic>> getManagerDashboard(
+    String leagueId,
+    String userId,
+  ) async {
+    print('📊 Getting manager dashboard for user $userId in league $leagueId...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/managers/$userId/dashboard',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ Manager dashboard retrieved');
+    return json;
+  }
+
+  /// Get manager performance
+  /// GET /v4/leagues/{leagueId}/managers/{userId}/performance
+  Future<Map<String, dynamic>> getManagerPerformance(
+    String leagueId,
+    String userId,
+  ) async {
+    print('📈 Getting manager performance for user $userId...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/managers/$userId/performance',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ Manager performance retrieved');
+    return json;
+  }
+
+  /// Get manager squad
+  /// GET /v4/leagues/{leagueId}/managers/{userId}/squad
+  Future<Map<String, dynamic>> getManagerSquad(
+    String leagueId,
+    String userId,
+  ) async {
+    print('👥 Getting manager squad for user $userId...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/managers/$userId/squad',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ Manager squad retrieved');
+    return json;
+  }
+
+  /// Remove player from market
+  /// DELETE /v4/leagues/{leagueId}/market/{playerId}
+  Future<Map<String, dynamic>> removePlayerFromMarket(
+    String leagueId,
+    String playerId,
+  ) async {
+    print('🔻 Removing player $playerId from market...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/market/$playerId',
+      method: 'DELETE',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ Player removed from market');
+    return json;
+  }
+
+  /// Withdraw offer
+  /// DELETE /v4/leagues/{leagueId}/market/{playerId}/offers/{offerId}
+  Future<Map<String, dynamic>> withdrawOffer(
+    String leagueId,
+    String playerId,
+    String offerId,
+  ) async {
+    print('↩️ Withdrawing offer $offerId for player $playerId...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/market/$playerId/offers/$offerId',
+      method: 'DELETE',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ Offer withdrawn');
+    return json;
+  }
+
+  /// Accept offer
+  /// DELETE /v4/leagues/{leagueId}/market/{playerId}/offers/{offerId}/accept
+  Future<void> acceptOffer(
+    String leagueId,
+    String playerId,
+    String offerId,
+  ) async {
+    print('✅ Accepting offer $offerId for player $playerId...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/market/$playerId/offers/$offerId/accept',
+      method: 'DELETE',
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw KickbaseException(
+        'Failed to accept offer: ${response.statusCode}',
+        code: response.statusCode.toString(),
+      );
+    }
+    print('✅ Offer accepted');
+  }
+
+  /// Decline offer
+  /// DELETE /v4/leagues/{leagueId}/market/{playerId}/offers/{offerId}/decline
+  Future<void> declineOffer(
+    String leagueId,
+    String playerId,
+    String offerId,
+  ) async {
+    print('❌ Declining offer $offerId for player $playerId...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/market/$playerId/offers/$offerId/decline',
+      method: 'DELETE',
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw KickbaseException(
+        'Failed to decline offer: ${response.statusCode}',
+        code: response.statusCode.toString(),
+      );
+    }
+    print('✅ Offer declined');
+  }
+
+  /// Accept Kickbase offer (sell to Kickbase)
+  /// DELETE /v4/leagues/{leagueId}/market/{playerId}/sell
+  Future<void> acceptKickbaseOffer(
+    String leagueId,
+    String playerId,
+  ) async {
+    print('💵 Selling player $playerId to Kickbase...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/market/$playerId/sell',
+      method: 'DELETE',
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw KickbaseException(
+        'Failed to sell player to Kickbase: ${response.statusCode}',
+        code: response.statusCode.toString(),
+      );
+    }
+    print('✅ Player sold to Kickbase');
+  }
+
+  // MARK: - Schritt 4: Live, Beobachtungsliste & Wettbewerb
+
+  /// Get my eleven (live lineup)
+  /// GET /v4/leagues/{leagueId}/teamcenter/myeleven
+  Future<Map<String, dynamic>> getMyEleven(String leagueId) async {
+    print('⚽ Getting my eleven for league $leagueId...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/teamcenter/myeleven',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ My eleven retrieved');
+    return json;
+  }
+
+  /// Get live event types
+  /// GET /v4/live/eventtypes
+  Future<Map<String, dynamic>> getLiveEventTypes() async {
+    print('📺 Getting live event types...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/live/eventtypes',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ Live event types retrieved');
+    return json;
+  }
+
+  /// Get scouted players (watchlist)
+  /// GET /v4/leagues/{leagueId}/scoutedplayers
+  Future<Map<String, dynamic>> getScoutedPlayers(String leagueId) async {
+    print('🔭 Getting scouted players for league $leagueId...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/scoutedplayers',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ Scouted players retrieved');
+    return json;
+  }
+
+  /// Add scouted player (add to watchlist)
+  /// POST /v4/leagues/{leagueId}/scoutedplayers/{playerId}
+  Future<void> addScoutedPlayer(String leagueId, String playerId) async {
+    print('➕ Adding player $playerId to watchlist...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/scoutedplayers/$playerId',
+      method: 'POST',
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw KickbaseException(
+        'Failed to add scouted player: ${response.statusCode}',
+        code: response.statusCode.toString(),
+      );
+    }
+    print('✅ Player added to watchlist');
+  }
+
+  /// Remove scouted player (remove from watchlist)
+  /// DELETE /v4/leagues/{leagueId}/scoutedplayers/{playerId}
+  Future<void> removeScoutedPlayer(String leagueId, String playerId) async {
+    print('➖ Removing player $playerId from watchlist...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/scoutedplayers/$playerId',
+      method: 'DELETE',
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw KickbaseException(
+        'Failed to remove scouted player: ${response.statusCode}',
+        code: response.statusCode.toString(),
+      );
+    }
+    print('✅ Player removed from watchlist');
+  }
+
+  /// Get competition table (e.g., Bundesliga table)
+  /// GET /v4/competitions/{competitionId}/table
+  Future<Map<String, dynamic>> getCompetitionTable(String competitionId) async {
+    print('🏆 Getting competition table for competition $competitionId...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/competitions/$competitionId/table',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ Competition table retrieved');
+    return json;
+  }
+
+  /// Get competition matchdays
+  /// GET /v4/competitions/{competitionId}/matchdays
+  Future<Map<String, dynamic>> getCompetitionMatchdays(
+    String competitionId,
+  ) async {
+    print('📅 Getting matchdays for competition $competitionId...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/competitions/$competitionId/matchdays',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ Competition matchdays retrieved');
+    return json;
+  }
+
+  /// Get player event history (match details)
+  /// GET /v4/competitions/{competitionId}/playercenter/{playerId}
+  Future<Map<String, dynamic>> getPlayerEventHistory(
+    String competitionId,
+    String playerId, {
+    int? matchDay,
+  }) async {
+    final dayParam = matchDay != null ? '?day=$matchDay' : '';
+    print('📊 Getting event history for player $playerId...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/competitions/$competitionId/playercenter/$playerId$dayParam',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    print('✅ Player event history retrieved');
+    return json;
+  }
+
   /// Dispose resources
   void dispose() {
     _httpClient.close();

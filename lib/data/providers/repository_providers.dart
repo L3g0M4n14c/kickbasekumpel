@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../repositories/firestore_repositories.dart';
 import '../repositories/auth_repository.dart';
-import 'service_providers.dart';
+import 'kickbase_api_provider.dart';
 
 // ============================================================================
 // FIREBASE INSTANCE PROVIDERS

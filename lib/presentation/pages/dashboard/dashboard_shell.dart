@@ -44,6 +44,11 @@ class DashboardShell extends StatelessWidget {
             label: 'Home',
           ),
           NavigationDestination(
+            icon: Icon(Icons.sports_soccer),
+            selectedIcon: Icon(Icons.sports_soccer),
+            label: 'Live',
+          ),
+          NavigationDestination(
             icon: Icon(Icons.emoji_events_outlined),
             selectedIcon: Icon(Icons.emoji_events),
             label: 'Ligen',
@@ -101,10 +106,11 @@ class DashboardShell extends StatelessWidget {
               ),
             ),
             _buildDrawerItem(context, 0, Icon(Icons.home), 'Home'),
-            _buildDrawerItem(context, 1, Icon(Icons.emoji_events), 'Ligen'),
-            _buildDrawerItem(context, 2, Icon(Icons.store), 'Markt'),
-            _buildDrawerItem(context, 3, Icon(Icons.people), 'Aufstellung'),
-            _buildDrawerItem(context, 4, Icon(Icons.swap_horiz), 'Transfers'),
+            _buildDrawerItem(context, 1, Icon(Icons.sports_soccer), 'Live'),
+            _buildDrawerItem(context, 2, Icon(Icons.emoji_events), 'Ligen'),
+            _buildDrawerItem(context, 3, Icon(Icons.store), 'Markt'),
+            _buildDrawerItem(context, 4, Icon(Icons.people), 'Aufstellung'),
+            _buildDrawerItem(context, 5, Icon(Icons.swap_horiz), 'Transfers'),
             ListTile(
               leading: Icon(Icons.sports_soccer),
               title: Text('Voraussichtliche Aufstellungen'),
@@ -115,7 +121,7 @@ class DashboardShell extends StatelessWidget {
               },
             ),
             const Divider(),
-            _buildDrawerItem(context, 5, Icon(Icons.settings), 'Einstellungen'),
+            _buildDrawerItem(context, 6, Icon(Icons.settings), 'Einstellungen'),
           ],
         ),
       ),
@@ -141,6 +147,11 @@ class DashboardShell extends StatelessWidget {
                 icon: Icon(Icons.home_outlined),
                 selectedIcon: Icon(Icons.home),
                 label: Text('Home'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.sports_soccer),
+                selectedIcon: Icon(Icons.sports_soccer),
+                label: Text('Live'),
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.emoji_events_outlined),
@@ -199,14 +210,16 @@ class DashboardShell extends StatelessWidget {
       case 0:
         return 'Home';
       case 1:
-        return 'Ligen';
+        return 'Live';
       case 2:
-        return 'Markt';
+        return 'Ligen';
       case 3:
-        return 'Aufstellung';
+        return 'Markt';
       case 4:
-        return 'Transfers';
+        return 'Aufstellung';
       case 5:
+        return 'Transfers';
+      case 6:
         return 'Einstellungen';
       default:
         return 'Kickbase Kumpel';
