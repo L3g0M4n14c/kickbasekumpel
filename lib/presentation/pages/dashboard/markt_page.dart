@@ -162,7 +162,7 @@ class _TransferTipsTab extends ConsumerWidget {
                   ),
                   title: Text(rec.playerName ?? 'Unbekannt'),
                   subtitle: Text(rec.reasoning ?? 'Keine Beschreibung'),
-                  trailing: Icon(Icons.chevron_right),
+                  trailing: const Icon(Icons.chevron_right),
                   onTap: () {
                     // TODO: Navigate to player details
                   },

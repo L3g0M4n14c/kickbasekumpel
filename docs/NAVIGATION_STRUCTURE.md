@@ -26,6 +26,7 @@ The app navigation has been reorganized from a flat structure to a hierarchical 
 
 #### Liga
 - **Tabelle** - League standings (Bundesliga)
+  - Note: Currently displays only the Bundesliga table. The tab structure was removed as there's only one view.
 
 #### Ligainsider
 - No sub-tabs, displays predicted lineups directly
@@ -50,7 +51,7 @@ The app navigation has been reorganized from a flat structure to a hierarchical 
 ### New Pages
 - `lib/presentation/pages/dashboard/team_page.dart` - Team page with 4 tabs
 - `lib/presentation/pages/dashboard/markt_page.dart` - Market page with 2 tabs
-- `lib/presentation/pages/dashboard/liga_page.dart` - League page with 1 tab
+- `lib/presentation/pages/dashboard/liga_page.dart` - League page (simplified, no tabs needed)
 - `lib/presentation/pages/dashboard/ligainsider_page.dart` - Ligainsider standalone page
 
 ### Updated Files
