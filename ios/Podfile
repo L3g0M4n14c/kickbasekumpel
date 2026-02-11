@@ -43,7 +43,7 @@ post_install do |installer|
     # Build Performance: Optimize compiler flags for Debug builds
     target.build_configurations.each do |config|
       if config.name == 'Debug'
-        config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = '-Ooff'
+        config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = '-Onone'
         config.build_settings['GCC_OPTIMIZATION_LEVEL'] = '0'
       end
     end
