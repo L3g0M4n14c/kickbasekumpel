@@ -8,11 +8,10 @@ import '../presentation/pages/auth/signin_page.dart';
 // import '../presentation/pages/auth/forgot_password_page.dart';
 // import '../presentation/pages/auth/verify_email_page.dart';
 import '../presentation/pages/dashboard/dashboard_shell.dart';
-import '../presentation/pages/dashboard/home_page.dart';
-import '../presentation/pages/dashboard/leagues_page.dart';
-import '../presentation/pages/dashboard/market_page.dart';
-import '../presentation/pages/dashboard/lineup_page.dart';
-import '../presentation/pages/dashboard/transfers_page.dart';
+import '../presentation/pages/dashboard/team_page.dart';
+import '../presentation/pages/dashboard/markt_page.dart';
+import '../presentation/pages/dashboard/liga_page.dart';
+import '../presentation/pages/dashboard/ligainsider_page.dart';
 import '../presentation/pages/dashboard/settings_page.dart';
 import '../presentation/pages/league/league_overview_page.dart';
 import '../presentation/pages/league/league_standings_page.dart';
@@ -20,10 +19,7 @@ import '../presentation/pages/league/league_players_page.dart';
 import '../presentation/pages/player/player_stats_page.dart';
 import '../presentation/pages/player/player_history_page.dart';
 import '../presentation/pages/error_page.dart';
-import '../presentation/screens/ligainsider/ligainsider_screen.dart';
-import '../presentation/screens/live_screen.dart';
 import '../presentation/screens/manager_detail_screen.dart';
-import '../presentation/screens/league_table_screen.dart';
 
 // ============================================================================
 // ROUTER PROVIDER
@@ -109,69 +105,47 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
         branches: [
-          // Home Tab
+          // Team Tab
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/dashboard',
                 name: 'dashboard',
                 pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: HomePage()),
+                    const NoTransitionPage(child: TeamPage()),
               ),
             ],
           ),
-          // Live Tab
+          // Markt Tab
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/dashboard/live',
-                name: 'live',
+                path: '/dashboard/markt',
+                name: 'markt',
                 pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: LiveScreen()),
+                    const NoTransitionPage(child: MarktPage()),
               ),
             ],
           ),
-          // Leagues Tab
+          // Liga Tab
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/dashboard/leagues',
-                name: 'leagues',
+                path: '/dashboard/liga',
+                name: 'liga',
                 pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: LeaguesPage()),
+                    const NoTransitionPage(child: LigaPage()),
               ),
             ],
           ),
-          // Market Tab
+          // Ligainsider Tab
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/dashboard/market',
-                name: 'market',
+                path: '/dashboard/ligainsider',
+                name: 'ligainsider',
                 pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: MarketPage()),
-              ),
-            ],
-          ),
-          // Lineup Tab
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/dashboard/lineup',
-                name: 'lineup',
-                pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: LineupPage()),
-              ),
-            ],
-          ),
-          // Transfers Tab
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/dashboard/transfers',
-                name: 'transfers',
-                pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: TransfersPage()),
+                    const NoTransitionPage(child: LigainsiderPage()),
               ),
             ],
           ),
@@ -199,16 +173,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           final leagueId = state.pathParameters['leagueId'];
           return '/league/$leagueId/overview';
         },
-      ),
-
-      // ======================================================================
-      // LIGAINSIDER - Voraussichtliche Aufstellungen
-      // ======================================================================
-      GoRoute(
-        path: '/ligainsider/lineups',
-        name: 'ligainsider',
-        pageBuilder: (context, state) =>
-            MaterialPage(key: state.pageKey, child: const LigainsiderScreen()),
       ),
 
       // ======================================================================
@@ -355,12 +319,22 @@ extension GoRouterExtensions on BuildContext {
 
   // Dashboard Routes
   void goToDashboard() => go('/dashboard');
-  void goToLive() => go('/dashboard/live');
-  void goToLeagues() => go('/dashboard/leagues');
-  void goToMarket() => go('/dashboard/market');
-  void goToLineup() => go('/dashboard/lineup');
-  void goToTransfers() => go('/dashboard/transfers');
+  void goToMarkt() => go('/dashboard/markt');
+  void goToLiga() => go('/dashboard/liga');
+  void goToLigainsider() => go('/dashboard/ligainsider');
   void goToSettings() => go('/dashboard/settings');
+
+  // Deprecated routes (kept for backwards compatibility)
+  @Deprecated('Use goToDashboard() instead')
+  void goToLive() => go('/dashboard');
+  @Deprecated('Use goToLigainsider() instead')
+  void goToLeagues() => go('/dashboard/liga');
+  @Deprecated('Use goToMarkt() instead')
+  void goToMarket() => go('/dashboard/markt');
+  @Deprecated('Use goToDashboard() instead')
+  void goToLineup() => go('/dashboard');
+  @Deprecated('Use goToMarkt() instead')
+  void goToTransfers() => go('/dashboard/markt');
 
   // Auth Routes
   void goToSignIn() => go('/auth/signin');
@@ -400,11 +374,9 @@ class RouterKeys {
   static const forgotPassword = 'forgot-password';
   static const verify = 'verify';
   static const dashboard = 'dashboard';
-  static const live = 'live';
-  static const leagues = 'leagues';
-  static const market = 'market';
-  static const lineup = 'lineup';
-  static const transfers = 'transfers';
+  static const markt = 'markt';
+  static const liga = 'liga';
+  static const ligainsider = 'ligainsider';
   static const settings = 'settings';
   static const league = 'league';
   static const leagueOverview = 'league-overview';
@@ -415,4 +387,16 @@ class RouterKeys {
   static const playerHistory = 'player-history';
   static const managerDetail = 'manager-detail';
   static const competitionTable = 'competition-table';
+  
+  // Deprecated keys (kept for backwards compatibility)
+  @Deprecated('Use dashboard instead')
+  static const live = 'dashboard';
+  @Deprecated('Use liga instead')
+  static const leagues = 'liga';
+  @Deprecated('Use markt instead')
+  static const market = 'markt';
+  @Deprecated('Use dashboard instead')
+  static const lineup = 'dashboard';
+  @Deprecated('Use markt instead')
+  static const transfers = 'markt';
 }

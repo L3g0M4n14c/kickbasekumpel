@@ -39,19 +39,9 @@ class DashboardShell extends StatelessWidget {
         onDestinationSelected: _onDestinationSelected,
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.sports_soccer),
-            selectedIcon: Icon(Icons.sports_soccer),
-            label: 'Live',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.emoji_events_outlined),
-            selectedIcon: Icon(Icons.emoji_events),
-            label: 'Ligen',
+            icon: Icon(Icons.people_outline),
+            selectedIcon: Icon(Icons.people),
+            label: 'Team',
           ),
           NavigationDestination(
             icon: Icon(Icons.store_outlined),
@@ -59,14 +49,14 @@ class DashboardShell extends StatelessWidget {
             label: 'Markt',
           ),
           NavigationDestination(
-            icon: Icon(Icons.people_outline),
-            selectedIcon: Icon(Icons.people),
-            label: 'Aufstellung',
+            icon: Icon(Icons.emoji_events_outlined),
+            selectedIcon: Icon(Icons.emoji_events),
+            label: 'Liga',
           ),
           NavigationDestination(
-            icon: Icon(Icons.swap_horiz_outlined),
-            selectedIcon: Icon(Icons.swap_horiz),
-            label: 'Transfers',
+            icon: Icon(Icons.sports_soccer),
+            selectedIcon: Icon(Icons.sports_soccer),
+            label: 'Ligainsider',
           ),
           NavigationDestination(
             icon: Icon(Icons.settings_outlined),
@@ -105,23 +95,12 @@ class DashboardShell extends StatelessWidget {
                 ],
               ),
             ),
-            _buildDrawerItem(context, 0, Icon(Icons.home), 'Home'),
-            _buildDrawerItem(context, 1, Icon(Icons.sports_soccer), 'Live'),
-            _buildDrawerItem(context, 2, Icon(Icons.emoji_events), 'Ligen'),
-            _buildDrawerItem(context, 3, Icon(Icons.store), 'Markt'),
-            _buildDrawerItem(context, 4, Icon(Icons.people), 'Aufstellung'),
-            _buildDrawerItem(context, 5, Icon(Icons.swap_horiz), 'Transfers'),
-            ListTile(
-              leading: Icon(Icons.sports_soccer),
-              title: Text('Voraussichtliche Aufstellungen'),
-              onTap: () {
-                Navigator.pop(context);
-                // Navigate to Ligainsider screen
-                context.go('/ligainsider/lineups');
-              },
-            ),
+            _buildDrawerItem(context, 0, Icon(Icons.people), 'Team'),
+            _buildDrawerItem(context, 1, Icon(Icons.store), 'Markt'),
+            _buildDrawerItem(context, 2, Icon(Icons.emoji_events), 'Liga'),
+            _buildDrawerItem(context, 3, Icon(Icons.sports_soccer), 'Ligainsider'),
             const Divider(),
-            _buildDrawerItem(context, 6, Icon(Icons.settings), 'Einstellungen'),
+            _buildDrawerItem(context, 4, Icon(Icons.settings), 'Einstellungen'),
           ],
         ),
       ),
@@ -144,19 +123,9 @@ class DashboardShell extends StatelessWidget {
             ),
             destinations: const [
               NavigationRailDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home),
-                label: Text('Home'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.sports_soccer),
-                selectedIcon: Icon(Icons.sports_soccer),
-                label: Text('Live'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.emoji_events_outlined),
-                selectedIcon: Icon(Icons.emoji_events),
-                label: Text('Ligen'),
+                icon: Icon(Icons.people_outline),
+                selectedIcon: Icon(Icons.people),
+                label: Text('Team'),
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.store_outlined),
@@ -164,14 +133,14 @@ class DashboardShell extends StatelessWidget {
                 label: Text('Markt'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.people_outline),
-                selectedIcon: Icon(Icons.people),
-                label: Text('Aufstellung'),
+                icon: Icon(Icons.emoji_events_outlined),
+                selectedIcon: Icon(Icons.emoji_events),
+                label: Text('Liga'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.swap_horiz_outlined),
-                selectedIcon: Icon(Icons.swap_horiz),
-                label: Text('Transfers'),
+                icon: Icon(Icons.sports_soccer),
+                selectedIcon: Icon(Icons.sports_soccer),
+                label: Text('Ligainsider'),
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.settings_outlined),
@@ -208,18 +177,14 @@ class DashboardShell extends StatelessWidget {
   String _getPageTitle() {
     switch (navigationShell.currentIndex) {
       case 0:
-        return 'Home';
+        return 'Team';
       case 1:
-        return 'Live';
-      case 2:
-        return 'Ligen';
-      case 3:
         return 'Markt';
+      case 2:
+        return 'Liga';
+      case 3:
+        return 'Ligainsider';
       case 4:
-        return 'Aufstellung';
-      case 5:
-        return 'Transfers';
-      case 6:
         return 'Einstellungen';
       default:
         return 'Kickbase Kumpel';
