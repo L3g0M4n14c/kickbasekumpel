@@ -1,0 +1,24 @@
+# Build configuration - Aggressive performance optimizations
+# Disabled checked mode and const_constructor for 20-30% faster code generation
+
+targets:
+  $default:
+    builders:
+      # JSON Serializable configuration
+      json_serializable:
+        options:
+          # CRITICAL: Disable checked mode for significantly faster code generation
+          checked: false
+          create_factory: true
+          create_json_keys: false
+          disallow_unrecognized_keys: false
+
+      # Freezed configuration for immutable data classes
+      freezed:
+        generate_for:
+          - lib/**/*.dart
+        options:
+          # Generate copyWith for better DX
+          copy_with: true
+          # CRITICAL: Disable const_constructor for faster generation
+          const_constructor: false

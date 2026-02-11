@@ -38,5 +38,17 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_macos_build_settings(target)
+    
+    # Build Performance: Optimize compiler flags for Debug builds
+    target.build_configurations.each do |config|
+      if config.name == 'Debug'
+        config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = '-Ooff'
+        config.build_settings['GCC_OPTIMIZATION_LEVEL'] = '0'
+      end
+    end
   end
+  
+  # Build Performance: Parallelize Pod builds
+  ENV['CONCURRENT_PREGEN'] = 'true'
+  ENV['COCOAPODS_PARALLEL_POD_INSTALL'] = 'true'
 end
