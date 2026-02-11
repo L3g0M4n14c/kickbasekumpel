@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/screen_size.dart';
+import '../../../data/providers/recommendation_providers.dart';
+import '../../../data/providers/league_providers.dart';
+import '../../../data/models/transfer_model.dart';
+import '../../widgets/loading_widget.dart';
+import '../../widgets/error_widget.dart';
 import '../../screens/dashboard/market_screen.dart';
-import '../../screens/dashboard/transfers_screen.dart';
 
 /// Markt Page with tabs for Transfermarkt and Transfer-Tipps
 class MarktPage extends ConsumerStatefulWidget {
@@ -55,10 +59,152 @@ class _MarktPageState extends ConsumerState<MarktPage>
       body: TabBarView(
         controller: _tabController,
         children: const [
-          MarketScreen(), // Transfermarkt
-          TransfersScreen(), // Transfer-Tipps
+          MarketScreen(), // Transfermarkt with its own tabs
+          _TransferTipsTab(), // Transfer recommendations
         ],
       ),
     );
+  }
+}
+
+/// Transfer Tips Tab - shows transfer recommendations
+class _TransferTipsTab extends ConsumerWidget {
+  const _TransferTipsTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final selectedLeague = ref.watch(selectedLeagueProvider);
+
+    if (selectedLeague == null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.emoji_events_outlined,
+                size: 80,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Keine Liga ausgewählt',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Bitte wähle zuerst eine Liga aus',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final recommendationsAsync = ref.watch(recommendationsProvider);
+
+    return recommendationsAsync.when(
+      data: (recommendations) {
+        if (recommendations.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.lightbulb_outline,
+                    size: 80,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Keine Empfehlungen verfügbar',
+                    style: theme.textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Aktuell gibt es keine Transfer-Empfehlungen',
+                    style: theme.textTheme.bodyLarge,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(recommendationsProvider);
+          },
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16.0),
+            itemCount: recommendations.length,
+            itemBuilder: (context, index) {
+              final rec = recommendations[index];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12.0),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: _getActionColor(rec.action, theme),
+                    child: Icon(
+                      _getActionIcon(rec.action),
+                      color: Colors.white,
+                    ),
+                  ),
+                  title: Text(rec.playerName ?? 'Unbekannt'),
+                  subtitle: Text(rec.reasoning ?? 'Keine Beschreibung'),
+                  trailing: Icon(Icons.chevron_right),
+                  onTap: () {
+                    // TODO: Navigate to player details
+                  },
+                ),
+              );
+            },
+          ),
+        );
+      },
+      loading: () => const Center(child: LoadingWidget()),
+      error: (error, stack) => Center(
+        child: CustomErrorWidget(
+          message: error.toString(),
+          onRetry: () => ref.invalidate(recommendationsProvider),
+        ),
+      ),
+    );
+  }
+
+  Color _getActionColor(String action, ThemeData theme) {
+    switch (action.toLowerCase()) {
+      case 'buy':
+        return Colors.green;
+      case 'sell':
+        return Colors.red;
+      case 'hold':
+        return Colors.blue;
+      default:
+        return theme.colorScheme.primary;
+    }
+  }
+
+  IconData _getActionIcon(String action) {
+    switch (action.toLowerCase()) {
+      case 'buy':
+        return Icons.add_shopping_cart;
+      case 'sell':
+        return Icons.remove_shopping_cart;
+      case 'hold':
+        return Icons.pause_circle_outline;
+      default:
+        return Icons.info_outline;
+    }
   }
 }
