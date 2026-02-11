@@ -18,8 +18,8 @@ class LineupPage extends ConsumerWidget {
                 IconButton(
                   icon: const Icon(Icons.sports_soccer),
                   onPressed: () {
-                    // Open Ligainsider lineups screen
-                    context.go('/ligainsider/lineups');
+                    // Navigate to Ligainsider tab
+                    context.go('/dashboard/ligainsider');
                   },
                 ),
                 IconButton(
