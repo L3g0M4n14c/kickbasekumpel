@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/player_model.dart';
+import '../models/lineup_model.dart';
 import '../../domain/repositories/repository_interfaces.dart';
 import 'repository_providers.dart';
 import 'league_providers.dart';
+import 'live_providers.dart';
 
 // ============================================================================
 // PLAYER STREAM PROVIDERS
@@ -688,3 +690,23 @@ class BestValuePlayersWidget extends ConsumerWidget {
   }
 }
 */
+
+// ============================================================================
+// LINEUP PROVIDERS
+// ============================================================================
+
+/// My Lineup Provider
+/// Fetches current lineup with player details
+final myLineupProvider = FutureProvider.family<List<LineupPlayer>, String>((
+  ref,
+  leagueId,
+) async {
+  final myElevenData = await ref.watch(myElevenProvider(leagueId).future);
+
+  try {
+    final response = LineupResponse.fromJson(myElevenData);
+    return response.players;
+  } catch (e) {
+    throw Exception('Failed to parse lineup: $e');
+  }
+});

@@ -4,16 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/providers/kickbase_auth_provider.dart';
 import '../presentation/pages/auth/signin_page.dart';
-// import '../presentation/pages/auth/signup_page.dart';
-// import '../presentation/pages/auth/forgot_password_page.dart';
-// import '../presentation/pages/auth/verify_email_page.dart';
 import '../presentation/pages/dashboard/dashboard_shell.dart';
-import '../presentation/pages/dashboard/home_page.dart';
-import '../presentation/pages/dashboard/leagues_page.dart';
+import '../presentation/pages/dashboard/team_page.dart';
 import '../presentation/pages/dashboard/market_page.dart';
 import '../presentation/pages/dashboard/lineup_page.dart';
 import '../presentation/pages/dashboard/transfers_page.dart';
-import '../presentation/pages/dashboard/settings_page.dart';
 import '../presentation/pages/league/league_overview_page.dart';
 import '../presentation/pages/league/league_standings_page.dart';
 import '../presentation/pages/league/league_players_page.dart';
@@ -109,40 +104,18 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
         branches: [
-          // Home Tab
+          // Team Tab (0)
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/dashboard',
                 name: 'dashboard',
                 pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: HomePage()),
+                    const NoTransitionPage(child: TeamPage()),
               ),
             ],
           ),
-          // Live Tab
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/dashboard/live',
-                name: 'live',
-                pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: LiveScreen()),
-              ),
-            ],
-          ),
-          // Leagues Tab
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/dashboard/leagues',
-                name: 'leagues',
-                pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: LeaguesPage()),
-              ),
-            ],
-          ),
-          // Market Tab
+          // Market Tab (1)
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -153,7 +126,18 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Lineup Tab
+          // Sales Recommendation Tab (2) - wird erst nach erstellt
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/dashboard/sales',
+                name: 'sales',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: Placeholder()),
+              ),
+            ],
+          ),
+          // Lineup Tab (3)
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -164,7 +148,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Transfers Tab
+          // Transfers (Transfer-Tipps) Tab (4)
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -175,14 +159,37 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Settings Tab
+          // Ligainsider Tab (5)
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/dashboard/settings',
-                name: 'settings',
+                path: '/dashboard/ligainsider',
+                name: 'ligainsider',
                 pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: SettingsPage()),
+                    const NoTransitionPage(child: LigainsiderScreen()),
+              ),
+            ],
+          ),
+          // League Table Tab (6)
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/dashboard/table',
+                name: 'table',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                  child: LeagueTableScreen(competitionId: 'bundesliga'),
+                ),
+              ),
+            ],
+          ),
+          // Live Tab (7)
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/dashboard/live',
+                name: 'live',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: LiveScreen()),
               ),
             ],
           ),
@@ -206,7 +213,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ======================================================================
       GoRoute(
         path: '/ligainsider/lineups',
-        name: 'ligainsider',
+        name: 'ligainsider-lineups',
         pageBuilder: (context, state) =>
             MaterialPage(key: state.pageKey, child: const LigainsiderScreen()),
       ),

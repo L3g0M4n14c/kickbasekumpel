@@ -34,46 +34,54 @@ class DashboardShell extends StatelessWidget {
   Widget _buildMobileLayout(BuildContext context) {
     return Scaffold(
       body: navigationShell,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: _onDestinationSelected,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.sports_soccer),
-            selectedIcon: Icon(Icons.sports_soccer),
-            label: 'Live',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.emoji_events_outlined),
-            selectedIcon: Icon(Icons.emoji_events),
-            label: 'Ligen',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.store_outlined),
-            selectedIcon: Icon(Icons.store),
-            label: 'Markt',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.people_outline),
-            selectedIcon: Icon(Icons.people),
-            label: 'Aufstellung',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.swap_horiz_outlined),
-            selectedIcon: Icon(Icons.swap_horiz),
-            label: 'Transfers',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Einstellungen',
-          ),
-        ],
+      bottomNavigationBar: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: NavigationBar(
+          selectedIndex: navigationShell.currentIndex,
+          onDestinationSelected: _onDestinationSelected,
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person),
+              label: 'Team',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.store_outlined),
+              selectedIcon: Icon(Icons.store),
+              label: 'Markt',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.sell_outlined),
+              selectedIcon: Icon(Icons.sell),
+              label: 'Verkaufen',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.people_outline),
+              selectedIcon: Icon(Icons.people),
+              label: 'Aufstellung',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.trending_up_outlined),
+              selectedIcon: Icon(Icons.trending_up),
+              label: 'Transfer-Tipps',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.list_outlined),
+              selectedIcon: Icon(Icons.list),
+              label: 'Ligainsider',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.leaderboard_outlined),
+              selectedIcon: Icon(Icons.leaderboard),
+              label: 'Tabelle',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.sports_soccer_outlined),
+              selectedIcon: Icon(Icons.sports_soccer),
+              label: 'Live',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -105,23 +113,19 @@ class DashboardShell extends StatelessWidget {
                 ],
               ),
             ),
-            _buildDrawerItem(context, 0, Icon(Icons.home), 'Home'),
-            _buildDrawerItem(context, 1, Icon(Icons.sports_soccer), 'Live'),
-            _buildDrawerItem(context, 2, Icon(Icons.emoji_events), 'Ligen'),
-            _buildDrawerItem(context, 3, Icon(Icons.store), 'Markt'),
-            _buildDrawerItem(context, 4, Icon(Icons.people), 'Aufstellung'),
-            _buildDrawerItem(context, 5, Icon(Icons.swap_horiz), 'Transfers'),
-            ListTile(
-              leading: Icon(Icons.sports_soccer),
-              title: Text('Voraussichtliche Aufstellungen'),
-              onTap: () {
-                Navigator.pop(context);
-                // Navigate to Ligainsider screen
-                context.go('/ligainsider/lineups');
-              },
+            _buildDrawerItem(context, 0, Icon(Icons.person), 'Team'),
+            _buildDrawerItem(context, 1, Icon(Icons.store), 'Markt'),
+            _buildDrawerItem(context, 2, Icon(Icons.sell), 'Verkaufen'),
+            _buildDrawerItem(context, 3, Icon(Icons.people), 'Aufstellung'),
+            _buildDrawerItem(
+              context,
+              4,
+              Icon(Icons.trending_up),
+              'Transfer-Tipps',
             ),
-            const Divider(),
-            _buildDrawerItem(context, 6, Icon(Icons.settings), 'Einstellungen'),
+            _buildDrawerItem(context, 5, Icon(Icons.list), 'Ligainsider'),
+            _buildDrawerItem(context, 6, Icon(Icons.leaderboard), 'Tabelle'),
+            _buildDrawerItem(context, 7, Icon(Icons.sports_soccer), 'Live'),
           ],
         ),
       ),
@@ -144,19 +148,9 @@ class DashboardShell extends StatelessWidget {
             ),
             destinations: const [
               NavigationRailDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home),
-                label: Text('Home'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.sports_soccer),
-                selectedIcon: Icon(Icons.sports_soccer),
-                label: Text('Live'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.emoji_events_outlined),
-                selectedIcon: Icon(Icons.emoji_events),
-                label: Text('Ligen'),
+                icon: Icon(Icons.person_outlined),
+                selectedIcon: Icon(Icons.person),
+                label: Text('Team'),
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.store_outlined),
@@ -164,19 +158,34 @@ class DashboardShell extends StatelessWidget {
                 label: Text('Markt'),
               ),
               NavigationRailDestination(
+                icon: Icon(Icons.sell_outlined),
+                selectedIcon: Icon(Icons.sell),
+                label: Text('Verkaufen'),
+              ),
+              NavigationRailDestination(
                 icon: Icon(Icons.people_outline),
                 selectedIcon: Icon(Icons.people),
                 label: Text('Aufstellung'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.swap_horiz_outlined),
-                selectedIcon: Icon(Icons.swap_horiz),
-                label: Text('Transfers'),
+                icon: Icon(Icons.trending_up_outlined),
+                selectedIcon: Icon(Icons.trending_up),
+                label: Text('Transfer-Tipps'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.settings_outlined),
-                selectedIcon: Icon(Icons.settings),
-                label: Text('Einstellungen'),
+                icon: Icon(Icons.list_outlined),
+                selectedIcon: Icon(Icons.list),
+                label: Text('Ligainsider'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.leaderboard_outlined),
+                selectedIcon: Icon(Icons.leaderboard),
+                label: Text('Tabelle'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.sports_soccer_outlined),
+                selectedIcon: Icon(Icons.sports_soccer),
+                label: Text('Live'),
               ),
             ],
           ),
@@ -208,19 +217,21 @@ class DashboardShell extends StatelessWidget {
   String _getPageTitle() {
     switch (navigationShell.currentIndex) {
       case 0:
-        return 'Home';
+        return 'Team';
       case 1:
-        return 'Live';
-      case 2:
-        return 'Ligen';
-      case 3:
         return 'Markt';
-      case 4:
+      case 2:
+        return 'Verkaufen';
+      case 3:
         return 'Aufstellung';
+      case 4:
+        return 'Transfer-Tipps';
       case 5:
-        return 'Transfers';
+        return 'Ligainsider';
       case 6:
-        return 'Einstellungen';
+        return 'Tabelle';
+      case 7:
+        return 'Live';
       default:
         return 'Kickbase Kumpel';
     }

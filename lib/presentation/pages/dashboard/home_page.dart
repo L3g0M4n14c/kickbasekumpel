@@ -145,8 +145,6 @@ class _HomePageState extends ConsumerState<HomePage> {
         _buildLeagueSelector(context, ref, leagues),
         if (selectedLeagueId != null) ...[
           const SizedBox(height: 16),
-          _buildLeagueStats(context, ref, selectedLeagueId!),
-          const SizedBox(height: 16),
           _buildSquadOverview(context, ref, selectedLeagueId!),
         ],
         const SizedBox(height: 16),
@@ -174,8 +172,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                 const SizedBox(height: 24),
                 _buildLeagueSelector(context, ref, leagues),
                 if (selectedLeagueId != null) ...[
-                  const SizedBox(height: 24),
-                  _buildLeagueStats(context, ref, selectedLeagueId!),
                   const SizedBox(height: 24),
                   _buildSquadOverview(context, ref, selectedLeagueId!),
                 ],
@@ -220,8 +216,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                     flex: 3,
                     child: Column(
                       children: [
-                        _buildLeagueStats(context, ref, selectedLeagueId!),
-                        const SizedBox(height: 32),
                         _buildSquadOverview(context, ref, selectedLeagueId!),
                       ],
                     ),
@@ -271,100 +265,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildLeagueStats(
-    BuildContext context,
-    WidgetRef ref,
-    String leagueId,
-  ) {
-    final leagueMeAsync = ref.watch(leagueMeProvider(leagueId));
-    final budgetAsync = ref.watch(myBudgetProvider(leagueId));
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Liga-Statistiken',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            leagueMeAsync.when(
-              data: (leagueMeData) {
-                final teamValue = leagueMeData['tv'] ?? 0;
-                final points = leagueMeData['p'] ?? 0;
-                final placement = leagueMeData['pl'] ?? 0;
-
-                return budgetAsync.when(
-                  data: (budgetData) {
-                    final budget = budgetData['b'] ?? 0;
-                    final availableBudget = budgetData['ab'] ?? 0;
-
-                    return GridView.count(
-                      crossAxisCount: ScreenSize.isMobile(context) ? 2 : 4,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 1.5,
-                      children: [
-                        _StatCard(
-                          title: 'Budget',
-                          value: '${(budget / 1000000).toStringAsFixed(1)}M€',
-                          icon: Icons.account_balance_wallet,
-                          color: Colors.green,
-                        ),
-                        _StatCard(
-                          title: 'Verfügbar',
-                          value:
-                              '${(availableBudget / 1000000).toStringAsFixed(1)}M€',
-                          icon: Icons.euro,
-                          color: Colors.teal,
-                        ),
-                        _StatCard(
-                          title: 'Team-Wert',
-                          value:
-                              '${(teamValue / 1000000).toStringAsFixed(1)}M€',
-                          icon: Icons.trending_up,
-                          color: Colors.blue,
-                        ),
-                        _StatCard(
-                          title: 'Platzierung',
-                          value: '#$placement',
-                          icon: Icons.emoji_events,
-                          color: Colors.amber,
-                        ),
-                        _StatCard(
-                          title: 'Punkte',
-                          value: '$points',
-                          icon: Icons.stars,
-                          color: Colors.purple,
-                        ),
-                      ],
-                    );
-                  },
-                  loading: () => const Center(child: LoadingWidget()),
-                  error: (error, stack) => Text(
-                    'Budget-Fehler: ${error.toString()}',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                );
-              },
-              loading: () => const Center(child: LoadingWidget()),
-              error: (error, stack) => Text(
-                'Fehler: ${error.toString()}',
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildSquadOverview(
     BuildContext context,
     WidgetRef ref,
@@ -372,96 +272,85 @@ class _HomePageState extends ConsumerState<HomePage> {
   ) {
     final squadAsync = ref.watch(mySquadProvider(leagueId));
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Mein Kader', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
-            squadAsync.when(
-              data: (squadData) {
-                final players = squadData['it'] as List? ?? [];
-                // tp = total points (Gesamtpunkte des Spielers)
-                final totalPoints = players.fold<int>(
-                  0,
-                  (sum, player) => sum + (player['tp'] as int? ?? 0),
-                );
-                final avgPoints = players.isEmpty
-                    ? 0.0
-                    : totalPoints / players.length;
-
-                return Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildSquadStat(
-                          context,
-                          'Spieler',
-                          '${players.length}',
-                          Icons.people,
-                        ),
-                        _buildSquadStat(
-                          context,
-                          'Ø Punkte',
-                          avgPoints.toStringAsFixed(1),
-                          Icons.star,
-                        ),
-                        _buildSquadStat(
-                          context,
-                          'Gesamt',
-                          '$totalPoints',
-                          Icons.emoji_events,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton.icon(
-                      onPressed: () {
-                        // Navigate to lineup/squad page
-                        context.push('/dashboard/lineup');
-                      },
-                      icon: const Icon(Icons.groups),
-                      label: const Text('Kader anzeigen'),
-                    ),
-                  ],
-                );
-              },
-              loading: () => const Center(child: LoadingWidget()),
-              error: (error, stack) => Text(
-                'Fehler beim Laden des Kaders: ${error.toString()}',
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSquadStat(
-    BuildContext context,
-    String label,
-    String value,
-    IconData icon,
-  ) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 32, color: Theme.of(context).colorScheme.primary),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+        Text('Dein Kader', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 12),
+        squadAsync.when(
+          data: (squadData) {
+            final players = squadData['it'] as List? ?? [];
+
+            if (players.isEmpty) {
+              return Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Center(
+                    child: Text(
+                      'Keine Spieler in deinem Kader',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            return Card(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  columns: [
+                    DataColumn(label: Text('Name')),
+                    DataColumn(label: Text('Marktwert')),
+                    DataColumn(label: Text('Punkte')),
+                    DataColumn(label: Text('Position')),
+                  ],
+                  rows: players.map((player) {
+                    final name = player['n'] as String? ?? 'Unbekannt';
+                    final marketValue = player['mv'] as int? ?? 0;
+                    final points = player['tp'] as int? ?? 0;
+                    final position = player['pos'] as int? ?? 0;
+
+                    String posLabel = '';
+                    switch (position) {
+                      case 1:
+                        posLabel = 'TW';
+                        break;
+                      case 2:
+                        posLabel = 'AB';
+                        break;
+                      case 3:
+                        posLabel = 'MF';
+                        break;
+                      case 4:
+                        posLabel = 'ST';
+                        break;
+                    }
+
+                    return DataRow(
+                      cells: [
+                        DataCell(Text(name)),
+                        DataCell(
+                          Text(
+                            '€${(marketValue / 1000000).toStringAsFixed(1)}M',
+                          ),
+                        ),
+                        DataCell(Text('⭐ $points')),
+                        DataCell(Text(posLabel)),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
+            );
+          },
+          loading: () => const Center(child: LoadingWidget()),
+          error: (error, stack) => Text(
+            'Fehler beim Laden des Kaders: ${error.toString()}',
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
         ),
       ],
     );
@@ -532,49 +421,6 @@ class _HomePageState extends ConsumerState<HomePage> {
             onTap: () => context.push('/ligainsider/lineups'),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final IconData icon;
-  final Color color;
-
-  const _StatCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 40, color: color),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: Theme.of(
-                context,
-              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-            ),
-          ],
-        ),
       ),
     );
   }

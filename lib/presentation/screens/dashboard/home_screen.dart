@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../data/providers/user_providers.dart' as user_prov;
 import '../../../data/providers/league_providers.dart';
 import '../../../data/providers/recommendation_providers.dart';
+import '../../../data/providers/player_providers.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/error_widget.dart';
 
@@ -83,9 +84,9 @@ class HomeScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
-            // Stats Grid (only if league selected)
+            // Lineup Section (only if league selected)
             if (selectedLeague != null) ...[
-              _StatsGrid(league: selectedLeague),
+              _KaderSection(leagueId: selectedLeague.i),
               const SizedBox(height: 16),
             ],
 
@@ -238,101 +239,6 @@ class _EmptyLeaguesCard extends StatelessWidget {
               'Tritt einer Liga bei oder erstelle eine neue Liga in Kickbase.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatsGrid extends StatelessWidget {
-  final dynamic league;
-
-  const _StatsGrid({required this.league});
-
-  @override
-  Widget build(BuildContext context) {
-    final items = [
-      _StatItem(
-        icon: Icons.attach_money,
-        label: 'Budget',
-        value: '${(league.cu.budget / 1000000).toStringAsFixed(1)}M €',
-        color: Colors.green,
-      ),
-      _StatItem(
-        icon: Icons.trending_up,
-        label: 'Team-Wert',
-        value: '${(league.cu.teamValue / 1000000).toStringAsFixed(1)}M €',
-        color: Colors.blue,
-      ),
-      _StatItem(
-        icon: Icons.stars,
-        label: 'Punkte',
-        value: '${league.cu.points}',
-        color: Colors.orange,
-      ),
-      _StatItem(
-        icon: Icons.emoji_events,
-        label: 'Platzierung',
-        value: '#${league.cu.placement}',
-        color: Colors.purple,
-      ),
-    ];
-
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 2,
-        childAspectRatio: 1.5,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
-      itemCount: items.length,
-      itemBuilder: (context, index) => items[index],
-    );
-  }
-}
-
-class _StatItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-
-  const _StatItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 32),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
@@ -562,5 +468,263 @@ class _LatestRecommendations extends ConsumerWidget {
       default:
         return Icons.help_outline;
     }
+  }
+}
+
+class _KaderSection extends ConsumerWidget {
+  final String leagueId;
+
+  const _KaderSection({required this.leagueId});
+
+  String _getPositionLabel(int position) {
+    switch (position) {
+      case 1:
+        return 'TW';
+      case 2:
+        return 'AB';
+      case 3:
+        return 'MF';
+      case 4:
+        return 'ST';
+      default:
+        return '?';
+    }
+  }
+
+  Color _getPositionColor(int position) {
+    switch (position) {
+      case 1:
+        return Colors.yellow;
+      case 2:
+        return Colors.blue;
+      case 3:
+        return Colors.green;
+      case 4:
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final myLineupAsync = ref.watch(myLineupProvider(leagueId));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Dein Kader',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        myLineupAsync.when(
+          data: (players) {
+            if (players.isEmpty) {
+              return Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Center(
+                    child: Text(
+                      'Keine Spieler in deinem Kader',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            final starters =
+                players
+                    .where((p) => p.lineupOrder > 0 && p.lineupOrder <= 11)
+                    .toList()
+                  ..sort((a, b) => a.lineupOrder.compareTo(b.lineupOrder));
+
+            final bench = players.where((p) => p.lineupOrder > 11).toList();
+
+            return Column(
+              children: [
+                // Startelf
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Startelf (${starters.length})',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount:
+                                    MediaQuery.of(context).size.width > 600
+                                    ? 6
+                                    : 4,
+                                childAspectRatio: 0.85,
+                                crossAxisSpacing: 8,
+                                mainAxisSpacing: 8,
+                              ),
+                          itemCount: starters.length,
+                          itemBuilder: (context, index) {
+                            final player = starters[index];
+                            return _PlayerCard(
+                              name: player.name,
+                              position: player.position,
+                              points: player.totalPoints,
+                              positionLabel: _getPositionLabel(player.position),
+                              positionColor: _getPositionColor(player.position),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (bench.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: Colors.grey,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Center(
+                              child: Icon(Icons.group, color: Colors.white),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Bank',
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  '${bench.length} ${bench.length == 1 ? 'Spieler' : 'Spieler'}',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            );
+          },
+          loading: () => const LoadingWidget(),
+          error: (error, stack) => ErrorWidgetCustom(
+            error: error,
+            onRetry: () => ref.invalidate(myLineupProvider(leagueId)),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PlayerCard extends StatelessWidget {
+  final String name;
+  final int position;
+  final int points;
+  final String positionLabel;
+  final Color positionColor;
+
+  const _PlayerCard({
+    required this.name,
+    required this.position,
+    required this.points,
+    required this.positionLabel,
+    required this.positionColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final nameParts = name.split(' ');
+    final displayName = nameParts.length > 1 ? nameParts.last : name;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: positionColor,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  positionLabel,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ),
+            Flexible(
+              child: Column(
+                children: [
+                  Text(
+                    displayName,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$points Pts',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.green,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
