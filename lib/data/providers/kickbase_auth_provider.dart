@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import '../models/user_model.dart';
 import '../services/kickbase_api_client.dart';
 import 'kickbase_api_provider.dart';
+
+final _logger = Logger();
 
 // ============================================================================
 // Kickbase Authentication State Management
@@ -80,13 +83,15 @@ class KickbaseAuthNotifier extends Notifier<KickbaseAuthState> {
       state = state.copyWith(isAuthenticated: true, currentUser: savedUser);
 
       if (savedUser != null) {
-        print('🔑 Existing token and user data found - user: ${savedUser.n}');
+        _logger.d(
+          '🔑 Existing token and user data found - user: ${savedUser.n}',
+        );
       } else {
-        print('🔑 Existing token found but no user data');
+        _logger.d('🔑 Existing token found but no user data');
       }
     } else {
       state = state.copyWith(isAuthenticated: false);
-      print('🔓 No token found - user needs to login');
+      _logger.d('🔓 No token found - user needs to login');
     }
   }
 
@@ -118,7 +123,7 @@ class KickbaseAuthNotifier extends Notifier<KickbaseAuthState> {
         successMessage: 'Erfolgreich bei Kickbase angemeldet',
       );
 
-      print('✅ Kickbase login successful for user: ${user.n}');
+      _logger.i('✅ Kickbase login successful for user: ${user.n}');
       return true;
     } catch (e) {
       final errorMessage = e.toString().replaceAll('Exception:', '').trim();
@@ -129,7 +134,7 @@ class KickbaseAuthNotifier extends Notifier<KickbaseAuthState> {
         error: errorMessage,
       );
 
-      print('❌ Kickbase login failed: $errorMessage');
+      _logger.e('❌ Kickbase login failed: $errorMessage');
       return false;
     }
   }
@@ -146,9 +151,9 @@ class KickbaseAuthNotifier extends Notifier<KickbaseAuthState> {
         successMessage: 'Erfolgreich abgemeldet',
       );
 
-      print('✅ Kickbase logout successful');
+      _logger.i('✅ Kickbase logout successful');
     } catch (e) {
-      print('⚠️ Logout error (still clearing state): $e');
+      _logger.w('⚠️ Logout error (still clearing state): $e');
 
       // Even if error, clear the state
       state = const KickbaseAuthState(
@@ -169,17 +174,17 @@ class KickbaseAuthNotifier extends Notifier<KickbaseAuthState> {
   Future<void> refreshUserData() async {
     if (!state.isAuthenticated) return;
 
-    print(
+    _logger.w(
       '⚠️ User data refresh not available - /v4/user endpoint not supported',
     );
-    print('💡 User data is loaded from login response only');
+    _logger.i('💡 User data is loaded from login response only');
 
     // try {
     //   final user = await _apiClient.getUser();
     //   state = state.copyWith(currentUser: user);
-    //   print('✅ User data refreshed');
+    //   _logger.i('✅ User data refreshed');
     // } catch (e) {
-    //   print('⚠️ Failed to refresh user data: $e');
+    //   _logger.w('⚠️ Failed to refresh user data: $e');
     //   // Don't change auth state, just log the error
     // }
   }

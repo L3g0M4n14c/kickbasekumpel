@@ -1,5 +1,8 @@
 import 'dart:io';
 import 'package:image/image.dart';
+import 'package:logger/logger.dart';
+
+final _logger = Logger();
 
 void main() {
   final files = [
@@ -14,14 +17,14 @@ void main() {
   for (final path in files) {
     final file = File(path);
     if (!file.existsSync()) {
-      print('⚠️ Datei nicht gefunden: $path');
+      _logger.w('⚠️ Datei nicht gefunden: $path');
       continue;
     }
 
     final bytes = file.readAsBytesSync();
     final img = decodeImage(bytes);
     if (img == null) {
-      print('⚠️ Konnte $path nicht dekodieren');
+      _logger.w('⚠️ Konnte $path nicht dekodieren');
       continue;
     }
 
@@ -49,7 +52,7 @@ void main() {
       }
     }
 
-    print(
+    _logger.d(
       '  -> Transparente Pixel: $convertedCount, numChannels: ${rgba.numChannels}, hasPalette: ${rgba.hasPalette}',
     );
 
@@ -61,12 +64,12 @@ void main() {
     final decodedAfter = decodeImage(File(path).readAsBytesSync());
     final hasTransparent =
         decodedAfter != null && _hasTransparentPixel(decodedAfter);
-    print(
+    _logger.i(
       '✅ Konvertiert: $path (Backup: ${backup.path}) - hatTransparent: $hasTransparent',
     );
   }
 
-  print(
+  _logger.i(
     '\nFertig. Bitte neu bauen, damit die geänderten Assets geladen werden.',
   );
 }

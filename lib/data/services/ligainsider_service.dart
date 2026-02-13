@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 
@@ -38,6 +39,7 @@ class LigainsiderService {
   final http.Client _httpClient;
   final SharedPreferences _prefs;
   final Connectivity _connectivity;
+  final Logger _logger = Logger();
 
   // In-memory cache for fast access
   final Map<String, LigainsiderPlayer> _playerCache = {};
@@ -70,12 +72,12 @@ class LigainsiderService {
 
   /// Fetch lineups and populate cache
   Future<void> fetchLineups() async {
-    print('🔄 Ligainsider: Starting lineup fetch...');
+    _logger.d('🔄 Ligainsider: Starting lineup fetch...');
 
     // Avoid noisy repeated fetches
     if (_lastFetch != null &&
         DateTime.now().difference(_lastFetch!) < const Duration(seconds: 15)) {
-      print(
+      _logger.w(
         '⚠️ Ligainsider: Recent fetch in last 15s detected, skipping redundant fetch',
       );
       return;
@@ -85,7 +87,7 @@ class LigainsiderService {
     // Check connectivity
     final connectivityResult = await _connectivity.checkConnectivity();
     if (connectivityResult.contains(ConnectivityResult.none)) {
-      print('⚠️ Ligainsider: No internet connection, loading from cache');
+      _logger.w('⚠️ Ligainsider: No internet connection, loading from cache');
       await _loadFromCache();
       return;
     }
@@ -95,7 +97,9 @@ class LigainsiderService {
     if (kIsWeb) {
       if (_proxyUrl.isNotEmpty) {
         try {
-          print('ℹ️ Ligainsider: Running on Web - trying proxy: $_proxyUrl');
+          _logger.i(
+            'ℹ️ Ligainsider: Running on Web - trying proxy: $_proxyUrl',
+          );
           final resp = await _httpClient.get(Uri.parse(_proxyUrl));
           if (resp.statusCode == 200) {
             final List<dynamic> data = jsonDecode(resp.body);
@@ -120,27 +124,27 @@ class LigainsiderService {
               }
             }
 
-            print(
+            _logger.d(
               '✅ Ligainsider: Loaded ${_playerCache.length} players from proxy',
             );
             _isReady = true;
             await _saveToCache(players);
             return;
           } else {
-            print(
+            _logger.w(
               '⚠️ Ligainsider: Proxy responded with ${resp.statusCode}, falling back to cache',
             );
             await _loadFromCache();
             return;
           }
         } catch (e) {
-          print('⚠️ Ligainsider: Proxy fetch failed: $e');
+          _logger.w('⚠️ Ligainsider: Proxy fetch failed: $e');
           await _loadFromCache();
           return;
         }
       }
 
-      print(
+      _logger.w(
         '⚠️ Ligainsider: Running on Web platform — scraping blocked by CORS. Loading from cache only.',
       );
       await _loadFromCache();
@@ -168,16 +172,16 @@ class LigainsiderService {
         }
       }
 
-      print(
+      _logger.d(
         '✅ Ligainsider: Cache populated with ${_playerCache.length} players',
       );
-      print('   - Starting lineup IDs: ${_startingLineupIds.length}');
-      print('   - Alternative names: ${_alternativeNames.length}');
+      _logger.d('   - Starting lineup IDs: ${_startingLineupIds.length}');
+      _logger.d('   - Alternative names: ${_alternativeNames.length}');
 
       // Debug: Dump cached players with image URLs
       for (final entry in _playerCache.entries) {
         final p = entry.value;
-        print(
+        _logger.d(
           '🔎 Ligainsider: CacheEntry - id=${entry.key}, name=${p.name}, imageUrl=${p.imageUrl ?? 'null'}',
         );
       }
@@ -187,7 +191,7 @@ class LigainsiderService {
       // Save to persistent cache
       await _saveToCache(players);
     } catch (e) {
-      print('❌ Ligainsider: Error fetching lineups: $e');
+      _logger.e('❌ Ligainsider: Error fetching lineups: $e');
       // Try loading from cache
       await _loadFromCache();
     }
@@ -196,7 +200,7 @@ class LigainsiderService {
   /// Get Ligainsider player by first and last name
   LigainsiderPlayer? getLigainsiderPlayer(String firstName, String lastName) {
     if (_playerCache.isEmpty) {
-      print(
+      _logger.d(
         '[MATCHING] ❌ Cache EMPTY for $firstName $lastName — trigger background fetch',
       );
       // Trigger background fetch
@@ -207,7 +211,7 @@ class LigainsiderService {
     final normalizedLastName = _normalize(lastName);
     final normalizedFirstName = _normalize(firstName);
 
-    print(
+    _logger.d(
       "[MATCHING] 🔍 Searching: '$firstName' '$lastName' (normalized: '$normalizedFirstName' '$normalizedLastName') in cache of ${_playerCache.length} players",
     );
 
@@ -218,7 +222,7 @@ class LigainsiderService {
       return keyParts.contains(normalizedLastName);
     }).toList();
 
-    print(
+    _logger.d(
       "   → Step 1: Found ${candidates.length} candidates by last name '$normalizedLastName'",
     );
 
@@ -231,7 +235,7 @@ class LigainsiderService {
       }).toList();
 
       if (candidates.isNotEmpty) {
-        print(
+        _logger.d(
           "   → Step 1b: Found ${candidates.length} candidates by first name '$normalizedFirstName'",
         );
       }
@@ -239,7 +243,7 @@ class LigainsiderService {
 
     // Single match
     if (candidates.length == 1) {
-      print(
+      _logger.d(
         '[Ligainsider] FOUND (exact): $firstName $lastName -> ${candidates.first.key}',
       );
       return candidates.first.value;
@@ -257,7 +261,7 @@ class LigainsiderService {
         }).firstOrNull;
 
         if (bothMatch != null) {
-          print(
+          _logger.d(
             '[Ligainsider] FOUND (both names): $firstName $lastName -> ${bothMatch.key}',
           );
           return bothMatch.value;
@@ -272,7 +276,7 @@ class LigainsiderService {
       }).firstOrNull;
 
       if (firstNameMatch != null) {
-        print(
+        _logger.d(
           '[Ligainsider] FOUND (firstName disamb): $firstName $lastName -> ${firstNameMatch.key}',
         );
         return firstNameMatch.value;
@@ -286,21 +290,21 @@ class LigainsiderService {
       }).firstOrNull;
 
       if (prefixMatch != null) {
-        print(
+        _logger.d(
           '[Ligainsider] FOUND (prefix): $firstName $lastName -> ${prefixMatch.key}',
         );
         return prefixMatch.value;
       }
 
       // Return first match
-      print(
+      _logger.d(
         '[Ligainsider] FOUND (first of many): $firstName $lastName -> ${candidates.first.key}',
       );
       return candidates.first.value;
     }
 
     // Step 2: Loose contains matching
-    print(
+    _logger.d(
       "[Ligainsider] Step 2: Trying loose contains matching for '$normalizedLastName'",
     );
     final looseCandidates = _playerCache.entries.where((entry) {
@@ -308,10 +312,10 @@ class LigainsiderService {
       return normalizedKey.contains(normalizedLastName);
     }).toList();
 
-    print('[Ligainsider] Found ${looseCandidates.length} loose candidates');
+    _logger.d('[Ligainsider] Found ${looseCandidates.length} loose candidates');
 
     if (looseCandidates.length == 1) {
-      print(
+      _logger.d(
         '[Ligainsider] FOUND (loose exact): $firstName $lastName -> ${looseCandidates.first.key}',
       );
       return looseCandidates.first.value;
@@ -324,18 +328,18 @@ class LigainsiderService {
       }).firstOrNull;
 
       if (bestMatch != null) {
-        print(
+        _logger.d(
           '[Ligainsider] FOUND (loose firstName): $firstName $lastName -> ${bestMatch.key}',
         );
         return bestMatch.value;
       }
 
-      print(
+      _logger.d(
         '[Ligainsider] NOT FOUND: Multiple loose matches and no firstName match',
       );
     }
 
-    print('[Ligainsider] NOT FOUND: $firstName $lastName');
+    _logger.d('[Ligainsider] NOT FOUND: $firstName $lastName');
     return null;
   }
 
@@ -348,7 +352,7 @@ class LigainsiderService {
   /// parse match pages for home/away lineups. If parsing fails it will leave
   /// the `_matches` list empty and fall back to player-based logic elsewhere.
   Future<void> fetchMatchLineups() async {
-    print(
+    _logger.d(
       '🔄 Ligainsider: Fetching match lineups (overview + detail pages)...',
     );
 
@@ -356,7 +360,7 @@ class LigainsiderService {
       // Try to fetch overview and parse basic match list
       final response = await _httpClient.get(Uri.parse(_overviewUrl));
       if (response.statusCode != 200) {
-        print('⚠️ Ligainsider: Failed to fetch overview for matches');
+        _logger.w('⚠️ Ligainsider: Failed to fetch overview for matches');
         return;
       }
 
@@ -380,7 +384,7 @@ class LigainsiderService {
 
       // If no links found, keep matches empty and return
       if (matchLinks.isEmpty) {
-        print('ℹ️ Ligainsider: No match links found in overview');
+        _logger.i('ℹ️ Ligainsider: No match links found in overview');
         return;
       }
 
@@ -493,9 +497,9 @@ class LigainsiderService {
       // Save to cache
       await _saveMatchesToCache(parsedMatches);
 
-      print('✅ Ligainsider: Parsed ${_matches.length} matches from HTML');
+      _logger.d('✅ Ligainsider: Parsed ${_matches.length} matches from HTML');
     } catch (e) {
-      print('⚠️ Ligainsider: Failed to fetch match lineups: $e');
+      _logger.w('⚠️ Ligainsider: Failed to fetch match lineups: $e');
     }
   }
 
@@ -572,7 +576,7 @@ class LigainsiderService {
   // MARK: - HTML Scraping
 
   Future<List<LigainsiderPlayer>> _scrapeLigainsider() async {
-    print('🌐 Ligainsider: Fetching overview from $_overviewUrl');
+    _logger.d('🌐 Ligainsider: Fetching overview from $_overviewUrl');
 
     final response = await _httpClient.get(Uri.parse(_overviewUrl));
 
@@ -608,7 +612,7 @@ class LigainsiderService {
 
       // Discard accidental overview URLs being used as images
       if (imageUrl != null && imageUrl.contains('spieltage')) {
-        print(
+        _logger.w(
           '⚠️ Ligainsider: Ignoring non-image URL found in anchor for $name: $imageUrl',
         );
         imageUrl = null;
@@ -644,19 +648,21 @@ class LigainsiderService {
             final candidate = metaOg ?? playerImg ?? spielerImg ?? genericImg;
             if (candidate != null && candidate.isNotEmpty) {
               if (candidate.contains('spieltage')) {
-                print(
+                _logger.w(
                   '⚠️ Ligainsider: Ignoring non-image URL from detail page for $name: $candidate',
                 );
               } else {
                 imageUrl = candidate;
-                print(
+                _logger.i(
                   'ℹ️ Ligainsider: Found detail image for $name -> $imageUrl',
                 );
               }
             }
           }
         } catch (e) {
-          print('⚠️ Ligainsider: Failed to fetch detail page for $href: $e');
+          _logger.w(
+            '⚠️ Ligainsider: Failed to fetch detail page for $href: $e',
+          );
         }
       }
 
@@ -683,7 +689,7 @@ class LigainsiderService {
       if (players.any((p) => p.ligainsiderId == slug)) continue;
 
       // Debug log for each parsed player
-      print(
+      _logger.d(
         '🔍 Ligainsider: Parsed player -> name: $name, id: $slug, imageUrl: ${imageUrl ?? 'null'}',
       );
 
@@ -708,7 +714,7 @@ class LigainsiderService {
       );
     }
 
-    print('✅ Ligainsider: Parsed ${players.length} players from HTML');
+    _logger.d('✅ Ligainsider: Parsed ${players.length} players from HTML');
     return players;
   }
 
@@ -741,9 +747,9 @@ class LigainsiderService {
         _cacheTimestampKey,
         DateTime.now().millisecondsSinceEpoch,
       );
-      print('💾 Ligainsider: Saved ${players.length} players to cache');
+      _logger.d('💾 Ligainsider: Saved ${players.length} players to cache');
     } catch (e) {
-      print('⚠️ Ligainsider: Failed to save cache: $e');
+      _logger.w('⚠️ Ligainsider: Failed to save cache: $e');
     }
   }
 
@@ -753,14 +759,14 @@ class LigainsiderService {
       final timestamp = _prefs.getInt(_cacheTimestampKey);
 
       if (cachedData == null || timestamp == null) {
-        print('ℹ️ Ligainsider: No cache available');
+        _logger.i('ℹ️ Ligainsider: No cache available');
         return;
       }
 
       // Check cache age
       final cacheAge = DateTime.now().millisecondsSinceEpoch - timestamp;
       if (cacheAge > _cacheTimeout.inMilliseconds) {
-        print(
+        _logger.w(
           '⏰ Ligainsider: Cache expired (${Duration(milliseconds: cacheAge).inMinutes} min old)',
         );
         return;
@@ -788,12 +794,14 @@ class LigainsiderService {
       }
 
       _isReady = true;
-      print('✅ Ligainsider: Loaded ${_playerCache.length} players from cache');
+      _logger.d(
+        '✅ Ligainsider: Loaded ${_playerCache.length} players from cache',
+      );
 
       // Debug: Dump cache entries loaded from persistent cache
       for (final entry in _playerCache.entries) {
         final p = entry.value;
-        print(
+        _logger.d(
           '🔎 Ligainsider (cache load): id=${entry.key}, name=${p.name}, imageUrl=${p.imageUrl ?? 'null'}',
         );
       }
@@ -801,7 +809,7 @@ class LigainsiderService {
       // Also try to load matches from cache
       await _loadMatchesFromCache();
     } catch (e) {
-      print('⚠️ Ligainsider: Failed to load cache: $e');
+      _logger.e('⚠️ Ligainsider: Failed to load cache: $e');
     }
   }
 
@@ -814,9 +822,9 @@ class LigainsiderService {
         _matchesCacheTimestampKey,
         DateTime.now().millisecondsSinceEpoch,
       );
-      print('💾 Ligainsider: Saved ${matches.length} matches to cache');
+      _logger.d('💾 Ligainsider: Saved ${matches.length} matches to cache');
     } catch (e) {
-      print('⚠️ Ligainsider: Failed to save matches cache: $e');
+      _logger.w('⚠️ Ligainsider: Failed to save matches cache: $e');
     }
   }
 
@@ -827,7 +835,7 @@ class LigainsiderService {
       if (cached == null || ts == null) return;
       final age = DateTime.now().millisecondsSinceEpoch - ts;
       if (age > _cacheTimeout.inMilliseconds) {
-        print('⏰ Ligainsider: Matches cache expired');
+        _logger.w('⏰ Ligainsider: Matches cache expired');
         return;
       }
 
@@ -835,9 +843,9 @@ class LigainsiderService {
       final matches = data.map((j) => LigainsiderMatch.fromJson(j)).toList();
       _matches.clear();
       _matches.addAll(matches);
-      print('✅ Ligainsider: Loaded ${_matches.length} matches from cache');
+      _logger.d('✅ Ligainsider: Loaded ${_matches.length} matches from cache');
     } catch (e) {
-      print('⚠️ Ligainsider: Failed to load matches cache: $e');
+      _logger.w('⚠️ Ligainsider: Failed to load matches cache: $e');
     }
   }
 
@@ -849,7 +857,7 @@ class LigainsiderService {
     _alternativeNames.clear();
     _startingLineupIds.clear();
     _isReady = false;
-    print('🗑️ Ligainsider: Cache cleared');
+    _logger.d('🗑️ Ligainsider: Cache cleared');
   }
 }
 

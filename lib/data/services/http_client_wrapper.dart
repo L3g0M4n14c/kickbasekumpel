@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 
 import '../../domain/exceptions/kickbase_exceptions.dart';
 
@@ -11,6 +12,7 @@ class HttpClientWrapper {
   final Duration _timeout;
   final int _maxRetries;
   final Duration _initialRetryDelay;
+  final Logger _logger = Logger();
 
   HttpClientWrapper({
     required http.Client httpClient,
@@ -232,7 +234,7 @@ class HttpClientWrapper {
   /// Log outgoing request
   void _logRequest(String method, String url, int attempt) {
     final attemptInfo = attempt > 1 ? ' (Attempt $attempt)' : '';
-    print('🌐 HTTP $method: $url$attemptInfo');
+    _logger.d('🌐 HTTP $method: $url$attemptInfo');
   }
 
   /// Log response with status and duration
@@ -243,19 +245,19 @@ class HttpClientWrapper {
     Duration duration,
   ) {
     final emoji = statusCode >= 200 && statusCode < 300 ? '✅' : '⚠️';
-    print(
+    _logger.d(
       '$emoji HTTP $method: $url → $statusCode (${duration.inMilliseconds}ms)',
     );
   }
 
   /// Log error
   void _logError(String method, String url, String errorType, String message) {
-    print('❌ HTTP $method: $url → $errorType: $message');
+    _logger.e('❌ HTTP $method: $url → $errorType: $message');
   }
 
   /// Log retry attempt
   void _logRetry(String method, String url, int attempt, Duration delay) {
-    print(
+    _logger.w(
       '🔄 HTTP $method: $url → Retrying (attempt $attempt) after ${delay.inSeconds}s',
     );
   }

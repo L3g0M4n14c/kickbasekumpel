@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'token_storage.dart';
@@ -33,6 +34,7 @@ class KickbaseAPIClient {
 
   final http.Client _httpClient;
   final TokenStorage _tokenStorage;
+  final Logger _logger = Logger();
 
   String? _cachedToken;
 
@@ -46,7 +48,7 @@ class KickbaseAPIClient {
   Future<void> setAuthToken(String token) async {
     _cachedToken = token;
     await _tokenStorage.setToken(token);
-    print('🔑 Auth token saved');
+    _logger.d('🔑 Auth token saved');
   }
 
   /// Get authentication token
@@ -68,14 +70,14 @@ class KickbaseAPIClient {
   Future<void> clearAuthToken() async {
     _cachedToken = null;
     await _tokenStorage.clearToken();
-    print('🗑️ Auth token and user data cleared');
+    _logger.i('🗑️ Auth token and user data cleared');
   }
 
   /// Save user data
   Future<void> saveUserData(User user) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_userDataKey, jsonEncode(user.toJson()));
-    print('💾 User data saved');
+    _logger.i('💾 User data saved');
   }
 
   /// Get saved user data
@@ -86,7 +88,7 @@ class KickbaseAPIClient {
       try {
         return User.fromJson(jsonDecode(userData));
       } catch (e) {
-        print('⚠️ Error loading user data: $e');
+        _logger.w('⚠️ Error loading user data: $e');
         return null;
       }
     }
@@ -117,7 +119,7 @@ class KickbaseAPIClient {
       ...?headers,
     };
 
-    print('📤 Making $method request to: $url');
+    _logger.d('📤 Making $method request to: $url');
 
     late http.Response response;
 
@@ -143,12 +145,12 @@ class KickbaseAPIClient {
       throw NetworkException('Network error: ${e.message}', originalError: e);
     }
 
-    print('📊 Response Status Code: ${response.statusCode}');
+    _logger.d('📊 Response Status Code: ${response.statusCode}');
     if (response.body.isNotEmpty) {
       final preview = response.body.length > 500
           ? '${response.body.substring(0, 500)}...'
           : response.body;
-      print('📥 Response: $preview');
+      _logger.d('📥 Response: $preview');
     }
 
     return response;
@@ -182,34 +184,34 @@ class KickbaseAPIClient {
         if (response.statusCode == 200) {
           final json = _parseJson(response.body);
           if (json.isNotEmpty) {
-            print(
+            _logger.d(
               '✅ Found working endpoint (${i + 1}/${endpoints.length}): $endpoint',
             );
             return json;
           } else {
-            print('⚠️ Could not parse JSON from endpoint: $endpoint');
+            _logger.w('⚠️ Could not parse JSON from endpoint: $endpoint');
             continue;
           }
         } else if (response.statusCode == 401) {
           throw const AuthenticationException('Authentication failed');
         } else if (response.statusCode == 404) {
-          print('⚠️ Endpoint $endpoint not found (404), trying next...');
+          _logger.w('⚠️ Endpoint $endpoint not found (404), trying next...');
           continue;
         } else if (response.statusCode == 403) {
-          print('⚠️ Access forbidden (403) for endpoint $endpoint');
+          _logger.w('⚠️ Access forbidden (403) for endpoint $endpoint');
           continue;
         } else if (response.statusCode >= 500) {
-          print(
+          _logger.w(
             '⚠️ Server error (${response.statusCode}) for endpoint $endpoint',
           );
           continue;
         } else {
-          print('⚠️ HTTP ${response.statusCode} for endpoint $endpoint');
+          _logger.w('⚠️ HTTP ${response.statusCode} for endpoint $endpoint');
           continue;
         }
       } catch (e) {
         lastError = e as Exception;
-        print('❌ Error with endpoint $endpoint: $e');
+        _logger.e('❌ Error with endpoint $endpoint: $e');
         continue;
       }
     }
@@ -242,7 +244,7 @@ class KickbaseAPIClient {
       if (response.statusCode >= 500 && retryCount < _maxRetries) {
         final delay =
             _initialRetryDelay * (1 << retryCount); // Exponential backoff
-        print(
+        _logger.w(
           '⏳ Retrying request in ${delay.inMilliseconds}ms (attempt ${retryCount + 1}/$_maxRetries)',
         );
         await Future.delayed(delay);
@@ -259,7 +261,7 @@ class KickbaseAPIClient {
       // Retry on network errors
       if (e is NetworkException && retryCount < _maxRetries) {
         final delay = _initialRetryDelay * (1 << retryCount);
-        print(
+        _logger.w(
           '⏳ Retrying after network error in ${delay.inMilliseconds}ms (attempt ${retryCount + 1}/$_maxRetries)',
         );
         await Future.delayed(delay);
@@ -340,7 +342,7 @@ class KickbaseAPIClient {
 
   /// Test network connectivity
   Future<bool> testNetworkConnectivity() async {
-    print('🌐 Testing network connectivity...');
+    _logger.d('🌐 Testing network connectivity...');
 
     try {
       final url = Uri.parse(_baseUrl);
@@ -348,10 +350,10 @@ class KickbaseAPIClient {
           .head(url)
           .timeout(const Duration(seconds: 5));
 
-      print('✅ Network test successful - Status: ${response.statusCode}');
+      _logger.i('✅ Network test successful - Status: ${response.statusCode}');
       return true;
     } catch (e) {
-      print('❌ Network test failed: $e');
+      _logger.e('❌ Network test failed: $e');
       return false;
     }
   }
@@ -369,7 +371,7 @@ class KickbaseAPIClient {
   /// Throws [AuthenticationException] if credentials are invalid.
   /// Throws [NetworkException] if connection fails.
   Future<LoginResponse> login(String email, String password) async {
-    print('🔐 Attempting Kickbase login for: $email');
+    _logger.i('🔐 Attempting Kickbase login for: $email');
 
     final request = LoginRequest(
       em: email,
@@ -393,7 +395,7 @@ class KickbaseAPIClient {
 
         // Store token for future requests
         await setAuthToken(loginResponse.tkn);
-        print('✅ Login successful - Token stored');
+        _logger.i('✅ Login successful - Token stored');
 
         return loginResponse;
       } else if (response.statusCode == 401 || response.statusCode == 403) {
@@ -417,7 +419,7 @@ class KickbaseAPIClient {
     } on NetworkException {
       rethrow;
     } catch (e) {
-      print('❌ Login error: $e');
+      _logger.e('❌ Login error: $e');
       throw KickbaseException(
         'Login fehlgeschlagen: ${e.toString()}',
         originalError: e,
@@ -455,7 +457,7 @@ class KickbaseAPIClient {
       throw const ParsingException('No leagues data in response');
     }
 
-    print('🔍 Parsing ${leaguesData.length} leagues...');
+    _logger.d('🔍 Parsing ${leaguesData.length} leagues...');
     try {
       final leagues = leaguesData
           .map(
@@ -463,11 +465,11 @@ class KickbaseAPIClient {
                 League.fromJson(normalizeLeagueJson(e as Map<String, dynamic>)),
           )
           .toList();
-      print('✅ Successfully parsed ${leagues.length} leagues');
+      _logger.i('✅ Successfully parsed ${leagues.length} leagues');
       return leagues;
     } catch (e, stack) {
-      print('❌ Error parsing leagues: $e');
-      print('Stack trace: $stack');
+      _logger.e('❌ Error parsing leagues: $e');
+      _logger.e('Stack trace: $stack');
       rethrow;
     }
   }
@@ -628,56 +630,58 @@ class KickbaseAPIClient {
   /// Get user settings
   /// GET /v4/user/settings
   Future<Map<String, dynamic>> getUserSettings() async {
-    print('⚙️ Getting user settings...');
+    _logger.i('⚙️ Getting user settings...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/user/settings',
       method: 'GET',
     );
 
     final json = _parseJson(response.body);
-    print('✅ User settings retrieved');
+    _logger.i('✅ User settings retrieved');
     return json;
   }
 
   /// Get league me (own stats in league)
   /// GET /v4/leagues/{leagueId}/me
   Future<Map<String, dynamic>> getLeagueMe(String leagueId) async {
-    print('👤 Getting league me for league $leagueId...');
+    _logger.i('👤 Getting league me for league $leagueId...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/me',
       method: 'GET',
     );
 
     final json = _parseJson(response.body);
-    print('✅ League me retrieved');
+    _logger.i('✅ League me retrieved');
     return json;
   }
 
   /// Get my budget in league
   /// GET /v4/leagues/{leagueId}/me/budget
   Future<Map<String, dynamic>> getMyBudget(String leagueId) async {
-    print('💰 Getting budget for league $leagueId...');
+    _logger.i('💰 Getting budget for league $leagueId...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/me/budget',
       method: 'GET',
     );
 
     final json = _parseJson(response.body);
-    print('✅ Budget retrieved');
+    _logger.i('✅ Budget retrieved');
     return json;
   }
 
   /// Get my squad (own players)
   /// GET /v4/leagues/{leagueId}/squad
   Future<Map<String, dynamic>> getMySquad(String leagueId) async {
-    print('👥 Getting squad for league $leagueId...');
+    _logger.i('👥 Getting squad for league $leagueId...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/squad',
       method: 'GET',
     );
 
     final json = _parseJson(response.body);
-    print('✅ Squad retrieved (${(json['it'] as List?)?.length ?? 0} players)');
+    _logger.i(
+      '✅ Squad retrieved (${(json['it'] as List?)?.length ?? 0} players)',
+    );
     return json;
   }
 
@@ -688,28 +692,28 @@ class KickbaseAPIClient {
     int? matchDay,
   }) async {
     final dayParam = matchDay != null ? '?dayNumber=$matchDay' : '';
-    print('🏆 Getting league ranking for league $leagueId$dayParam...');
+    _logger.i('🏆 Getting league ranking for league $leagueId$dayParam...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/ranking$dayParam',
       method: 'GET',
     );
 
     final json = _parseJson(response.body);
-    print('✅ League ranking retrieved');
+    _logger.i('✅ League ranking retrieved');
     return json;
   }
 
   /// Collect daily bonus
   /// GET /v4/bonus/collect
   Future<Map<String, dynamic>> collectBonus() async {
-    print('🎁 Collecting daily bonus...');
+    _logger.i('🎁 Collecting daily bonus...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/bonus/collect',
       method: 'GET',
     );
 
     final json = _parseJson(response.body);
-    print('✅ Bonus collected!');
+    _logger.i('✅ Bonus collected!');
     return json;
   }
 
@@ -721,14 +725,16 @@ class KickbaseAPIClient {
     String leagueId,
     String playerId,
   ) async {
-    print('⚽ Getting player details for player $playerId in league $leagueId...');
+    _logger.i(
+      '⚽ Getting player details for player $playerId in league $leagueId...',
+    );
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/players/$playerId',
       method: 'GET',
     );
 
     final json = _parseJson(response.body);
-    print('✅ Player details retrieved');
+    _logger.i('✅ Player details retrieved');
     return json;
   }
 
@@ -739,14 +745,17 @@ class KickbaseAPIClient {
     String playerId, {
     int timeframe = 365,
   }) async {
-    print('📈 Getting market value for player $playerId (timeframe: $timeframe days)...');
+    _logger.i(
+      '📈 Getting market value for player $playerId (timeframe: $timeframe days)...',
+    );
     final response = await _makeRequestWithRetry(
-      endpoint: '/$_apiVersion/leagues/$leagueId/players/$playerId/marketvalue/$timeframe',
+      endpoint:
+          '/$_apiVersion/leagues/$leagueId/players/$playerId/marketvalue/$timeframe',
       method: 'GET',
     );
 
     final json = _parseJson(response.body);
-    print('✅ Market value history retrieved');
+    _logger.i('✅ Market value history retrieved');
     return json;
   }
 
@@ -758,14 +767,15 @@ class KickbaseAPIClient {
     int? matchDay,
   }) async {
     final dayParam = matchDay != null ? '?matchDay=$matchDay' : '';
-    print('🔄 Getting transfer history for player $playerId...');
+    _logger.i('🔄 Getting transfer history for player $playerId...');
     final response = await _makeRequestWithRetry(
-      endpoint: '/$_apiVersion/leagues/$leagueId/players/$playerId/transferHistory$dayParam',
+      endpoint:
+          '/$_apiVersion/leagues/$leagueId/players/$playerId/transferHistory$dayParam',
       method: 'GET',
     );
 
     final json = _parseJson(response.body);
-    print('✅ Transfer history retrieved');
+    _logger.i('✅ Transfer history retrieved');
     return json;
   }
 
@@ -775,14 +785,14 @@ class KickbaseAPIClient {
     String leagueId,
     String playerId,
   ) async {
-    print('🔄 Getting transfers for player $playerId...');
+    _logger.i('🔄 Getting transfers for player $playerId...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/players/$playerId/transfers',
       method: 'GET',
     );
 
     final json = _parseJson(response.body);
-    print('✅ Player transfers retrieved');
+    _logger.i('✅ Player transfers retrieved');
     return json;
   }
 
@@ -794,14 +804,16 @@ class KickbaseAPIClient {
     String leagueId,
     String userId,
   ) async {
-    print('📊 Getting manager dashboard for user $userId in league $leagueId...');
+    _logger.i(
+      '📊 Getting manager dashboard for user $userId in league $leagueId...',
+    );
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/managers/$userId/dashboard',
       method: 'GET',
     );
 
     final json = _parseJson(response.body);
-    print('✅ Manager dashboard retrieved');
+    _logger.i('✅ Manager dashboard retrieved');
     return json;
   }
 
@@ -811,14 +823,14 @@ class KickbaseAPIClient {
     String leagueId,
     String userId,
   ) async {
-    print('📈 Getting manager performance for user $userId...');
+    _logger.i('📈 Getting manager performance for user $userId...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/managers/$userId/performance',
       method: 'GET',
     );
 
     final json = _parseJson(response.body);
-    print('✅ Manager performance retrieved');
+    _logger.i('✅ Manager performance retrieved');
     return json;
   }
 
@@ -828,14 +840,14 @@ class KickbaseAPIClient {
     String leagueId,
     String userId,
   ) async {
-    print('👥 Getting manager squad for user $userId...');
+    _logger.i('👥 Getting manager squad for user $userId...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/managers/$userId/squad',
       method: 'GET',
     );
 
     final json = _parseJson(response.body);
-    print('✅ Manager squad retrieved');
+    _logger.i('✅ Manager squad retrieved');
     return json;
   }
 
@@ -845,14 +857,14 @@ class KickbaseAPIClient {
     String leagueId,
     String playerId,
   ) async {
-    print('🔻 Removing player $playerId from market...');
+    _logger.i('🔻 Removing player $playerId from market...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/market/$playerId',
       method: 'DELETE',
     );
 
     final json = _parseJson(response.body);
-    print('✅ Player removed from market');
+    _logger.i('✅ Player removed from market');
     return json;
   }
 
@@ -863,14 +875,15 @@ class KickbaseAPIClient {
     String playerId,
     String offerId,
   ) async {
-    print('↩️ Withdrawing offer $offerId for player $playerId...');
+    _logger.i('↩️ Withdrawing offer $offerId for player $playerId...');
     final response = await _makeRequestWithRetry(
-      endpoint: '/$_apiVersion/leagues/$leagueId/market/$playerId/offers/$offerId',
+      endpoint:
+          '/$_apiVersion/leagues/$leagueId/market/$playerId/offers/$offerId',
       method: 'DELETE',
     );
 
     final json = _parseJson(response.body);
-    print('✅ Offer withdrawn');
+    _logger.i('✅ Offer withdrawn');
     return json;
   }
 
@@ -881,9 +894,10 @@ class KickbaseAPIClient {
     String playerId,
     String offerId,
   ) async {
-    print('✅ Accepting offer $offerId for player $playerId...');
+    _logger.d('✅ Accepting offer $offerId for player $playerId...');
     final response = await _makeRequestWithRetry(
-      endpoint: '/$_apiVersion/leagues/$leagueId/market/$playerId/offers/$offerId/accept',
+      endpoint:
+          '/$_apiVersion/leagues/$leagueId/market/$playerId/offers/$offerId/accept',
       method: 'DELETE',
     );
 
@@ -893,7 +907,7 @@ class KickbaseAPIClient {
         code: response.statusCode.toString(),
       );
     }
-    print('✅ Offer accepted');
+    _logger.i('✅ Offer accepted');
   }
 
   /// Decline offer
@@ -903,9 +917,10 @@ class KickbaseAPIClient {
     String playerId,
     String offerId,
   ) async {
-    print('❌ Declining offer $offerId for player $playerId...');
+    _logger.w('❌ Declining offer $offerId for player $playerId...');
     final response = await _makeRequestWithRetry(
-      endpoint: '/$_apiVersion/leagues/$leagueId/market/$playerId/offers/$offerId/decline',
+      endpoint:
+          '/$_apiVersion/leagues/$leagueId/market/$playerId/offers/$offerId/decline',
       method: 'DELETE',
     );
 
@@ -915,16 +930,13 @@ class KickbaseAPIClient {
         code: response.statusCode.toString(),
       );
     }
-    print('✅ Offer declined');
+    _logger.i('✅ Offer declined');
   }
 
   /// Accept Kickbase offer (sell to Kickbase)
   /// DELETE /v4/leagues/{leagueId}/market/{playerId}/sell
-  Future<void> acceptKickbaseOffer(
-    String leagueId,
-    String playerId,
-  ) async {
-    print('💵 Selling player $playerId to Kickbase...');
+  Future<void> acceptKickbaseOffer(String leagueId, String playerId) async {
+    _logger.i('💵 Selling player $playerId to Kickbase...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/market/$playerId/sell',
       method: 'DELETE',
@@ -936,7 +948,7 @@ class KickbaseAPIClient {
         code: response.statusCode.toString(),
       );
     }
-    print('✅ Player sold to Kickbase');
+    _logger.i('✅ Player sold to Kickbase');
   }
 
   // MARK: - Schritt 4: Live, Beobachtungsliste & Wettbewerb
@@ -944,49 +956,49 @@ class KickbaseAPIClient {
   /// Get my eleven (live lineup)
   /// GET /v4/leagues/{leagueId}/teamcenter/myeleven
   Future<Map<String, dynamic>> getMyEleven(String leagueId) async {
-    print('⚽ Getting my eleven for league $leagueId...');
+    _logger.i('⚽ Getting my eleven for league $leagueId...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/teamcenter/myeleven',
       method: 'GET',
     );
 
     final json = _parseJson(response.body);
-    print('✅ My eleven retrieved');
+    _logger.i('✅ My eleven retrieved');
     return json;
   }
 
   /// Get live event types
   /// GET /v4/live/eventtypes
   Future<Map<String, dynamic>> getLiveEventTypes() async {
-    print('📺 Getting live event types...');
+    _logger.d('📺 Getting live event types...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/live/eventtypes',
       method: 'GET',
     );
 
     final json = _parseJson(response.body);
-    print('✅ Live event types retrieved');
+    _logger.i('✅ Live event types retrieved');
     return json;
   }
 
   /// Get scouted players (watchlist)
   /// GET /v4/leagues/{leagueId}/scoutedplayers
   Future<Map<String, dynamic>> getScoutedPlayers(String leagueId) async {
-    print('🔭 Getting scouted players for league $leagueId...');
+    _logger.d('🔭 Getting scouted players for league $leagueId...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/scoutedplayers',
       method: 'GET',
     );
 
     final json = _parseJson(response.body);
-    print('✅ Scouted players retrieved');
+    _logger.i('✅ Scouted players retrieved');
     return json;
   }
 
   /// Add scouted player (add to watchlist)
   /// POST /v4/leagues/{leagueId}/scoutedplayers/{playerId}
   Future<void> addScoutedPlayer(String leagueId, String playerId) async {
-    print('➕ Adding player $playerId to watchlist...');
+    _logger.i('➕ Adding player $playerId to watchlist...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/scoutedplayers/$playerId',
       method: 'POST',
@@ -998,13 +1010,13 @@ class KickbaseAPIClient {
         code: response.statusCode.toString(),
       );
     }
-    print('✅ Player added to watchlist');
+    _logger.i('✅ Player added to watchlist');
   }
 
   /// Remove scouted player (remove from watchlist)
   /// DELETE /v4/leagues/{leagueId}/scoutedplayers/{playerId}
   Future<void> removeScoutedPlayer(String leagueId, String playerId) async {
-    print('➖ Removing player $playerId from watchlist...');
+    _logger.i('➖ Removing player $playerId from watchlist...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/scoutedplayers/$playerId',
       method: 'DELETE',
@@ -1016,20 +1028,20 @@ class KickbaseAPIClient {
         code: response.statusCode.toString(),
       );
     }
-    print('✅ Player removed from watchlist');
+    _logger.i('✅ Player removed from watchlist');
   }
 
   /// Get competition table (e.g., Bundesliga table)
   /// GET /v4/competitions/{competitionId}/table
   Future<Map<String, dynamic>> getCompetitionTable(String competitionId) async {
-    print('🏆 Getting competition table for competition $competitionId...');
+    _logger.i('🏆 Getting competition table for competition $competitionId...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/competitions/$competitionId/table',
       method: 'GET',
     );
 
     final json = _parseJson(response.body);
-    print('✅ Competition table retrieved');
+    _logger.i('✅ Competition table retrieved');
     return json;
   }
 
@@ -1038,14 +1050,14 @@ class KickbaseAPIClient {
   Future<Map<String, dynamic>> getCompetitionMatchdays(
     String competitionId,
   ) async {
-    print('📅 Getting matchdays for competition $competitionId...');
+    _logger.i('📅 Getting matchdays for competition $competitionId...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/competitions/$competitionId/matchdays',
       method: 'GET',
     );
 
     final json = _parseJson(response.body);
-    print('✅ Competition matchdays retrieved');
+    _logger.i('✅ Competition matchdays retrieved');
     return json;
   }
 
@@ -1057,14 +1069,15 @@ class KickbaseAPIClient {
     int? matchDay,
   }) async {
     final dayParam = matchDay != null ? '?day=$matchDay' : '';
-    print('📊 Getting event history for player $playerId...');
+    _logger.i('📊 Getting event history for player $playerId...');
     final response = await _makeRequestWithRetry(
-      endpoint: '/$_apiVersion/competitions/$competitionId/playercenter/$playerId$dayParam',
+      endpoint:
+          '/$_apiVersion/competitions/$competitionId/playercenter/$playerId$dayParam',
       method: 'GET',
     );
 
     final json = _parseJson(response.body);
-    print('✅ Player event history retrieved');
+    _logger.i('✅ Player event history retrieved');
     return json;
   }
 
