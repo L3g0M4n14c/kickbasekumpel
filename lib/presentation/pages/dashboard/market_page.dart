@@ -2,12 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/screen_size.dart';
 import '../../widgets/responsive_layout.dart';
+import '../../providers/market_providers.dart';
+import '../../widgets/market/market_filters.dart';
+import '../../widgets/market/player_market_card.dart';
+import '../../widgets/loading_widget.dart';
+import '../../widgets/error_widget.dart';
 
-class MarketPage extends ConsumerWidget {
+class MarketPage extends ConsumerStatefulWidget {
   const MarketPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MarketPage> createState() => _MarketPageState();
+}
+
+class _MarketPageState extends ConsumerState<MarketPage> {
+  late TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: ScreenSize.isMobile(context)
           ? AppBar(
@@ -16,12 +40,6 @@ class MarketPage extends ConsumerWidget {
                 IconButton(
                   icon: const Icon(Icons.filter_list),
                   onPressed: () => _showFilterBottomSheet(context),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: () {
-                    // TODO: Search
-                  },
                 ),
               ],
             )
@@ -34,19 +52,51 @@ class MarketPage extends ConsumerWidget {
     );
   }
 
-  /// Mobile: Single column grid with bottom sheet for filters
+  /// Mobile: Single column with search and market players
   Widget _buildMobileLayout(BuildContext context) {
+    final marketPlayersAsync = ref.watch(marketPlayersProvider);
+
     return Column(
       children: [
         _buildSearchBar(context),
+        _buildTabBar(context),
         Expanded(
-          child: ResponsiveGrid(
-            mobileColumns: 1,
-            tabletColumns: 2,
-            desktopColumns: 3,
-            children: List.generate(
-              10,
-              (index) => _buildPlayerCard(context, index),
+          child: marketPlayersAsync.when(
+            data: (players) {
+              if (players.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.shopping_cart_outlined,
+                        size: 64,
+                        color: Colors.grey[400],
+                      ),
+                      const SizedBox(height: 16),
+                      const Text('Keine Spieler auf dem Markt'),
+                    ],
+                  ),
+                );
+              }
+              return ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: players.length,
+                itemBuilder: (context, index) {
+                  final player = players[index];
+                  return PlayerMarketCard(
+                    player: player,
+                    onTap: () {
+                      // TODO: Navigate to player detail
+                    },
+                  );
+                },
+              );
+            },
+            loading: () => const Center(child: LoadingWidget()),
+            error: (error, stack) => ErrorWidgetCustom(
+              error: error,
+              onRetry: () => ref.invalidate(marketPlayersProvider),
             ),
           ),
         ),
@@ -56,20 +106,39 @@ class MarketPage extends ConsumerWidget {
 
   /// Tablet: Split view with filters sidebar
   Widget _buildTabletLayout(BuildContext context) {
+    final marketPlayersAsync = ref.watch(marketPlayersProvider);
+
     return ResponsiveSplitView(
       listFlex: 3,
       detailFlex: 1,
       list: Column(
         children: [
           _buildSearchBar(context),
+          _buildTabBar(context),
           Expanded(
-            child: ResponsiveGrid(
-              mobileColumns: 1,
-              tabletColumns: 2,
-              desktopColumns: 2,
-              children: List.generate(
-                10,
-                (index) => _buildPlayerCard(context, index),
+            child: marketPlayersAsync.when(
+              data: (players) {
+                if (players.isEmpty) {
+                  return const Center(child: Text('Keine Spieler verfügbar'));
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: players.length,
+                  itemBuilder: (context, index) {
+                    final player = players[index];
+                    return PlayerMarketCard(
+                      player: player,
+                      onTap: () {
+                        // TODO: Navigate to player detail
+                      },
+                    );
+                  },
+                );
+              },
+              loading: () => const Center(child: LoadingWidget()),
+              error: (error, stack) => ErrorWidgetCustom(
+                error: error,
+                onRetry: () => ref.invalidate(marketPlayersProvider),
               ),
             ),
           ),
@@ -77,13 +146,15 @@ class MarketPage extends ConsumerWidget {
       ),
       detail: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
-        child: _buildFilterPanel(context),
+        child: const MarketFilters(),
       ),
     );
   }
 
   /// Desktop: Grid with advanced filters and sorting
   Widget _buildDesktopLayout(BuildContext context) {
+    final marketPlayersAsync = ref.watch(marketPlayersProvider);
+
     return Row(
       children: [
         // Filter Sidebar
@@ -91,7 +162,7 @@ class MarketPage extends ConsumerWidget {
           width: 280,
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
-            child: _buildFilterPanel(context),
+            child: const MarketFilters(),
           ),
         ),
         const VerticalDivider(width: 1),
@@ -100,15 +171,33 @@ class MarketPage extends ConsumerWidget {
           child: Column(
             children: [
               _buildSearchBar(context),
-              _buildSortingBar(context),
+              _buildTabBar(context),
               Expanded(
-                child: ResponsiveGrid(
-                  mobileColumns: 1,
-                  tabletColumns: 2,
-                  desktopColumns: 3,
-                  children: List.generate(
-                    20,
-                    (index) => _buildPlayerCard(context, index),
+                child: marketPlayersAsync.when(
+                  data: (players) {
+                    if (players.isEmpty) {
+                      return const Center(
+                        child: Text('Keine Spieler verfügbar'),
+                      );
+                    }
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: players.length,
+                      itemBuilder: (context, index) {
+                        final player = players[index];
+                        return PlayerMarketCard(
+                          player: player,
+                          onTap: () {
+                            // TODO: Navigate to player detail
+                          },
+                        );
+                      },
+                    );
+                  },
+                  loading: () => const Center(child: LoadingWidget()),
+                  error: (error, stack) => ErrorWidgetCustom(
+                    error: error,
+                    onRetry: () => ref.invalidate(marketPlayersProvider),
                   ),
                 ),
               ),
@@ -121,11 +210,24 @@ class MarketPage extends ConsumerWidget {
 
   Widget _buildSearchBar(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.all(context.horizontalPadding),
+      padding: const EdgeInsets.all(12.0),
       child: TextField(
+        controller: _searchController,
+        onChanged: (value) {
+          ref.read(marketFilterProvider.notifier).setSearchQuery(value);
+        },
         decoration: InputDecoration(
           hintText: 'Spieler suchen...',
           prefixIcon: const Icon(Icons.search),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    _searchController.clear();
+                    ref.read(marketFilterProvider.notifier).setSearchQuery('');
+                  },
+                )
+              : null,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           filled: true,
         ),
@@ -133,192 +235,58 @@ class MarketPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildSortingBar(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: context.horizontalPadding,
-        vertical: 8,
-      ),
+  Widget _buildTabBar(BuildContext context) {
+    final currentTab = ref.watch(marketTabProvider);
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 12.0),
       child: Row(
         children: [
-          const Text('Sortieren:'),
-          const SizedBox(width: 16),
-          DropdownButton<String>(
-            value: 'Preis',
-            items: const [
-              DropdownMenuItem(value: 'Preis', child: Text('Preis')),
-              DropdownMenuItem(value: 'Punkte', child: Text('Punkte')),
-              DropdownMenuItem(value: 'Name', child: Text('Name')),
-            ],
-            onChanged: (value) {
-              // TODO: Sort
-            },
+          _buildTabButton(
+            context,
+            'Verfügbar',
+            MarketTab.available,
+            currentTab == MarketTab.available,
           ),
-          const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.grid_view),
-            onPressed: () {
-              // TODO: Toggle view
-            },
+          const SizedBox(width: 12),
+          _buildTabButton(
+            context,
+            'Zum Verkauf',
+            MarketTab.mySelling,
+            currentTab == MarketTab.mySelling,
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlayerCard(BuildContext context, int index) {
-    final isMobile = context.isMobile;
-
-    return ResponsiveCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: isMobile ? 24 : 32,
-                child: Text('P${index + 1}'),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Spieler ${index + 1}',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      'Team ${index % 4 + 1}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '${(index + 1) * 100}k€',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  Text(
-                    '${(index + 1) * 10} Pkt',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ],
+          const SizedBox(width: 12),
+          _buildTabButton(
+            context,
+            'Kürzliche',
+            MarketTab.recentTransfers,
+            currentTab == MarketTab.recentTransfers,
           ),
-          if (!isMobile) ...[
-            const SizedBox(height: 12),
-            const Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildStatChip('Position', '${index % 4 + 1}'),
-                _buildStatChip('Form', '${(index % 5 + 1) * 20}%'),
-              ],
-            ),
-          ],
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                // TODO: Buy player
-              },
-              icon: const Icon(Icons.shopping_cart),
-              label: const Text('Kaufen'),
-            ),
+          const SizedBox(width: 12),
+          _buildTabButton(
+            context,
+            'Beobachtete',
+            MarketTab.watchlist,
+            currentTab == MarketTab.watchlist,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatChip(String label, String value) {
-    return Chip(
-      label: Text('$label: $value'),
-      visualDensity: VisualDensity.compact,
-    );
-  }
-
-  Widget _buildFilterPanel(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Filter', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 16),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Position'),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    FilterChip(
-                      label: const Text('Torwart'),
-                      selected: false,
-                      onSelected: (selected) {},
-                    ),
-                    FilterChip(
-                      label: const Text('Abwehr'),
-                      selected: false,
-                      onSelected: (selected) {},
-                    ),
-                    FilterChip(
-                      label: const Text('Mittelfeld'),
-                      selected: false,
-                      onSelected: (selected) {},
-                    ),
-                    FilterChip(
-                      label: const Text('Sturm'),
-                      selected: false,
-                      onSelected: (selected) {},
-                    ),
-                  ],
-                ),
-                const Divider(),
-                const Text('Preisbereich'),
-                const SizedBox(height: 8),
-                RangeSlider(
-                  values: const RangeValues(0, 1000000),
-                  min: 0,
-                  max: 10000000,
-                  divisions: 100,
-                  labels: const RangeLabels('0€', '10M€'),
-                  onChanged: (values) {},
-                ),
-                const Divider(),
-                const Text('Status'),
-                CheckboxListTile(
-                  title: const Text('Verfügbar'),
-                  value: true,
-                  onChanged: (value) {},
-                  dense: true,
-                ),
-                CheckboxListTile(
-                  title: const Text('Fit'),
-                  value: true,
-                  onChanged: (value) {},
-                  dense: true,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+  Widget _buildTabButton(
+    BuildContext context,
+    String label,
+    MarketTab tab,
+    bool isSelected,
+  ) {
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (_) {
+        ref.read(marketTabProvider.notifier).setTab(tab);
+      },
     );
   }
 
@@ -334,7 +302,7 @@ class MarketPage extends ConsumerWidget {
         builder: (context, scrollController) => SingleChildScrollView(
           controller: scrollController,
           padding: const EdgeInsets.all(16.0),
-          child: _buildFilterPanel(context),
+          child: const MarketFilters(),
         ),
       ),
     );

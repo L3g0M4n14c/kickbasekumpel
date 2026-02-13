@@ -36,7 +36,9 @@ class TransfersPage extends ConsumerWidget {
       children: [
         _buildRecommendationCard(context),
         const SizedBox(height: 16),
-        ..._buildTransferList(context),
+        _buildTabSection(context, 'Zu verkaufen'),
+        const SizedBox(height: 16),
+        _buildTabSection(context, 'Zu kaufen'),
       ],
     );
   }
@@ -47,7 +49,13 @@ class TransfersPage extends ConsumerWidget {
       detailFlex: 3,
       list: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
-        child: Column(children: _buildTransferList(context)),
+        child: Column(
+          children: [
+            _buildTabSection(context, 'Zu verkaufen'),
+            const SizedBox(height: 16),
+            _buildTabSection(context, 'Zu kaufen'),
+          ],
+        ),
       ),
       detail: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -63,7 +71,13 @@ class TransfersPage extends ConsumerWidget {
           flex: 2,
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(32.0),
-            child: Column(children: _buildTransferList(context)),
+            child: Column(
+              children: [
+                _buildTabSection(context, 'Zu verkaufen'),
+                const SizedBox(height: 16),
+                _buildTabSection(context, 'Zu kaufen'),
+              ],
+            ),
           ),
         ),
         const VerticalDivider(width: 1),
@@ -101,20 +115,29 @@ class TransfersPage extends ConsumerWidget {
     );
   }
 
-  List<Widget> _buildTransferList(BuildContext context) {
-    return List.generate(5, (index) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 16.0),
-        child: ResponsiveCard(
-          child: ListTile(
-            leading: const CircleAvatar(child: Icon(Icons.person)),
-            title: Text('Transfer ${index + 1}'),
-            subtitle: const Text('Empfohlen'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
-          ),
-        ),
-      );
-    });
+  Widget _buildTabSection(BuildContext context, String title) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        ...List.generate(3, (index) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: ResponsiveCard(
+              child: ListTile(
+                leading: const CircleAvatar(child: Icon(Icons.person)),
+                title: Text('Transfer ${index + 1}'),
+                subtitle: index % 2 == 0
+                    ? const Text('Hohe Priorität')
+                    : const Text('Mittlere Priorität'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {},
+              ),
+            ),
+          );
+        }),
+      ],
+    );
   }
 }
