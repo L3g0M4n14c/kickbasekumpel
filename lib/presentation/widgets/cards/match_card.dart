@@ -98,7 +98,7 @@ class MatchCard extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: isLive
-                          ? Colors.red.withOpacity(0.1)
+                          ? Colors.red.withValues(alpha: 0.1)
                           : colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -147,7 +147,7 @@ class MatchCard extends StatelessWidget {
                 Text(
                   _formatKickoffDate(),
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                   ),
                 ),
               ],

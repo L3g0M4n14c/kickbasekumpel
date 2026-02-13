@@ -38,41 +38,41 @@ Map<String, dynamic> _$$MatchImplToJson(_$MatchImpl instance) =>
 _$MatchDataImpl _$$MatchDataImplFromJson(Map<String, dynamic> json) =>
     _$MatchDataImpl(
       id: json['id'] as String,
-      playerId: json['playerId'] as String,
-      playerName: json['playerName'] as String,
-      matchId: json['matchId'] as String,
+      playerId: json['player_id'] as String,
+      playerName: json['player_name'] as String,
+      matchId: json['match_id'] as String,
       opponent: json['opponent'] as String,
       position: (json['position'] as num).toInt(),
       goals: (json['goals'] as num).toInt(),
       assists: (json['assists'] as num).toInt(),
-      cleanSheet: (json['cleanSheet'] as num).toInt(),
-      own_goals: (json['own_goals'] as num).toInt(),
-      redCards: (json['redCards'] as num).toInt(),
-      yellowCards: (json['yellowCards'] as num).toInt(),
-      minutesPlayed: (json['minutesPlayed'] as num).toInt(),
+      cleanSheet: (json['clean_sheet'] as num).toInt(),
+      ownGoals: (json['own_goals'] as num).toInt(),
+      redCards: (json['red_cards'] as num).toInt(),
+      yellowCards: (json['yellow_cards'] as num).toInt(),
+      minutesPlayed: (json['minutes_played'] as num).toInt(),
       points: (json['points'] as num).toInt(),
       rating: (json['rating'] as num).toDouble(),
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: DateTime.parse(json['created_at'] as String),
     );
 
 Map<String, dynamic> _$$MatchDataImplToJson(_$MatchDataImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'playerId': instance.playerId,
-      'playerName': instance.playerName,
-      'matchId': instance.matchId,
+      'player_id': instance.playerId,
+      'player_name': instance.playerName,
+      'match_id': instance.matchId,
       'opponent': instance.opponent,
       'position': instance.position,
       'goals': instance.goals,
       'assists': instance.assists,
-      'cleanSheet': instance.cleanSheet,
-      'own_goals': instance.own_goals,
-      'redCards': instance.redCards,
-      'yellowCards': instance.yellowCards,
-      'minutesPlayed': instance.minutesPlayed,
+      'clean_sheet': instance.cleanSheet,
+      'own_goals': instance.ownGoals,
+      'red_cards': instance.redCards,
+      'yellow_cards': instance.yellowCards,
+      'minutes_played': instance.minutesPlayed,
       'points': instance.points,
       'rating': instance.rating,
-      'createdAt': instance.createdAt.toIso8601String(),
+      'created_at': instance.createdAt.toIso8601String(),
     };
 
 _$HighlightImpl _$$HighlightImplFromJson(Map<String, dynamic> json) =>
@@ -105,14 +105,14 @@ _$MatchesResponseImpl _$$MatchesResponseImplFromJson(
   matches: (json['matches'] as List<dynamic>)
       .map((e) => Match.fromJson(e as Map<String, dynamic>))
       .toList(),
-  total_count: (json['total_count'] as num?)?.toInt(),
+  totalCount: (json['total_count'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$$MatchesResponseImplToJson(
   _$MatchesResponseImpl instance,
 ) => <String, dynamic>{
   'matches': instance.matches,
-  'total_count': instance.total_count,
+  'total_count': instance.totalCount,
 };
 
 _$MatchDayInfoImpl _$$MatchDayInfoImplFromJson(Map<String, dynamic> json) =>

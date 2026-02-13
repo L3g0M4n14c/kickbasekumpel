@@ -200,7 +200,7 @@ class PerformanceLineChart extends StatelessWidget {
           ),
           belowBarData: BarAreaData(
             show: true,
-            color: colorScheme.primary.withOpacity(0.1),
+            color: colorScheme.primary.withValues(alpha: 0.1),
           ),
         ),
         // Durchschnitts-Linie

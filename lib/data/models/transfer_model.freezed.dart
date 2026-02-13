@@ -1331,7 +1331,7 @@ TransfersResponse _$TransfersResponseFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$TransfersResponse {
   List<Transfer> get transfers => throw _privateConstructorUsedError;
-  int? get total_count => throw _privateConstructorUsedError;
+  int? get totalCount => throw _privateConstructorUsedError;
 
   /// Serializes this TransfersResponse to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -1350,7 +1350,7 @@ abstract class $TransfersResponseCopyWith<$Res> {
     $Res Function(TransfersResponse) then,
   ) = _$TransfersResponseCopyWithImpl<$Res, TransfersResponse>;
   @useResult
-  $Res call({List<Transfer> transfers, int? total_count});
+  $Res call({List<Transfer> transfers, int? totalCount});
 }
 
 /// @nodoc
@@ -1367,16 +1367,16 @@ class _$TransfersResponseCopyWithImpl<$Res, $Val extends TransfersResponse>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? transfers = null, Object? total_count = freezed}) {
+  $Res call({Object? transfers = null, Object? totalCount = freezed}) {
     return _then(
       _value.copyWith(
             transfers: null == transfers
                 ? _value.transfers
                 : transfers // ignore: cast_nullable_to_non_nullable
                       as List<Transfer>,
-            total_count: freezed == total_count
-                ? _value.total_count
-                : total_count // ignore: cast_nullable_to_non_nullable
+            totalCount: freezed == totalCount
+                ? _value.totalCount
+                : totalCount // ignore: cast_nullable_to_non_nullable
                       as int?,
           )
           as $Val,
@@ -1393,7 +1393,7 @@ abstract class _$$TransfersResponseImplCopyWith<$Res>
   ) = __$$TransfersResponseImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({List<Transfer> transfers, int? total_count});
+  $Res call({List<Transfer> transfers, int? totalCount});
 }
 
 /// @nodoc
@@ -1409,16 +1409,16 @@ class __$$TransfersResponseImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? transfers = null, Object? total_count = freezed}) {
+  $Res call({Object? transfers = null, Object? totalCount = freezed}) {
     return _then(
       _$TransfersResponseImpl(
         transfers: null == transfers
             ? _value._transfers
             : transfers // ignore: cast_nullable_to_non_nullable
                   as List<Transfer>,
-        total_count: freezed == total_count
-            ? _value.total_count
-            : total_count // ignore: cast_nullable_to_non_nullable
+        totalCount: freezed == totalCount
+            ? _value.totalCount
+            : totalCount // ignore: cast_nullable_to_non_nullable
                   as int?,
       ),
     );
@@ -1426,11 +1426,12 @@ class __$$TransfersResponseImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
+
+@JsonSerializable(fieldRename: FieldRename.snake)
 class _$TransfersResponseImpl implements _TransfersResponse {
   const _$TransfersResponseImpl({
     required final List<Transfer> transfers,
-    this.total_count,
+    this.totalCount,
   }) : _transfers = transfers;
 
   factory _$TransfersResponseImpl.fromJson(Map<String, dynamic> json) =>
@@ -1445,11 +1446,11 @@ class _$TransfersResponseImpl implements _TransfersResponse {
   }
 
   @override
-  final int? total_count;
+  final int? totalCount;
 
   @override
   String toString() {
-    return 'TransfersResponse(transfers: $transfers, total_count: $total_count)';
+    return 'TransfersResponse(transfers: $transfers, totalCount: $totalCount)';
   }
 
   @override
@@ -1461,8 +1462,8 @@ class _$TransfersResponseImpl implements _TransfersResponse {
               other._transfers,
               _transfers,
             ) &&
-            (identical(other.total_count, total_count) ||
-                other.total_count == total_count));
+            (identical(other.totalCount, totalCount) ||
+                other.totalCount == totalCount));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1470,7 +1471,7 @@ class _$TransfersResponseImpl implements _TransfersResponse {
   int get hashCode => Object.hash(
     runtimeType,
     const DeepCollectionEquality().hash(_transfers),
-    total_count,
+    totalCount,
   );
 
   /// Create a copy of TransfersResponse
@@ -1493,7 +1494,7 @@ class _$TransfersResponseImpl implements _TransfersResponse {
 abstract class _TransfersResponse implements TransfersResponse {
   const factory _TransfersResponse({
     required final List<Transfer> transfers,
-    final int? total_count,
+    final int? totalCount,
   }) = _$TransfersResponseImpl;
 
   factory _TransfersResponse.fromJson(Map<String, dynamic> json) =
@@ -1502,7 +1503,7 @@ abstract class _TransfersResponse implements TransfersResponse {
   @override
   List<Transfer> get transfers;
   @override
-  int? get total_count;
+  int? get totalCount;
 
   /// Create a copy of TransfersResponse
   /// with the given fields replaced by the non-null parameter values.

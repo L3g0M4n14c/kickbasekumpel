@@ -409,7 +409,7 @@ mixin _$MatchData {
   int get goals => throw _privateConstructorUsedError;
   int get assists => throw _privateConstructorUsedError;
   int get cleanSheet => throw _privateConstructorUsedError;
-  int get own_goals => throw _privateConstructorUsedError;
+  int get ownGoals => throw _privateConstructorUsedError;
   int get redCards => throw _privateConstructorUsedError;
   int get yellowCards => throw _privateConstructorUsedError;
   int get minutesPlayed => throw _privateConstructorUsedError;
@@ -442,7 +442,7 @@ abstract class $MatchDataCopyWith<$Res> {
     int goals,
     int assists,
     int cleanSheet,
-    int own_goals,
+    int ownGoals,
     int redCards,
     int yellowCards,
     int minutesPlayed,
@@ -476,7 +476,7 @@ class _$MatchDataCopyWithImpl<$Res, $Val extends MatchData>
     Object? goals = null,
     Object? assists = null,
     Object? cleanSheet = null,
-    Object? own_goals = null,
+    Object? ownGoals = null,
     Object? redCards = null,
     Object? yellowCards = null,
     Object? minutesPlayed = null,
@@ -522,9 +522,9 @@ class _$MatchDataCopyWithImpl<$Res, $Val extends MatchData>
                 ? _value.cleanSheet
                 : cleanSheet // ignore: cast_nullable_to_non_nullable
                       as int,
-            own_goals: null == own_goals
-                ? _value.own_goals
-                : own_goals // ignore: cast_nullable_to_non_nullable
+            ownGoals: null == ownGoals
+                ? _value.ownGoals
+                : ownGoals // ignore: cast_nullable_to_non_nullable
                       as int,
             redCards: null == redCards
                 ? _value.redCards
@@ -575,7 +575,7 @@ abstract class _$$MatchDataImplCopyWith<$Res>
     int goals,
     int assists,
     int cleanSheet,
-    int own_goals,
+    int ownGoals,
     int redCards,
     int yellowCards,
     int minutesPlayed,
@@ -608,7 +608,7 @@ class __$$MatchDataImplCopyWithImpl<$Res>
     Object? goals = null,
     Object? assists = null,
     Object? cleanSheet = null,
-    Object? own_goals = null,
+    Object? ownGoals = null,
     Object? redCards = null,
     Object? yellowCards = null,
     Object? minutesPlayed = null,
@@ -654,9 +654,9 @@ class __$$MatchDataImplCopyWithImpl<$Res>
             ? _value.cleanSheet
             : cleanSheet // ignore: cast_nullable_to_non_nullable
                   as int,
-        own_goals: null == own_goals
-            ? _value.own_goals
-            : own_goals // ignore: cast_nullable_to_non_nullable
+        ownGoals: null == ownGoals
+            ? _value.ownGoals
+            : ownGoals // ignore: cast_nullable_to_non_nullable
                   as int,
         redCards: null == redCards
             ? _value.redCards
@@ -688,7 +688,8 @@ class __$$MatchDataImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
+
+@JsonSerializable(fieldRename: FieldRename.snake)
 class _$MatchDataImpl implements _MatchData {
   const _$MatchDataImpl({
     required this.id,
@@ -700,7 +701,7 @@ class _$MatchDataImpl implements _MatchData {
     required this.goals,
     required this.assists,
     required this.cleanSheet,
-    required this.own_goals,
+    required this.ownGoals,
     required this.redCards,
     required this.yellowCards,
     required this.minutesPlayed,
@@ -731,7 +732,7 @@ class _$MatchDataImpl implements _MatchData {
   @override
   final int cleanSheet;
   @override
-  final int own_goals;
+  final int ownGoals;
   @override
   final int redCards;
   @override
@@ -747,7 +748,7 @@ class _$MatchDataImpl implements _MatchData {
 
   @override
   String toString() {
-    return 'MatchData(id: $id, playerId: $playerId, playerName: $playerName, matchId: $matchId, opponent: $opponent, position: $position, goals: $goals, assists: $assists, cleanSheet: $cleanSheet, own_goals: $own_goals, redCards: $redCards, yellowCards: $yellowCards, minutesPlayed: $minutesPlayed, points: $points, rating: $rating, createdAt: $createdAt)';
+    return 'MatchData(id: $id, playerId: $playerId, playerName: $playerName, matchId: $matchId, opponent: $opponent, position: $position, goals: $goals, assists: $assists, cleanSheet: $cleanSheet, ownGoals: $ownGoals, redCards: $redCards, yellowCards: $yellowCards, minutesPlayed: $minutesPlayed, points: $points, rating: $rating, createdAt: $createdAt)';
   }
 
   @override
@@ -769,8 +770,8 @@ class _$MatchDataImpl implements _MatchData {
             (identical(other.assists, assists) || other.assists == assists) &&
             (identical(other.cleanSheet, cleanSheet) ||
                 other.cleanSheet == cleanSheet) &&
-            (identical(other.own_goals, own_goals) ||
-                other.own_goals == own_goals) &&
+            (identical(other.ownGoals, ownGoals) ||
+                other.ownGoals == ownGoals) &&
             (identical(other.redCards, redCards) ||
                 other.redCards == redCards) &&
             (identical(other.yellowCards, yellowCards) ||
@@ -796,7 +797,7 @@ class _$MatchDataImpl implements _MatchData {
     goals,
     assists,
     cleanSheet,
-    own_goals,
+    ownGoals,
     redCards,
     yellowCards,
     minutesPlayed,
@@ -830,7 +831,7 @@ abstract class _MatchData implements MatchData {
     required final int goals,
     required final int assists,
     required final int cleanSheet,
-    required final int own_goals,
+    required final int ownGoals,
     required final int redCards,
     required final int yellowCards,
     required final int minutesPlayed,
@@ -861,7 +862,7 @@ abstract class _MatchData implements MatchData {
   @override
   int get cleanSheet;
   @override
-  int get own_goals;
+  int get ownGoals;
   @override
   int get redCards;
   @override
@@ -1206,7 +1207,7 @@ MatchesResponse _$MatchesResponseFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$MatchesResponse {
   List<Match> get matches => throw _privateConstructorUsedError;
-  int? get total_count => throw _privateConstructorUsedError;
+  int? get totalCount => throw _privateConstructorUsedError;
 
   /// Serializes this MatchesResponse to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -1225,7 +1226,7 @@ abstract class $MatchesResponseCopyWith<$Res> {
     $Res Function(MatchesResponse) then,
   ) = _$MatchesResponseCopyWithImpl<$Res, MatchesResponse>;
   @useResult
-  $Res call({List<Match> matches, int? total_count});
+  $Res call({List<Match> matches, int? totalCount});
 }
 
 /// @nodoc
@@ -1242,16 +1243,16 @@ class _$MatchesResponseCopyWithImpl<$Res, $Val extends MatchesResponse>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? matches = null, Object? total_count = freezed}) {
+  $Res call({Object? matches = null, Object? totalCount = freezed}) {
     return _then(
       _value.copyWith(
             matches: null == matches
                 ? _value.matches
                 : matches // ignore: cast_nullable_to_non_nullable
                       as List<Match>,
-            total_count: freezed == total_count
-                ? _value.total_count
-                : total_count // ignore: cast_nullable_to_non_nullable
+            totalCount: freezed == totalCount
+                ? _value.totalCount
+                : totalCount // ignore: cast_nullable_to_non_nullable
                       as int?,
           )
           as $Val,
@@ -1268,7 +1269,7 @@ abstract class _$$MatchesResponseImplCopyWith<$Res>
   ) = __$$MatchesResponseImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({List<Match> matches, int? total_count});
+  $Res call({List<Match> matches, int? totalCount});
 }
 
 /// @nodoc
@@ -1284,16 +1285,16 @@ class __$$MatchesResponseImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? matches = null, Object? total_count = freezed}) {
+  $Res call({Object? matches = null, Object? totalCount = freezed}) {
     return _then(
       _$MatchesResponseImpl(
         matches: null == matches
             ? _value._matches
             : matches // ignore: cast_nullable_to_non_nullable
                   as List<Match>,
-        total_count: freezed == total_count
-            ? _value.total_count
-            : total_count // ignore: cast_nullable_to_non_nullable
+        totalCount: freezed == totalCount
+            ? _value.totalCount
+            : totalCount // ignore: cast_nullable_to_non_nullable
                   as int?,
       ),
     );
@@ -1301,11 +1302,12 @@ class __$$MatchesResponseImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
+
+@JsonSerializable(fieldRename: FieldRename.snake)
 class _$MatchesResponseImpl implements _MatchesResponse {
   const _$MatchesResponseImpl({
     required final List<Match> matches,
-    this.total_count,
+    this.totalCount,
   }) : _matches = matches;
 
   factory _$MatchesResponseImpl.fromJson(Map<String, dynamic> json) =>
@@ -1320,11 +1322,11 @@ class _$MatchesResponseImpl implements _MatchesResponse {
   }
 
   @override
-  final int? total_count;
+  final int? totalCount;
 
   @override
   String toString() {
-    return 'MatchesResponse(matches: $matches, total_count: $total_count)';
+    return 'MatchesResponse(matches: $matches, totalCount: $totalCount)';
   }
 
   @override
@@ -1333,8 +1335,8 @@ class _$MatchesResponseImpl implements _MatchesResponse {
         (other.runtimeType == runtimeType &&
             other is _$MatchesResponseImpl &&
             const DeepCollectionEquality().equals(other._matches, _matches) &&
-            (identical(other.total_count, total_count) ||
-                other.total_count == total_count));
+            (identical(other.totalCount, totalCount) ||
+                other.totalCount == totalCount));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1342,7 +1344,7 @@ class _$MatchesResponseImpl implements _MatchesResponse {
   int get hashCode => Object.hash(
     runtimeType,
     const DeepCollectionEquality().hash(_matches),
-    total_count,
+    totalCount,
   );
 
   /// Create a copy of MatchesResponse
@@ -1365,7 +1367,7 @@ class _$MatchesResponseImpl implements _MatchesResponse {
 abstract class _MatchesResponse implements MatchesResponse {
   const factory _MatchesResponse({
     required final List<Match> matches,
-    final int? total_count,
+    final int? totalCount,
   }) = _$MatchesResponseImpl;
 
   factory _MatchesResponse.fromJson(Map<String, dynamic> json) =
@@ -1374,7 +1376,7 @@ abstract class _MatchesResponse implements MatchesResponse {
   @override
   List<Match> get matches;
   @override
-  int? get total_count;
+  int? get totalCount;
 
   /// Create a copy of MatchesResponse
   /// with the given fields replaced by the non-null parameter values.

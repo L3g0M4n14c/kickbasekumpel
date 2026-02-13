@@ -66,7 +66,9 @@ class TransferCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: (isBuy ? Colors.green : Colors.red).withOpacity(0.1),
+                  color: (isBuy ? Colors.green : Colors.red).withValues(
+                    alpha: 0.1,
+                  ),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -108,7 +110,9 @@ class TransferCard extends StatelessWidget {
                     Text(
                       _formatDate(date),
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+                        color: colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.7,
+                        ),
                       ),
                     ),
                   ],
@@ -139,7 +143,9 @@ class TransferCard extends StatelessWidget {
                     Text(
                       isBuy ? 'Kauf' : 'Verkauf',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onPrimaryContainer.withOpacity(0.7),
+                        color: colorScheme.onPrimaryContainer.withValues(
+                          alpha: 0.7,
+                        ),
                       ),
                     ),
                   ],

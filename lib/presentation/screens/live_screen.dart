@@ -502,7 +502,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
                   );
                 }())
               : CircleAvatar(
-                  backgroundColor: pointsColor.withOpacity(0.2),
+                  backgroundColor: pointsColor.withValues(alpha: 0.2),
                   child: Text(
                     firstName.isNotEmpty ? firstName[0] : '?',
                     style: TextStyle(

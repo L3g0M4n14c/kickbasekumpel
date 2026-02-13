@@ -11,21 +11,21 @@ _$LigainsiderPlayerImpl _$$LigainsiderPlayerImplFromJson(
 ) => _$LigainsiderPlayerImpl(
   id: json['id'] as String,
   name: json['name'] as String,
-  shortName: json['shortName'] as String,
-  teamName: json['teamName'] as String,
-  teamId: json['teamId'] as String,
+  shortName: json['short_name'] as String,
+  teamName: json['team_name'] as String,
+  teamId: json['team_id'] as String,
   position: (json['position'] as num).toInt(),
-  injury_status: json['injury_status'] as String,
-  injury_description: json['injury_description'] as String?,
-  form_rating: (json['form_rating'] as num?)?.toInt(),
-  last_update: DateTime.parse(json['last_update'] as String),
-  status_text: json['status_text'] as String?,
-  expected_return: json['expected_return'] == null
+  injuryStatus: json['injury_status'] as String,
+  injuryDescription: json['injury_description'] as String?,
+  formRating: (json['form_rating'] as num?)?.toInt(),
+  lastUpdate: DateTime.parse(json['last_update'] as String),
+  statusText: json['status_text'] as String?,
+  expectedReturn: json['expected_return'] == null
       ? null
       : DateTime.parse(json['expected_return'] as String),
   alternative: json['alternative'] as String?,
-  ligainsiderId: json['ligainsiderId'] as String?,
-  imageUrl: json['imageUrl'] as String?,
+  ligainsiderId: json['ligainsider_id'] as String?,
+  imageUrl: json['image_url'] as String?,
 );
 
 Map<String, dynamic> _$$LigainsiderPlayerImplToJson(
@@ -33,19 +33,19 @@ Map<String, dynamic> _$$LigainsiderPlayerImplToJson(
 ) => <String, dynamic>{
   'id': instance.id,
   'name': instance.name,
-  'shortName': instance.shortName,
-  'teamName': instance.teamName,
-  'teamId': instance.teamId,
+  'short_name': instance.shortName,
+  'team_name': instance.teamName,
+  'team_id': instance.teamId,
   'position': instance.position,
-  'injury_status': instance.injury_status,
-  'injury_description': instance.injury_description,
-  'form_rating': instance.form_rating,
-  'last_update': instance.last_update.toIso8601String(),
-  'status_text': instance.status_text,
-  'expected_return': instance.expected_return?.toIso8601String(),
+  'injury_status': instance.injuryStatus,
+  'injury_description': instance.injuryDescription,
+  'form_rating': instance.formRating,
+  'last_update': instance.lastUpdate.toIso8601String(),
+  'status_text': instance.statusText,
+  'expected_return': instance.expectedReturn?.toIso8601String(),
   'alternative': instance.alternative,
-  'ligainsiderId': instance.ligainsiderId,
-  'imageUrl': instance.imageUrl,
+  'ligainsider_id': instance.ligainsiderId,
+  'image_url': instance.imageUrl,
 };
 
 _$LigainsiderStatusImpl _$$LigainsiderStatusImplFromJson(
@@ -74,18 +74,18 @@ _$LigainsiderResponseImpl _$$LigainsiderResponseImplFromJson(
   players: (json['players'] as List<dynamic>)
       .map((e) => LigainsiderPlayer.fromJson(e as Map<String, dynamic>))
       .toList(),
-  last_update: DateTime.parse(json['last_update'] as String),
-  total_injured: (json['total_injured'] as num?)?.toInt(),
-  total_questionable: (json['total_questionable'] as num?)?.toInt(),
+  lastUpdate: DateTime.parse(json['last_update'] as String),
+  totalInjured: (json['total_injured'] as num?)?.toInt(),
+  totalQuestionable: (json['total_questionable'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$$LigainsiderResponseImplToJson(
   _$LigainsiderResponseImpl instance,
 ) => <String, dynamic>{
   'players': instance.players,
-  'last_update': instance.last_update.toIso8601String(),
-  'total_injured': instance.total_injured,
-  'total_questionable': instance.total_questionable,
+  'last_update': instance.lastUpdate.toIso8601String(),
+  'total_injured': instance.totalInjured,
+  'total_questionable': instance.totalQuestionable,
 };
 
 _$InjuryReportImpl _$$InjuryReportImplFromJson(Map<String, dynamic> json) =>

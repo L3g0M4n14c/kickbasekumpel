@@ -1,10 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kickbasekumpel/data/models/sales_recommendation_model.dart';
 import 'package:kickbasekumpel/data/models/optimal_lineup_model.dart';
-import 'package:kickbasekumpel/data/models/team_player_counts_model.dart';
 import 'package:kickbasekumpel/data/models/player_model.dart';
 import 'package:kickbasekumpel/data/models/user_model.dart';
-import 'package:kickbasekumpel/data/providers/player_providers.dart';
 import 'package:kickbasekumpel/data/providers/user_providers.dart';
 
 // ============================================================================

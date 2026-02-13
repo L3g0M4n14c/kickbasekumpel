@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kickbasekumpel/data/models/player_model.dart';
 import 'package:kickbasekumpel/data/models/team_player_counts_model.dart';
-import 'package:kickbasekumpel/data/providers/player_providers.dart';
-import 'package:kickbasekumpel/data/providers/user_providers.dart';
 import 'package:kickbasekumpel/presentation/widgets/team/team_budget_header.dart';
 import 'package:kickbasekumpel/presentation/widgets/team/player_count_overview.dart';
 import 'package:kickbasekumpel/presentation/widgets/team/player_row_with_sale.dart';

@@ -80,9 +80,10 @@ class TransferRequest with _$TransferRequest {
 /// Transfers Response - Liste von Transfers
 @freezed
 class TransfersResponse with _$TransfersResponse {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory TransfersResponse({
     required List<Transfer> transfers,
-    int? total_count,
+    int? totalCount,
   }) = _TransfersResponse;
 
   factory TransfersResponse.fromJson(Map<String, dynamic> json) =>

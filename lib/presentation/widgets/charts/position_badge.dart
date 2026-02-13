@@ -38,7 +38,7 @@ class PositionBadge extends StatelessWidget {
       width: dimensions.size,
       height: dimensions.size,
       decoration: BoxDecoration(
-        color: config.color.withOpacity(0.1),
+        color: config.color.withValues(alpha: 0.1),
         border: Border.all(color: config.color, width: dimensions.borderWidth),
         borderRadius: BorderRadius.circular(dimensions.borderRadius),
       ),

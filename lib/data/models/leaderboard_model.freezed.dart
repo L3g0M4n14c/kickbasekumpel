@@ -31,7 +31,7 @@ mixin _$LeaderboardEntry {
   int get wins => throw _privateConstructorUsedError;
   int get draws => throw _privateConstructorUsedError;
   int get losses => throw _privateConstructorUsedError;
-  DateTime get last_updated => throw _privateConstructorUsedError;
+  DateTime get lastUpdated => throw _privateConstructorUsedError;
 
   /// Serializes this LeaderboardEntry to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -61,7 +61,7 @@ abstract class $LeaderboardEntryCopyWith<$Res> {
     int wins,
     int draws,
     int losses,
-    DateTime last_updated,
+    DateTime lastUpdated,
   });
 }
 
@@ -90,7 +90,7 @@ class _$LeaderboardEntryCopyWithImpl<$Res, $Val extends LeaderboardEntry>
     Object? wins = null,
     Object? draws = null,
     Object? losses = null,
-    Object? last_updated = null,
+    Object? lastUpdated = null,
   }) {
     return _then(
       _value.copyWith(
@@ -134,9 +134,9 @@ class _$LeaderboardEntryCopyWithImpl<$Res, $Val extends LeaderboardEntry>
                 ? _value.losses
                 : losses // ignore: cast_nullable_to_non_nullable
                       as int,
-            last_updated: null == last_updated
-                ? _value.last_updated
-                : last_updated // ignore: cast_nullable_to_non_nullable
+            lastUpdated: null == lastUpdated
+                ? _value.lastUpdated
+                : lastUpdated // ignore: cast_nullable_to_non_nullable
                       as DateTime,
           )
           as $Val,
@@ -164,7 +164,7 @@ abstract class _$$LeaderboardEntryImplCopyWith<$Res>
     int wins,
     int draws,
     int losses,
-    DateTime last_updated,
+    DateTime lastUpdated,
   });
 }
 
@@ -192,7 +192,7 @@ class __$$LeaderboardEntryImplCopyWithImpl<$Res>
     Object? wins = null,
     Object? draws = null,
     Object? losses = null,
-    Object? last_updated = null,
+    Object? lastUpdated = null,
   }) {
     return _then(
       _$LeaderboardEntryImpl(
@@ -236,9 +236,9 @@ class __$$LeaderboardEntryImplCopyWithImpl<$Res>
             ? _value.losses
             : losses // ignore: cast_nullable_to_non_nullable
                   as int,
-        last_updated: null == last_updated
-            ? _value.last_updated
-            : last_updated // ignore: cast_nullable_to_non_nullable
+        lastUpdated: null == lastUpdated
+            ? _value.lastUpdated
+            : lastUpdated // ignore: cast_nullable_to_non_nullable
                   as DateTime,
       ),
     );
@@ -246,7 +246,8 @@ class __$$LeaderboardEntryImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
+
+@JsonSerializable(fieldRename: FieldRename.snake)
 class _$LeaderboardEntryImpl implements _LeaderboardEntry {
   const _$LeaderboardEntryImpl({
     required this.leagueId,
@@ -259,7 +260,7 @@ class _$LeaderboardEntryImpl implements _LeaderboardEntry {
     required this.wins,
     required this.draws,
     required this.losses,
-    required this.last_updated,
+    required this.lastUpdated,
   });
 
   factory _$LeaderboardEntryImpl.fromJson(Map<String, dynamic> json) =>
@@ -286,11 +287,11 @@ class _$LeaderboardEntryImpl implements _LeaderboardEntry {
   @override
   final int losses;
   @override
-  final DateTime last_updated;
+  final DateTime lastUpdated;
 
   @override
   String toString() {
-    return 'LeaderboardEntry(leagueId: $leagueId, userId: $userId, username: $username, rank: $rank, totalPoints: $totalPoints, gamesPlayed: $gamesPlayed, averagePoints: $averagePoints, wins: $wins, draws: $draws, losses: $losses, last_updated: $last_updated)';
+    return 'LeaderboardEntry(leagueId: $leagueId, userId: $userId, username: $username, rank: $rank, totalPoints: $totalPoints, gamesPlayed: $gamesPlayed, averagePoints: $averagePoints, wins: $wins, draws: $draws, losses: $losses, lastUpdated: $lastUpdated)';
   }
 
   @override
@@ -313,8 +314,8 @@ class _$LeaderboardEntryImpl implements _LeaderboardEntry {
             (identical(other.wins, wins) || other.wins == wins) &&
             (identical(other.draws, draws) || other.draws == draws) &&
             (identical(other.losses, losses) || other.losses == losses) &&
-            (identical(other.last_updated, last_updated) ||
-                other.last_updated == last_updated));
+            (identical(other.lastUpdated, lastUpdated) ||
+                other.lastUpdated == lastUpdated));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -331,7 +332,7 @@ class _$LeaderboardEntryImpl implements _LeaderboardEntry {
     wins,
     draws,
     losses,
-    last_updated,
+    lastUpdated,
   );
 
   /// Create a copy of LeaderboardEntry
@@ -363,7 +364,7 @@ abstract class _LeaderboardEntry implements LeaderboardEntry {
     required final int wins,
     required final int draws,
     required final int losses,
-    required final DateTime last_updated,
+    required final DateTime lastUpdated,
   }) = _$LeaderboardEntryImpl;
 
   factory _LeaderboardEntry.fromJson(Map<String, dynamic> json) =
@@ -390,7 +391,7 @@ abstract class _LeaderboardEntry implements LeaderboardEntry {
   @override
   int get losses;
   @override
-  DateTime get last_updated;
+  DateTime get lastUpdated;
 
   /// Create a copy of LeaderboardEntry
   /// with the given fields replaced by the non-null parameter values.
@@ -409,9 +410,9 @@ mixin _$Ranking {
   String get leagueId => throw _privateConstructorUsedError;
   String get leagueName => throw _privateConstructorUsedError;
   List<LeaderboardEntry> get entries => throw _privateConstructorUsedError;
-  int get total_participants => throw _privateConstructorUsedError;
-  String? get update_frequency => throw _privateConstructorUsedError;
-  DateTime get last_updated => throw _privateConstructorUsedError;
+  int get totalParticipants => throw _privateConstructorUsedError;
+  String? get updateFrequency => throw _privateConstructorUsedError;
+  DateTime get lastUpdated => throw _privateConstructorUsedError;
 
   /// Serializes this Ranking to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -431,9 +432,9 @@ abstract class $RankingCopyWith<$Res> {
     String leagueId,
     String leagueName,
     List<LeaderboardEntry> entries,
-    int total_participants,
-    String? update_frequency,
-    DateTime last_updated,
+    int totalParticipants,
+    String? updateFrequency,
+    DateTime lastUpdated,
   });
 }
 
@@ -455,9 +456,9 @@ class _$RankingCopyWithImpl<$Res, $Val extends Ranking>
     Object? leagueId = null,
     Object? leagueName = null,
     Object? entries = null,
-    Object? total_participants = null,
-    Object? update_frequency = freezed,
-    Object? last_updated = null,
+    Object? totalParticipants = null,
+    Object? updateFrequency = freezed,
+    Object? lastUpdated = null,
   }) {
     return _then(
       _value.copyWith(
@@ -473,17 +474,17 @@ class _$RankingCopyWithImpl<$Res, $Val extends Ranking>
                 ? _value.entries
                 : entries // ignore: cast_nullable_to_non_nullable
                       as List<LeaderboardEntry>,
-            total_participants: null == total_participants
-                ? _value.total_participants
-                : total_participants // ignore: cast_nullable_to_non_nullable
+            totalParticipants: null == totalParticipants
+                ? _value.totalParticipants
+                : totalParticipants // ignore: cast_nullable_to_non_nullable
                       as int,
-            update_frequency: freezed == update_frequency
-                ? _value.update_frequency
-                : update_frequency // ignore: cast_nullable_to_non_nullable
+            updateFrequency: freezed == updateFrequency
+                ? _value.updateFrequency
+                : updateFrequency // ignore: cast_nullable_to_non_nullable
                       as String?,
-            last_updated: null == last_updated
-                ? _value.last_updated
-                : last_updated // ignore: cast_nullable_to_non_nullable
+            lastUpdated: null == lastUpdated
+                ? _value.lastUpdated
+                : lastUpdated // ignore: cast_nullable_to_non_nullable
                       as DateTime,
           )
           as $Val,
@@ -503,9 +504,9 @@ abstract class _$$RankingImplCopyWith<$Res> implements $RankingCopyWith<$Res> {
     String leagueId,
     String leagueName,
     List<LeaderboardEntry> entries,
-    int total_participants,
-    String? update_frequency,
-    DateTime last_updated,
+    int totalParticipants,
+    String? updateFrequency,
+    DateTime lastUpdated,
   });
 }
 
@@ -526,9 +527,9 @@ class __$$RankingImplCopyWithImpl<$Res>
     Object? leagueId = null,
     Object? leagueName = null,
     Object? entries = null,
-    Object? total_participants = null,
-    Object? update_frequency = freezed,
-    Object? last_updated = null,
+    Object? totalParticipants = null,
+    Object? updateFrequency = freezed,
+    Object? lastUpdated = null,
   }) {
     return _then(
       _$RankingImpl(
@@ -544,17 +545,17 @@ class __$$RankingImplCopyWithImpl<$Res>
             ? _value._entries
             : entries // ignore: cast_nullable_to_non_nullable
                   as List<LeaderboardEntry>,
-        total_participants: null == total_participants
-            ? _value.total_participants
-            : total_participants // ignore: cast_nullable_to_non_nullable
+        totalParticipants: null == totalParticipants
+            ? _value.totalParticipants
+            : totalParticipants // ignore: cast_nullable_to_non_nullable
                   as int,
-        update_frequency: freezed == update_frequency
-            ? _value.update_frequency
-            : update_frequency // ignore: cast_nullable_to_non_nullable
+        updateFrequency: freezed == updateFrequency
+            ? _value.updateFrequency
+            : updateFrequency // ignore: cast_nullable_to_non_nullable
                   as String?,
-        last_updated: null == last_updated
-            ? _value.last_updated
-            : last_updated // ignore: cast_nullable_to_non_nullable
+        lastUpdated: null == lastUpdated
+            ? _value.lastUpdated
+            : lastUpdated // ignore: cast_nullable_to_non_nullable
                   as DateTime,
       ),
     );
@@ -562,15 +563,16 @@ class __$$RankingImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
+
+@JsonSerializable(fieldRename: FieldRename.snake)
 class _$RankingImpl implements _Ranking {
   const _$RankingImpl({
     required this.leagueId,
     required this.leagueName,
     required final List<LeaderboardEntry> entries,
-    required this.total_participants,
-    this.update_frequency,
-    required this.last_updated,
+    required this.totalParticipants,
+    this.updateFrequency,
+    required this.lastUpdated,
   }) : _entries = entries;
 
   factory _$RankingImpl.fromJson(Map<String, dynamic> json) =>
@@ -589,15 +591,15 @@ class _$RankingImpl implements _Ranking {
   }
 
   @override
-  final int total_participants;
+  final int totalParticipants;
   @override
-  final String? update_frequency;
+  final String? updateFrequency;
   @override
-  final DateTime last_updated;
+  final DateTime lastUpdated;
 
   @override
   String toString() {
-    return 'Ranking(leagueId: $leagueId, leagueName: $leagueName, entries: $entries, total_participants: $total_participants, update_frequency: $update_frequency, last_updated: $last_updated)';
+    return 'Ranking(leagueId: $leagueId, leagueName: $leagueName, entries: $entries, totalParticipants: $totalParticipants, updateFrequency: $updateFrequency, lastUpdated: $lastUpdated)';
   }
 
   @override
@@ -610,12 +612,12 @@ class _$RankingImpl implements _Ranking {
             (identical(other.leagueName, leagueName) ||
                 other.leagueName == leagueName) &&
             const DeepCollectionEquality().equals(other._entries, _entries) &&
-            (identical(other.total_participants, total_participants) ||
-                other.total_participants == total_participants) &&
-            (identical(other.update_frequency, update_frequency) ||
-                other.update_frequency == update_frequency) &&
-            (identical(other.last_updated, last_updated) ||
-                other.last_updated == last_updated));
+            (identical(other.totalParticipants, totalParticipants) ||
+                other.totalParticipants == totalParticipants) &&
+            (identical(other.updateFrequency, updateFrequency) ||
+                other.updateFrequency == updateFrequency) &&
+            (identical(other.lastUpdated, lastUpdated) ||
+                other.lastUpdated == lastUpdated));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -625,9 +627,9 @@ class _$RankingImpl implements _Ranking {
     leagueId,
     leagueName,
     const DeepCollectionEquality().hash(_entries),
-    total_participants,
-    update_frequency,
-    last_updated,
+    totalParticipants,
+    updateFrequency,
+    lastUpdated,
   );
 
   /// Create a copy of Ranking
@@ -649,9 +651,9 @@ abstract class _Ranking implements Ranking {
     required final String leagueId,
     required final String leagueName,
     required final List<LeaderboardEntry> entries,
-    required final int total_participants,
-    final String? update_frequency,
-    required final DateTime last_updated,
+    required final int totalParticipants,
+    final String? updateFrequency,
+    required final DateTime lastUpdated,
   }) = _$RankingImpl;
 
   factory _Ranking.fromJson(Map<String, dynamic> json) = _$RankingImpl.fromJson;
@@ -663,11 +665,11 @@ abstract class _Ranking implements Ranking {
   @override
   List<LeaderboardEntry> get entries;
   @override
-  int get total_participants;
+  int get totalParticipants;
   @override
-  String? get update_frequency;
+  String? get updateFrequency;
   @override
-  DateTime get last_updated;
+  DateTime get lastUpdated;
 
   /// Create a copy of Ranking
   /// with the given fields replaced by the non-null parameter values.
@@ -687,8 +689,8 @@ mixin _$UserRanking {
   String get username => throw _privateConstructorUsedError;
   int get totalPoints => throw _privateConstructorUsedError;
   int get rank => throw _privateConstructorUsedError;
-  int? get points_behind_leader => throw _privateConstructorUsedError;
-  int? get points_ahead_next => throw _privateConstructorUsedError;
+  int? get pointsBehindLeader => throw _privateConstructorUsedError;
+  int? get pointsAheadNext => throw _privateConstructorUsedError;
   int get gamesPlayed => throw _privateConstructorUsedError;
   String get trend => throw _privateConstructorUsedError;
 
@@ -714,8 +716,8 @@ abstract class $UserRankingCopyWith<$Res> {
     String username,
     int totalPoints,
     int rank,
-    int? points_behind_leader,
-    int? points_ahead_next,
+    int? pointsBehindLeader,
+    int? pointsAheadNext,
     int gamesPlayed,
     String trend,
   });
@@ -740,8 +742,8 @@ class _$UserRankingCopyWithImpl<$Res, $Val extends UserRanking>
     Object? username = null,
     Object? totalPoints = null,
     Object? rank = null,
-    Object? points_behind_leader = freezed,
-    Object? points_ahead_next = freezed,
+    Object? pointsBehindLeader = freezed,
+    Object? pointsAheadNext = freezed,
     Object? gamesPlayed = null,
     Object? trend = null,
   }) {
@@ -763,13 +765,13 @@ class _$UserRankingCopyWithImpl<$Res, $Val extends UserRanking>
                 ? _value.rank
                 : rank // ignore: cast_nullable_to_non_nullable
                       as int,
-            points_behind_leader: freezed == points_behind_leader
-                ? _value.points_behind_leader
-                : points_behind_leader // ignore: cast_nullable_to_non_nullable
+            pointsBehindLeader: freezed == pointsBehindLeader
+                ? _value.pointsBehindLeader
+                : pointsBehindLeader // ignore: cast_nullable_to_non_nullable
                       as int?,
-            points_ahead_next: freezed == points_ahead_next
-                ? _value.points_ahead_next
-                : points_ahead_next // ignore: cast_nullable_to_non_nullable
+            pointsAheadNext: freezed == pointsAheadNext
+                ? _value.pointsAheadNext
+                : pointsAheadNext // ignore: cast_nullable_to_non_nullable
                       as int?,
             gamesPlayed: null == gamesPlayed
                 ? _value.gamesPlayed
@@ -799,8 +801,8 @@ abstract class _$$UserRankingImplCopyWith<$Res>
     String username,
     int totalPoints,
     int rank,
-    int? points_behind_leader,
-    int? points_ahead_next,
+    int? pointsBehindLeader,
+    int? pointsAheadNext,
     int gamesPlayed,
     String trend,
   });
@@ -824,8 +826,8 @@ class __$$UserRankingImplCopyWithImpl<$Res>
     Object? username = null,
     Object? totalPoints = null,
     Object? rank = null,
-    Object? points_behind_leader = freezed,
-    Object? points_ahead_next = freezed,
+    Object? pointsBehindLeader = freezed,
+    Object? pointsAheadNext = freezed,
     Object? gamesPlayed = null,
     Object? trend = null,
   }) {
@@ -847,13 +849,13 @@ class __$$UserRankingImplCopyWithImpl<$Res>
             ? _value.rank
             : rank // ignore: cast_nullable_to_non_nullable
                   as int,
-        points_behind_leader: freezed == points_behind_leader
-            ? _value.points_behind_leader
-            : points_behind_leader // ignore: cast_nullable_to_non_nullable
+        pointsBehindLeader: freezed == pointsBehindLeader
+            ? _value.pointsBehindLeader
+            : pointsBehindLeader // ignore: cast_nullable_to_non_nullable
                   as int?,
-        points_ahead_next: freezed == points_ahead_next
-            ? _value.points_ahead_next
-            : points_ahead_next // ignore: cast_nullable_to_non_nullable
+        pointsAheadNext: freezed == pointsAheadNext
+            ? _value.pointsAheadNext
+            : pointsAheadNext // ignore: cast_nullable_to_non_nullable
                   as int?,
         gamesPlayed: null == gamesPlayed
             ? _value.gamesPlayed
@@ -869,15 +871,16 @@ class __$$UserRankingImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
+
+@JsonSerializable(fieldRename: FieldRename.snake)
 class _$UserRankingImpl implements _UserRanking {
   const _$UserRankingImpl({
     required this.userId,
     required this.username,
     required this.totalPoints,
     required this.rank,
-    this.points_behind_leader,
-    this.points_ahead_next,
+    this.pointsBehindLeader,
+    this.pointsAheadNext,
     required this.gamesPlayed,
     required this.trend,
   });
@@ -894,9 +897,9 @@ class _$UserRankingImpl implements _UserRanking {
   @override
   final int rank;
   @override
-  final int? points_behind_leader;
+  final int? pointsBehindLeader;
   @override
-  final int? points_ahead_next;
+  final int? pointsAheadNext;
   @override
   final int gamesPlayed;
   @override
@@ -904,7 +907,7 @@ class _$UserRankingImpl implements _UserRanking {
 
   @override
   String toString() {
-    return 'UserRanking(userId: $userId, username: $username, totalPoints: $totalPoints, rank: $rank, points_behind_leader: $points_behind_leader, points_ahead_next: $points_ahead_next, gamesPlayed: $gamesPlayed, trend: $trend)';
+    return 'UserRanking(userId: $userId, username: $username, totalPoints: $totalPoints, rank: $rank, pointsBehindLeader: $pointsBehindLeader, pointsAheadNext: $pointsAheadNext, gamesPlayed: $gamesPlayed, trend: $trend)';
   }
 
   @override
@@ -918,10 +921,10 @@ class _$UserRankingImpl implements _UserRanking {
             (identical(other.totalPoints, totalPoints) ||
                 other.totalPoints == totalPoints) &&
             (identical(other.rank, rank) || other.rank == rank) &&
-            (identical(other.points_behind_leader, points_behind_leader) ||
-                other.points_behind_leader == points_behind_leader) &&
-            (identical(other.points_ahead_next, points_ahead_next) ||
-                other.points_ahead_next == points_ahead_next) &&
+            (identical(other.pointsBehindLeader, pointsBehindLeader) ||
+                other.pointsBehindLeader == pointsBehindLeader) &&
+            (identical(other.pointsAheadNext, pointsAheadNext) ||
+                other.pointsAheadNext == pointsAheadNext) &&
             (identical(other.gamesPlayed, gamesPlayed) ||
                 other.gamesPlayed == gamesPlayed) &&
             (identical(other.trend, trend) || other.trend == trend));
@@ -935,8 +938,8 @@ class _$UserRankingImpl implements _UserRanking {
     username,
     totalPoints,
     rank,
-    points_behind_leader,
-    points_ahead_next,
+    pointsBehindLeader,
+    pointsAheadNext,
     gamesPlayed,
     trend,
   );
@@ -961,8 +964,8 @@ abstract class _UserRanking implements UserRanking {
     required final String username,
     required final int totalPoints,
     required final int rank,
-    final int? points_behind_leader,
-    final int? points_ahead_next,
+    final int? pointsBehindLeader,
+    final int? pointsAheadNext,
     required final int gamesPlayed,
     required final String trend,
   }) = _$UserRankingImpl;
@@ -979,9 +982,9 @@ abstract class _UserRanking implements UserRanking {
   @override
   int get rank;
   @override
-  int? get points_behind_leader;
+  int? get pointsBehindLeader;
   @override
-  int? get points_ahead_next;
+  int? get pointsAheadNext;
   @override
   int get gamesPlayed;
   @override

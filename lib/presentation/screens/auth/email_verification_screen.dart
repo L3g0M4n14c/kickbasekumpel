@@ -303,7 +303,7 @@ class _EmailVerificationScreenState
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            theme.colorScheme.primary.withOpacity(0.5),
+                            theme.colorScheme.primary.withValues(alpha: 0.5),
                           ),
                         ),
                       ),

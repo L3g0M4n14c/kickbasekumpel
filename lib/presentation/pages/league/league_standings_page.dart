@@ -431,7 +431,7 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
                     ? WidgetStateProperty.all(
                         Theme.of(
                           context,
-                        ).colorScheme.primaryContainer.withOpacity(0.3),
+                        ).colorScheme.primaryContainer.withValues(alpha: 0.3),
                       )
                     : null,
                 cells: [

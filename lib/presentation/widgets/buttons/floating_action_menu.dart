@@ -91,7 +91,7 @@ class _FloatingActionMenuState extends State<FloatingActionMenu>
           Positioned.fill(
             child: GestureDetector(
               onTap: _toggle,
-              child: Container(color: Colors.black.withOpacity(0.5)),
+              child: Container(color: Colors.black.withValues(alpha: 0.5)),
             ),
           ),
 
@@ -141,7 +141,7 @@ class _FloatingActionMenuState extends State<FloatingActionMenu>
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
+                          color: Colors.black.withValues(alpha: 0.2),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),

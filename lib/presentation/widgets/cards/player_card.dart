@@ -172,7 +172,7 @@ class PlayerCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -198,7 +198,7 @@ class PlayerCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: (isUp ? Colors.green : Colors.red).withOpacity(0.1),
+        color: (isUp ? Colors.green : Colors.red).withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
       child: Icon(

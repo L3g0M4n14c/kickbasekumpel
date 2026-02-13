@@ -115,12 +115,12 @@ _$TransfersResponseImpl _$$TransfersResponseImplFromJson(
   transfers: (json['transfers'] as List<dynamic>)
       .map((e) => Transfer.fromJson(e as Map<String, dynamic>))
       .toList(),
-  total_count: (json['total_count'] as num?)?.toInt(),
+  totalCount: (json['total_count'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$$TransfersResponseImplToJson(
   _$TransfersResponseImpl instance,
 ) => <String, dynamic>{
   'transfers': instance.transfers,
-  'total_count': instance.total_count,
+  'total_count': instance.totalCount,
 };

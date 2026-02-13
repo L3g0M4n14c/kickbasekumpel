@@ -6,6 +6,7 @@ part 'leaderboard_model.g.dart';
 /// Leaderboard Entry - Eintrag in der Rangliste
 @freezed
 class LeaderboardEntry with _$LeaderboardEntry {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory LeaderboardEntry({
     required String leagueId,
     required String userId,
@@ -17,7 +18,7 @@ class LeaderboardEntry with _$LeaderboardEntry {
     required int wins,
     required int draws,
     required int losses,
-    required DateTime last_updated,
+    required DateTime lastUpdated,
   }) = _LeaderboardEntry;
 
   factory LeaderboardEntry.fromJson(Map<String, dynamic> json) =>
@@ -27,13 +28,14 @@ class LeaderboardEntry with _$LeaderboardEntry {
 /// Ranking Model - Rangliste/Standings für eine Liga
 @freezed
 class Ranking with _$Ranking {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Ranking({
     required String leagueId,
     required String leagueName,
     required List<LeaderboardEntry> entries,
-    required int total_participants,
-    String? update_frequency,
-    required DateTime last_updated,
+    required int totalParticipants,
+    String? updateFrequency,
+    required DateTime lastUpdated,
   }) = _Ranking;
 
   factory Ranking.fromJson(Map<String, dynamic> json) =>
@@ -43,13 +45,14 @@ class Ranking with _$Ranking {
 /// User Ranking - Ranking eines einzelnen Nutzers
 @freezed
 class UserRanking with _$UserRanking {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory UserRanking({
     required String userId,
     required String username,
     required int totalPoints,
     required int rank,
-    int? points_behind_leader,
-    int? points_ahead_next,
+    int? pointsBehindLeader,
+    int? pointsAheadNext,
     required int gamesPlayed,
     required String trend,
   }) = _UserRanking;

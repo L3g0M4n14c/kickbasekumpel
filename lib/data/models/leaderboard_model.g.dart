@@ -9,78 +9,78 @@ part of 'leaderboard_model.dart';
 _$LeaderboardEntryImpl _$$LeaderboardEntryImplFromJson(
   Map<String, dynamic> json,
 ) => _$LeaderboardEntryImpl(
-  leagueId: json['leagueId'] as String,
-  userId: json['userId'] as String,
+  leagueId: json['league_id'] as String,
+  userId: json['user_id'] as String,
   username: json['username'] as String,
   rank: (json['rank'] as num).toInt(),
-  totalPoints: (json['totalPoints'] as num).toInt(),
-  gamesPlayed: (json['gamesPlayed'] as num).toInt(),
-  averagePoints: (json['averagePoints'] as num).toDouble(),
+  totalPoints: (json['total_points'] as num).toInt(),
+  gamesPlayed: (json['games_played'] as num).toInt(),
+  averagePoints: (json['average_points'] as num).toDouble(),
   wins: (json['wins'] as num).toInt(),
   draws: (json['draws'] as num).toInt(),
   losses: (json['losses'] as num).toInt(),
-  last_updated: DateTime.parse(json['last_updated'] as String),
+  lastUpdated: DateTime.parse(json['last_updated'] as String),
 );
 
 Map<String, dynamic> _$$LeaderboardEntryImplToJson(
   _$LeaderboardEntryImpl instance,
 ) => <String, dynamic>{
-  'leagueId': instance.leagueId,
-  'userId': instance.userId,
+  'league_id': instance.leagueId,
+  'user_id': instance.userId,
   'username': instance.username,
   'rank': instance.rank,
-  'totalPoints': instance.totalPoints,
-  'gamesPlayed': instance.gamesPlayed,
-  'averagePoints': instance.averagePoints,
+  'total_points': instance.totalPoints,
+  'games_played': instance.gamesPlayed,
+  'average_points': instance.averagePoints,
   'wins': instance.wins,
   'draws': instance.draws,
   'losses': instance.losses,
-  'last_updated': instance.last_updated.toIso8601String(),
+  'last_updated': instance.lastUpdated.toIso8601String(),
 };
 
 _$RankingImpl _$$RankingImplFromJson(Map<String, dynamic> json) =>
     _$RankingImpl(
-      leagueId: json['leagueId'] as String,
-      leagueName: json['leagueName'] as String,
+      leagueId: json['league_id'] as String,
+      leagueName: json['league_name'] as String,
       entries: (json['entries'] as List<dynamic>)
           .map((e) => LeaderboardEntry.fromJson(e as Map<String, dynamic>))
           .toList(),
-      total_participants: (json['total_participants'] as num).toInt(),
-      update_frequency: json['update_frequency'] as String?,
-      last_updated: DateTime.parse(json['last_updated'] as String),
+      totalParticipants: (json['total_participants'] as num).toInt(),
+      updateFrequency: json['update_frequency'] as String?,
+      lastUpdated: DateTime.parse(json['last_updated'] as String),
     );
 
 Map<String, dynamic> _$$RankingImplToJson(_$RankingImpl instance) =>
     <String, dynamic>{
-      'leagueId': instance.leagueId,
-      'leagueName': instance.leagueName,
+      'league_id': instance.leagueId,
+      'league_name': instance.leagueName,
       'entries': instance.entries,
-      'total_participants': instance.total_participants,
-      'update_frequency': instance.update_frequency,
-      'last_updated': instance.last_updated.toIso8601String(),
+      'total_participants': instance.totalParticipants,
+      'update_frequency': instance.updateFrequency,
+      'last_updated': instance.lastUpdated.toIso8601String(),
     };
 
 _$UserRankingImpl _$$UserRankingImplFromJson(Map<String, dynamic> json) =>
     _$UserRankingImpl(
-      userId: json['userId'] as String,
+      userId: json['user_id'] as String,
       username: json['username'] as String,
-      totalPoints: (json['totalPoints'] as num).toInt(),
+      totalPoints: (json['total_points'] as num).toInt(),
       rank: (json['rank'] as num).toInt(),
-      points_behind_leader: (json['points_behind_leader'] as num?)?.toInt(),
-      points_ahead_next: (json['points_ahead_next'] as num?)?.toInt(),
-      gamesPlayed: (json['gamesPlayed'] as num).toInt(),
+      pointsBehindLeader: (json['points_behind_leader'] as num?)?.toInt(),
+      pointsAheadNext: (json['points_ahead_next'] as num?)?.toInt(),
+      gamesPlayed: (json['games_played'] as num).toInt(),
       trend: json['trend'] as String,
     );
 
 Map<String, dynamic> _$$UserRankingImplToJson(_$UserRankingImpl instance) =>
     <String, dynamic>{
-      'userId': instance.userId,
+      'user_id': instance.userId,
       'username': instance.username,
-      'totalPoints': instance.totalPoints,
+      'total_points': instance.totalPoints,
       'rank': instance.rank,
-      'points_behind_leader': instance.points_behind_leader,
-      'points_ahead_next': instance.points_ahead_next,
-      'gamesPlayed': instance.gamesPlayed,
+      'points_behind_leader': instance.pointsBehindLeader,
+      'points_ahead_next': instance.pointsAheadNext,
+      'games_played': instance.gamesPlayed,
       'trend': instance.trend,
     };
 

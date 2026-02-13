@@ -300,7 +300,7 @@ class AppTheme {
           fontSize: 16,
           fontWeight: FontWeight.w400,
           fontFamily: 'Roboto',
-          color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
         ),
         errorStyle: TextStyle(
           fontSize: 12,
@@ -344,7 +344,7 @@ class AppTheme {
   static ChipThemeData _chipTheme(ColorScheme colorScheme) => ChipThemeData(
     backgroundColor: colorScheme.surfaceContainerHighest,
     deleteIconColor: colorScheme.onSurfaceVariant,
-    disabledColor: colorScheme.onSurface.withOpacity(0.12),
+    disabledColor: colorScheme.onSurface.withValues(alpha: 0.12),
     selectedColor: colorScheme.secondaryContainer,
     secondarySelectedColor: colorScheme.secondaryContainer,
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

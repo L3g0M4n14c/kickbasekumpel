@@ -26,6 +26,7 @@ class Match with _$Match {
 /// Match Data - Detaillierte Match Informationen
 @freezed
 class MatchData with _$MatchData {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory MatchData({
     required String id,
     required String playerId,
@@ -36,7 +37,7 @@ class MatchData with _$MatchData {
     required int goals,
     required int assists,
     required int cleanSheet,
-    required int own_goals,
+    required int ownGoals,
     required int redCards,
     required int yellowCards,
     required int minutesPlayed,
@@ -70,9 +71,10 @@ class Highlight with _$Highlight {
 /// Matches Response - Match Liste
 @freezed
 class MatchesResponse with _$MatchesResponse {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory MatchesResponse({
     required List<Match> matches,
-    int? total_count,
+    int? totalCount,
   }) = _MatchesResponse;
 
   factory MatchesResponse.fromJson(Map<String, dynamic> json) =>

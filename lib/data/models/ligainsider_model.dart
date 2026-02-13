@@ -6,6 +6,7 @@ part 'ligainsider_model.g.dart';
 /// Ligainsider Player Model - Verletzungen & Form von ligainsider.de
 @freezed
 class LigainsiderPlayer with _$LigainsiderPlayer {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory LigainsiderPlayer({
     required String id,
     required String name,
@@ -13,12 +14,12 @@ class LigainsiderPlayer with _$LigainsiderPlayer {
     required String teamName,
     required String teamId,
     required int position,
-    required String injury_status,
-    String? injury_description,
-    int? form_rating,
-    required DateTime last_update,
-    String? status_text,
-    DateTime? expected_return,
+    required String injuryStatus,
+    String? injuryDescription,
+    int? formRating,
+    required DateTime lastUpdate,
+    String? statusText,
+    DateTime? expectedReturn,
     String? alternative, // Name der Alternative (für Lineup-Status)
     String? ligainsiderId, // Ligainsider ID (z.B. "nikola-vasilj_13866")
     String? imageUrl, // URL zum Profilbild
@@ -66,11 +67,12 @@ class LigainsiderStatus with _$LigainsiderStatus {
 /// Ligainsider Response - Liste von Spielern mit Status
 @freezed
 class LigainsiderResponse with _$LigainsiderResponse {
+  @JsonSerializable(fieldRename: FieldRename.snake)
   const factory LigainsiderResponse({
     required List<LigainsiderPlayer> players,
-    required DateTime last_update,
-    int? total_injured,
-    int? total_questionable,
+    required DateTime lastUpdate,
+    int? totalInjured,
+    int? totalQuestionable,
   }) = _LigainsiderResponse;
 
   factory LigainsiderResponse.fromJson(Map<String, dynamic> json) =>

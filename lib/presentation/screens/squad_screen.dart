@@ -14,7 +14,7 @@ class SquadScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedLeague = ref.watch(selectedLeagueProvider);
-    
+
     if (selectedLeague == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Mein Kader')),
@@ -26,14 +26,14 @@ class SquadScreen extends ConsumerWidget {
     final budgetAsync = ref.watch(myBudgetProvider(selectedLeague.i));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mein Kader'),
-      ),
+      appBar: AppBar(title: const Text('Mein Kader')),
       body: squadAsync.when(
         data: (squadData) {
-          final players = (squadData['it'] as List?)
-              ?.map((json) => Player.fromJson(json as Map<String, dynamic>))
-              .toList() ?? [];
+          final players =
+              (squadData['it'] as List?)
+                  ?.map((json) => Player.fromJson(json as Map<String, dynamic>))
+                  .toList() ??
+              [];
 
           if (players.isEmpty) {
             return const Center(child: Text('Keine Spieler im Kader'));
@@ -43,10 +43,7 @@ class SquadScreen extends ConsumerWidget {
             children: [
               _BudgetHeader(budgetAsync: budgetAsync),
               Expanded(
-                child: _SquadList(
-                  players: players,
-                  leagueId: selectedLeague.i,
-                ),
+                child: _SquadList(players: players, leagueId: selectedLeague.i),
               ),
             ],
           );
@@ -69,12 +66,12 @@ class _BudgetHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return budgetAsync.when(
       data: (budgetData) {
         final budget = budgetData['budget'] as int? ?? 0;
         final teamValue = budgetData['teamValue'] as int? ?? 0;
-        
+
         return Card(
           margin: const EdgeInsets.all(16),
           color: theme.colorScheme.primaryContainer,
@@ -92,7 +89,7 @@ class _BudgetHeader extends StatelessWidget {
                 Container(
                   width: 1,
                   height: 40,
-                  color: theme.colorScheme.outline.withOpacity(0.3),
+                  color: theme.colorScheme.outline.withValues(alpha: 0.3),
                 ),
                 _BudgetItem(
                   icon: Icons.groups,
@@ -127,7 +124,7 @@ class _BudgetItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Column(
       children: [
         Icon(icon, color: color, size: 28),
@@ -164,10 +161,30 @@ class _SquadList extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       children: [
-        _buildPositionSection(context, 'Torwart', groupedPlayers[1] ?? [], leagueId),
-        _buildPositionSection(context, 'Abwehr', groupedPlayers[2] ?? [], leagueId),
-        _buildPositionSection(context, 'Mittelfeld', groupedPlayers[3] ?? [], leagueId),
-        _buildPositionSection(context, 'Sturm', groupedPlayers[4] ?? [], leagueId),
+        _buildPositionSection(
+          context,
+          'Torwart',
+          groupedPlayers[1] ?? [],
+          leagueId,
+        ),
+        _buildPositionSection(
+          context,
+          'Abwehr',
+          groupedPlayers[2] ?? [],
+          leagueId,
+        ),
+        _buildPositionSection(
+          context,
+          'Mittelfeld',
+          groupedPlayers[3] ?? [],
+          leagueId,
+        ),
+        _buildPositionSection(
+          context,
+          'Sturm',
+          groupedPlayers[4] ?? [],
+          leagueId,
+        ),
       ],
     );
   }
@@ -203,7 +220,9 @@ class _SquadList extends StatelessWidget {
             ),
           ),
         ),
-        ...players.map((player) => _PlayerTile(player: player, leagueId: leagueId)),
+        ...players.map(
+          (player) => _PlayerTile(player: player, leagueId: leagueId),
+        ),
       ],
     );
   }
@@ -218,7 +237,7 @@ class _PlayerTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
@@ -226,10 +245,8 @@ class _PlayerTile extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => PlayerDetailScreen(
-                playerId: player.id,
-                leagueId: leagueId,
-              ),
+              builder: (context) =>
+                  PlayerDetailScreen(playerId: player.id, leagueId: leagueId),
             ),
           );
         },

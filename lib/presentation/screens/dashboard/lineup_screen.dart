@@ -260,7 +260,7 @@ class _LineupSection extends StatelessWidget {
             const Spacer(),
             Chip(
               label: Text('${players.length}'),
-              backgroundColor: color.withOpacity(0.2),
+              backgroundColor: color.withValues(alpha: 0.2),
               labelStyle: TextStyle(color: color, fontWeight: FontWeight.bold),
             ),
           ],

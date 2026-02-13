@@ -27,12 +27,12 @@ mixin _$LigainsiderPlayer {
   String get teamName => throw _privateConstructorUsedError;
   String get teamId => throw _privateConstructorUsedError;
   int get position => throw _privateConstructorUsedError;
-  String get injury_status => throw _privateConstructorUsedError;
-  String? get injury_description => throw _privateConstructorUsedError;
-  int? get form_rating => throw _privateConstructorUsedError;
-  DateTime get last_update => throw _privateConstructorUsedError;
-  String? get status_text => throw _privateConstructorUsedError;
-  DateTime? get expected_return => throw _privateConstructorUsedError;
+  String get injuryStatus => throw _privateConstructorUsedError;
+  String? get injuryDescription => throw _privateConstructorUsedError;
+  int? get formRating => throw _privateConstructorUsedError;
+  DateTime get lastUpdate => throw _privateConstructorUsedError;
+  String? get statusText => throw _privateConstructorUsedError;
+  DateTime? get expectedReturn => throw _privateConstructorUsedError;
   String? get alternative =>
       throw _privateConstructorUsedError; // Name der Alternative (für Lineup-Status)
   String? get ligainsiderId =>
@@ -63,12 +63,12 @@ abstract class $LigainsiderPlayerCopyWith<$Res> {
     String teamName,
     String teamId,
     int position,
-    String injury_status,
-    String? injury_description,
-    int? form_rating,
-    DateTime last_update,
-    String? status_text,
-    DateTime? expected_return,
+    String injuryStatus,
+    String? injuryDescription,
+    int? formRating,
+    DateTime lastUpdate,
+    String? statusText,
+    DateTime? expectedReturn,
     String? alternative,
     String? ligainsiderId,
     String? imageUrl,
@@ -96,12 +96,12 @@ class _$LigainsiderPlayerCopyWithImpl<$Res, $Val extends LigainsiderPlayer>
     Object? teamName = null,
     Object? teamId = null,
     Object? position = null,
-    Object? injury_status = null,
-    Object? injury_description = freezed,
-    Object? form_rating = freezed,
-    Object? last_update = null,
-    Object? status_text = freezed,
-    Object? expected_return = freezed,
+    Object? injuryStatus = null,
+    Object? injuryDescription = freezed,
+    Object? formRating = freezed,
+    Object? lastUpdate = null,
+    Object? statusText = freezed,
+    Object? expectedReturn = freezed,
     Object? alternative = freezed,
     Object? ligainsiderId = freezed,
     Object? imageUrl = freezed,
@@ -132,29 +132,29 @@ class _$LigainsiderPlayerCopyWithImpl<$Res, $Val extends LigainsiderPlayer>
                 ? _value.position
                 : position // ignore: cast_nullable_to_non_nullable
                       as int,
-            injury_status: null == injury_status
-                ? _value.injury_status
-                : injury_status // ignore: cast_nullable_to_non_nullable
+            injuryStatus: null == injuryStatus
+                ? _value.injuryStatus
+                : injuryStatus // ignore: cast_nullable_to_non_nullable
                       as String,
-            injury_description: freezed == injury_description
-                ? _value.injury_description
-                : injury_description // ignore: cast_nullable_to_non_nullable
+            injuryDescription: freezed == injuryDescription
+                ? _value.injuryDescription
+                : injuryDescription // ignore: cast_nullable_to_non_nullable
                       as String?,
-            form_rating: freezed == form_rating
-                ? _value.form_rating
-                : form_rating // ignore: cast_nullable_to_non_nullable
+            formRating: freezed == formRating
+                ? _value.formRating
+                : formRating // ignore: cast_nullable_to_non_nullable
                       as int?,
-            last_update: null == last_update
-                ? _value.last_update
-                : last_update // ignore: cast_nullable_to_non_nullable
+            lastUpdate: null == lastUpdate
+                ? _value.lastUpdate
+                : lastUpdate // ignore: cast_nullable_to_non_nullable
                       as DateTime,
-            status_text: freezed == status_text
-                ? _value.status_text
-                : status_text // ignore: cast_nullable_to_non_nullable
+            statusText: freezed == statusText
+                ? _value.statusText
+                : statusText // ignore: cast_nullable_to_non_nullable
                       as String?,
-            expected_return: freezed == expected_return
-                ? _value.expected_return
-                : expected_return // ignore: cast_nullable_to_non_nullable
+            expectedReturn: freezed == expectedReturn
+                ? _value.expectedReturn
+                : expectedReturn // ignore: cast_nullable_to_non_nullable
                       as DateTime?,
             alternative: freezed == alternative
                 ? _value.alternative
@@ -190,12 +190,12 @@ abstract class _$$LigainsiderPlayerImplCopyWith<$Res>
     String teamName,
     String teamId,
     int position,
-    String injury_status,
-    String? injury_description,
-    int? form_rating,
-    DateTime last_update,
-    String? status_text,
-    DateTime? expected_return,
+    String injuryStatus,
+    String? injuryDescription,
+    int? formRating,
+    DateTime lastUpdate,
+    String? statusText,
+    DateTime? expectedReturn,
     String? alternative,
     String? ligainsiderId,
     String? imageUrl,
@@ -222,12 +222,12 @@ class __$$LigainsiderPlayerImplCopyWithImpl<$Res>
     Object? teamName = null,
     Object? teamId = null,
     Object? position = null,
-    Object? injury_status = null,
-    Object? injury_description = freezed,
-    Object? form_rating = freezed,
-    Object? last_update = null,
-    Object? status_text = freezed,
-    Object? expected_return = freezed,
+    Object? injuryStatus = null,
+    Object? injuryDescription = freezed,
+    Object? formRating = freezed,
+    Object? lastUpdate = null,
+    Object? statusText = freezed,
+    Object? expectedReturn = freezed,
     Object? alternative = freezed,
     Object? ligainsiderId = freezed,
     Object? imageUrl = freezed,
@@ -258,29 +258,29 @@ class __$$LigainsiderPlayerImplCopyWithImpl<$Res>
             ? _value.position
             : position // ignore: cast_nullable_to_non_nullable
                   as int,
-        injury_status: null == injury_status
-            ? _value.injury_status
-            : injury_status // ignore: cast_nullable_to_non_nullable
+        injuryStatus: null == injuryStatus
+            ? _value.injuryStatus
+            : injuryStatus // ignore: cast_nullable_to_non_nullable
                   as String,
-        injury_description: freezed == injury_description
-            ? _value.injury_description
-            : injury_description // ignore: cast_nullable_to_non_nullable
+        injuryDescription: freezed == injuryDescription
+            ? _value.injuryDescription
+            : injuryDescription // ignore: cast_nullable_to_non_nullable
                   as String?,
-        form_rating: freezed == form_rating
-            ? _value.form_rating
-            : form_rating // ignore: cast_nullable_to_non_nullable
+        formRating: freezed == formRating
+            ? _value.formRating
+            : formRating // ignore: cast_nullable_to_non_nullable
                   as int?,
-        last_update: null == last_update
-            ? _value.last_update
-            : last_update // ignore: cast_nullable_to_non_nullable
+        lastUpdate: null == lastUpdate
+            ? _value.lastUpdate
+            : lastUpdate // ignore: cast_nullable_to_non_nullable
                   as DateTime,
-        status_text: freezed == status_text
-            ? _value.status_text
-            : status_text // ignore: cast_nullable_to_non_nullable
+        statusText: freezed == statusText
+            ? _value.statusText
+            : statusText // ignore: cast_nullable_to_non_nullable
                   as String?,
-        expected_return: freezed == expected_return
-            ? _value.expected_return
-            : expected_return // ignore: cast_nullable_to_non_nullable
+        expectedReturn: freezed == expectedReturn
+            ? _value.expectedReturn
+            : expectedReturn // ignore: cast_nullable_to_non_nullable
                   as DateTime?,
         alternative: freezed == alternative
             ? _value.alternative
@@ -300,7 +300,8 @@ class __$$LigainsiderPlayerImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
+
+@JsonSerializable(fieldRename: FieldRename.snake)
 class _$LigainsiderPlayerImpl implements _LigainsiderPlayer {
   const _$LigainsiderPlayerImpl({
     required this.id,
@@ -309,12 +310,12 @@ class _$LigainsiderPlayerImpl implements _LigainsiderPlayer {
     required this.teamName,
     required this.teamId,
     required this.position,
-    required this.injury_status,
-    this.injury_description,
-    this.form_rating,
-    required this.last_update,
-    this.status_text,
-    this.expected_return,
+    required this.injuryStatus,
+    this.injuryDescription,
+    this.formRating,
+    required this.lastUpdate,
+    this.statusText,
+    this.expectedReturn,
     this.alternative,
     this.ligainsiderId,
     this.imageUrl,
@@ -336,17 +337,17 @@ class _$LigainsiderPlayerImpl implements _LigainsiderPlayer {
   @override
   final int position;
   @override
-  final String injury_status;
+  final String injuryStatus;
   @override
-  final String? injury_description;
+  final String? injuryDescription;
   @override
-  final int? form_rating;
+  final int? formRating;
   @override
-  final DateTime last_update;
+  final DateTime lastUpdate;
   @override
-  final String? status_text;
+  final String? statusText;
   @override
-  final DateTime? expected_return;
+  final DateTime? expectedReturn;
   @override
   final String? alternative;
   // Name der Alternative (für Lineup-Status)
@@ -358,7 +359,7 @@ class _$LigainsiderPlayerImpl implements _LigainsiderPlayer {
 
   @override
   String toString() {
-    return 'LigainsiderPlayer(id: $id, name: $name, shortName: $shortName, teamName: $teamName, teamId: $teamId, position: $position, injury_status: $injury_status, injury_description: $injury_description, form_rating: $form_rating, last_update: $last_update, status_text: $status_text, expected_return: $expected_return, alternative: $alternative, ligainsiderId: $ligainsiderId, imageUrl: $imageUrl)';
+    return 'LigainsiderPlayer(id: $id, name: $name, shortName: $shortName, teamName: $teamName, teamId: $teamId, position: $position, injuryStatus: $injuryStatus, injuryDescription: $injuryDescription, formRating: $formRating, lastUpdate: $lastUpdate, statusText: $statusText, expectedReturn: $expectedReturn, alternative: $alternative, ligainsiderId: $ligainsiderId, imageUrl: $imageUrl)';
   }
 
   @override
@@ -375,18 +376,18 @@ class _$LigainsiderPlayerImpl implements _LigainsiderPlayer {
             (identical(other.teamId, teamId) || other.teamId == teamId) &&
             (identical(other.position, position) ||
                 other.position == position) &&
-            (identical(other.injury_status, injury_status) ||
-                other.injury_status == injury_status) &&
-            (identical(other.injury_description, injury_description) ||
-                other.injury_description == injury_description) &&
-            (identical(other.form_rating, form_rating) ||
-                other.form_rating == form_rating) &&
-            (identical(other.last_update, last_update) ||
-                other.last_update == last_update) &&
-            (identical(other.status_text, status_text) ||
-                other.status_text == status_text) &&
-            (identical(other.expected_return, expected_return) ||
-                other.expected_return == expected_return) &&
+            (identical(other.injuryStatus, injuryStatus) ||
+                other.injuryStatus == injuryStatus) &&
+            (identical(other.injuryDescription, injuryDescription) ||
+                other.injuryDescription == injuryDescription) &&
+            (identical(other.formRating, formRating) ||
+                other.formRating == formRating) &&
+            (identical(other.lastUpdate, lastUpdate) ||
+                other.lastUpdate == lastUpdate) &&
+            (identical(other.statusText, statusText) ||
+                other.statusText == statusText) &&
+            (identical(other.expectedReturn, expectedReturn) ||
+                other.expectedReturn == expectedReturn) &&
             (identical(other.alternative, alternative) ||
                 other.alternative == alternative) &&
             (identical(other.ligainsiderId, ligainsiderId) ||
@@ -405,12 +406,12 @@ class _$LigainsiderPlayerImpl implements _LigainsiderPlayer {
     teamName,
     teamId,
     position,
-    injury_status,
-    injury_description,
-    form_rating,
-    last_update,
-    status_text,
-    expected_return,
+    injuryStatus,
+    injuryDescription,
+    formRating,
+    lastUpdate,
+    statusText,
+    expectedReturn,
     alternative,
     ligainsiderId,
     imageUrl,
@@ -441,12 +442,12 @@ abstract class _LigainsiderPlayer implements LigainsiderPlayer {
     required final String teamName,
     required final String teamId,
     required final int position,
-    required final String injury_status,
-    final String? injury_description,
-    final int? form_rating,
-    required final DateTime last_update,
-    final String? status_text,
-    final DateTime? expected_return,
+    required final String injuryStatus,
+    final String? injuryDescription,
+    final int? formRating,
+    required final DateTime lastUpdate,
+    final String? statusText,
+    final DateTime? expectedReturn,
     final String? alternative,
     final String? ligainsiderId,
     final String? imageUrl,
@@ -468,17 +469,17 @@ abstract class _LigainsiderPlayer implements LigainsiderPlayer {
   @override
   int get position;
   @override
-  String get injury_status;
+  String get injuryStatus;
   @override
-  String? get injury_description;
+  String? get injuryDescription;
   @override
-  int? get form_rating;
+  int? get formRating;
   @override
-  DateTime get last_update;
+  DateTime get lastUpdate;
   @override
-  String? get status_text;
+  String? get statusText;
   @override
-  DateTime? get expected_return;
+  DateTime? get expectedReturn;
   @override
   String? get alternative; // Name der Alternative (für Lineup-Status)
   @override
@@ -759,9 +760,9 @@ LigainsiderResponse _$LigainsiderResponseFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$LigainsiderResponse {
   List<LigainsiderPlayer> get players => throw _privateConstructorUsedError;
-  DateTime get last_update => throw _privateConstructorUsedError;
-  int? get total_injured => throw _privateConstructorUsedError;
-  int? get total_questionable => throw _privateConstructorUsedError;
+  DateTime get lastUpdate => throw _privateConstructorUsedError;
+  int? get totalInjured => throw _privateConstructorUsedError;
+  int? get totalQuestionable => throw _privateConstructorUsedError;
 
   /// Serializes this LigainsiderResponse to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -782,9 +783,9 @@ abstract class $LigainsiderResponseCopyWith<$Res> {
   @useResult
   $Res call({
     List<LigainsiderPlayer> players,
-    DateTime last_update,
-    int? total_injured,
-    int? total_questionable,
+    DateTime lastUpdate,
+    int? totalInjured,
+    int? totalQuestionable,
   });
 }
 
@@ -804,9 +805,9 @@ class _$LigainsiderResponseCopyWithImpl<$Res, $Val extends LigainsiderResponse>
   @override
   $Res call({
     Object? players = null,
-    Object? last_update = null,
-    Object? total_injured = freezed,
-    Object? total_questionable = freezed,
+    Object? lastUpdate = null,
+    Object? totalInjured = freezed,
+    Object? totalQuestionable = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -814,17 +815,17 @@ class _$LigainsiderResponseCopyWithImpl<$Res, $Val extends LigainsiderResponse>
                 ? _value.players
                 : players // ignore: cast_nullable_to_non_nullable
                       as List<LigainsiderPlayer>,
-            last_update: null == last_update
-                ? _value.last_update
-                : last_update // ignore: cast_nullable_to_non_nullable
+            lastUpdate: null == lastUpdate
+                ? _value.lastUpdate
+                : lastUpdate // ignore: cast_nullable_to_non_nullable
                       as DateTime,
-            total_injured: freezed == total_injured
-                ? _value.total_injured
-                : total_injured // ignore: cast_nullable_to_non_nullable
+            totalInjured: freezed == totalInjured
+                ? _value.totalInjured
+                : totalInjured // ignore: cast_nullable_to_non_nullable
                       as int?,
-            total_questionable: freezed == total_questionable
-                ? _value.total_questionable
-                : total_questionable // ignore: cast_nullable_to_non_nullable
+            totalQuestionable: freezed == totalQuestionable
+                ? _value.totalQuestionable
+                : totalQuestionable // ignore: cast_nullable_to_non_nullable
                       as int?,
           )
           as $Val,
@@ -843,9 +844,9 @@ abstract class _$$LigainsiderResponseImplCopyWith<$Res>
   @useResult
   $Res call({
     List<LigainsiderPlayer> players,
-    DateTime last_update,
-    int? total_injured,
-    int? total_questionable,
+    DateTime lastUpdate,
+    int? totalInjured,
+    int? totalQuestionable,
   });
 }
 
@@ -864,9 +865,9 @@ class __$$LigainsiderResponseImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? players = null,
-    Object? last_update = null,
-    Object? total_injured = freezed,
-    Object? total_questionable = freezed,
+    Object? lastUpdate = null,
+    Object? totalInjured = freezed,
+    Object? totalQuestionable = freezed,
   }) {
     return _then(
       _$LigainsiderResponseImpl(
@@ -874,17 +875,17 @@ class __$$LigainsiderResponseImplCopyWithImpl<$Res>
             ? _value._players
             : players // ignore: cast_nullable_to_non_nullable
                   as List<LigainsiderPlayer>,
-        last_update: null == last_update
-            ? _value.last_update
-            : last_update // ignore: cast_nullable_to_non_nullable
+        lastUpdate: null == lastUpdate
+            ? _value.lastUpdate
+            : lastUpdate // ignore: cast_nullable_to_non_nullable
                   as DateTime,
-        total_injured: freezed == total_injured
-            ? _value.total_injured
-            : total_injured // ignore: cast_nullable_to_non_nullable
+        totalInjured: freezed == totalInjured
+            ? _value.totalInjured
+            : totalInjured // ignore: cast_nullable_to_non_nullable
                   as int?,
-        total_questionable: freezed == total_questionable
-            ? _value.total_questionable
-            : total_questionable // ignore: cast_nullable_to_non_nullable
+        totalQuestionable: freezed == totalQuestionable
+            ? _value.totalQuestionable
+            : totalQuestionable // ignore: cast_nullable_to_non_nullable
                   as int?,
       ),
     );
@@ -892,13 +893,14 @@ class __$$LigainsiderResponseImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
+
+@JsonSerializable(fieldRename: FieldRename.snake)
 class _$LigainsiderResponseImpl implements _LigainsiderResponse {
   const _$LigainsiderResponseImpl({
     required final List<LigainsiderPlayer> players,
-    required this.last_update,
-    this.total_injured,
-    this.total_questionable,
+    required this.lastUpdate,
+    this.totalInjured,
+    this.totalQuestionable,
   }) : _players = players;
 
   factory _$LigainsiderResponseImpl.fromJson(Map<String, dynamic> json) =>
@@ -913,15 +915,15 @@ class _$LigainsiderResponseImpl implements _LigainsiderResponse {
   }
 
   @override
-  final DateTime last_update;
+  final DateTime lastUpdate;
   @override
-  final int? total_injured;
+  final int? totalInjured;
   @override
-  final int? total_questionable;
+  final int? totalQuestionable;
 
   @override
   String toString() {
-    return 'LigainsiderResponse(players: $players, last_update: $last_update, total_injured: $total_injured, total_questionable: $total_questionable)';
+    return 'LigainsiderResponse(players: $players, lastUpdate: $lastUpdate, totalInjured: $totalInjured, totalQuestionable: $totalQuestionable)';
   }
 
   @override
@@ -930,12 +932,12 @@ class _$LigainsiderResponseImpl implements _LigainsiderResponse {
         (other.runtimeType == runtimeType &&
             other is _$LigainsiderResponseImpl &&
             const DeepCollectionEquality().equals(other._players, _players) &&
-            (identical(other.last_update, last_update) ||
-                other.last_update == last_update) &&
-            (identical(other.total_injured, total_injured) ||
-                other.total_injured == total_injured) &&
-            (identical(other.total_questionable, total_questionable) ||
-                other.total_questionable == total_questionable));
+            (identical(other.lastUpdate, lastUpdate) ||
+                other.lastUpdate == lastUpdate) &&
+            (identical(other.totalInjured, totalInjured) ||
+                other.totalInjured == totalInjured) &&
+            (identical(other.totalQuestionable, totalQuestionable) ||
+                other.totalQuestionable == totalQuestionable));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -943,9 +945,9 @@ class _$LigainsiderResponseImpl implements _LigainsiderResponse {
   int get hashCode => Object.hash(
     runtimeType,
     const DeepCollectionEquality().hash(_players),
-    last_update,
-    total_injured,
-    total_questionable,
+    lastUpdate,
+    totalInjured,
+    totalQuestionable,
   );
 
   /// Create a copy of LigainsiderResponse
@@ -968,9 +970,9 @@ class _$LigainsiderResponseImpl implements _LigainsiderResponse {
 abstract class _LigainsiderResponse implements LigainsiderResponse {
   const factory _LigainsiderResponse({
     required final List<LigainsiderPlayer> players,
-    required final DateTime last_update,
-    final int? total_injured,
-    final int? total_questionable,
+    required final DateTime lastUpdate,
+    final int? totalInjured,
+    final int? totalQuestionable,
   }) = _$LigainsiderResponseImpl;
 
   factory _LigainsiderResponse.fromJson(Map<String, dynamic> json) =
@@ -979,11 +981,11 @@ abstract class _LigainsiderResponse implements LigainsiderResponse {
   @override
   List<LigainsiderPlayer> get players;
   @override
-  DateTime get last_update;
+  DateTime get lastUpdate;
   @override
-  int? get total_injured;
+  int? get totalInjured;
   @override
-  int? get total_questionable;
+  int? get totalQuestionable;
 
   /// Create a copy of LigainsiderResponse
   /// with the given fields replaced by the non-null parameter values.

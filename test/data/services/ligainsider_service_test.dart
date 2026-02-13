@@ -445,8 +445,8 @@ void main() {
         teamName: 'Test',
         teamId: 'test',
         position: 0,
-        injury_status: InjuryStatus.fit,
-        last_update: DateTime.now(),
+        injuryStatus: InjuryStatus.fit,
+        lastUpdate: DateTime.now(),
         ligainsiderId: 'cached_999',
       );
 
