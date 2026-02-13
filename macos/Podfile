@@ -38,19 +38,8 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_macos_build_settings(target)
-    
-    # Fix Swift optimization level for all targets and configurations
     target.build_configurations.each do |config|
-      # Replace invalid -Ooff with -Onone for Swift
-      if config.build_settings['SWIFT_OPTIMIZATION_LEVEL']
-        config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = config.build_settings['SWIFT_OPTIMIZATION_LEVEL'].gsub('-Ooff', '-Onone')
-      end
-      
-      # Set proper optimization levels for Debug builds
-      if config.name == 'Debug'
-        config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = '-Onone'
-        config.build_settings['GCC_OPTIMIZATION_LEVEL'] = '0'
-      end
+      config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = '10.15'
     end
   end
   
