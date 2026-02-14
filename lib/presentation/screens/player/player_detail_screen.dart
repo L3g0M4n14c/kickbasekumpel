@@ -108,18 +108,40 @@ class _PlayerDetailScreenState extends ConsumerState<PlayerDetailScreen>
       profileBigUrl: data['profileBigUrl'] ?? '',
       teamName: data['tn'] ?? '',
       teamId: data['teamId'] ?? '',
-      position: data['position'] ?? 0,
-      number: data['number'] ?? 0,
-      averagePoints: (data['averagePoints'] ?? 0).toDouble(),
-      totalPoints: data['totalPoints'] ?? 0,
-      marketValue: data['marketValue'] ?? 0,
-      marketValueTrend: data['marketValueTrend'] ?? 0,
-      tfhmvt: data['tfhmvt'] ?? 0,
-      prlo: data['prlo'] ?? 0,
-      stl: data['stl'] ?? 0,
-      status: data['status'] ?? 0,
+      position: _parseIntField(data, 'position'),
+      number: _parseIntField(data, 'number'),
+      averagePoints: _parseDoubleField(data, 'averagePoints'),
+      totalPoints: _parseIntField(data, 'totalPoints'),
+      marketValue: _parseIntField(data, 'marketValue'),
+      marketValueTrend: _parseIntField(data, 'marketValueTrend'),
+      tfhmvt: _parseIntField(data, 'tfhmvt'),
+      prlo: _parseIntField(data, 'prlo'),
+      stl: _parseIntField(data, 'stl'),
+      status: _parseIntField(data, 'status'),
       userOwnsPlayer: data['userOwnsPlayer'] ?? false,
     );
+  }
+
+  int _parseIntField(Map<String, dynamic> data, String key) {
+    final value = data[key];
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    if (value is List && value.isNotEmpty) {
+      return _parseIntField({'value': value.first}, 'value');
+    }
+    return 0;
+  }
+
+  double _parseDoubleField(Map<String, dynamic> data, String key) {
+    final value = data[key];
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    if (value is List && value.isNotEmpty) {
+      return _parseDoubleField({'value': value.first}, 'value');
+    }
+    return 0.0;
   }
 }
 

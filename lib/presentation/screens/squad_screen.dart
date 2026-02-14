@@ -240,6 +240,8 @@ class _PlayerTile extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
+      clipBehavior: Clip.hardEdge,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () {
           Navigator.push(

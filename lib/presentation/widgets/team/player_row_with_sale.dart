@@ -7,11 +7,13 @@ class PlayerRowWithSale extends StatelessWidget {
   final Player player;
   final bool isSelectedForSale;
   final Function(bool) onToggleSale;
+  final VoidCallback? onTap;
 
   const PlayerRowWithSale({
     required this.player,
     required this.isSelectedForSale,
     required this.onToggleSale,
+    this.onTap,
     super.key,
   });
 
@@ -20,74 +22,78 @@ class PlayerRowWithSale extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          children: [
-            // Position Badge
-            PositionBadge(position: player.position),
-            const SizedBox(width: 12),
+      clipBehavior: Clip.hardEdge,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            children: [
+              // Position Badge
+              PositionBadge(position: player.position),
+              const SizedBox(width: 12),
 
-            // Player Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    fullName,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    player.teamName,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelSmall?.copyWith(color: Colors.grey),
-                  ),
-                ],
-              ),
-            ),
-
-            // Stats
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Row(
+              // Player Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
-                      Icons.star_rounded,
-                      size: 16,
-                      color: Colors.orange,
-                    ),
-                    const SizedBox(width: 4),
                     Text(
-                      player.averagePoints.toStringAsFixed(1),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fullName,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    const SizedBox(height: 4),
+                    Text(
+                      player.teamName,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelSmall?.copyWith(color: Colors.grey),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '€${_formatValue(player.marketValue)}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.green,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(width: 12),
+              ),
 
-            // Sale Toggle
-            Checkbox(
-              value: isSelectedForSale,
-              onChanged: (value) => onToggleSale(value ?? false),
-            ),
-          ],
+              // Stats
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 16,
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        player.averagePoints.toStringAsFixed(1),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '€${_formatValue(player.marketValue)}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.green,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 12),
+
+              // Sale Toggle
+              Checkbox(
+                value: isSelectedForSale,
+                onChanged: (value) => onToggleSale(value ?? false),
+              ),
+            ],
+          ),
         ),
       ),
     );

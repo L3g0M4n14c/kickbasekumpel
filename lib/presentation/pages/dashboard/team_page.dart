@@ -7,6 +7,7 @@ import 'package:kickbasekumpel/presentation/widgets/team/player_count_overview.d
 import 'package:kickbasekumpel/presentation/widgets/team/player_row_with_sale.dart';
 import 'package:kickbasekumpel/presentation/providers/dashboard_providers.dart';
 import 'package:kickbasekumpel/data/providers/league_providers.dart';
+import 'package:kickbasekumpel/presentation/screens/player/player_detail_screen.dart';
 
 /// Sortierungs-Optionen für Spieler
 enum SortOption { name, marketValue, points, trend, position }
@@ -32,6 +33,7 @@ class _TeamPageState extends ConsumerState<TeamPage> {
   Widget build(BuildContext context) {
     // Trigger auto-select of first league
     ref.watch(autoSelectFirstLeagueProvider);
+    final selectedLeague = ref.watch(selectedLeagueProvider);
 
     final teamPlayersAsync = ref.watch(teamPlayersProvider);
     final teamBudgetAsync = ref.watch(teamBudgetProvider);
@@ -152,6 +154,19 @@ class _TeamPageState extends ConsumerState<TeamPage> {
                                 .togglePlayer(player.id);
                           }
                         },
+                        onTap: selectedLeague != null
+                            ? () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PlayerDetailScreen(
+                                      playerId: player.id,
+                                      leagueId: selectedLeague.i,
+                                    ),
+                                  ),
+                                );
+                              }
+                            : null,
                       );
                     },
                   );
