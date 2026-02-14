@@ -288,6 +288,10 @@ class KickbaseAPIClient {
       throw const AuthenticationException(
         'Authentication failed. Token may be expired.',
       );
+    } else if (response.statusCode == 403) {
+      throw const AuthorizationException(
+        'Access forbidden. Your token may be revoked or you lack permissions for this endpoint.',
+      );
     } else if (response.statusCode == 404) {
       throw NotFoundException(
         'Resource not found',

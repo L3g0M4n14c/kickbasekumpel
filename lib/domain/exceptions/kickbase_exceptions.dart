@@ -32,6 +32,18 @@ class AuthenticationException extends KickbaseException {
   String toString() => 'AuthenticationException: $message';
 }
 
+/// Authorization failed (403) - insufficient permissions or token revoked
+class AuthorizationException extends KickbaseException {
+  const AuthorizationException(
+    super.message, {
+    super.code = '403',
+    super.originalError,
+  });
+
+  @override
+  String toString() => 'AuthorizationException: $message';
+}
+
 /// Resource not found (404)
 class NotFoundException extends KickbaseException {
   final String? resourceId;

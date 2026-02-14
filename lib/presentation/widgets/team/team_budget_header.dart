@@ -73,7 +73,7 @@ class TeamBudgetHeader extends StatelessWidget {
       final kValue = value / 1000;
       return kValue < 10
           ? kValue.toStringAsFixed(1)
-          : kValue.toStringAsFixed(0) + 'k';
+          : '${kValue.toStringAsFixed(0)}k';
     }
     return value.toString();
   }

@@ -63,7 +63,7 @@ class PlayerRowWithSale extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '${player.averagePoints.toStringAsFixed(1)}',
+                      player.averagePoints.toStringAsFixed(1),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),

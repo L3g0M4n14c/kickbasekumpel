@@ -9,6 +9,7 @@ import '../presentation/pages/dashboard/team_page.dart';
 import '../presentation/pages/dashboard/market_page.dart';
 import '../presentation/pages/dashboard/lineup_page.dart';
 import '../presentation/pages/dashboard/transfers_page.dart';
+import '../presentation/pages/dashboard/settings_page.dart';
 import '../presentation/pages/league/league_overview_page.dart';
 import '../presentation/pages/league/league_standings_page.dart';
 import '../presentation/pages/league/league_players_page.dart';
@@ -190,6 +191,17 @@ final routerProvider = Provider<GoRouter>((ref) {
                 name: 'live',
                 pageBuilder: (context, state) =>
                     const NoTransitionPage(child: LiveScreen()),
+              ),
+            ],
+          ),
+          // Settings Tab (8)
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/dashboard/settings',
+                name: 'settings',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: SettingsPage()),
               ),
             ],
           ),
