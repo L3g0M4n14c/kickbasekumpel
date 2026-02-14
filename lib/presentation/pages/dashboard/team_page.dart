@@ -6,6 +6,7 @@ import 'package:kickbasekumpel/presentation/widgets/team/team_budget_header.dart
 import 'package:kickbasekumpel/presentation/widgets/team/player_count_overview.dart';
 import 'package:kickbasekumpel/presentation/widgets/team/player_row_with_sale.dart';
 import 'package:kickbasekumpel/presentation/providers/dashboard_providers.dart';
+import 'package:kickbasekumpel/data/providers/league_providers.dart';
 
 /// Sortierungs-Optionen für Spieler
 enum SortOption { name, marketValue, points, trend, position }
@@ -29,15 +30,18 @@ class _TeamPageState extends ConsumerState<TeamPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Trigger auto-select of first league
+    ref.watch(autoSelectFirstLeagueProvider);
+
     final teamPlayersAsync = ref.watch(teamPlayersProvider);
-    final userStatsAsync = ref.watch(userStatsProvider);
+    final teamBudgetAsync = ref.watch(teamBudgetProvider);
     final selectedForSale = ref.watch(selectedTeamPlayersForSaleProvider);
 
     return RefreshIndicator(
       onRefresh: () async {
         // Refresh team data
         ref.invalidate(teamPlayersProvider);
-        ref.invalidate(userStatsProvider);
+        ref.invalidate(teamBudgetProvider);
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -47,8 +51,8 @@ class _TeamPageState extends ConsumerState<TeamPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Budget Header
-              userStatsAsync.when(
-                data: (stats) {
+              teamBudgetAsync.when(
+                data: (budget) {
                   final saleValue = _calculateSaleValue(
                     teamPlayersAsync.maybeWhen(
                       data: (players) => players,
@@ -57,7 +61,7 @@ class _TeamPageState extends ConsumerState<TeamPage> {
                     selectedForSale,
                   );
                   return TeamBudgetHeader(
-                    currentBudget: stats?.b ?? 0,
+                    currentBudget: budget,
                     saleValue: saleValue,
                   );
                 },

@@ -51,9 +51,7 @@ class TeamBudgetHeader extends StatelessWidget {
                   Text(
                     '€${_formatValue(totalBudget)}',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: totalBudget < 0
-                          ? Colors.red
-                          : (saleValue > 0 ? Colors.green : Colors.black87),
+                      color: totalBudget >= 0 ? Colors.green : Colors.red,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

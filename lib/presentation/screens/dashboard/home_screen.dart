@@ -20,6 +20,9 @@ class HomeScreen extends ConsumerWidget {
     final size = MediaQuery.of(context).size;
     final isTablet = size.width > 600;
 
+    // Trigger auto-select of first league
+    ref.watch(autoSelectFirstLeagueProvider);
+
     final userAsync = ref.watch(user_prov.currentUserProvider);
     final leaguesAsync = ref.watch(userLeaguesProvider);
     final selectedLeague = ref.watch(selectedLeagueProvider);

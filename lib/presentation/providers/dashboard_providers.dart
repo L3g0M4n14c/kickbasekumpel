@@ -1,9 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'package:kickbasekumpel/data/models/sales_recommendation_model.dart';
 import 'package:kickbasekumpel/data/models/optimal_lineup_model.dart';
 import 'package:kickbasekumpel/data/models/player_model.dart';
 import 'package:kickbasekumpel/data/models/user_model.dart';
 import 'package:kickbasekumpel/data/providers/user_providers.dart';
+import 'package:kickbasekumpel/data/providers/league_providers.dart';
+import 'package:kickbasekumpel/data/providers/league_detail_providers.dart';
+import 'package:kickbasekumpel/data/utils/parsing_utils.dart';
+
+final _logger = Logger();
 
 // ============================================================================
 // DASHBOARD TAB NOTIFIER & PROVIDER (Riverpod 3.x)
@@ -114,9 +120,57 @@ final selectedFormationIndexProvider =
 // ============================================================================
 
 /// Team Players Provider - wird aus API geladen
+/// Lädt die Spieler des aktuellen Teams basierend auf der ausgewählten Liga
 final teamPlayersProvider = FutureProvider<List<Player>>((ref) async {
-  // Placeholder - später mit echter API-Integration
-  return [];
+  // Wait for auto-select to complete first
+  await ref.watch(autoSelectFirstLeagueProvider.future);
+
+  final leagueId = ref.watch(selectedLeagueIdProvider);
+
+  _logger.i('🎯 teamPlayersProvider called. selectedLeagueId: $leagueId');
+
+  if (leagueId == null) {
+    _logger.w('⚠️ selectedLeagueId is null, returning empty list');
+    return [];
+  }
+
+  try {
+    // Get squad data from API
+    _logger.i('📥 Fetching squad data for league: $leagueId');
+    final squadData = await ref.watch(mySquadProvider(leagueId).future);
+
+    _logger.i('✅ Squad data received: ${squadData.keys}');
+
+    // Extract players from squad data
+    final rawPlayers = (squadData['it'] as List?) ?? [];
+    _logger.i('📊 Raw players count: ${rawPlayers.length}');
+    if (rawPlayers.isNotEmpty) {
+      _logger.i('📋 First raw player: ${rawPlayers.first}');
+    }
+
+    final players = rawPlayers.map((json) {
+      try {
+        final normalized = normalizePlayerJson(json as Map<String, dynamic>);
+        _logger.i(
+          '🔄 Normalized player: fn=${normalized['firstName']}, ln=${normalized['lastName']}, tn=${normalized['teamName']}',
+        );
+        return Player.fromJson(normalized);
+      } catch (e) {
+        _logger.e('❌ Error normalizing player: $e');
+        rethrow;
+      }
+    }).toList();
+
+    _logger.i('✅ Extracted ${players.length} players from squad data');
+    return players;
+  } catch (e, stack) {
+    _logger.e(
+      '❌ Error in teamPlayersProvider: $e',
+      error: e,
+      stackTrace: stack,
+    );
+    rethrow;
+  }
 });
 
 /// User Stats Provider
@@ -128,4 +182,42 @@ final userStatsProvider = FutureProvider<User?>((ref) async {
         loading: () => throw Exception('Loading...'),
         error: (err, stack) => throw err,
       );
+});
+
+/// Team Budget Provider - lädt das Budget für die ausgewählte Liga
+final teamBudgetProvider = FutureProvider<int>((ref) async {
+  // Wait for auto-select to complete first
+  await ref.watch(autoSelectFirstLeagueProvider.future);
+
+  final leagueId = ref.watch(selectedLeagueIdProvider);
+
+  _logger.i('💰 teamBudgetProvider called. selectedLeagueId: $leagueId');
+
+  if (leagueId == null) {
+    _logger.w('⚠️ selectedLeagueId is null, returning 0');
+    return 0;
+  }
+
+  try {
+    // Get budget data from API
+    _logger.i('📥 Fetching budget data for league: $leagueId');
+    final budgetData = await ref.watch(myBudgetProvider(leagueId).future);
+
+    _logger.i('✅ Budget data received: ${budgetData.keys}');
+
+    // Extract budget - API might return 'b' (short) or 'budget' (long)
+    // Can be double or int
+    final budgetValue = budgetData['b'] ?? budgetData['budget'] ?? 0;
+    final budget = budgetValue is int
+        ? budgetValue
+        : budgetValue is double
+        ? budgetValue.toInt()
+        : (int.tryParse(budgetValue.toString()) ?? 0);
+
+    _logger.i('✅ Budget: €$budget');
+    return budget;
+  } catch (e, stack) {
+    _logger.e('❌ Error in teamBudgetProvider: $e', error: e, stackTrace: stack);
+    return 0;
+  }
 });

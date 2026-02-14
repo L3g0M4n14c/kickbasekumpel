@@ -4,7 +4,7 @@ Map<String, dynamic> normalizePlayerJson(Map<String, dynamic> json) {
   // Ensure required string fields exist
   copy['id'] = copy['id']?.toString() ?? copy['i']?.toString() ?? '';
 
-  // Names
+  // Names - handle both long format (fn, ln) and squad format (n)
   if ((copy['firstName'] == null || copy['firstName'] == '') &&
       copy['fn'] != null) {
     copy['firstName'] = copy['fn'];
@@ -13,6 +13,18 @@ Map<String, dynamic> normalizePlayerJson(Map<String, dynamic> json) {
       copy['ln'] != null) {
     copy['lastName'] = copy['ln'];
   }
+
+  // If only 'n' (name) exists, split it
+  if ((copy['firstName'] == null || copy['firstName'] == '') &&
+      copy['n'] != null) {
+    final fullName = copy['n'].toString().trim();
+    final parts = fullName.split(' ');
+    if (parts.isNotEmpty) {
+      copy['firstName'] = parts.first;
+      copy['lastName'] = parts.length > 1 ? parts.skip(1).join(' ') : '';
+    }
+  }
+
   copy['firstName'] = (copy['firstName'] ?? '').toString();
   copy['lastName'] = (copy['lastName'] ?? '').toString();
 
@@ -25,6 +37,9 @@ Map<String, dynamic> normalizePlayerJson(Map<String, dynamic> json) {
       copy['team'] != null) {
     copy['teamId'] = copy['team'];
   }
+  if ((copy['teamId'] == null || copy['teamId'] == '') && copy['tid'] != null) {
+    copy['teamId'] = copy['tid'].toString();
+  }
   copy['teamName'] = (copy['teamName'] ?? '').toString();
   copy['teamId'] = (copy['teamId'] ?? '').toString();
 
@@ -33,19 +48,27 @@ Map<String, dynamic> normalizePlayerJson(Map<String, dynamic> json) {
       copy['pbu'] != null) {
     copy['profileBigUrl'] = copy['pbu'];
   }
+  if ((copy['profileBigUrl'] == null || copy['profileBigUrl'] == '') &&
+      copy['pim'] != null) {
+    copy['profileBigUrl'] = copy['pim'];
+  }
   copy['profileBigUrl'] = (copy['profileBigUrl'] ?? '').toString();
 
   // Numeric fields - attempt to coerce
-  copy['position'] = _toIntSafe(copy['position']);
+  copy['position'] = _toIntSafe(copy['position'] ?? copy['pos']);
   copy['number'] = _toIntSafe(copy['number']);
-  copy['averagePoints'] = _toDoubleSafe(copy['averagePoints']);
-  copy['totalPoints'] = _toIntSafe(copy['totalPoints']);
-  copy['marketValue'] = _toIntSafe(copy['marketValue']);
-  copy['marketValueTrend'] = _toIntSafe(copy['marketValueTrend']);
+  copy['averagePoints'] = _toDoubleSafe(copy['averagePoints'] ?? copy['ap']);
+  copy['totalPoints'] = _toIntSafe(copy['totalPoints'] ?? copy['p']);
+  copy['marketValue'] = _toIntSafe(copy['marketValue'] ?? copy['mv']);
+  copy['marketValueTrend'] = _toIntSafe(
+    copy['marketValueTrend'] ?? copy['mvt'],
+  );
   copy['tfhmvt'] = _toIntSafe(copy['tfhmvt']);
   copy['prlo'] = _toIntSafe(copy['prlo']);
   copy['stl'] = _toIntSafe(copy['stl']);
-  copy['status'] = _toIntSafe(copy['status']);
+  copy['status'] = _toIntSafe(copy['status'] ?? copy['st']);
+
+  // userOwnsPlayer boolean
 
   // userOwnsPlayer boolean
   if (copy['userOwnsPlayer'] is bool) {

@@ -96,6 +96,17 @@ final selectedLeagueIdProvider = Provider<String?>((ref) {
   return league?.i;
 });
 
+/// Auto-select first league Effect
+/// Automatically selects the first league if available and none is selected
+final autoSelectFirstLeagueProvider = FutureProvider<void>((ref) async {
+  final leagues = await ref.watch(userLeaguesProvider.future);
+  final selectedLeague = ref.watch(selectedLeagueProvider);
+
+  if (leagues.isNotEmpty && selectedLeague == null) {
+    ref.read(selectedLeagueProvider.notifier).select(leagues.first);
+  }
+});
+
 // ============================================================================
 // LEAGUE DETAIL PROVIDERS
 // ============================================================================
