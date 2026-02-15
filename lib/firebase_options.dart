@@ -24,15 +24,9 @@ class DefaultFirebaseOptions {
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for android - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
         return macos;
       case TargetPlatform.windows:
@@ -51,6 +45,23 @@ class DefaultFirebaseOptions {
         );
     }
   }
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyB9klScyAgpN-rd2QqTNDKJh_6f-4Z5Vn0',
+    appId: '1:843006606880:android:c7556d45dde367fcde0645',
+    messagingSenderId: '843006606880',
+    projectId: 'kickbasekumpel',
+    storageBucket: 'kickbasekumpel.firebasestorage.app',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyB6Uzkkn38uyeBk79GQtO0RJbztZRzWQuc',
+    appId: '1:843006606880:ios:ace0cffa4a7c702ede0645',
+    messagingSenderId: '843006606880',
+    projectId: 'kickbasekumpel',
+    storageBucket: 'kickbasekumpel.firebasestorage.app',
+    iosBundleId: 'de.legomaniac.kickbasekumpel',
+  );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyB6Uzkkn38uyeBk79GQtO0RJbztZRzWQuc',

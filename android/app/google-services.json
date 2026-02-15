@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:843006606880:android:b885b46004b6515fde0645",
+        "mobilesdk_app_id": "1:843006606880:android:c7556d45dde367fcde0645",
         "android_client_info": {
-          "package_name": "de.legomaniac.kickbasehelper"
+          "package_name": "de.legomaniac.kickbasekumpel"
         }
       },
       "oauth_client": [],

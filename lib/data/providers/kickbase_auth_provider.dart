@@ -58,7 +58,7 @@ class KickbaseAuthState {
 }
 
 // ============================================================================
-// Kickbase Auth Notifier
+// Kickbase Auth Notifier with Async Support
 // ============================================================================
 
 /// Notifier für Kickbase Authentication Operations
@@ -67,31 +67,38 @@ class KickbaseAuthNotifier extends Notifier<KickbaseAuthState> {
 
   @override
   KickbaseAuthState build() {
-    // Check if token exists on initialization
-    _checkAuthStatus();
     return const KickbaseAuthState();
   }
 
   /// Check authentication status by verifying token existence
+  /// This is now called from initializeAuthProvider as a separate async operation
   Future<void> _checkAuthStatus() async {
-    final hasToken = await _apiClient.hasAuthToken();
+    try {
+      final hasToken = await _apiClient.hasAuthToken();
 
-    if (hasToken) {
-      // Token exists - load saved user data
-      final savedUser = await _apiClient.getSavedUserData();
+      if (hasToken) {
+        // Token exists - load saved user data
+        final savedUser = await _apiClient.getSavedUserData();
 
-      state = state.copyWith(isAuthenticated: true, currentUser: savedUser);
+        state = state.copyWith(isAuthenticated: true, currentUser: savedUser);
 
-      if (savedUser != null) {
-        _logger.d(
-          '🔑 Existing token and user data found - user: ${savedUser.n}',
-        );
+        if (savedUser != null) {
+          _logger.d(
+            '🔑 Existing token and user data found - user: ${savedUser.n}',
+          );
+        } else {
+          _logger.d('🔑 Existing token found but no user data');
+        }
       } else {
-        _logger.d('🔑 Existing token found but no user data');
+        state = state.copyWith(isAuthenticated: false);
+        _logger.d('🔓 No token found - user needs to login');
       }
-    } else {
-      state = state.copyWith(isAuthenticated: false);
-      _logger.d('🔓 No token found - user needs to login');
+    } catch (e, stackTrace) {
+      _logger.e('❌ Auth check failed: $e', stackTrace: stackTrace);
+      state = state.copyWith(
+        isAuthenticated: false,
+        error: 'Authentication check failed: $e',
+      );
     }
   }
 
@@ -194,6 +201,16 @@ class KickbaseAuthNotifier extends Notifier<KickbaseAuthState> {
 // Providers
 // ============================================================================
 
+/// Initialize Auth - Async provider that checks authentication on app startup
+/// This runs independently and updates the kickbaseAuthProvider when done
+final initializeAuthProvider = FutureProvider<void>((ref) async {
+  // Watch the notifier so we can call its methods
+  final authNotifier = ref.watch(kickbaseAuthProvider.notifier);
+
+  // Call _checkAuthStatus() which will update the state
+  await authNotifier._checkAuthStatus();
+});
+
 /// Main Kickbase Auth Provider
 final kickbaseAuthProvider =
     NotifierProvider<KickbaseAuthNotifier, KickbaseAuthState>(
@@ -201,7 +218,18 @@ final kickbaseAuthProvider =
     );
 
 /// Convenience Provider: Is user authenticated?
+/// Now depends on initializeAuthProvider to ensure auth check is complete
 final isKickbaseAuthenticatedProvider = Provider<bool>((ref) {
+  // Wait for initialization to complete
+  final initStatus = ref.watch(initializeAuthProvider);
+
+  // If initialization failed, return false (show login)
+  if (initStatus.hasError) {
+    _logger.w('⚠️ Auth initialization failed, showing login');
+    return false;
+  }
+
+  // Get auth state
   final authState = ref.watch(kickbaseAuthProvider);
   return authState.isAuthenticated;
 });

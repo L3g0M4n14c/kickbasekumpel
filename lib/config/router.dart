@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/providers/kickbase_auth_provider.dart';
 import '../presentation/pages/auth/signin_page.dart';
+import '../presentation/pages/loading_screen.dart';
 import '../presentation/pages/dashboard/dashboard_shell.dart';
 import '../presentation/pages/dashboard/team_page.dart';
 import '../presentation/pages/dashboard/market_page.dart';
@@ -27,29 +28,58 @@ import '../presentation/screens/league_table_screen.dart';
 
 /// GoRouter Provider mit Riverpod
 /// Managed Routing, Deep Linking und Kickbase Authentication State
-final routerProvider = Provider<GoRouter>((ref) {
+final goRouterProvider = Provider<GoRouter>((ref) {
+  // Watch both the auth state AND the initialization to handle loading properly
+  final initStatus = ref.watch(initializeAuthProvider);
   final isAuthenticated = ref.watch(isKickbaseAuthenticatedProvider);
 
   return GoRouter(
     debugLogDiagnostics: true,
     initialLocation: '/',
     redirect: (context, state) {
-      final isAuth = isAuthenticated;
       final isGoingToAuth = state.matchedLocation.startsWith('/auth');
+      final isGoingToLoading = state.matchedLocation.startsWith('/loading');
 
+      // Show loading screen while authentication is checking
+      if (initStatus.isLoading) {
+        if (!isGoingToLoading) {
+          return '/loading';
+        }
+        return null;
+      }
+
+      // If initialization failed, show error and redirect to login
+      if (initStatus.hasError) {
+        if (!isGoingToAuth) {
+          return '/auth/signin';
+        }
+        return null;
+      }
+
+      // Normal auth redirect logic
       // Wenn nicht authentifiziert und nicht auf Auth-Seite → zu /auth/signin
-      if (!isAuth && !isGoingToAuth) {
+      if (!isAuthenticated && !isGoingToAuth) {
         return '/auth/signin';
       }
 
       // Wenn authentifiziert und auf Auth-Seite → zu /dashboard
-      if (isAuth && isGoingToAuth) {
+      if (isAuthenticated && isGoingToAuth) {
         return '/dashboard';
       }
 
       return null; // Keine Weiterleitung
     },
     routes: [
+      // ======================================================================
+      // LOADING ROUTE - Shown while authentication is being checked
+      // ======================================================================
+      GoRoute(
+        path: '/loading',
+        name: 'loading',
+        pageBuilder: (context, state) =>
+            MaterialPage(key: state.pageKey, child: const LoadingScreen()),
+      ),
+
       // ======================================================================
       // ROOT ROUTE - Auth Wrapper
       // ======================================================================
@@ -348,9 +378,6 @@ final routerProvider = Provider<GoRouter>((ref) {
     ),
   );
 });
-
-// Backward compatibility alias
-final goRouterProvider = routerProvider;
 
 // ============================================================================
 // ROUTER HELPERS - Extension Methods
