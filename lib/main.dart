@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'config/router.dart';
 import 'config/theme.dart';
 import 'firebase_options.dart';
@@ -11,6 +12,18 @@ final _logger = Logger();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize SharedPreferences EARLY - must be done before Firebase
+  try {
+    await SharedPreferences.getInstance();
+    _logger.i('✅ SharedPreferences initialized successfully');
+  } catch (e, stackTrace) {
+    _logger.e(
+      '⚠️ SharedPreferences initialization warning: $e',
+      stackTrace: stackTrace,
+    );
+    // Continue anyway - might work later
+  }
 
   // Setup global error handlers
   FlutterError.onError = (FlutterErrorDetails details) {
