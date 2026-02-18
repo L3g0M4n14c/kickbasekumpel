@@ -195,13 +195,10 @@ jobs:
           bundle exec fastlane ios distribute \
             release_notes:"${{ github.event.inputs.release_notes || 'Automatisches Deploy von main branch' }}"
 
-      - name: Show Xcode build log on failure
+      - name: Upload Xcode build log on failure
         if: failure() && steps.fastlane_build.outcome == 'failure'
-        run: |
-          echo "=== gym (xcodebuild) log ==="
-          LOG=$(find build/ios/logs -name "*.log" 2>/dev/null | head -1)
-          if [ -n "$LOG" ]; then
-            cat "$LOG"
-          else
-            find ~/Library/Logs/gym -name "Runner-Runner.log" 2>/dev/null | xargs cat 2>/dev/null || echo "Log not found"
-          fi
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcode-build-log
+          path: build/ios/logs/
+          retention-days: 3
