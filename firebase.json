@@ -1,55 +1,72 @@
 {
-    "projects": {
-        "default": "kickbasekumpel"
-    },
-    "flutter": {
-        "platforms": {
-            "macos": {
-                "default": {
-                    "projectId": "kickbasekumpel",
-                    "appId": "1:843006606880:ios:ace0cffa4a7c702ede0645",
-                    "uploadDebugSymbols": false,
-                    "fileOutput": "macos/Runner/GoogleService-Info.plist"
-                }
-            },
-            "dart": {
-                "lib/firebase_options.dart": {
-                    "projectId": "kickbasekumpel",
-                    "configurations": {
-                        "macos": "1:843006606880:ios:ace0cffa4a7c702ede0645"
-                    }
-                },
-                "lib/config/firebase_options.dart": {
-                    "projectId": "kickbasekumpel",
-                    "configurations": {
-                        "ios": "1:843006606880:ios:ace0cffa4a7c702ede0645"
-                    }
-                }
-            },
-            "ios": {
-                "default": {
-                    "projectId": "kickbasekumpel",
-                    "appId": "1:843006606880:ios:ace0cffa4a7c702ede0645",
-                    "uploadDebugSymbols": false,
-                    "fileOutput": "ios/Runner/GoogleService-Info.plist"
-                }
-            }
+  "projects": {
+    "default": "kickbasekumpel"
+  },
+  "flutter": {
+    "platforms": {
+      "macos": {
+        "default": {
+          "projectId": "kickbasekumpel",
+          "appId": "1:843006606880:ios:ace0cffa4a7c702ede0645",
+          "uploadDebugSymbols": false,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
         }
-    },
-    "functions": [
-        {
-            "source": "functions",
-            "codebase": "default",
-            "ignore": [
-                "node_modules",
-                ".git",
-                "firebase-debug.log",
-                "firebase-functions-debug.log"
-            ]
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "kickbasekumpel",
+          "configurations": {
+            "macos": "1:843006606880:ios:ace0cffa4a7c702ede0645"
+          }
+        },
+        "lib/config/firebase_options.dart": {
+          "projectId": "kickbasekumpel",
+          "configurations": {
+            "ios": "1:843006606880:ios:ace0cffa4a7c702ede0645"
+          }
         }
-    ],
-    "firestore": {
-        "rules": "firestore.rules",
-        "indexes": "firestore.indexes.json"
+      },
+      "ios": {
+        "default": {
+          "projectId": "kickbasekumpel",
+          "appId": "1:843006606880:ios:ace0cffa4a7c702ede0645",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      }
     }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-functions-debug.log"
+      ]
+    }
+  ],
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
 }

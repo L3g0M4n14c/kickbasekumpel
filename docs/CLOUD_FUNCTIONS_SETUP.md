@@ -96,19 +96,25 @@ gcloud scheduler jobs create http update-ligainsider-photos-daily \
 
 **Triggers:**
 - Cloud Scheduler täglich (02:00 UTC)
-- Manuelle Anfrage mit Authentication
+- Manuelle Anfrage mit Authentication (Firebase ID Token)
 
-**Header (für Cloud Scheduler):**
-```
-X-CloudScheduler: true
-```
+**Accepted Headers:**
+- Scheduler: `X-CloudScheduler: true`
+- Manual: `Authorization: Bearer <Firebase ID Token>` (serverseitig verifiziert via `admin.auth().verifyIdToken()`)
 
-**Header (für manuelle Requests):**
-```
-Authorization: Bearer <Firebase ID Token>
-```
+**Security notes:**
+- Requests ohne gültigen Scheduler‑Header oder gültigen Firebase ID Token werden mit **401** abgewiesen.
+- Ungültiger Token → Antwort `{ error: 'Invalid token' }`.
 
-**Response:**
+**Behaviour / Important implementation details:**
+- Die Function **aktualisiert nur** Spieler, bei denen `profileBigUrl` leer ist — vorhandene Bilder werden nicht überschrieben.
+- Setzt zusätzlich `ligainsiderPhotoUpdatedAt` (ISO‑String) auf dem Player‑Dokument.
+- Führt Firestore‑Writes als `batch` aus (commit nur wenn Updates vorhanden). Beachte die 500‑writes/Beschränkung pro Batch.
+- Timeout / Memory: `timeoutSeconds: 540` (9 min), `memory: 512MB`.
+- Wenn keine Fotos gefunden werden → `success: false` (message: `No photos scraped`).
+- Wenn keine Spieler in Firestore → `success: false` (message: `No players found in Firestore`).
+
+**Response (Beispiel - success):**
 ```json
 {
   "success": true,
@@ -121,6 +127,11 @@ Authorization: Bearer <Firebase ID Token>
   },
   "errors": []
 }
+```
+
+**Response (Beispiel - no photos):**
+```json
+{ "success": false, "message": "No photos scraped", "errors": [ ... ] }
 ```
 
 **Firestore Struktur (gespeichert in `system/ligainsider-scraper`):**
@@ -137,6 +148,8 @@ Authorization: Bearer <Firebase ID Token>
 }
 ```
 
+(Die oben genannten Details spiegeln die aktuelle TypeScript‑Implementierung wider: `ligainsiderPhotoUpdatedAt` am Player, Batch‑Commits, Auth‑Verifikation.)
+
 ### 2. `getLigainsiderScraperStatus` (HTTP GET)
 
 **Returns:** Metadaten vom letzten erfolgreichen Lauf
@@ -144,6 +157,31 @@ Authorization: Bearer <Firebase ID Token>
 ```bash
 curl https://europe-west1-kickbasekumpel.cloudfunctions.net/getLigainsiderScraperStatus
 ```
+
+### 3. `initializeLigainsiderScraperMetadata` (Firestore onCreate)
+
+**Trigger:** `firestore.document('players/{playerId}').onCreate`
+
+**Zweck:**
+- Erstellt automatisch das `system/ligainsider-scraper` Dokument beim ersten Anlegen eines Players.
+- Verhindert manuelle Setup‑Schritte nach DB‑Initialisierung.
+
+**Initialer Inhalt (Beispiel):**
+```dart
+{
+  status: 'ready',
+  lastRun: null,
+  lastRunDate: null,
+  totalTeamsScraped: 0,
+  totalPhotosFound: 0,
+  totalPlayersUpdated: 0,
+  totalPlayersProcessed: 0,
+  errors: [],
+  createdAt: Timestamp
+}
+```
+
+**Hinweis:** Diese Funktion ist idempotent — sie legt das Dokument nur an, wenn es noch nicht existiert.
 
 ---
 

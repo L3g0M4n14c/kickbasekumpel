@@ -285,6 +285,44 @@ final normalized = scraperService.normalizePlayerName(name);
 
 ---
 
+## Backend — TypeScript / Cloud Functions (neu: Implementation & Verhalten)
+
+Kurz: der Scraper läuft jetzt als Node.js/TypeScript Cloud Function. Wichtige Ergänzungen, die gerade eingebaut wurden:
+
+- **Neue Cloud Functions**
+  - `updateLigainsiderPhotos` — HTTP POST (Scheduler + manuell, siehe Auth)
+  - `getLigainsiderScraperStatus` — HTTP GET (Status & Metadaten)
+  - `initializeLigainsiderScraperMetadata` — Firestore `players/{playerId}` onCreate (automatische Initialisierung)
+
+- **Authentifizierung & Sicherheit**
+  - Akzeptierte Trigger: `X-CloudScheduler: true` **oder** `Authorization: Bearer <Firebase ID Token>`.
+  - Manuelle Requests werden serverseitig mit `admin.auth().verifyIdToken()` validiert — fehlender/ungültiger Token → **401** (`Unauthorized` / `Invalid token`).
+
+- **Firestore / Player‑Updates**
+  - `updateLigainsiderPhotos` **schreibt nur**, wenn `player.profileBigUrl` leer ist — bestehende Player‑Bilder werden **nicht** überschrieben.
+  - Bei erfolgreichem Update wird zusätzlich `ligainsiderPhotoUpdatedAt` (ISO‑String) am Player‑Dokument gesetzt.
+  - Updates werden als **Firestore batch** ausgeführt (Commit nur wenn `totalPlayersUpdated > 0`). Achtung: 500 writes pro Batch.
+
+- **Initialisierung (kein manuelles Setup mehr nötig)**
+  - `initializeLigainsiderScraperMetadata` legt beim ersten `players/{playerId}` die Dokumente unter `system/ligainsider-scraper` an (status: `ready`, counters = 0, errors = []).
+
+- **Robustheit & Netzwerk**
+  - HTTP‑Requests verwenden einen **Retry‑Wrapper** mit Exponential‑Backoff (MAX_RETRIES = 3, initial delay = 2000ms).
+  - Cloud Function Limit: `timeoutSeconds: 540` (9 min), `memory: 512MB`.
+
+- **Normalization / Matching (Implementation‑Detail)**
+  - Node‑Scraper nutzt eine `DECOMPOSITION_MAP` + Entfernen von Unicode Combining Marks, dann `toLowerCase()` und Trim — dadurch sehr robustes Matching internationaler Namen.
+
+- **ScraperResult & Metadaten**
+  - `ScraperResult` (TypeScript) = { teamPhotos: Map<normalizedName, photoUrl>, totalTeams, totalPhotos, errors }
+  - `system/ligainsider-scraper` enthält: `lastRun`, `lastRunDate`, `totalTeamsScraped`, `totalPhotosFound`, `totalPlayersUpdated`, `totalPlayersProcessed`, `status`, `errors`.
+
+- **Fehler-/Edge‑Cases**
+  - Wenn keine Fotos gefunden werden → Function antwortet mit `success: false` und `message: 'No photos scraped'`.
+  - Wenn keine Spieler in Firestore existieren → `success: false`, `message: 'No players found in Firestore'`.
+
+---
+
 ## Verwendung in der Flutter App
 
 ### ⚠️ Migration zur Cloud Function

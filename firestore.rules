@@ -1,0 +1,29 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Authentifizierte Benutzer können ihre eigenen Daten lesen und schreiben
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Ligainsider Spielerdaten: Alle authentifizierten Benutzer können lesen,
+    // nur Backend (Cloud Functions via Admin SDK) kann schreiben
+    match /players/{playerId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Nur Admin SDK (Cloud Functions)
+    }
+
+    // Scraper Metadaten: Nur lesbar für authentifizierte Benutzer
+    match /scraper_metadata/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Nur Admin SDK (Cloud Functions)
+    }
+
+    // Alle anderen Dokumente: Zugriff verweigert
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

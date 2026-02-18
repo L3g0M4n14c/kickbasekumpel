@@ -1,0 +1,18 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Spielerbilder: Alle authentifizierten Benutzer können lesen,
+    // nur Backend (Cloud Functions via Admin SDK) kann schreiben
+    match /players/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if false; // Nur Admin SDK (Cloud Functions)
+    }
+
+    // Alle anderen Pfade: Zugriff verweigert
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -19,6 +19,22 @@ android {
         jvmTarget = JavaVersion.VERSION_11.toString()
     }
 
+    signingConfigs {
+        create("release") {
+            // Keystore wird im CI/CD via Umgebungsvariablen bereitgestellt.
+            // Lokal: Datei keystore.jks im android/app/ Verzeichnis ablegen (nicht committen!).
+            val keystoreFile = file("keystore.jks")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+            } else if (System.getenv("ANDROID_KEYSTORE_PATH") != null) {
+                storeFile = file(System.getenv("ANDROID_KEYSTORE_PATH")!!)
+            }
+            storePassword = System.getenv("ANDROID_STORE_PASSWORD") ?: ""
+            keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: ""
+            keyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: ""
+        }
+    }
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "de.legomaniac.kickbasekumpel"
@@ -32,9 +48,7 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }

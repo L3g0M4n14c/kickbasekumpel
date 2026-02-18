@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -70,5 +67,15 @@ class DefaultFirebaseOptions {
     projectId: 'kickbasekumpel',
     storageBucket: 'kickbasekumpel.firebasestorage.app',
     iosBundleId: 'de.legomaniac.kickbasekumpel',
+  );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyAwu1rs5Dvr_L0iMnv_6hdbBHWCvwokrxs',
+    appId: '1:843006606880:web:873da22f6bdea565de0645',
+    messagingSenderId: '843006606880',
+    projectId: 'kickbasekumpel',
+    authDomain: 'kickbasekumpel.firebaseapp.com',
+    storageBucket: 'kickbasekumpel.firebasestorage.app',
+    measurementId: 'G-F107DFZ643',
   );
 }
