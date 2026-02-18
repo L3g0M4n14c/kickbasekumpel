@@ -28,7 +28,7 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 flutter_ios_podfile_setup
 
 target 'Runner' do
-  use_frameworks!
+  use_frameworks! :linkage => :static
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do
@@ -48,26 +48,10 @@ post_install do |installer|
       end
     end
     
-    # Fix Firebase module imports (cloud_firestore not finding FirebaseFirestore module)
-    # This is a known issue with Xcode 16 and Firebase on iOS
+    # Fix: Disable BUILD_LIBRARY_FOR_DISTRIBUTION to avoid XCFrameworkIntermediates
+    # search path warnings that cause linker failures with Firebase on arm64 CI runners
     target.build_configurations.each do |config|
-      # Enable module maps for all targets
-      config.build_settings['DEFINES_MODULE'] = 'YES'
-      config.build_settings['MODULE_MAP_FILE'] = '$(SRCROOT)/Pods/Target\ Support\ Files/$(PRODUCT_NAME)/$(PRODUCT_NAME).modulemap'
-      
-      # Ensure header search paths include Firebase frameworks
-      if config.build_settings['HEADER_SEARCH_PATHS']
-        config.build_settings['HEADER_SEARCH_PATHS'] += ' $(inherited) ${PODS_ROOT}/FirebaseFirestore/Firestore/core/include ${PODS_ROOT}/FirebaseCoreInternal'
-      else
-        config.build_settings['HEADER_SEARCH_PATHS'] = '$(inherited) ${PODS_ROOT}/FirebaseFirestore/Firestore/core/include ${PODS_ROOT}/FirebaseCoreInternal'
-      end
-      
-      # Framework search paths
-      if config.build_settings['FRAMEWORK_SEARCH_PATHS']
-        config.build_settings['FRAMEWORK_SEARCH_PATHS'] += ' $(inherited) ${PODS_XCFRAMEWORKS_BUILD_DIR}'
-      else
-        config.build_settings['FRAMEWORK_SEARCH_PATHS'] = '$(inherited) ${PODS_XCFRAMEWORKS_BUILD_DIR}'
-      end
+      config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'NO'
     end
     
     # Xcode 16 Workaround: Fix Firebase Firestore stale file warnings
