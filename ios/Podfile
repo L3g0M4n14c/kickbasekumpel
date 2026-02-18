@@ -40,12 +40,63 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     
+    # Fix Firebase module imports (cloud_firestore not finding FirebaseFirestore module)
+    # This is a known issue with Xcode 16 and Firebase on iOS
+    target.build_configurations.each do |config|
+      # Enable module maps for all targets
+      config.build_settings['DEFINES_MODULE'] = 'YES'
+      config.build_settings['MODULE_MAP_FILE'] = '$(SRCROOT)/Pods/Target\ Support\ Files/$(PRODUCT_NAME)/$(PRODUCT_NAME).modulemap'
+      
+      # Ensure header search paths include Firebase frameworks
+      if config.build_settings['HEADER_SEARCH_PATHS']
+        config.build_settings['HEADER_SEARCH_PATHS'] += ' $(inherited) ${PODS_ROOT}/FirebaseFirestore/Firestore/core/include ${PODS_ROOT}/FirebaseCoreInternal'
+      else
+        config.build_settings['HEADER_SEARCH_PATHS'] = '$(inherited) ${PODS_ROOT}/FirebaseFirestore/Firestore/core/include ${PODS_ROOT}/FirebaseCoreInternal'
+      end
+      
+      # Framework search paths
+      if config.build_settings['FRAMEWORK_SEARCH_PATHS']
+        config.build_settings['FRAMEWORK_SEARCH_PATHS'] += ' $(inherited) ${PODS_XCFRAMEWORKS_BUILD_DIR}'
+      else
+        config.build_settings['FRAMEWORK_SEARCH_PATHS'] = '$(inherited) ${PODS_XCFRAMEWORKS_BUILD_DIR}'
+      end
+    end
+    
+    # Xcode 16 Workaround: Fix Firebase Firestore stale file warnings
+    # https://github.com/firebase/firebase-ios-sdk/issues/13487
+    if target.name == 'FirebaseFirestore' || target.name == 'FirebaseFirestoreInternal' || target.name == 'cloud_firestore'
+      target.build_configurations.each do |config|
+        config.build_settings['CONFIGURATION_BUILD_DIR'] = '$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)'
+        config.build_settings['STRIP_INSTALLED_PRODUCT'] = 'NO'
+        config.build_settings['DEFINES_MODULE'] = 'YES'
+      end
+    end
+    
     # Build Performance: Optimize compiler flags for Debug builds
     target.build_configurations.each do |config|
       if config.name == 'Debug'
         config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = '-Onone'
         config.build_settings['GCC_OPTIMIZATION_LEVEL'] = '0'
       end
+      
+      # Fix duplicate library linking warning: Remove duplicate -lc++ flags
+      # This resolves: "ld: warning: ignoring duplicate libraries: '-lc++'"
+      # Firebase and other C++ pods can add multiple -lc++ flags, causing linker warnings
+      other_ldflags = config.build_settings['OTHER_LDFLAGS'] || ''
+      if other_ldflags.kind_of?(String)
+        other_ldflags = other_ldflags.split(' ')
+      else
+        other_ldflags = other_ldflags.dup
+      end
+      
+      # Remove all instances of -lc++ and re-add only one
+      other_ldflags.delete('-lc++')
+      other_ldflags << '-lc++' unless other_ldflags.include?('-lc++')
+      
+      # Remove duplicate -lSystem flags as well (can happen with Firebase)
+      other_ldflags.uniq!
+      
+      config.build_settings['OTHER_LDFLAGS'] = other_ldflags.join(' ')
     end
   end
   

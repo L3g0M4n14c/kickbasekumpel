@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 /// Team Budget Header - Zeigt aktuelles Budget und Verkaufs-Summe
 class TeamBudgetHeader extends StatelessWidget {
@@ -66,13 +67,18 @@ class TeamBudgetHeader extends StatelessWidget {
 
   String _formatValue(int value) {
     if (value >= 1000000) {
-      return '${(value / 1000000).toStringAsFixed(1)}M';
+      final mValue = value / 1000000;
+      return '${mValue.toStringAsFixed(1)}M';
     } else if (value >= 1000) {
       final kValue = value / 1000;
-      return kValue < 10
-          ? kValue.toStringAsFixed(1)
-          : '${kValue.toStringAsFixed(0)}k';
+      if (kValue < 10) {
+        return '${kValue.toStringAsFixed(1)}k';
+      } else {
+        return '${kValue.toStringAsFixed(0)}k';
+      }
     }
-    return value.toString();
+    // Formatiere mit Tausendertrennzeichen für kleinere Werte
+    final formatter = NumberFormat.decimalPattern('de_DE');
+    return formatter.format(value);
   }
 }

@@ -127,14 +127,16 @@ class PlayerCard extends StatelessWidget {
       height: compact ? 48 : 60,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        image: DecorationImage(
-          image: NetworkImage(player.profileBigUrl),
-          fit: BoxFit.cover,
-          onError: (_, __) {},
-        ),
+        image: _isValidHttpUrl(player.profileBigUrl)
+            ? DecorationImage(
+                image: NetworkImage(player.profileBigUrl),
+                fit: BoxFit.cover,
+                onError: (_, __) {},
+              )
+            : null,
         color: Colors.grey[300],
       ),
-      child: player.profileBigUrl.isEmpty
+      child: !_isValidHttpUrl(player.profileBigUrl)
           ? Icon(Icons.person, size: compact ? 24 : 30, color: Colors.grey[600])
           : null,
     );
@@ -233,5 +235,11 @@ class PlayerCard extends StatelessWidget {
       return '${(value / 1000).toStringAsFixed(0)}K';
     }
     return value.toString();
+  }
+
+  /// Überprüft, ob eine URL gültig für NetworkImage ist
+  bool _isValidHttpUrl(String url) {
+    if (url.isEmpty) return false;
+    return url.startsWith('http://') || url.startsWith('https://');
   }
 }

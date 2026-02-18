@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import '../../domain/repositories/repository_interfaces.dart';
 import '../models/user_model.dart';
 import '../models/league_model.dart';
@@ -677,6 +680,59 @@ class PlayerRepository extends BaseRepository<Player>
     }).toList();
 
     return await batchWrite(operations);
+  }
+
+  /// Triggert die Cloud Function für Ligainsider Photo-Updates
+  ///
+  /// Ruft die Google Cloud Function auf, die automatisch Spielerfotos
+  /// von ligainsider.de scraped und in Firestore speichert.
+  ///
+  /// Die Cloud Function läuft auch automatisch täglich um 02:00 UTC via Cloud Scheduler.
+  ///
+  /// Returns: Success wenn die Function erfolgreich triggered wurde
+  Future<Result<void>> triggerCloudFunctionPhotoUpdate() async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        return Failure('User not authenticated');
+      }
+
+      // Hole Firebase ID Token
+      final idToken = await currentUser.getIdToken();
+
+      // Rufe Cloud Function auf
+      final response = await http
+          .post(
+            Uri.parse(
+              'https://europe-west1-kickbasekumpel.cloudfunctions.net/updateLigainsiderPhotos',
+            ),
+            headers: {
+              'Authorization': 'Bearer $idToken',
+              'Content-Type': 'application/json',
+            },
+          )
+          .timeout(
+            const Duration(minutes: 10),
+            onTimeout: () => throw TimeoutException(
+              'Cloud Function timeout',
+              const Duration(minutes: 10),
+            ),
+          );
+
+      if (response.statusCode == 200) {
+        debugPrint('✅ Cloud Function triggered successfully');
+        return const Success(null);
+      } else {
+        debugPrint('❌ Cloud Function returned status ${response.statusCode}');
+        return Failure('Cloud Function failed: ${response.statusCode}');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error triggering Cloud Function: $e\n$stackTrace');
+      return Failure(
+        'Error triggering photo update: $e',
+        exception: e as Exception?,
+      );
+    }
   }
 }
 

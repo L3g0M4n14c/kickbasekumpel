@@ -128,11 +128,11 @@ class PlayerListTile extends StatelessWidget {
   Widget _buildPlayerImage() {
     return CircleAvatar(
       radius: 24,
-      backgroundImage: player.profileBigUrl.isNotEmpty
+      backgroundImage: _isValidHttpUrl(player.profileBigUrl)
           ? NetworkImage(player.profileBigUrl)
           : null,
       backgroundColor: Colors.grey[300],
-      child: player.profileBigUrl.isEmpty
+      child: !_isValidHttpUrl(player.profileBigUrl)
           ? Icon(Icons.person, color: Colors.grey[600])
           : null,
     );
@@ -162,5 +162,11 @@ class PlayerListTile extends StatelessWidget {
       return '${(value / 1000).toStringAsFixed(0)}K';
     }
     return value.toString();
+  }
+
+  /// Überprüft, ob eine URL gültig für NetworkImage ist
+  bool _isValidHttpUrl(String url) {
+    if (url.isEmpty) return false;
+    return url.startsWith('http://') || url.startsWith('https://');
   }
 }

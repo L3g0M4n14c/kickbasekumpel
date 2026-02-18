@@ -29,7 +29,12 @@ RefreshIndicator
 
 team_budget_header.dart - Budget-Anzeige
 player_count_overview.dart - Position-Übersicht
-player_row_with_sale.dart - Spieler-Zeile mit Toggle
+player_row_with_sale.dart - Spieler-Zeile mit erweiterten Infos:
+  - Spalte 1: Vor-/Nachname + Teamname
+  - Spalte 2: Status-Emoji (✅ Fit, ⚠️ Fraglich, 🚑 Verletzt)
+  - Spalte 3: Durchschnittspunkte + Gesamtpunkte
+  - Spalte 4: Marktwert + Trend (↑ grün / ↓ rot)
+  - Toggle zum Verkaufen (Checkbox)
 position_badge.dart - TW/ABW/MF/ST farbig
 Router
 ✅ router.dart - 8 Tabs statt 7 konfiguriert
