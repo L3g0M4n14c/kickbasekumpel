@@ -74,13 +74,16 @@ jobs:
           name: web-build
           path: build/web
 
-      - name: Deploy to Firebase
-        uses: w9jds/firebase-action@master
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          args: deploy --only functions,firestore,storage,hosting
-        env:
-          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
-          PROJECT_ID: kickbasekumpel
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Deploy to Firebase
+        run: firebase deploy --only functions,firestore,storage,hosting --project kickbasekumpel
 
   # ─────────────────────────────────────────────────────────────────────────────
   # JOB 3: Android APK bauen und via Firebase App Distribution verteilen
@@ -169,6 +172,11 @@ jobs:
       - name: Install CocoaPods dependencies
         working-directory: ios
         run: pod install
+
+      - name: Configure Git credentials for Match
+        run: |
+          git config --global credential.helper store
+          echo "https://${{ secrets.MATCH_GIT_USERNAME }}:${{ secrets.MATCH_GIT_TOKEN }}@github.com" > ~/.git-credentials
 
       - name: Run Fastlane distribute lane
         env:
