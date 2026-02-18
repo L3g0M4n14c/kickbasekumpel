@@ -19,6 +19,16 @@ platform :ios do
       api_key: api_key,
     )
 
+    # Manuelles Code Signing erzwingen (Xcode nicht automatisch signieren lassen)
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "ios/Runner.xcodeproj",
+      team_id: ENV["APPLE_TEAM_ID"],
+      bundle_identifier: "de.legomaniac.kickbasekumpel",
+      profile_name: "match AdHoc de.legomaniac.kickbasekumpel",
+      code_sign_identity: "iPhone Distribution",
+    )
+
     # Projekt-Version aus pubspec.yaml lesen
     pubspec = YAML.load_file("../pubspec.yaml")
     version_parts = pubspec["version"].split("+")
