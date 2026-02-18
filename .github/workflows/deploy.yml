@@ -169,9 +169,11 @@ jobs:
         working-directory: fastlane
         run: bundle install
 
-      - name: Install CocoaPods dependencies
+      - name: Clean CocoaPods cache and reinstall
         working-directory: ios
-        run: pod install --repo-update
+        run: |
+          rm -rf Pods Podfile.lock
+          pod install --repo-update
 
       - name: Configure Git credentials for Match
         run: |
