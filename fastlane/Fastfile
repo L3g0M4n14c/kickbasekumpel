@@ -34,6 +34,7 @@ platform :ios do
       output_directory: "build/ios/ipa",
       output_name: "kickbasekumpel.ipa",
       build_path: "build/ios",
+      buildlog_path: "build/ios/logs",
       export_options: {
         method: "ad-hoc",
         provisioningProfiles: {
