@@ -143,6 +143,7 @@ jobs:
   ios-distribute:
     name: "Build & Distribute iOS"
     runs-on: macos-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
@@ -169,11 +170,19 @@ jobs:
         working-directory: fastlane
         run: bundle install
 
-      - name: Clean CocoaPods cache and reinstall
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        id: cocoapods-cache
+        with:
+          path: ios/Pods
+          key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile') }}
+          restore-keys: |
+            pods-${{ runner.os }}-
+
+      - name: Install CocoaPods
+        if: steps.cocoapods-cache.outputs.cache-hit != 'true'
         working-directory: ios
-        run: |
-          rm -rf Pods Podfile.lock
-          pod install --repo-update
+        run: pod install --repo-update
 
       - name: Configure Git credentials for Match
         run: |
