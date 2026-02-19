@@ -68,5 +68,6 @@
         "destination": "/index.html"
       }
     ]
-  }
+  },
+  "extensions": {}
 }

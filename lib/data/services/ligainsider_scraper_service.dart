@@ -19,7 +19,7 @@
 /// - [lib/data/repositories/firestore_repositories.dart](../repositories/firestore_repositories.dart) - Neue Methode
 ///
 /// Diese Datei bleibt zur Referenz, wird aber nicht mehr verwendet.
-library deprecated_ligainsider_scraper;
+library;
 
 // ============================================================================
 // ARCHIVIERTE KLASSE - NICHT MEHR IN VERWENDUNG
