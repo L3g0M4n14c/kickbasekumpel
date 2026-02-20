@@ -153,7 +153,7 @@ jobs:
   ios-distribute:
     name: "Build & Distribute iOS"
     runs-on: macos-15
-    timeout-minutes: 70
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
 
@@ -170,7 +170,6 @@ jobs:
           key: pub-cache-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
           restore-keys: |
             pub-cache-${{ runner.os }}-
-          save-always: true
 
       - name: Get packages
         run: flutter pub get
@@ -193,7 +192,6 @@ jobs:
           key: cocoapods-spec-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock') }}
           restore-keys: |
             cocoapods-spec-${{ runner.os }}-
-          save-always: true
 
       - name: Cache CocoaPods
         uses: actions/cache@v4
@@ -203,16 +201,6 @@ jobs:
           key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'ios/Podfile') }}
           restore-keys: |
             pods-${{ runner.os }}-
-          save-always: true
-
-      - name: Cache Xcode DerivedData
-        uses: actions/cache@v4
-        with:
-          path: ~/Library/Developer/Xcode/DerivedData
-          key: xcode-derived-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'pubspec.lock') }}
-          restore-keys: |
-            xcode-derived-${{ runner.os }}-
-          save-always: true
 
       - name: Install CocoaPods
         if: steps.cocoapods-cache.outputs.cache-hit != 'true'
@@ -244,7 +232,9 @@ jobs:
           bundle exec fastlane ios setup_signing
 
       - name: Flutter Build IPA
-        run: flutter build ipa --release --export-options-plist ios/ExportOptions.plist
+        env:
+          COMPILER_INDEX_STORE_ENABLE: NO
+        run: flutter build ipa --release --no-tree-shake-icons --export-options-plist ios/ExportOptions.plist
 
       - name: "Fastlane: Upload zu Firebase App Distribution"
         id: fastlane_upload
