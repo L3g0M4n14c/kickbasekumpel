@@ -206,7 +206,7 @@ export const getLigainsiderScraperStatus = onRequest(
  * Erstelle initiales "system" Dokument für Scraper-Tracking
  */
 export const initializeLigainsiderScraperMetadata = onDocumentCreated(
-    { document: 'players/{playerId}', region: 'us-central1' },
+    { document: 'players/{playerId}', region: 'europe-west3' },
     async (_event) => {
         try {
             const scraperDoc = await firestore.collection('system').doc('ligainsider-scraper').get();

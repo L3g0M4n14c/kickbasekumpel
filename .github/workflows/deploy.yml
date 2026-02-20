@@ -90,6 +90,7 @@ jobs:
         run: |
           firebase functions:delete getLigainsiderScraperStatus --region us-central1 --project kickbasekumpel --force || true
           firebase functions:delete initializeLigainsiderScraperMetadata --region us-central1 --project kickbasekumpel --force || true
+          firebase functions:delete initializeLigainsiderScraperMetadata --region europe-west3 --project kickbasekumpel --force || true
 
       - name: Deploy to Firebase
         run: firebase deploy --only functions,firestore,storage,hosting --project kickbasekumpel --non-interactive --force
