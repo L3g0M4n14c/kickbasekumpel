@@ -209,7 +209,7 @@ jobs:
           git config --global credential.helper store
           echo "https://${{ secrets.MATCH_GIT_USERNAME }}:${{ secrets.MATCH_GIT_TOKEN }}@github.com" > ~/.git-credentials
 
-      - name: Fastlane: Signing vorbereiten
+      - name: "Fastlane: Signing vorbereiten"
         id: fastlane_signing
         env:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
@@ -226,7 +226,7 @@ jobs:
       - name: Flutter Build IPA
         run: flutter build ipa --release --export-options-plist ios/ExportOptions.plist
 
-      - name: Fastlane: Upload zu Firebase App Distribution
+      - name: "Fastlane: Upload zu Firebase App Distribution"
         id: fastlane_upload
         env:
           FIREBASE_APP_ID_IOS: ${{ secrets.FIREBASE_APP_ID_IOS }}
