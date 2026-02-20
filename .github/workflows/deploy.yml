@@ -89,6 +89,7 @@ jobs:
       - name: Delete Gen-1 functions (pre-migration, idempotent)
         run: |
           firebase functions:delete getLigainsiderScraperStatus --region us-central1 --project kickbasekumpel --force || true
+          firebase functions:delete initializeLigainsiderScraperMetadata --region us-central1 --project kickbasekumpel --force || true
 
       - name: Deploy to Firebase
         run: firebase deploy --only functions,firestore,storage,hosting --project kickbasekumpel --non-interactive --force
@@ -150,7 +151,7 @@ jobs:
   # ─────────────────────────────────────────────────────────────────────────────
   ios-distribute:
     name: "Build & Distribute iOS"
-    runs-on: macos-15-arm64
+    runs-on: macos-15
     timeout-minutes: 70
     steps:
       - uses: actions/checkout@v4
