@@ -45,6 +45,10 @@ platform :ios do
       output_name: "kickbasekumpel.ipa",
       build_path: "build/ios",
       buildlog_path: "build/ios/logs",
+      derived_data_path: File.expand_path("~/Library/Developer/Xcode/DerivedData"),
+      clean: false,
+      xcargs: "COMPILER_INDEX_STORE_ENABLED=NO -jobs 4",
+      disable_xcpretty: true,
       export_options: {
         method: "ad-hoc",
         provisioningProfiles: {

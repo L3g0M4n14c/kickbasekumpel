@@ -143,7 +143,7 @@ jobs:
   ios-distribute:
     name: "Build & Distribute iOS"
     runs-on: macos-latest
-    timeout-minutes: 90
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
 
@@ -206,7 +206,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/Library/Developer/Xcode/DerivedData
-          key: xcode-derived-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'ios/Runner.xcodeproj/project.pbxproj') }}
+          key: xcode-derived-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'pubspec.lock') }}
           restore-keys: |
             xcode-derived-${{ runner.os }}-
 
