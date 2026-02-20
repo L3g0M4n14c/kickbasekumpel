@@ -160,6 +160,7 @@ jobs:
           key: pub-cache-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
           restore-keys: |
             pub-cache-${{ runner.os }}-
+          save-always: true
 
       - name: Get packages
         run: flutter pub get
@@ -192,6 +193,15 @@ jobs:
           key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'ios/Podfile') }}
           restore-keys: |
             pods-${{ runner.os }}-
+          save-always: true
+
+      - name: Cache Xcode DerivedData
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData
+          key: xcode-derived-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'pubspec.lock') }}
+          restore-keys: |
+            xcode-derived-${{ runner.os }}-
           save-always: true
 
       - name: Install CocoaPods (erster Lauf / veralteter Spec-Repo-Cache)
