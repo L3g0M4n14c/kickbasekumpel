@@ -29,38 +29,40 @@ platform :ios do
       code_sign_identity: "iPhone Distribution",
     )
 
-    # Projekt-Version aus pubspec.yaml lesen
-    pubspec = YAML.load_file("../pubspec.yaml")
-    version_parts = pubspec["version"].split("+")
-    version_name = version_parts[0]
-    build_number = version_parts[1] || "1"
+    # ExportOptions.plist dynamisch generieren (wird von flutter build ipa benötigt)
+    export_plist_path = File.expand_path("../ios/ExportOptions.plist")
+    File.write(export_plist_path, <<~PLIST)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+      <plist version="1.0">
+      <dict>
+          <key>method</key>
+          <string>ad-hoc</string>
+          <key>teamID</key>
+          <string>#{ENV["APPLE_TEAM_ID"]}</string>
+          <key>provisioningProfiles</key>
+          <dict>
+              <key>de.legomaniac.kickbasekumpel</key>
+              <string>match AdHoc de.legomaniac.kickbasekumpel</string>
+          </dict>
+          <key>signingStyle</key>
+          <string>manual</string>
+          <key>signingCertificate</key>
+          <string>iPhone Distribution</string>
+          <key>stripSwiftSymbols</key>
+          <true/>
+      </dict>
+      </plist>
+    PLIST
 
-    # iOS IPA bauen
-    build_app(
-      workspace: "ios/Runner.xcworkspace",
-      scheme: "Runner",
-      configuration: "Release",
-      export_method: "ad-hoc",
-      output_directory: "build/ios/ipa",
-      output_name: "kickbasekumpel.ipa",
-      build_path: "build/ios",
-      buildlog_path: "build/ios/logs",
-      derived_data_path: File.expand_path("~/Library/Developer/Xcode/DerivedData"),
-      clean: false,
-      xcargs: "COMPILER_INDEX_STORE_ENABLED=NO -jobs 4",
-      disable_xcpretty: true,
-      export_options: {
-        method: "ad-hoc",
-        provisioningProfiles: {
-          "de.legomaniac.kickbasekumpel" => "match AdHoc de.legomaniac.kickbasekumpel"
-        }
-      }
-    )
+    # IPA via Flutter bauen – deutlich schneller als build_app/xcodebuild direkt,
+    # da Flutter Dart-Kompilierung und nativen Build trennt.
+    sh("cd .. && flutter build ipa --release --export-options-plist ios/ExportOptions.plist")
 
     # IPA zu Firebase App Distribution hochladen
     firebase_app_distribution(
       app: ENV["FIREBASE_APP_ID_IOS"],
-      ipa_path: "build/ios/ipa/kickbasekumpel.ipa",
+      ipa_path: "../build/ios/ipa/Runner.ipa",
       groups: "internal-testers",
       release_notes: options[:release_notes] || "Automatisches Deploy von main branch",
       firebase_cli_token: ENV["FIREBASE_CLI_TOKEN"],
