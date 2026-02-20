@@ -1,5 +1,6 @@
 import admin from 'firebase-admin';
-import functions from 'firebase-functions';
+import { onRequest } from 'firebase-functions/v2/https';
+import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { LigainsiderScraperService } from './ligainsider-scraper.js';
 import logger from './logger.js';
 import type { FirestorePlayer } from './types.js';
@@ -21,12 +22,13 @@ const firestore = admin.firestore();
  * 3. Update Firestore mit neuen Foto-URLs
  * 4. Speichere Metadaten (letztes Update, etc.)
  */
-export const updateLigainsiderPhotos = functions
-    .runWith({
+export const updateLigainsiderPhotos = onRequest(
+    {
         timeoutSeconds: 540, // 9 Minuten für vollständigen Scraping-Prozess
-        memory: '512MB',
-    })
-    .https.onRequest(async (req, res) => {
+        memory: '512MiB',
+        region: 'us-central1',
+    },
+    async (req, res) => {
         try {
             // Authentifizierung: Nur vom Cloud Scheduler oder authentifizierten Requests
             const isScheduled = req.headers['x-cloudscheduler'] === 'true';
@@ -162,15 +164,17 @@ export const updateLigainsiderPhotos = functions
                 error: error instanceof Error ? error.message : 'Unknown error',
             });
         }
-    });
+    }
+);
 
 /**
  * Cloud Function: GET Ligainsider Scraper Status
  *
  * Gibt Informationen über den letzten erfolgreichen Scraping-Lauf zurück
  */
-export const getLigainsiderScraperStatus = functions
-    .https.onRequest(async (req, res) => {
+export const getLigainsiderScraperStatus = onRequest(
+    { region: 'us-central1' },
+    async (req, res) => {
         try {
             const doc = await firestore.collection('system').doc('ligainsider-scraper').get();
 
@@ -193,16 +197,17 @@ export const getLigainsiderScraperStatus = functions
                 error: error instanceof Error ? error.message : 'Unknown error',
             });
         }
-    });
+    }
+);
 
 /**
  * Cloud Function: Firestore Trigger für initiales Setup
  *
  * Erstelle initiales "system" Dokument für Scraper-Tracking
  */
-export const initializeLigainsiderScraperMetadata = functions
-    .firestore.document('players/{playerId}')
-    .onCreate(async (_, context) => {
+export const initializeLigainsiderScraperMetadata = onDocumentCreated(
+    { document: 'players/{playerId}', region: 'us-central1' },
+    async (_event) => {
         try {
             const scraperDoc = await firestore.collection('system').doc('ligainsider-scraper').get();
 
@@ -224,4 +229,5 @@ export const initializeLigainsiderScraperMetadata = functions
         } catch (error) {
             logger.error({ error }, 'Error initializing scraper metadata');
         }
-    });
+    }
+);
