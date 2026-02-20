@@ -1,10 +1,9 @@
 default_platform(:ios)
 
 platform :ios do
-  # Lane: iOS IPA bauen, signieren und zu Firebase App Distribution hochladen
-  desc "Build iOS IPA and distribute via Firebase App Distribution"
-  lane :distribute do |options|
-    # App Store Connect API Key für Fastlane konfigurieren (kein interaktives Login nötig)
+  # Lane 1: Signing vorbereiten (match + xcodeproj + ExportOptions.plist)
+  desc "Set up code signing via Match"
+  lane :setup_signing do
     api_key = app_store_connect_api_key(
       key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
       issuer_id: ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"],
@@ -12,14 +11,12 @@ platform :ios do
       is_key_content_base64: false,
     )
 
-    # Zertifikate und Provisioning Profiles aus dem privaten Match-Repo holen
     match(
       type: "adhoc",
       readonly: true,
       api_key: api_key,
     )
 
-    # Manuelles Code Signing erzwingen (Xcode nicht automatisch signieren lassen)
     update_code_signing_settings(
       use_automatic_signing: false,
       path: "ios/Runner.xcodeproj",
@@ -29,9 +26,8 @@ platform :ios do
       code_sign_identity: "iPhone Distribution",
     )
 
-    # ExportOptions.plist dynamisch generieren (wird von flutter build ipa benötigt)
-    export_plist_path = File.expand_path("../ios/ExportOptions.plist")
-    File.write(export_plist_path, <<~PLIST)
+    # ExportOptions.plist für flutter build ipa generieren
+    File.write(File.expand_path("../ios/ExportOptions.plist"), <<~PLIST)
       <?xml version="1.0" encoding="UTF-8"?>
       <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
       <plist version="1.0">
@@ -54,15 +50,14 @@ platform :ios do
       </dict>
       </plist>
     PLIST
+  end
 
-    # IPA via Flutter bauen – deutlich schneller als build_app/xcodebuild direkt,
-    # da Flutter Dart-Kompilierung und nativen Build trennt.
-    sh("cd .. && flutter build ipa --release --export-options-plist ios/ExportOptions.plist")
-
-    # IPA zu Firebase App Distribution hochladen
+  # Lane 2: IPA zu Firebase App Distribution hochladen
+  desc "Upload IPA to Firebase App Distribution"
+  lane :upload do |options|
     firebase_app_distribution(
       app: ENV["FIREBASE_APP_ID_IOS"],
-      ipa_path: "../build/ios/ipa/Runner.ipa",
+      ipa_path: File.expand_path("../build/ios/ipa/Runner.ipa"),
       groups: "internal-testers",
       release_notes: options[:release_notes] || "Automatisches Deploy von main branch",
       firebase_cli_token: ENV["FIREBASE_CLI_TOKEN"],

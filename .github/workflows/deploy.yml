@@ -209,8 +209,8 @@ jobs:
           git config --global credential.helper store
           echo "https://${{ secrets.MATCH_GIT_USERNAME }}:${{ secrets.MATCH_GIT_TOKEN }}@github.com" > ~/.git-credentials
 
-      - name: Run Fastlane distribute lane
-        id: fastlane_build
+      - name: Fastlane: Signing vorbereiten
+        id: fastlane_signing
         env:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
@@ -218,17 +218,26 @@ jobs:
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
-          FIREBASE_APP_ID_IOS: ${{ secrets.FIREBASE_APP_ID_IOS }}
-          FIREBASE_CLI_TOKEN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           cd fastlane
-          bundle exec fastlane ios distribute \
+          bundle exec fastlane ios setup_signing
+
+      - name: Flutter Build IPA
+        run: flutter build ipa --release --export-options-plist ios/ExportOptions.plist
+
+      - name: Fastlane: Upload zu Firebase App Distribution
+        id: fastlane_upload
+        env:
+          FIREBASE_APP_ID_IOS: ${{ secrets.FIREBASE_APP_ID_IOS }}
+          FIREBASE_CLI_TOKEN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          cd fastlane
+          bundle exec fastlane ios upload \
             release_notes:"${{ github.event.inputs.release_notes || 'Automatisches Deploy von main branch' }}"
 
       - name: Upload Xcode build log on failure
-        if: failure() && steps.fastlane_build.outcome == 'failure'
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: xcode-build-log
