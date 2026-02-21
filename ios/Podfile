@@ -70,11 +70,16 @@ post_install do |installer|
       end
     end
     
-    # Build Performance: Optimize compiler flags for Debug builds
+    # Build Performance: Optimize compiler flags per build configuration
     target.build_configurations.each do |config|
       if config.name == 'Debug'
         config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = '-Onone'
         config.build_settings['GCC_OPTIMIZATION_LEVEL'] = '0'
+      else
+        # Release/Profile: incremental statt wholemodule (Standard) –
+        # wholemodule kompiliert alle Swift-Module zusammen (sehr langsam auf CI).
+        # incremental kompiliert Dateien parallel, spart 30-50% Kompilierzeit.
+        config.build_settings['SWIFT_COMPILATION_MODE'] = 'incremental'
       end
       
       # Fix duplicate library linking warning: Remove duplicate -lc++ flags

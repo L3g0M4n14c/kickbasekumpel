@@ -153,7 +153,7 @@ jobs:
   ios-distribute:
     name: "Build & Distribute iOS"
     runs-on: macos-15
-    timeout-minutes: 120
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
 
@@ -212,6 +212,25 @@ jobs:
             pod install --repo-update
           fi
 
+      # Pods-Cache sofort nach pod install explizit speichern – NICHT erst im post-job.
+      # Wenn xcodebuild danach timeoutet, wird der Runner gekillt und post-job läuft nie.
+      # So ist der Pods-Cache beim nächsten Run trotzdem warm.
+      - name: Pods-Cache explizit speichern
+        if: steps.cocoapods-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ios/Pods
+          key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'ios/Podfile') }}
+
+      - name: Cache Xcode DerivedData
+        uses: actions/cache@v4
+        id: derived-data-cache
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData
+          key: xcode-derived-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'pubspec.lock') }}
+          restore-keys: |
+            xcode-derived-${{ runner.os }}-
+
       - name: Configure Git credentials for Match
         run: |
           git config --global credential.helper store
@@ -232,9 +251,19 @@ jobs:
           bundle exec fastlane ios setup_signing
 
       - name: Flutter Build IPA
+        id: flutter_build
         env:
           COMPILER_INDEX_STORE_ENABLE: NO
         run: flutter build ipa --release --no-tree-shake-icons --export-options-plist ios/ExportOptions.plist
+
+      # DerivedData direkt nach erfolgreichem Build explizit speichern (vor Upload),
+      # damit der Cache verfügbar ist, auch wenn der Upload-Step danach fehlschlägt.
+      - name: DerivedData-Cache explizit speichern
+        if: steps.flutter_build.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData
+          key: xcode-derived-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'pubspec.lock') }}
 
       - name: "Fastlane: Upload zu Firebase App Distribution"
         id: fastlane_upload
