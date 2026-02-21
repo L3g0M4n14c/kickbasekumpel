@@ -253,12 +253,11 @@ jobs:
       # unlock the login keychain and give codesign access (prevents hanging on GitHub runners)
       - name: Unlock keychain & allow codesign
         run: |
-          security list-keychains -s ~/Library/Keychains/login.keychain-db
-          security unlock-keychain -p "${{ secrets.MATCH_PASSWORD }}" \
-              ~/Library/Keychains/login.keychain-db
+          # GitHub macOS runners use an empty login keychain password.
+          # avoid passing MATCH_PASSWORD here, it only applies to Fastlane/match.
+          security unlock-keychain -p "" ~/Library/Keychains/login.keychain-db
           security set-key-partition-list -S apple-tool:,apple: \
-              -s -k "${{ secrets.MATCH_PASSWORD }}" \
-              ~/Library/Keychains/login.keychain-db
+              -s -k "" ~/Library/Keychains/login.keychain-db
 
       - name: "Debug: run pod install" # separate step to catch failures/hangs early
         run: |
