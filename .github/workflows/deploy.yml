@@ -250,11 +250,29 @@ jobs:
           cd fastlane
           bundle exec fastlane ios setup_signing
 
+      # unlock the login keychain and give codesign access (prevents hanging on GitHub runners)
+      - name: Unlock keychain & allow codesign
+        run: |
+          security list-keychains -s ~/Library/Keychains/login.keychain-db
+          security unlock-keychain -p "${{ secrets.MATCH_PASSWORD }}" \
+              ~/Library/Keychains/login.keychain-db
+          security set-key-partition-list -S apple-tool:,apple: \
+              -s -k "${{ secrets.MATCH_PASSWORD }}" \
+              ~/Library/Keychains/login.keychain-db
+
+      - name: "Debug: run pod install" # separate step to catch failures/hangs early
+        run: |
+          set -x
+          cd ios
+          pod install --repo-update
+
       - name: Flutter Build IPA
         id: flutter_build
         env:
           COMPILER_INDEX_STORE_ENABLE: NO
-        run: flutter build ipa --release --no-tree-shake-icons --export-options-plist ios/ExportOptions.plist
+        run: |
+          set -x
+          flutter build ipa --release --no-tree-shake-icons --export-options-plist ios/ExportOptions.plist --verbose
 
       # DerivedData direkt nach erfolgreichem Build explizit speichern (vor Upload),
       # damit der Cache verfügbar ist, auch wenn der Upload-Step danach fehlschlägt.
