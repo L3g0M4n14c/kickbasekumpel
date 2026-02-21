@@ -152,7 +152,8 @@ jobs:
   # ─────────────────────────────────────────────────────────────────────────────
   ios-distribute:
     name: "Build & Distribute iOS"
-    runs-on: macos-15
+    # use latest macOS image for best performance
+    runs-on: macos-latest
     timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
@@ -162,6 +163,12 @@ jobs:
         with:
           flutter-version: "3.38.x"
           cache: true
+
+      - name: Accept Xcode license
+        run: sudo xcodebuild -license accept
+
+      - name: Set CI environment variable
+        run: echo "CI=true" >> $GITHUB_ENV
 
       - name: Cache Flutter pub packages
         uses: actions/cache@v4
@@ -272,7 +279,17 @@ jobs:
           COMPILER_INDEX_STORE_ENABLE: NO
         run: |
           set -x
-          flutter build ipa --release --no-tree-shake-icons --export-options-plist ios/ExportOptions.plist --verbose
+          # build step may take long; print a heartbeat every 5 minutes to avoid appearing hung
+          (
+            flutter build ipa --release --no-tree-shake-icons \
+              --export-options-plist ios/ExportOptions.plist --verbose &
+            pid=$!
+            while kill -0 $pid 2>/dev/null; do
+              echo "=== build still running at $(date) ==="
+              sleep 300
+            done
+            wait $pid
+          )
 
       # DerivedData direkt nach erfolgreichem Build explizit speichern (vor Upload),
       # damit der Cache verfügbar ist, auch wenn der Upload-Step danach fehlschlägt.

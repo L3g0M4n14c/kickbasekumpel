@@ -1,0 +1,4 @@
+{
+    // enable the Dart & Flutter MCP server for this workspace
+    "dart.mcpServer": true
+}
