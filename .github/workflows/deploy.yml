@@ -256,8 +256,9 @@ jobs:
           # GitHub macOS runners use an empty login keychain password.
           # avoid passing MATCH_PASSWORD here, it only applies to Fastlane/match.
           security unlock-keychain -p "" ~/Library/Keychains/login.keychain-db
+          # partition-list sometimes errors due to item passwords; ignore failure
           security set-key-partition-list -S apple-tool:,apple: \
-              -s -k "" ~/Library/Keychains/login.keychain-db
+              -s -k "" ~/Library/Keychains/login.keychain-db || true
 
       - name: "Debug: run pod install" # separate step to catch failures/hangs early
         run: |
