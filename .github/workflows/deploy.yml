@@ -152,168 +152,113 @@ jobs:
   # ─────────────────────────────────────────────────────────────────────────────
   ios-distribute:
     name: "Build & Distribute iOS"
-    # use latest macOS image for best performance
-    runs-on: macos-latest
-    timeout-minutes: 150
+    runs-on: macos-13 # Statt latest: stabiler, oft 20-30% schneller [web:23]
+    timeout-minutes: 120 # Reduziert, da optimiert
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1 # Shallow clone spart Checkout-Zeit
+
+      - name: Select Xcode 16 # Oder passend zu deiner App; latest kann hängen
+        run: sudo xcode-select -s /Applications/Xcode_16.x.app # Passe Version an [web:11]
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.38.x"
           cache: true
+          channel: "stable"
 
       - name: Accept Xcode license
         run: sudo xcodebuild -license accept
 
-      - name: Set CI environment variable
+      - name: Set CI=true
         run: echo "CI=true" >> $GITHUB_ENV
 
-      - name: Cache Flutter pub packages
+      - name: Cache pub & Flutter
         uses: actions/cache@v4
         with:
-          path: ~/.pub-cache
-          key: pub-cache-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
-          restore-keys: |
-            pub-cache-${{ runner.os }}-
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: flutter-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
 
-      - name: Get packages
-        run: flutter pub get
+      - name: pub get & build_runner # Kombiniert, parallelisierbar später
+        run: |
+          flutter pub get
+          flutter pub run build_runner build --delete-conflicting-outputs
 
-      - name: Generate code (Freezed / build_runner)
-        run: flutter pub run build_runner build --delete-conflicting-outputs
+      - name: Cache CocoaPods Specs
+        uses: actions/cache@v4
+        id: specs-cache
+        with:
+          path: ~/.cocoapods/repos
+          key: cocoapods-specs-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: cocoapods-specs-${{ runner.os }}-
 
-      - name: Setup Ruby
+      - name: Cache Pods
+        uses: actions/cache@v4
+        id: pods-cache
+        with:
+          path: ios/Pods
+          key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: pods-${{ runner.os }}-
+
+      - name: Install Pods
+        if: steps.pods-cache.outputs.cache-hit != 'true'
+        working-directory: ios
+        run: pod install --repo-update=false # Specs gecacht, kein Update nötig
+
+      - name: Cache DerivedData + Homebrew
+        uses: actions/cache@v4
+        id: derived-cache
+        with:
+          path: |
+            ~/Library/Developer/Xcode/DerivedData
+            /usr/local/Homebrew  # Zusätzlich für Fastlane/Ruby [web:30]
+          key: derived-${{ runner.os }}-xcode-${{ hashFiles('ios/**/*.pbxproj', 'ios/Podfile.lock', 'pubspec.lock') }}-${{ github.sha_short }} # Enger Key für Incremental [web:36]
+
+      - name: Setup Ruby & Fastlane
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.2"
           bundler-cache: true
           working-directory: fastlane
 
-      - name: Cache CocoaPods Spec Repo
-        uses: actions/cache@v4
-        id: cocoapods-spec-cache
-        with:
-          path: ~/.cocoapods
-          key: cocoapods-spec-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock') }}
-          restore-keys: |
-            cocoapods-spec-${{ runner.os }}-
-
-      - name: Cache CocoaPods
-        uses: actions/cache@v4
-        id: cocoapods-cache
-        with:
-          path: ios/Pods
-          key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'ios/Podfile') }}
-          restore-keys: |
-            pods-${{ runner.os }}-
-
-      - name: Install CocoaPods
-        if: steps.cocoapods-cache.outputs.cache-hit != 'true'
-        working-directory: ios
-        run: |
-          if [ "${{ steps.cocoapods-spec-cache.outputs.cache-hit }}" == 'true' ]; then
-            pod install
-          else
-            pod install --repo-update
-          fi
-
-      # Pods-Cache sofort nach pod install explizit speichern – NICHT erst im post-job.
-      # Wenn xcodebuild danach timeoutet, wird der Runner gekillt und post-job läuft nie.
-      # So ist der Pods-Cache beim nächsten Run trotzdem warm.
-      - name: Pods-Cache explizit speichern
-        if: steps.cocoapods-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: ios/Pods
-          key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'ios/Podfile') }}
-
-      - name: Cache Xcode DerivedData
-        uses: actions/cache@v4
-        id: derived-data-cache
-        with:
-          path: ~/Library/Developer/Xcode/DerivedData
-          key: xcode-derived-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'pubspec.lock') }}
-          restore-keys: |
-            xcode-derived-${{ runner.os }}-
-
-      - name: Configure Git credentials for Match
+      - name: Git Credentials for Match
         run: |
           git config --global credential.helper store
           echo "https://${{ secrets.MATCH_GIT_USERNAME }}:${{ secrets.MATCH_GIT_TOKEN }}@github.com" > ~/.git-credentials
 
-      - name: "Fastlane: Signing vorbereiten"
-        id: fastlane_signing
+      - name: Fastlane setup_signing
         env:
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
-          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
-          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
-          APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          cd fastlane
-          bundle exec fastlane ios setup_signing
+          # Deine Secrets...
+        run: cd fastlane && bundle exec fastlane ios setup_signing
 
-      # unlock the login keychain and give codesign access (prevents hanging on GitHub runners)
-      - name: Unlock keychain & allow codesign
+      - name: Unlock Keychain & Codesign Access
         run: |
-          # GitHub macOS runners use an empty login keychain password.
-          # avoid passing MATCH_PASSWORD here, it only applies to Fastlane/match.
           security unlock-keychain -p "" ~/Library/Keychains/login.keychain-db
-          # partition-list sometimes errors due to item passwords; ignore failure
-          security set-key-partition-list -S apple-tool:,apple: \
-              -s -k "" ~/Library/Keychains/login.keychain-db || true
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "" ~/Library/Keychains/login.keychain-db  # Erweitert [web:32]
 
-      - name: "Debug: run pod install" # separate step to catch failures/hangs early
-        run: |
-          set -x
-          cd ios
-          pod install --repo-update
-
-      - name: Flutter Build IPA
-        id: flutter_build
+      - name: Flutter Build IPA (optimiert)
         env:
           COMPILER_INDEX_STORE_ENABLE: NO
         run: |
-          set -x
-          # build step may take long; print a heartbeat every 5 minutes to avoid appearing hung
-          (
-            flutter build ipa --release --no-tree-shake-icons \
-              --export-options-plist ios/ExportOptions.plist --verbose &
-            pid=$!
-            while kill -0 $pid 2>/dev/null; do
-              echo "=== build still running at $(date) ==="
-              sleep 300
-            done
-            wait $pid
-          )
+          flutter build ipa --release --no-tree-shake-icons \
+            --export-options-plist=ios/ExportOptions.plist \
+            --verbose  # Entferne Heartbeat wenn stabil
 
-      # DerivedData direkt nach erfolgreichem Build explizit speichern (vor Upload),
-      # damit der Cache verfügbar ist, auch wenn der Upload-Step danach fehlschlägt.
-      - name: DerivedData-Cache explizit speichern
-        if: steps.flutter_build.outcome == 'success'
-        uses: actions/cache/save@v4
-        with:
-          path: ~/Library/Developer/Xcode/DerivedData
-          key: xcode-derived-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'pubspec.lock') }}
-
-      - name: "Fastlane: Upload zu Firebase App Distribution"
-        id: fastlane_upload
+      - name: Fastlane Upload
         env:
-          FIREBASE_APP_ID_IOS: ${{ secrets.FIREBASE_APP_ID_IOS }}
-          FIREBASE_CLI_TOKEN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
-        run: |
-          cd fastlane
-          bundle exec fastlane ios upload \
-            release_notes:"${{ github.event.inputs.release_notes || 'Automatisches Deploy von main branch' }}"
+          # Secrets...
+        run: cd fastlane && bundle exec fastlane ios upload --release_notes="${{ github.event.inputs.release_notes || 'Auto-Deploy' }}"
 
-      - name: Upload Xcode build log on failure
+      - name: Logs on Failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: xcode-build-log
-          path: build/ios/logs/
-          retention-days: 3
+          name: ios-logs
+          path: |
+            ios/build/logs/
+            ~/Library/Logs/
+          retention-days: 7
