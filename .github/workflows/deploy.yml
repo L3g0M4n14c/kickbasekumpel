@@ -152,7 +152,7 @@ jobs:
   # ─────────────────────────────────────────────────────────────────────────────
   ios-distribute:
     name: "Build & Distribute iOS"
-    runs-on: macos-13 # Statt latest: stabiler, oft 20-30% schneller [web:23]
+    runs-on: macos-14 # macos-13 war offenbar nicht verfügbar; 14 ist aktueller und ebenfalls schnell
     timeout-minutes: 120 # Reduziert, da optimiert
     steps:
       - uses: actions/checkout@v4
