@@ -232,7 +232,13 @@ jobs:
 
       - name: Fastlane setup_signing
         env:
-          # Deine Secrets...
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: cd fastlane && bundle exec fastlane ios setup_signing
 
       - name: Unlock Keychain & Codesign Access
@@ -250,7 +256,8 @@ jobs:
 
       - name: Fastlane Upload
         env:
-          # Secrets...
+          FIREBASE_APP_ID_IOS: ${{ secrets.FIREBASE_APP_ID_IOS }}
+          FIREBASE_CLI_TOKEN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
         run: cd fastlane && bundle exec fastlane ios upload --release_notes="${{ github.event.inputs.release_notes || 'Auto-Deploy' }}"
 
       - name: Logs on Failure
