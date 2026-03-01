@@ -15,9 +15,9 @@ class PlayerStatusHelper {
       case 0:
         return '💪'; // Fit
       case 1:
-        return '💊'; // Fraglich/Angeschlagen
+        return '�'; // Fraglich/Angeschlagen (Krankenwagen)
       case 2:
-        return '🚑'; // Verletzt
+        return '💊'; // Verletzt (Tabletten)
       case 32:
         return '🟨'; // Gelbe Karte
       default:

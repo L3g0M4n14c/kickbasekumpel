@@ -14,6 +14,7 @@ import '../presentation/pages/dashboard/settings_page.dart';
 import '../presentation/pages/league/league_overview_page.dart';
 import '../presentation/pages/league/league_standings_page.dart';
 import '../presentation/pages/league/league_players_page.dart';
+import '../presentation/pages/dashboard/league_rankings_page.dart';
 import '../presentation/pages/player/player_stats_page.dart';
 import '../presentation/pages/player/player_history_page.dart';
 import '../presentation/pages/error_page.dart';
@@ -201,15 +202,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // League Table Tab (6)
+          // League Rankings Tab (6)
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/dashboard/table',
                 name: 'table',
-                pageBuilder: (context, state) => const NoTransitionPage(
-                  child: LeagueTableScreen(competitionId: 'bundesliga'),
-                ),
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: LeagueRankingsPage()),
               ),
             ],
           ),
