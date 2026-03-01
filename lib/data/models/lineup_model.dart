@@ -25,28 +25,28 @@ class LineupPlayer with _$LineupPlayer {
     @JsonKey(name: 'n') required String name,
 
     /// Position (1=Torwart, 2=Abwehr, 3=Mittelfeld, 4=Sturm)
-    @JsonKey(name: 'pos') required int position,
+    @JsonKey(name: 'pos') @Default(0) int position,
 
     /// Team ID
-    @JsonKey(name: 'tid') required String teamId,
+    @JsonKey(name: 'tid') @Default('') String teamId,
 
     /// Average points
-    @JsonKey(name: 'ap') required int averagePoints,
+    @JsonKey(name: 'ap') @Default(0) int averagePoints,
 
     /// Total points
-    @JsonKey(name: 'st') required int totalPoints,
+    @JsonKey(name: 'st') @Default(0) int totalPoints,
 
     /// Match day status (0=fit, 1=verletzt, 2=gesperrt, etc.)
-    @JsonKey(name: 'mdst') required int matchDayStatus,
+    @JsonKey(name: 'mdst') @Default(0) int matchDayStatus,
 
     /// Lineup order (0 means on bench/not in lineup)
-    @JsonKey(name: 'lo') required int lineupOrder,
+    @JsonKey(name: 'lo') @Default(0) int lineupOrder,
 
     /// Last total points
-    @JsonKey(name: 'lst') required int lastTotalPoints,
+    @JsonKey(name: 'lst') @Default(0) int lastTotalPoints,
 
     /// Has today (if player plays today)
-    @JsonKey(name: 'ht') required bool hasToday,
+    @JsonKey(name: 'ht') @Default(false) bool hasToday,
 
     /// Original status (e.g., injury/suspension info)
     @JsonKey(name: 'os') String? originalStatus,
@@ -64,10 +64,10 @@ class LineupPlayer with _$LineupPlayer {
 class PerformanceHistory with _$PerformanceHistory {
   const factory PerformanceHistory({
     /// Points
-    @JsonKey(name: 'p') required int points,
+    @JsonKey(name: 'p') @Default(0) int points,
 
     /// Has played (if player played in this match)
-    @JsonKey(name: 'hp') required bool hasPlayed,
+    @JsonKey(name: 'hp') @Default(false) bool hasPlayed,
   }) = _PerformanceHistory;
 
   factory PerformanceHistory.fromJson(Map<String, dynamic> json) =>

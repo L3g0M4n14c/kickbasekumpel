@@ -21,14 +21,14 @@ _$LineupPlayerImpl _$$LineupPlayerImplFromJson(Map<String, dynamic> json) =>
     _$LineupPlayerImpl(
       id: json['i'] as String,
       name: json['n'] as String,
-      position: (json['pos'] as num).toInt(),
-      teamId: json['tid'] as String,
-      averagePoints: (json['ap'] as num).toInt(),
-      totalPoints: (json['st'] as num).toInt(),
-      matchDayStatus: (json['mdst'] as num).toInt(),
-      lineupOrder: (json['lo'] as num).toInt(),
-      lastTotalPoints: (json['lst'] as num).toInt(),
-      hasToday: json['ht'] as bool,
+      position: (json['pos'] as num?)?.toInt() ?? 0,
+      teamId: json['tid'] as String? ?? '',
+      averagePoints: (json['ap'] as num?)?.toInt() ?? 0,
+      totalPoints: (json['st'] as num?)?.toInt() ?? 0,
+      matchDayStatus: (json['mdst'] as num?)?.toInt() ?? 0,
+      lineupOrder: (json['lo'] as num?)?.toInt() ?? 0,
+      lastTotalPoints: (json['lst'] as num?)?.toInt() ?? 0,
+      hasToday: json['ht'] as bool? ?? false,
       originalStatus: json['os'] as String?,
       performanceHistory: (json['ph'] as List<dynamic>?)
           ?.map((e) => PerformanceHistory.fromJson(e as Map<String, dynamic>))
@@ -54,8 +54,8 @@ Map<String, dynamic> _$$LineupPlayerImplToJson(_$LineupPlayerImpl instance) =>
 _$PerformanceHistoryImpl _$$PerformanceHistoryImplFromJson(
   Map<String, dynamic> json,
 ) => _$PerformanceHistoryImpl(
-  points: (json['p'] as num).toInt(),
-  hasPlayed: json['hp'] as bool,
+  points: (json['p'] as num?)?.toInt() ?? 0,
+  hasPlayed: json['hp'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$$PerformanceHistoryImplToJson(

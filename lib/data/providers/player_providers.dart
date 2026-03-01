@@ -2,9 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/player_model.dart';
 import '../models/lineup_model.dart';
 import '../../domain/repositories/repository_interfaces.dart';
+import 'kickbase_api_provider.dart';
 import 'repository_providers.dart';
 import 'league_providers.dart';
-import 'live_providers.dart';
 
 // ============================================================================
 // PLAYER STREAM PROVIDERS
@@ -696,17 +696,12 @@ class BestValuePlayersWidget extends ConsumerWidget {
 // ============================================================================
 
 /// My Lineup Provider
-/// Fetches current lineup with player details
+/// Fetches current lineup via GET /v4/leagues/{leagueId}/lineup
 final myLineupProvider = FutureProvider.family<List<LineupPlayer>, String>((
   ref,
   leagueId,
 ) async {
-  final myElevenData = await ref.watch(myElevenProvider(leagueId).future);
-
-  try {
-    final response = LineupResponse.fromJson(myElevenData);
-    return response.players;
-  } catch (e) {
-    throw Exception('Failed to parse lineup: $e');
-  }
+  final apiClient = ref.watch(kickbaseApiClientProvider);
+  final response = await apiClient.getLineup(leagueId);
+  return response.players;
 });

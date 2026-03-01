@@ -467,14 +467,14 @@ class _$LineupPlayerImpl implements _LineupPlayer {
   const _$LineupPlayerImpl({
     @JsonKey(name: 'i') required this.id,
     @JsonKey(name: 'n') required this.name,
-    @JsonKey(name: 'pos') required this.position,
-    @JsonKey(name: 'tid') required this.teamId,
-    @JsonKey(name: 'ap') required this.averagePoints,
-    @JsonKey(name: 'st') required this.totalPoints,
-    @JsonKey(name: 'mdst') required this.matchDayStatus,
-    @JsonKey(name: 'lo') required this.lineupOrder,
-    @JsonKey(name: 'lst') required this.lastTotalPoints,
-    @JsonKey(name: 'ht') required this.hasToday,
+    @JsonKey(name: 'pos') this.position = 0,
+    @JsonKey(name: 'tid') this.teamId = '',
+    @JsonKey(name: 'ap') this.averagePoints = 0,
+    @JsonKey(name: 'st') this.totalPoints = 0,
+    @JsonKey(name: 'mdst') this.matchDayStatus = 0,
+    @JsonKey(name: 'lo') this.lineupOrder = 0,
+    @JsonKey(name: 'lst') this.lastTotalPoints = 0,
+    @JsonKey(name: 'ht') this.hasToday = false,
     @JsonKey(name: 'os') this.originalStatus,
     @JsonKey(name: 'ph') final List<PerformanceHistory>? performanceHistory,
   }) : _performanceHistory = performanceHistory;
@@ -623,14 +623,14 @@ abstract class _LineupPlayer implements LineupPlayer {
   const factory _LineupPlayer({
     @JsonKey(name: 'i') required final String id,
     @JsonKey(name: 'n') required final String name,
-    @JsonKey(name: 'pos') required final int position,
-    @JsonKey(name: 'tid') required final String teamId,
-    @JsonKey(name: 'ap') required final int averagePoints,
-    @JsonKey(name: 'st') required final int totalPoints,
-    @JsonKey(name: 'mdst') required final int matchDayStatus,
-    @JsonKey(name: 'lo') required final int lineupOrder,
-    @JsonKey(name: 'lst') required final int lastTotalPoints,
-    @JsonKey(name: 'ht') required final bool hasToday,
+    @JsonKey(name: 'pos') final int position,
+    @JsonKey(name: 'tid') final String teamId,
+    @JsonKey(name: 'ap') final int averagePoints,
+    @JsonKey(name: 'st') final int totalPoints,
+    @JsonKey(name: 'mdst') final int matchDayStatus,
+    @JsonKey(name: 'lo') final int lineupOrder,
+    @JsonKey(name: 'lst') final int lastTotalPoints,
+    @JsonKey(name: 'ht') final bool hasToday,
     @JsonKey(name: 'os') final String? originalStatus,
     @JsonKey(name: 'ph') final List<PerformanceHistory>? performanceHistory,
   }) = _$LineupPlayerImpl;
@@ -822,8 +822,8 @@ class __$$PerformanceHistoryImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$PerformanceHistoryImpl implements _PerformanceHistory {
   const _$PerformanceHistoryImpl({
-    @JsonKey(name: 'p') required this.points,
-    @JsonKey(name: 'hp') required this.hasPlayed,
+    @JsonKey(name: 'p') this.points = 0,
+    @JsonKey(name: 'hp') this.hasPlayed = false,
   });
 
   factory _$PerformanceHistoryImpl.fromJson(Map<String, dynamic> json) =>
@@ -877,8 +877,8 @@ class _$PerformanceHistoryImpl implements _PerformanceHistory {
 
 abstract class _PerformanceHistory implements PerformanceHistory {
   const factory _PerformanceHistory({
-    @JsonKey(name: 'p') required final int points,
-    @JsonKey(name: 'hp') required final bool hasPlayed,
+    @JsonKey(name: 'p') final int points,
+    @JsonKey(name: 'hp') final bool hasPlayed,
   }) = _$PerformanceHistoryImpl;
 
   factory _PerformanceHistory.fromJson(Map<String, dynamic> json) =
