@@ -4,10 +4,12 @@ import 'package:kickbasekumpel/data/models/sales_recommendation_model.dart';
 import 'package:kickbasekumpel/data/models/optimal_lineup_model.dart';
 import 'package:kickbasekumpel/data/models/player_model.dart';
 import 'package:kickbasekumpel/data/models/user_model.dart';
+import 'package:kickbasekumpel/data/providers/kickbase_auth_provider.dart';
 import 'package:kickbasekumpel/data/providers/user_providers.dart';
 import 'package:kickbasekumpel/data/providers/league_providers.dart';
 import 'package:kickbasekumpel/data/providers/league_detail_providers.dart';
 import 'package:kickbasekumpel/data/utils/parsing_utils.dart';
+import 'package:kickbasekumpel/domain/exceptions/kickbase_exceptions.dart';
 
 final _logger = Logger();
 
@@ -163,6 +165,15 @@ final teamPlayersProvider = FutureProvider<List<Player>>((ref) async {
 
     _logger.i('✅ Extracted ${players.length} players from squad data');
     return players;
+  } on AuthorizationException catch (e) {
+    _logger.w('🔒 403 in teamPlayersProvider – Token abgelaufen: ${e.message}');
+    // Logout erzwingen → Router leitet zur Login-Seite weiter
+    ref.read(kickbaseAuthProvider.notifier).handleSessionExpired();
+    rethrow;
+  } on AuthenticationException catch (e) {
+    _logger.w('🔒 401 in teamPlayersProvider – Token ungültig: ${e.message}');
+    ref.read(kickbaseAuthProvider.notifier).handleSessionExpired();
+    rethrow;
   } catch (e, stack) {
     _logger.e(
       '❌ Error in teamPlayersProvider: $e',

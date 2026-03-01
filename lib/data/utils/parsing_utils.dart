@@ -115,6 +115,68 @@ Map<String, dynamic> normalizeLeagueJson(Map<String, dynamic> json) {
   return copy;
 }
 
+/// Normalisiert einen Market-Spieler von der Kickbase API.
+/// Die API liefert abgekürzte Keys (i, fn, n, pos, mv, prc, …) und
+/// kein vollständiges seller-Objekt; diese Funktion ergänzt alles, was
+/// [MarketPlayer.fromJson] benötigt.
+Map<String, dynamic> normalizeMarketPlayerJson(Map<String, dynamic> json) {
+  final copy = Map<String, dynamic>.from(json);
+
+  // id
+  copy['id'] = copy['id']?.toString() ?? copy['i']?.toString() ?? '';
+
+  // Names
+  if (copy['firstName'] == null && copy['fn'] != null) {
+    copy['firstName'] = copy['fn'];
+  }
+  if (copy['lastName'] == null && copy['ln'] != null) {
+    copy['lastName'] = copy['ln'];
+  }
+  // 'n' = last name in market response
+  if (copy['lastName'] == null || copy['lastName'] == '') {
+    copy['lastName'] = (copy['n'] ?? '').toString();
+  }
+  copy['firstName'] = (copy['firstName'] ?? '').toString();
+  copy['lastName'] = (copy['lastName'] ?? '').toString();
+
+  // Team
+  copy['teamId'] = (copy['teamId'] ?? copy['tid'] ?? '').toString();
+  copy['teamName'] = (copy['teamName'] ?? copy['tn'] ?? '').toString();
+
+  // Profile
+  copy['profileBigUrl'] =
+      (copy['profileBigUrl'] ?? copy['pbu'] ?? copy['pim'] ?? '').toString();
+
+  // Numerics
+  copy['position'] = _toIntSafe(copy['position'] ?? copy['pos']);
+  copy['number'] = _toIntSafe(copy['number']);
+  copy['averagePoints'] = _toDoubleSafe(copy['averagePoints'] ?? copy['ap']);
+  copy['totalPoints'] = _toIntSafe(copy['totalPoints'] ?? copy['p']);
+  copy['marketValue'] = _toIntSafe(copy['marketValue'] ?? copy['mv']);
+  copy['marketValueTrend'] = _toIntSafe(
+    copy['marketValueTrend'] ?? copy['mvt'],
+  );
+  // price: 'prc' in market list, 'price' in other contexts
+  copy['price'] = _toIntSafe(copy['price'] ?? copy['prc']);
+  copy['expiry'] = (copy['expiry'] ?? copy['dt'] ?? '').toString();
+  copy['offers'] = _toIntSafe(copy['offers'] ?? copy['ofc']);
+  copy['status'] = _toIntSafe(copy['status'] ?? copy['st']);
+  copy['stl'] = _toIntSafe(copy['stl']);
+  copy['exs'] = _toIntSafe(copy['exs']);
+  copy['prlo'] = copy['prlo'] != null ? _toIntSafe(copy['prlo']) : null;
+
+  // seller: construct from 'uoid' (user-offer-id = seller's user id) when absent
+  if (copy['seller'] == null) {
+    final sellerId = (copy['uoid'] ?? '').toString();
+    copy['seller'] = {'id': sellerId, 'name': ''};
+  }
+
+  // owner: optional, keep as-is or null
+  copy['owner'] = copy['owner'] ?? copy['u'];
+
+  return copy;
+}
+
 int _toIntSafe(dynamic value) {
   if (value == null) return 0;
   if (value is int) return value;

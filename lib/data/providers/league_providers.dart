@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/league_model.dart';
+import '../../domain/exceptions/kickbase_exceptions.dart';
 import '../../domain/repositories/repository_interfaces.dart';
 import 'repository_providers.dart';
 import 'user_providers.dart';
@@ -58,6 +59,18 @@ final userLeaguesProvider = FutureProvider<List<League>>((ref) async {
   final apiClient = ref.watch(kickbaseApiClientProvider);
   try {
     return await apiClient.getLeagues();
+  } on AuthorizationException {
+    // 403 – Token abgelaufen → Logout erzwingen
+    ref.read(kickbaseAuthProvider.notifier).handleSessionExpired();
+    throw Exception(
+      'Deine Kickbase-Sitzung ist abgelaufen. Bitte melde dich erneut an.',
+    );
+  } on AuthenticationException {
+    // 401 – Token ungültig → Logout erzwingen
+    ref.read(kickbaseAuthProvider.notifier).handleSessionExpired();
+    throw Exception(
+      'Deine Kickbase-Sitzung ist abgelaufen. Bitte melde dich erneut an.',
+    );
   } catch (e) {
     throw Exception('Fehler beim Laden der Ligen: $e');
   }

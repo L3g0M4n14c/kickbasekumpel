@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+import '../../domain/exceptions/kickbase_exceptions.dart';
 import '../models/user_model.dart';
 import '../services/kickbase_api_client.dart';
 import 'kickbase_api_provider.dart';
@@ -70,36 +71,71 @@ class KickbaseAuthNotifier extends Notifier<KickbaseAuthState> {
     return const KickbaseAuthState();
   }
 
-  /// Check authentication status by verifying token existence
+  /// Check authentication status by verifying token existence AND validity
   /// This is now called from initializeAuthProvider as a separate async operation
   Future<void> _checkAuthStatus() async {
     try {
       final hasToken = await _apiClient.hasAuthToken();
 
-      if (hasToken) {
-        // Token exists - load saved user data
-        final savedUser = await _apiClient.getSavedUserData();
-
-        state = state.copyWith(isAuthenticated: true, currentUser: savedUser);
-
-        if (savedUser != null) {
-          _logger.d(
-            '🔑 Existing token and user data found - user: ${savedUser.n}',
-          );
-        } else {
-          _logger.d('🔑 Existing token found but no user data');
-        }
-      } else {
+      if (!hasToken) {
         state = state.copyWith(isAuthenticated: false);
         _logger.d('🔓 No token found - user needs to login');
+        return;
+      }
+
+      // Token exists – validate it against the API to detect expired sessions
+      _logger.d('🔍 Validating existing token against Kickbase API...');
+      try {
+        await _apiClient.getLeagues();
+        // Token is still valid
+        final savedUser = await _apiClient.getSavedUserData();
+        state = state.copyWith(isAuthenticated: true, currentUser: savedUser);
+        _logger.d(
+          savedUser != null
+              ? '🔑 Token valid – user: ${savedUser.n}'
+              : '🔑 Token valid but no cached user data',
+        );
+      } on AuthorizationException catch (e) {
+        // 403 – token is expired/revoked
+        _logger.w('⚠️ Token expired or revoked (403): ${e.message}');
+        await _apiClient.clearAuthToken();
+        state = state.copyWith(
+          isAuthenticated: false,
+          error:
+              'Deine Kickbase-Sitzung ist abgelaufen. Bitte melde dich erneut an.',
+        );
+      } on AuthenticationException catch (e) {
+        // 401 – token is invalid
+        _logger.w('⚠️ Token invalid (401): ${e.message}');
+        await _apiClient.clearAuthToken();
+        state = state.copyWith(
+          isAuthenticated: false,
+          error:
+              'Deine Kickbase-Sitzung ist abgelaufen. Bitte melde dich erneut an.',
+        );
       }
     } catch (e, stackTrace) {
       _logger.e('❌ Auth check failed: $e', stackTrace: stackTrace);
+      // On network errors, keep the token but mark as potentially unauthenticated
       state = state.copyWith(
         isAuthenticated: false,
-        error: 'Authentication check failed: $e',
+        error: 'Verbindungsfehler beim Prüfen der Sitzung: $e',
       );
     }
+  }
+
+  /// Called when any API call returns 403/401 – clears auth state
+  /// and forces re-login
+  Future<void> handleSessionExpired() async {
+    _logger.w(
+      '🔒 Session expired detected – clearing token and requiring re-login',
+    );
+    await _apiClient.clearAuthToken();
+    state = const KickbaseAuthState(
+      isAuthenticated: false,
+      error:
+          'Deine Kickbase-Sitzung ist abgelaufen. Bitte melde dich erneut an.',
+    );
   }
 
   /// Login with Kickbase credentials

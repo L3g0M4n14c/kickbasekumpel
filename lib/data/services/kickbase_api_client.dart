@@ -240,6 +240,17 @@ class KickbaseAPIClient {
         body: body,
       );
 
+      // Handle authentication/authorization errors immediately (no retry)
+      if (response.statusCode == 401) {
+        throw const AuthenticationException(
+          'Authentication failed. Token may be expired.',
+        );
+      } else if (response.statusCode == 403) {
+        throw const AuthorizationException(
+          'Access forbidden. Your token may be revoked or you lack permissions.',
+        );
+      }
+
       // Retry on 5xx server errors
       if (response.statusCode >= 500 && retryCount < _maxRetries) {
         final delay =
@@ -258,6 +269,11 @@ class KickbaseAPIClient {
 
       return response;
     } catch (e) {
+      // Don't retry authentication/authorization errors
+      if (e is AuthenticationException || e is AuthorizationException) {
+        rethrow;
+      }
+
       // Retry on network errors
       if (e is NetworkException && retryCount < _maxRetries) {
         final delay = _initialRetryDelay * (1 << retryCount);
@@ -546,20 +562,47 @@ class KickbaseAPIClient {
   /// Get available players on market
   /// GET /v4/leagues/{leagueId}/market
   Future<List<MarketPlayer>> getMarketAvailable(String leagueId) async {
+    _logger.i('📦 Getting available market players for league $leagueId...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/market',
       method: 'GET',
     );
 
-    final json = _parseJson(response.body);
-    final playersData = json['players'] as List<dynamic>?;
-
-    if (playersData == null) {
-      throw const ParsingException('No market players data in response');
+    // At this point, response.statusCode is guaranteed to be 200 or other non-auth error
+    // because _makeRequestWithRetry throws on 401/403
+    if (response.statusCode != 200) {
+      throw KickbaseException(
+        'Failed to load market players: HTTP ${response.statusCode}',
+        code: response.statusCode.toString(),
+        originalError: response.body,
+      );
     }
 
+    final json = _parseJson(response.body);
+    // API returns market players under key 'it' (not 'players')
+    final playersData =
+        json['it'] as List<dynamic>? ?? json['players'] as List<dynamic>?;
+
+    if (playersData == null) {
+      _logger.w('⚠️ Market response keys: ${json.keys.toList()}');
+      // Empty market is valid – return empty list instead of throwing
+      return [];
+    }
+
+    _logger.i('✅ Found ${playersData.length} market players');
     return playersData
-        .map((e) => MarketPlayer.fromJson(e as Map<String, dynamic>))
+        .map((e) {
+          try {
+            final normalized = normalizeMarketPlayerJson(
+              e as Map<String, dynamic>,
+            );
+            return MarketPlayer.fromJson(normalized);
+          } catch (err) {
+            _logger.w('⚠️ Skipping unparseable market player: $err | raw: $e');
+            return null;
+          }
+        })
+        .whereType<MarketPlayer>()
         .toList();
   }
 

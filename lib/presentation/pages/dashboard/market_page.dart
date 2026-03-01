@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/screen_size.dart';
+import '../../../data/providers/league_providers.dart';
 import '../../widgets/responsive_layout.dart';
 import '../../providers/market_providers.dart';
 import '../../widgets/market/market_filters.dart';
@@ -32,12 +33,34 @@ class _MarketPageState extends ConsumerState<MarketPage> {
 
   @override
   Widget build(BuildContext context) {
+    // ensure a league is selected when entering the market
+    ref.watch(autoSelectFirstLeagueProvider);
+
+    final leagueId = ref.watch(selectedLeagueIdProvider);
+    if (leagueId == null) {
+      return Scaffold(
+        appBar: ScreenSize.isMobile(context)
+            ? AppBar(
+                title: const Text('Transfermarkt'),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.filter_list),
+                    onPressed: () => _showFilterBottomSheet(context),
+                  ),
+                ],
+              )
+            : null,
+        body: const Center(child: Text('Keine Liga ausgewählt')),
+      );
+    }
+
     return Scaffold(
       appBar: ScreenSize.isMobile(context)
           ? AppBar(
               title: const Text('Transfermarkt'),
               actions: [
                 IconButton(
+                  // ignore: undefined_operator,invalid_constant,undefined_identifier
                   icon: const Icon(Icons.filter_list),
                   onPressed: () => _showFilterBottomSheet(context),
                 ),

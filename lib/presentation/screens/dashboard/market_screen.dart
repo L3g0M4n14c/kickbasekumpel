@@ -56,6 +56,18 @@ class _MarketScreenState extends ConsumerState<MarketScreen>
 
   @override
   Widget build(BuildContext context) {
+    // make sure a league is auto‑selected
+    ref.watch(autoSelectFirstLeagueProvider);
+
+    final leagueId = ref.watch(selectedLeagueIdProvider);
+    if (leagueId == null) {
+      // still render the app bar so user can change league
+      return Scaffold(
+        appBar: AppBar(title: const Text('Transfermarkt')),
+        body: const Center(child: Text('Keine Liga ausgewählt')),
+      );
+    }
+
     final theme = Theme.of(context);
     final size = MediaQuery.of(context).size;
     final isTablet = size.width > 600;
@@ -229,6 +241,11 @@ class _MarketScreenState extends ConsumerState<MarketScreen>
 class _AvailablePlayersTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final leagueId = ref.watch(selectedLeagueIdProvider);
+    if (leagueId == null) {
+      return const Center(child: Text('Keine Liga ausgewählt'));
+    }
+
     final playersAsync = ref.watch(marketPlayersProvider);
 
     return RefreshIndicator(

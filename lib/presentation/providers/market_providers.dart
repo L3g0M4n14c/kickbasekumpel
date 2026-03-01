@@ -2,8 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/market_model.dart';
 import '../../data/models/transfer_model.dart';
 import '../../data/providers/kickbase_api_provider.dart';
+import '../../data/providers/kickbase_auth_provider.dart';
 import '../../data/providers/league_providers.dart';
 import '../../data/providers/user_providers.dart';
+import '../../domain/exceptions/kickbase_exceptions.dart';
 
 // ============================================================================
 // MARKET STATE & FILTER MODELS
@@ -149,11 +151,26 @@ final marketPlayersProvider = StreamProvider.autoDispose<List<MarketPlayer>>((
         final filteredUpdated = _applyFiltersAndSort(updatedPlayers, filter);
         yield filteredUpdated;
       } catch (e) {
-        // Continue with previous data on error
+        // Continue with previous data on polling error
+        if (e is AuthenticationException || e is AuthorizationException) {
+          rethrow; // Re-throw auth errors to notify user
+        }
       }
     }
-  } catch (e, stack) {
-    throw Exception('Failed to load market players: $e\n$stack');
+  } on AuthenticationException catch (e) {
+    // 401 – Token ungültig → Logout erzwingen
+    ref.read(kickbaseAuthProvider.notifier).handleSessionExpired();
+    throw Exception(
+      'Deine Kickbase-Sitzung ist abgelaufen. Bitte melde dich erneut an.\n(${e.message})',
+    );
+  } on AuthorizationException catch (e) {
+    // 403 – Token abgelaufen/widerrufen → Logout erzwingen
+    ref.read(kickbaseAuthProvider.notifier).handleSessionExpired();
+    throw Exception(
+      'Deine Kickbase-Sitzung ist abgelaufen. Bitte melde dich erneut an.\n(${e.message})',
+    );
+  } catch (e, _) {
+    throw Exception('Fehler beim Laden der Spieler: $e');
   }
 });
 

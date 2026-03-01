@@ -215,7 +215,7 @@ jobs:
       - name: Install Pods
         if: steps.pods-cache.outputs.cache-hit != 'true'
         working-directory: ios
-        run: pod install --repo-update=false # Specs gecacht, kein Update nötig
+        run: pod install # rely on cached specs; no explicit repo update
 
       - name: Cache DerivedData + Homebrew
         uses: actions/cache@v4

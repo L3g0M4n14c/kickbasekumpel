@@ -177,11 +177,35 @@ class _TeamPageState extends ConsumerState<TeamPage> {
                 ),
                 error: (err, stack) => Center(
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text('Fehler beim Laden der Spieler'),
-                      ElevatedButton(
+                      const Icon(
+                        Icons.lock_outline,
+                        size: 48,
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Kickbase-Sitzung abgelaufen',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        err.toString().contains('403') ||
+                                err.toString().contains('abgelaufen')
+                            ? 'Deine Sitzung ist abgelaufen.\nBitte melde dich erneut an.'
+                            : 'Fehler beim Laden der Spieler:\n${err.toString()}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Erneut versuchen'),
                         onPressed: () => ref.invalidate(teamPlayersProvider),
-                        child: const Text('Erneut versuchen'),
                       ),
                     ],
                   ),

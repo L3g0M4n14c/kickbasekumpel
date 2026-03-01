@@ -52,6 +52,8 @@ enum MarketTab {
 - **Sort Menu**: PopupMenu mit allen Sort-Optionen
 - **Pull-to-Refresh**: Auf allen Tabs
 - **Empty States**: Individuelle für jeden Tab
+- **League Selection**: Beim Öffnen wird automatisch die erste Liga ausgewählt (`autoSelectFirstLeagueProvider`).
+- **Hinweis bei fehlender Liga**: Wenn noch keine Liga ausgewählt ist, zeigt die View den Text "Keine Liga ausgewählt" statt einer leeren Liste.
 
 #### Tabs:
 1. **Available Players**: Alle verfügbaren Markt-Spieler
