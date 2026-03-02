@@ -43,7 +43,7 @@ Map<String, dynamic> normalizePlayerJson(Map<String, dynamic> json) {
   copy['teamName'] = (copy['teamName'] ?? '').toString();
   copy['teamId'] = (copy['teamId'] ?? '').toString();
 
-  // Profile
+  // Profile – try pbu, pim, plpt (player profile thumbnail), i (image)
   if ((copy['profileBigUrl'] == null || copy['profileBigUrl'] == '') &&
       copy['pbu'] != null) {
     copy['profileBigUrl'] = copy['pbu'];
@@ -52,13 +52,27 @@ Map<String, dynamic> normalizePlayerJson(Map<String, dynamic> json) {
       copy['pim'] != null) {
     copy['profileBigUrl'] = copy['pim'];
   }
+  if ((copy['profileBigUrl'] == null || copy['profileBigUrl'] == '') &&
+      copy['plpt'] != null) {
+    copy['profileBigUrl'] = copy['plpt'];
+  }
+  // 'i' can be image URL in player-detail response
+  if ((copy['profileBigUrl'] == null || copy['profileBigUrl'] == '') &&
+      copy['i'] != null &&
+      copy['i'].toString().startsWith('http')) {
+    copy['profileBigUrl'] = copy['i'];
+  }
   copy['profileBigUrl'] = (copy['profileBigUrl'] ?? '').toString();
 
   // Numeric fields - attempt to coerce
   copy['position'] = _toIntSafe(copy['position'] ?? copy['pos']);
-  copy['number'] = _toIntSafe(copy['number']);
+  // 'shn' = shirt/jersey number in player-detail responses
+  copy['number'] = _toIntSafe(copy['number'] ?? copy['shn']);
   copy['averagePoints'] = _toDoubleSafe(copy['averagePoints'] ?? copy['ap']);
-  copy['totalPoints'] = _toIntSafe(copy['totalPoints'] ?? copy['p']);
+  // 'tp' = total points in player-detail responses; 'p' is a fallback
+  copy['totalPoints'] = _toIntSafe(
+    copy['totalPoints'] ?? copy['tp'] ?? copy['p'],
+  );
   copy['marketValue'] = _toIntSafe(copy['marketValue'] ?? copy['mv']);
   copy['marketValueTrend'] = _toIntSafe(
     copy['marketValueTrend'] ?? copy['mvt'],
@@ -68,14 +82,14 @@ Map<String, dynamic> normalizePlayerJson(Map<String, dynamic> json) {
   copy['stl'] = _toIntSafe(copy['stl']);
   copy['status'] = _toIntSafe(copy['status'] ?? copy['st']);
 
-  // userOwnsPlayer boolean
-
-  // userOwnsPlayer boolean
+  // userOwnsPlayer boolean – 'sl' = self-listed / owned in player-detail
   if (copy['userOwnsPlayer'] is bool) {
     // ok
   } else if (copy['userOwnsPlayer'] != null) {
     final val = copy['userOwnsPlayer'].toString().toLowerCase();
     copy['userOwnsPlayer'] = (val == 'true' || val == '1');
+  } else if (copy['sl'] is bool) {
+    copy['userOwnsPlayer'] = copy['sl'];
   } else {
     copy['userOwnsPlayer'] = false;
   }

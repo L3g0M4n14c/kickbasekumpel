@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/performance_model.dart';
 import 'kickbase_api_provider.dart';
 
 // ============================================================================
@@ -90,4 +91,16 @@ final playerTransfersProvider =
         params.leagueId,
         params.playerId,
       );
+    });
+
+/// Player Performance (Stats) Provider
+/// GET /v4/leagues/{leagueId}/players/{playerId}/performance
+/// Returns the full season performance history for a player
+final playerPerformanceProvider =
+    FutureProvider.family<
+      PlayerPerformanceResponse,
+      ({String leagueId, String playerId})
+    >((ref, params) async {
+      final apiClient = ref.watch(kickbaseApiClientProvider);
+      return await apiClient.getPlayerStats(params.leagueId, params.playerId);
     });

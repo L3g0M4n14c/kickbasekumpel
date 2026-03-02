@@ -119,7 +119,7 @@ class PerformanceLineChart extends StatelessWidget {
     final points = data.map((e) => e.points).toList();
     final minPoints = points.reduce((a, b) => a < b ? a : b);
     final maxPoints = points.reduce((a, b) => a > b ? a : b);
-    final yMin = (minPoints - 5).clamp(0.0, double.infinity);
+    final yMin = (minPoints - 5).toDouble();
     final yMax = (maxPoints + 5).toDouble();
 
     // Erstelle Spots
@@ -128,6 +128,18 @@ class PerformanceLineChart extends StatelessWidget {
     }).toList();
 
     return LineChartData(
+      extraLinesData: yMin < 0
+          ? ExtraLinesData(
+              horizontalLines: [
+                HorizontalLine(
+                  y: 0,
+                  color: colorScheme.outline,
+                  strokeWidth: 1.5,
+                  dashArray: [4, 4],
+                ),
+              ],
+            )
+          : null,
       gridData: FlGridData(
         show: showGrid,
         drawVerticalLine: false,
@@ -158,7 +170,7 @@ class PerformanceLineChart extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  'ST ${value.toInt()}',
+                  value.toInt().toString(),
                   style: theme.textTheme.bodySmall,
                 ),
               );
