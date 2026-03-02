@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/providers/providers.dart';
 import '../../data/utils/parsing_utils.dart';
+import '../widgets/charts/stats_bar_chart.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/error_widget.dart';
 
@@ -71,19 +72,19 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
       ),
       body: dashboardAsync.when(
         data: (dashboardData) {
-          return Column(
-            children: [
-              _buildManagerHeader(context, dashboardData),
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildSquadTab(context),
-                    _buildPerformanceTab(context),
-                  ],
-                ),
+          return NestedScrollView(
+            headerSliverBuilder: (context, innerBoxIsScrolled) => [
+              SliverToBoxAdapter(
+                child: _buildManagerHeader(context, dashboardData),
               ),
             ],
+            body: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildSquadTab(context),
+                _buildPerformanceTab(context),
+              ],
+            ),
           );
         },
         loading: () => const Center(child: LoadingWidget()),
@@ -441,19 +442,137 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
 
     return performanceAsync.when(
       data: (performanceData) {
-        final performances = performanceData['performances'] as List? ?? [];
+        // API Struktur: { it: [ { ap, tp, pl, it: [ { day, mdp, tw, cur, md } ] } ] }
+        final seasons = performanceData['it'] as List? ?? [];
+        if (seasons.isEmpty) {
+          return const Center(child: Text('Keine Performance-Daten verfügbar'));
+        }
+
+        // Aktuelle Saison: Saisons sind alt→neu sortiert, daher von hinten suchen.
+        // Neueste Saison mit cur=true nehmen; Fallback: seasons.last (= neueste).
+        final currentSeason = (seasons
+            .cast<Map<String, dynamic>>()
+            .reversed
+            .firstWhere((s) {
+              final days = s['it'] as List? ?? [];
+              return days.any((d) => d['cur'] == true);
+            }, orElse: () => seasons.last as Map<String, dynamic>));
+        final performances = currentSeason['it'] as List? ?? [];
+        final seasonTotalPoints =
+            (currentSeason['tp'] as num?)?.toDouble() ?? 0.0;
+        final seasonAvgPoints =
+            (currentSeason['ap'] as num?)?.toDouble() ?? 0.0;
+        final seasonPlacement = currentSeason['pl'] ?? 0;
 
         if (performances.isEmpty) {
           return const Center(child: Text('Keine Performance-Daten verfügbar'));
         }
 
-        return ListView.builder(
+        // Nur Spieltage mit Punkte-Daten (gespielte Spieltage)
+        final playedDays = performances
+            .where((p) => (p['mdp'] as num? ?? 0) > 0 || p['cur'] == true)
+            .toList();
+
+        // Balkendiagramm-Datenpunkte aufbauen
+        final chartData = playedDays.map<StatPoint>((p) {
+          final matchDay = (p['day'] as num?)?.toInt() ?? 0;
+          final points = (p['mdp'] as num?)?.toDouble() ?? 0.0;
+          return StatPoint(label: '$matchDay', value: points);
+        }).toList();
+
+        return ListView(
           padding: const EdgeInsets.all(16.0),
-          itemCount: performances.length,
-          itemBuilder: (context, index) {
-            final performance = performances[index];
-            return _buildPerformanceCard(context, performance);
-          },
+          children: [
+            // Zusammenfassung
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Column(
+                      children: [
+                        Text(
+                          seasonTotalPoints.toInt().toString(),
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                        ),
+                        Text(
+                          'Gesamtpunkte',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        Text(
+                          seasonAvgPoints.toStringAsFixed(1),
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.secondary,
+                              ),
+                        ),
+                        Text(
+                          'Ø Pkt/Spieltag',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        Text(
+                          '#$seasonPlacement',
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'Platz',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Balkendiagramm
+            StatsBarChart(
+              data: chartData,
+              title: 'Punkte pro Spieltag',
+              height: 220,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Spieltag-Details',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            ...playedDays.map<Widget>(
+              (performance) => _buildPerformanceCard(context, performance),
+            ),
+          ],
         );
       },
       loading: () => const Center(child: LoadingWidget()),
@@ -472,21 +591,26 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
   }
 
   Widget _buildPerformanceCard(BuildContext context, dynamic performance) {
-    final matchDay = performance['matchDay'] ?? performance['md'] ?? 0;
-    final points = performance['points'] ?? performance['p'] ?? 0;
-    final rank = performance['rank'] ?? performance['r'] ?? 0;
-    final teamValue = performance['teamValue'] ?? performance['tv'] ?? 0;
+    // API Felder: day (Spieltag-Nr), mdp (Punkte), tw (Sieg), cur (aktuell)
+    final matchDay = (performance['day'] as num?)?.toInt() ?? 0;
+    final points = (performance['mdp'] as num?)?.toInt() ?? 0;
+    final isWin = performance['tw'] as bool? ?? false;
+    final isCurrent = performance['cur'] as bool? ?? false;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8.0),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+          backgroundColor: isCurrent
+              ? Theme.of(context).colorScheme.primaryContainer
+              : Theme.of(context).colorScheme.surfaceContainerHighest,
           child: Text(
             '$matchDay',
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
+              color: isCurrent
+                  ? Theme.of(context).colorScheme.onPrimaryContainer
+                  : Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
@@ -494,22 +618,20 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
           'Spieltag $matchDay',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text('Platz $rank'),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              '$points Pkt',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            ),
-            Text(
-              '${(teamValue / 1000000).toStringAsFixed(1)}M€',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: Colors.grey),
-            ),
-          ],
+        subtitle: isWin
+            ? Text('Sieg', style: TextStyle(color: Colors.green.shade600))
+            : const Text(''),
+        trailing: Text(
+          '$points Pkt',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: points >= 10
+                ? Colors.green
+                : points >= 5
+                ? Colors.orange
+                : Colors.red,
+          ),
         ),
       ),
     );
