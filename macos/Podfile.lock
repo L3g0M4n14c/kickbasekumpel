@@ -1188,6 +1188,10 @@ PODS:
     - abseil/meta/type_traits
     - abseil/xcprivacy
   - abseil/xcprivacy (1.20240722.0)
+  - AppCheckCore (11.2.0):
+    - GoogleUtilities/Environment (~> 8.0)
+    - GoogleUtilities/UserDefaults (~> 8.0)
+    - PromisesObjC (~> 2.4)
   - BoringSSL-GRPC (0.0.37):
     - BoringSSL-GRPC/Implementation (= 0.0.37)
     - BoringSSL-GRPC/Interface (= 0.0.37)
@@ -1201,6 +1205,9 @@ PODS:
     - FlutterMacOS
   - connectivity_plus (0.0.1):
     - FlutterMacOS
+  - Firebase/AppCheck (12.8.0):
+    - Firebase/CoreOnly
+    - FirebaseAppCheck (~> 12.8.0)
   - Firebase/Auth (12.8.0):
     - Firebase/CoreOnly
     - FirebaseAuth (~> 12.8.0)
@@ -1209,6 +1216,11 @@ PODS:
   - Firebase/Firestore (12.8.0):
     - Firebase/CoreOnly
     - FirebaseFirestore (~> 12.8.0)
+  - firebase_app_check (0.4.1-4):
+    - Firebase/AppCheck (~> 12.8.0)
+    - Firebase/CoreOnly (~> 12.8.0)
+    - firebase_core
+    - FlutterMacOS
   - firebase_auth (6.1.4):
     - Firebase/Auth (~> 12.8.0)
     - Firebase/CoreOnly (~> 12.8.0)
@@ -1217,6 +1229,12 @@ PODS:
   - firebase_core (4.4.0):
     - Firebase/CoreOnly (~> 12.8.0)
     - FlutterMacOS
+  - FirebaseAppCheck (12.8.0):
+    - AppCheckCore (~> 11.0)
+    - FirebaseAppCheckInterop (~> 12.8.0)
+    - FirebaseCore (~> 12.8.0)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GoogleUtilities/UserDefaults (~> 8.1)
   - FirebaseAppCheckInterop (12.8.0)
   - FirebaseAuth (12.8.0):
     - FirebaseAppCheckInterop (~> 12.8.0)
@@ -1280,6 +1298,9 @@ PODS:
     - GoogleUtilities/Privacy
   - GoogleUtilities/Privacy (8.1.0)
   - GoogleUtilities/Reachability (8.1.0):
+    - GoogleUtilities/Logger
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/UserDefaults (8.1.0):
     - GoogleUtilities/Logger
     - GoogleUtilities/Privacy
   - "gRPC-C++ (1.69.0)":
@@ -1384,6 +1405,7 @@ PODS:
   - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
+  - PromisesObjC (2.4.0)
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -1394,6 +1416,7 @@ PODS:
 DEPENDENCIES:
   - cloud_firestore (from `Flutter/ephemeral/.symlinks/plugins/cloud_firestore/macos`)
   - connectivity_plus (from `Flutter/ephemeral/.symlinks/plugins/connectivity_plus/macos`)
+  - firebase_app_check (from `Flutter/ephemeral/.symlinks/plugins/firebase_app_check/macos`)
   - firebase_auth (from `Flutter/ephemeral/.symlinks/plugins/firebase_auth/macos`)
   - firebase_core (from `Flutter/ephemeral/.symlinks/plugins/firebase_core/macos`)
   - flutter_secure_storage_darwin (from `Flutter/ephemeral/.symlinks/plugins/flutter_secure_storage_darwin/darwin`)
@@ -1405,8 +1428,10 @@ DEPENDENCIES:
 SPEC REPOS:
   trunk:
     - abseil
+    - AppCheckCore
     - BoringSSL-GRPC
     - Firebase
+    - FirebaseAppCheck
     - FirebaseAppCheckInterop
     - FirebaseAuth
     - FirebaseAuthInterop
@@ -1422,12 +1447,15 @@ SPEC REPOS:
     - GTMSessionFetcher
     - leveldb-library
     - nanopb
+    - PromisesObjC
 
 EXTERNAL SOURCES:
   cloud_firestore:
     :path: Flutter/ephemeral/.symlinks/plugins/cloud_firestore/macos
   connectivity_plus:
     :path: Flutter/ephemeral/.symlinks/plugins/connectivity_plus/macos
+  firebase_app_check:
+    :path: Flutter/ephemeral/.symlinks/plugins/firebase_app_check/macos
   firebase_auth:
     :path: Flutter/ephemeral/.symlinks/plugins/firebase_auth/macos
   firebase_core:
@@ -1445,12 +1473,15 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   abseil: a05cc83bf02079535e17169a73c5be5ba47f714b
+  AppCheckCore: cc8fd0a3a230ddd401f326489c99990b013f0c4f
   BoringSSL-GRPC: dded2a44897e45f28f08ae87a55ee4bcd19bc508
   cloud_firestore: 71947b640bd24f6f849d9d185e5d0a619fa6b93b
   connectivity_plus: 4adf20a405e25b42b9c9f87feff8f4b6fde18a4e
   Firebase: 9a58fdbc9d8655ed7b79a19cf9690bb007d3d46d
+  firebase_app_check: daf97f2d7044e28b68d23bc90e16751acee09732
   firebase_auth: 2c2438e41f061c03bd67dcb045dfd7bc843b5f52
   firebase_core: b1697fb64ff2b9ca16baaa821205f8b0c058e5d2
+  FirebaseAppCheck: 11da425929a45c677d537adfff3520ccd57c1690
   FirebaseAppCheckInterop: ba3dc604a89815379e61ec2365101608d365cf7d
   FirebaseAuth: 4c289b1a43f5955283244a55cf6bd616de344be5
   FirebaseAuthInterop: 95363fe96493cb4f106656666a0768b420cba090
@@ -1469,6 +1500,7 @@ SPEC CHECKSUMS:
   leveldb-library: cc8b8f8e013647a295ad3f8cd2ddf49a6f19be19
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   path_provider_foundation: bb55f6dbba17d0dccd6737fe6f7f34fbd0376880
+  PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../data/providers/recommendation_providers.dart';
 import '../../../data/providers/league_providers.dart';
+import '../../../data/providers/player_providers.dart';
 import '../../../data/models/transfer_model.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/error_widget.dart';
@@ -114,60 +115,67 @@ class _RecommendationsTab extends ConsumerWidget {
 
     final recommendationsAsync = ref.watch(recommendationsProvider(leagueId));
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        ref.invalidate(recommendationsProvider(leagueId));
-      },
-      child: recommendationsAsync.when(
-        data: (recommendations) {
-          if (recommendations.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.lightbulb_outline,
-                      size: 80,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Keine Empfehlungen verfügbar',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Komm später wieder vorbei für neue Empfehlungen',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          return ListView.builder(
-            padding: EdgeInsets.all(isTablet ? 24.0 : 16.0),
-            itemCount: recommendations.length,
-            itemBuilder: (context, index) {
-              final rec = recommendations[index];
-              return _RecommendationCard(recommendation: rec);
+    return Column(
+      children: [
+        _AIGenerateBanner(leagueId: leagueId),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(recommendationsProvider(leagueId));
             },
-          );
-        },
-        loading: () => const LoadingWidget(),
-        error: (error, stack) => ErrorWidgetCustom(
-          error: error,
-          onRetry: () => ref.invalidate(recommendationsProvider),
+            child: recommendationsAsync.when(
+              data: (recommendations) {
+                if (recommendations.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.auto_awesome_outlined,
+                            size: 80,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Keine Empfehlungen verfügbar',
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Tippe auf "Jetzt analysieren" um KI-Empfehlungen zu generieren.',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: EdgeInsets.all(isTablet ? 24.0 : 16.0),
+                  itemCount: recommendations.length,
+                  itemBuilder: (context, index) {
+                    final rec = recommendations[index];
+                    return _RecommendationCard(recommendation: rec);
+                  },
+                );
+              },
+              loading: () => const LoadingWidget(),
+              error: (error, stack) => ErrorWidgetCustom(
+                error: error,
+                onRetry: () => ref.invalidate(recommendationsProvider),
+              ),
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -309,6 +317,182 @@ class _SellRecommendationsTab extends ConsumerWidget {
         ),
       ),
     );
+  }
+}
+
+/// Banner mit KI-Generierungs-Button und Fortschrittsanzeige.
+///
+/// Immer am oberen Rand des Empfehlungs-Tabs sichtbar.
+/// Liest Zustand aus [generateAIRecommendationsNotifierProvider].
+class _AIGenerateBanner extends ConsumerWidget {
+  final String leagueId;
+
+  const _AIGenerateBanner({required this.leagueId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final genState = ref.watch(generateAIRecommendationsNotifierProvider);
+    final isGenerating = genState.isGenerating;
+
+    return Card(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.auto_awesome,
+                  color: theme.colorScheme.primary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'KI-Empfehlungen (Gemini)',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                if (genState.lastRunSucceeded == true && !isGenerating)
+                  Chip(
+                    label: const Text('Aktuell'),
+                    avatar: const Icon(Icons.check_circle, size: 16),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                    labelStyle: theme.textTheme.labelSmall,
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                  ),
+              ],
+            ),
+            if (!isGenerating) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Analysiert Spielerdaten mit Gemini AI und gibt '
+                'Kauf-/Verkaufsempfehlungen mit Begründungen.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              if (genState.errorMessage != null) ...[
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      size: 14,
+                      color: theme.colorScheme.error,
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        genState.errorMessage!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.error,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: _GenerateButton(leagueId: leagueId),
+              ),
+            ] else ...[
+              const SizedBox(height: 12),
+              LinearProgressIndicator(
+                value: genState.totalCount > 0
+                    ? genState.generatedCount / genState.totalCount
+                    : null,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      genState.totalCount > 1
+                          ? 'Analysiere Spieler ${genState.generatedCount + 1} '
+                                'von ${genState.totalCount}…'
+                          : 'Analysiere Spieler…',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => ref
+                        .read(
+                          generateAIRecommendationsNotifierProvider.notifier,
+                        )
+                        .cancel(),
+                    child: const Text('Abbrechen'),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Widget das Spieler lädt und den Generierungsvorgang startet.
+///
+/// Separates Widget damit [allPlayersProvider] nur bei Bedarf (Button-Tap)
+/// aufgerufen wird – kein unnötiger Load beim Öffnen des Tabs.
+class _GenerateButton extends ConsumerWidget {
+  final String leagueId;
+
+  const _GenerateButton({required this.leagueId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return FilledButton.icon(
+      icon: const Icon(Icons.auto_awesome, size: 18),
+      label: const Text('Jetzt analysieren'),
+      onPressed: () => _startGeneration(context, ref),
+    );
+  }
+
+  Future<void> _startGeneration(BuildContext context, WidgetRef ref) async {
+    final playersResult = await ref.read(allPlayersProvider.future);
+
+    if (playersResult.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Keine Spielerdaten verfügbar.')),
+        );
+      }
+      return;
+    }
+
+    // Alle Spieler analysieren (KI entscheidet buy/sell/hold)
+    await ref
+        .read(generateAIRecommendationsNotifierProvider.notifier)
+        .generateForPlayers(leagueId, playersResult);
+
+    if (context.mounted) {
+      final state = ref.read(generateAIRecommendationsNotifierProvider);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            state.lastRunSucceeded == true
+                ? '${state.generatedCount} KI-Empfehlungen generiert ✓'
+                : 'Generierung abgeschlossen (${state.errorMessage ?? "Unbekannter Fehler"})',
+          ),
+          backgroundColor: state.lastRunSucceeded == true
+              ? Colors.green.shade700
+              : Colors.orange.shade700,
+        ),
+      );
+    }
   }
 }
 

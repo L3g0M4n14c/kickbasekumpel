@@ -9,7 +9,11 @@ import '../models/user_model.dart';
 import '../models/league_model.dart';
 import '../models/player_model.dart';
 import '../models/transfer_model.dart';
+import '../models/market_value_model.dart';
+import '../models/performance_model.dart';
+import '../models/ligainsider_model.dart';
 import '../services/kickbase_api_client.dart';
+import '../services/gemini_recommendation_service.dart';
 import '../providers/kickbase_api_provider.dart';
 import 'base_repository.dart';
 
@@ -47,10 +51,19 @@ final transferRepositoryProvider = Provider<TransferRepository>((ref) {
   );
 });
 
+/// Provider für [GeminiRecommendationService].
+final geminiRecommendationServiceProvider =
+    Provider<GeminiRecommendationService>((ref) {
+      return GeminiRecommendationService();
+    });
+
 final recommendationRepositoryProvider = Provider<RecommendationRepository>((
   ref,
 ) {
-  return RecommendationRepository(firestore: ref.watch(firestoreProvider));
+  return RecommendationRepository(
+    firestore: ref.watch(firestoreProvider),
+    geminiService: ref.watch(geminiRecommendationServiceProvider),
+  );
 });
 
 // ============================================================================
@@ -1049,8 +1062,13 @@ class TransferRepository extends BaseRepository<Transfer>
 
 class RecommendationRepository extends BaseRepository<Recommendation>
     implements RecommendationRepositoryInterface {
-  RecommendationRepository({required super.firestore})
-    : super(collectionPath: 'recommendations');
+  final GeminiRecommendationService? _geminiService;
+
+  RecommendationRepository({
+    required super.firestore,
+    GeminiRecommendationService? geminiService,
+  }) : _geminiService = geminiService,
+       super(collectionPath: 'recommendations');
 
   @override
   Recommendation fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -1113,6 +1131,135 @@ class RecommendationRepository extends BaseRepository<Recommendation>
       orderByField: 'score',
       descending: true,
     );
+  }
+
+  /// Generiert eine KI-gestützte Empfehlung für einen Spieler via Gemini.
+  ///
+  /// Benötigt [player] als Stammdaten. Die optionalen Parameter verbessern
+  /// die Qualität der Analyse erheblich wenn vorhanden.
+  /// Speichert das Ergebnis in Firestore und gibt das [Recommendation]-Objekt zurück.
+  ///
+  /// Falls [GeminiRecommendationService] nicht initialisiert, fällt auf den
+  /// regelbasierten Algorithmus zurück.
+  Future<Result<Recommendation>> generateAIRecommendation({
+    required String leagueId,
+    required Player player,
+    List<MarketValueEntry>? marketValueHistory,
+    List<MatchPerformance>? recentPerformances,
+    LigainsiderPlayer? ligainsiderData,
+  }) async {
+    final service = _geminiService;
+    if (service == null) {
+      // Fallback auf regelbasierte Logik
+      return generateRecommendation(
+        leagueId: leagueId,
+        playerId: player.id,
+        analysisData: {
+          'playerName': '${player.firstName} ${player.lastName}',
+          'averagePoints': player.averagePoints,
+          'marketValue': player.marketValue,
+          'marketValueTrend': player.marketValueTrend,
+          'status': player.status,
+          'currentMarketValue': player.marketValue,
+          'estimatedValue': player.marketValue,
+        },
+      );
+    }
+
+    final aiResult = await service.generateRecommendation(
+      player: player,
+      marketValueHistory: marketValueHistory,
+      recentPerformances: recentPerformances,
+      ligainsiderData: ligainsiderData,
+    );
+
+    if (aiResult is Failure<GeminiRecommendationResult>) {
+      return Failure(
+        aiResult.message,
+        code: aiResult.code,
+        exception: aiResult.exception,
+      );
+    }
+
+    final ai = (aiResult as Success<GeminiRecommendationResult>).data;
+
+    final recommendation = Recommendation(
+      id: '',
+      leagueId: leagueId,
+      playerId: player.id,
+      playerName: '${player.firstName} ${player.lastName}',
+      score: ai.score,
+      reason: ai.reason,
+      action: ai.action,
+      suggestedPrice: null,
+      currentMarketValue: player.marketValue,
+      estimatedValue: ai.estimatedValue,
+      confidence: ai.confidence,
+      timestamp: DateTime.now(),
+      category: ai.category,
+    );
+
+    return await create(recommendation);
+  }
+
+  /// Generiert KI-Empfehlungen für eine ganze Spielerliste (Batch).
+  ///
+  /// Alle Spieler werden in einem einzigen Gemini-Aufruf analysiert.
+  Future<Result<List<Recommendation>>> generateAIBatchRecommendations({
+    required String leagueId,
+    required List<PlayerAnalysisInput> players,
+  }) async {
+    final service = _geminiService;
+    if (service == null) {
+      return const Failure(
+        'KI-Service nicht verfügbar.',
+        code: 'service_unavailable',
+      );
+    }
+
+    final batchResult = await service.generateBatchRecommendations(
+      players: players,
+    );
+
+    if (batchResult is Failure<Map<String, GeminiRecommendationResult>>) {
+      return Failure(
+        batchResult.message,
+        code: batchResult.code,
+        exception: batchResult.exception,
+      );
+    }
+
+    final aiMap =
+        (batchResult as Success<Map<String, GeminiRecommendationResult>>).data;
+    final recommendations = <Recommendation>[];
+
+    for (final input in players) {
+      final ai = aiMap[input.player.id];
+      if (ai == null) continue;
+
+      final rec = Recommendation(
+        id: '',
+        leagueId: leagueId,
+        playerId: input.player.id,
+        playerName: '${input.player.firstName} ${input.player.lastName}',
+        score: ai.score,
+        reason: ai.reason,
+        action: ai.action,
+        suggestedPrice: null,
+        currentMarketValue: input.player.marketValue,
+        estimatedValue: ai.estimatedValue,
+        confidence: ai.confidence,
+        timestamp: DateTime.now(),
+        category: ai.category,
+      );
+
+      final saveResult = await create(rec);
+      if (saveResult is Success<Recommendation>) {
+        recommendations.add(saveResult.data);
+      }
+    }
+
+    return Success(recommendations);
   }
 
   @override

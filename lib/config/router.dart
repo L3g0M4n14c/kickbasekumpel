@@ -9,7 +9,7 @@ import '../presentation/pages/dashboard/dashboard_shell.dart';
 import '../presentation/pages/dashboard/team_page.dart';
 import '../presentation/pages/dashboard/market_page.dart';
 import '../presentation/pages/dashboard/lineup_page.dart';
-import '../presentation/pages/dashboard/transfers_page.dart';
+import '../presentation/screens/dashboard/transfers_screen.dart';
 import '../presentation/pages/dashboard/settings_page.dart';
 import '../presentation/pages/league/league_overview_page.dart';
 import '../presentation/pages/league/league_standings_page.dart';
@@ -187,7 +187,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
                 path: '/dashboard/transfers',
                 name: 'transfers',
                 pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: TransfersPage()),
+                    const NoTransitionPage(child: TransfersScreen()),
               ),
             ],
           ),

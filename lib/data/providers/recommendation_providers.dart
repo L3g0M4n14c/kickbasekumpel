@@ -1,5 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/transfer_model.dart';
+import '../models/player_model.dart';
+import '../models/market_value_model.dart';
+import '../models/performance_model.dart';
+import '../models/ligainsider_model.dart';
 import '../../domain/repositories/repository_interfaces.dart';
 import 'repository_providers.dart';
 import 'league_providers.dart';
@@ -386,8 +390,178 @@ final recommendationsByActionCountProvider = Provider<Map<String, int>>((ref) {
 });
 
 // ============================================================================
-// USAGE EXAMPLES
+// KI-EMPFEHLUNGEN GENERIEREN (Gemini / Firebase Vertex AI)
 // ============================================================================
+
+/// Zustand des AI-Generierungs-Notifiers
+class GenerateAIRecommendationsState {
+  /// Ob gerade ein Generierungsvorgang läuft
+  final bool isGenerating;
+
+  /// Anzahl bereits generierter Empfehlungen im aktuellen Durchlauf
+  final int generatedCount;
+
+  /// Gesamtanzahl der zu analysierenden Spieler
+  final int totalCount;
+
+  /// Fehlermeldung (null wenn kein Fehler)
+  final String? errorMessage;
+
+  /// Ob der letzte Vorgang erfolgreich war
+  final bool? lastRunSucceeded;
+
+  const GenerateAIRecommendationsState({
+    this.isGenerating = false,
+    this.generatedCount = 0,
+    this.totalCount = 0,
+    this.errorMessage,
+    this.lastRunSucceeded,
+  });
+
+  GenerateAIRecommendationsState copyWith({
+    bool? isGenerating,
+    int? generatedCount,
+    int? totalCount,
+    String? errorMessage,
+    bool? lastRunSucceeded,
+  }) => GenerateAIRecommendationsState(
+    isGenerating: isGenerating ?? this.isGenerating,
+    generatedCount: generatedCount ?? this.generatedCount,
+    totalCount: totalCount ?? this.totalCount,
+    errorMessage: errorMessage,
+    lastRunSucceeded: lastRunSucceeded ?? this.lastRunSucceeded,
+  );
+}
+
+/// Notifier, der KI-Empfehlungen via Gemini generiert und in Firestore schreibt.
+///
+/// Die bestehenden [recommendationsProvider]-Stream-Provider lesen die Daten
+/// automatisch aus Firestore – kein Umbau der UI nötig.
+///
+/// Verwendung:
+/// ```dart
+/// // Einzelner Spieler
+/// await ref.read(generateAIRecommendationsNotifierProvider(leagueId).notifier)
+///     .generateForPlayer(player);
+///
+/// // Komplette Spielerliste
+/// await ref.read(generateAIRecommendationsNotifierProvider.notifier)
+///     .generateForPlayers(leagueId, players);
+/// ```
+class GenerateAIRecommendationsNotifier
+    extends Notifier<GenerateAIRecommendationsState> {
+  @override
+  GenerateAIRecommendationsState build() =>
+      const GenerateAIRecommendationsState();
+
+  /// Generiert eine KI-Empfehlung für einen einzelnen Spieler.
+  Future<void> generateForPlayer(
+    String leagueId,
+    Player player, {
+    List<MarketValueEntry>? marketValueHistory,
+    List<MatchPerformance>? recentPerformances,
+    LigainsiderPlayer? ligainsiderData,
+  }) async {
+    state = state.copyWith(
+      isGenerating: true,
+      generatedCount: 0,
+      totalCount: 1,
+    );
+
+    final repo = ref.read(recommendationRepositoryProvider);
+    final result = await repo.generateAIRecommendation(
+      leagueId: leagueId,
+      player: player,
+      marketValueHistory: marketValueHistory,
+      recentPerformances: recentPerformances,
+      ligainsiderData: ligainsiderData,
+    );
+
+    if (result is Failure<Recommendation>) {
+      state = state.copyWith(
+        isGenerating: false,
+        errorMessage: result.message,
+        lastRunSucceeded: false,
+      );
+      return;
+    }
+
+    // Firestore-Streams holen die neue Empfehlung automatisch –
+    // trotzdem explizit invalidieren für sofortiges UI-Update
+    ref.invalidate(recommendationsProvider(leagueId));
+
+    state = state.copyWith(
+      isGenerating: false,
+      generatedCount: 1,
+      lastRunSucceeded: true,
+    );
+  }
+
+  /// Generiert KI-Empfehlungen für eine Liste von Spielern (Einzelaufrufe).
+  ///
+  /// Verarbeitet Spieler sequenziell und aktualisiert den Fortschritt.
+  Future<void> generateForPlayers(
+    String leagueId,
+    List<Player> players, {
+    Map<String, List<MarketValueEntry>>? marketValueHistories,
+    Map<String, List<MatchPerformance>>? recentPerformances,
+    Map<String, LigainsiderPlayer>? ligainsiderData,
+  }) async {
+    if (players.isEmpty) return;
+
+    state = state.copyWith(
+      isGenerating: true,
+      generatedCount: 0,
+      totalCount: players.length,
+    );
+
+    final repo = ref.read(recommendationRepositoryProvider);
+    int successCount = 0;
+    String? lastError;
+
+    for (final player in players) {
+      if (!state.isGenerating) break; // Abbruch möglich
+
+      final result = await repo.generateAIRecommendation(
+        leagueId: leagueId,
+        player: player,
+        marketValueHistory: marketValueHistories?[player.id],
+        recentPerformances: recentPerformances?[player.id],
+        ligainsiderData: ligainsiderData?[player.id],
+      );
+
+      if (result is Success<Recommendation>) {
+        successCount++;
+      } else if (result is Failure<Recommendation>) {
+        lastError = result.message;
+      }
+
+      state = state.copyWith(
+        generatedCount: successCount,
+        errorMessage: lastError,
+      );
+    }
+
+    ref.invalidate(recommendationsProvider(leagueId));
+
+    state = state.copyWith(
+      isGenerating: false,
+      lastRunSucceeded: successCount > 0,
+    );
+  }
+
+  /// Bricht einen laufenden Generierungsvorgang ab.
+  void cancel() {
+    state = state.copyWith(isGenerating: false);
+  }
+}
+
+/// Provider für [GenerateAIRecommendationsNotifier].
+final generateAIRecommendationsNotifierProvider =
+    NotifierProvider<
+      GenerateAIRecommendationsNotifier,
+      GenerateAIRecommendationsState
+    >(GenerateAIRecommendationsNotifier.new);
 
 /*
 /// Example 1: Display recommendations for selected league
