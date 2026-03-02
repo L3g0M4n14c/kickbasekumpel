@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import '../../domain/exceptions/kickbase_exceptions.dart';
@@ -94,7 +95,8 @@ class KickbaseAuthNotifier extends Notifier<KickbaseAuthState> {
           savedUser != null
               ? '🔑 Token valid – user: ${savedUser.n}'
               : '🔑 Token valid but no cached user data',
-        );
+        ); // Firebase Anonymous Auth für Firestore-Zugriff sicherstellen
+        await _ensureFirebaseAuth();
       } on AuthorizationException catch (e) {
         // 403 – token is expired/revoked
         _logger.w('⚠️ Token expired or revoked (403): ${e.message}');
@@ -166,6 +168,9 @@ class KickbaseAuthNotifier extends Notifier<KickbaseAuthState> {
         successMessage: 'Erfolgreich bei Kickbase angemeldet',
       );
 
+      // Firebase Anonymous Auth für Firestore-Zugriff (Empfehlungen etc.)
+      await _ensureFirebaseAuth();
+
       _logger.i('✅ Kickbase login successful for user: ${user.n}');
       return true;
     } catch (e) {
@@ -189,6 +194,13 @@ class KickbaseAuthNotifier extends Notifier<KickbaseAuthState> {
     try {
       await _apiClient.clearAuthToken();
 
+      // Firebase Auth auch abmelden
+      try {
+        await firebase_auth.FirebaseAuth.instance.signOut();
+      } catch (e) {
+        _logger.w('⚠️ Firebase signOut warning: $e');
+      }
+
       state = const KickbaseAuthState(
         isAuthenticated: false,
         successMessage: 'Erfolgreich abgemeldet',
@@ -203,6 +215,22 @@ class KickbaseAuthNotifier extends Notifier<KickbaseAuthState> {
         isAuthenticated: false,
         error: 'Abmeldung abgeschlossen (mit Warnung)',
       );
+    }
+  }
+
+  /// Stellt Firebase Anonymous Auth sicher, damit Firestore-Rules funktionieren.
+  /// Wird nach erfolgreichem Kickbase-Login bzw. bei Token-Restore aufgerufen.
+  Future<void> _ensureFirebaseAuth() async {
+    try {
+      final firebaseUser = firebase_auth.FirebaseAuth.instance.currentUser;
+      if (firebaseUser == null) {
+        await firebase_auth.FirebaseAuth.instance.signInAnonymously();
+        _logger.d('🔥 Firebase Anonymous Auth aktiviert für Firestore-Zugriff');
+      }
+    } catch (e) {
+      // Nicht-kritisch: Firestore-Features funktionieren möglicherweise nicht,
+      // aber die Kickbase-Kernfunktionen sind davon unabhängig
+      _logger.w('⚠️ Firebase Anonymous Auth fehlgeschlagen: $e');
     }
   }
 

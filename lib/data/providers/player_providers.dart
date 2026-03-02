@@ -39,6 +39,24 @@ final allPlayersProvider = FutureProvider<List<Player>>((ref) async {
   throw Exception('Unknown error fetching players');
 });
 
+/// League Players Provider
+/// Lädt ALLE Spieler einer Liga direkt von der Kickbase API.
+/// Ideal für KI-Analyse: enthält aktuelle Marktwerte, Stats etc.
+final leaguePlayersProvider = FutureProvider.family<List<Player>, String>((
+  ref,
+  leagueId,
+) async {
+  final playerRepo = ref.watch(playerRepositoryProvider);
+  final result = await playerRepo.getByLeague(leagueId);
+
+  if (result is Success<List<Player>>) {
+    return result.data;
+  } else if (result is Failure<List<Player>>) {
+    throw Exception((result as Failure<List<Player>>).message);
+  }
+  throw Exception('Unknown error fetching league players');
+});
+
 // ============================================================================
 // PLAYER DETAIL PROVIDERS
 // ============================================================================

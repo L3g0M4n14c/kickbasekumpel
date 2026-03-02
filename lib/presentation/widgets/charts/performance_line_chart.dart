@@ -122,8 +122,10 @@ class PerformanceLineChart extends StatelessWidget {
     final yMin = (minPoints - 5).toDouble();
     final yMax = (maxPoints + 5).toDouble();
 
-    // Erstelle Spots
-    final spots = data.map((point) {
+    // Erstelle Spots und sortiere nach matchDay (X-Achsen-Position)
+    final sortedData = [...data]
+      ..sort((a, b) => a.matchDay.compareTo(b.matchDay));
+    final spots = sortedData.map((point) {
       return FlSpot(point.matchDay.toDouble(), point.points);
     }).toList();
 

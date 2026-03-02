@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../data/providers/providers.dart';
+import '../../data/utils/parsing_utils.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/error_widget.dart';
 
@@ -48,6 +50,16 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/dashboard/table');
+            }
+          },
+        ),
         title: const Text('Manager-Profil'),
         bottom: TabBar(
           controller: _tabController,
@@ -184,7 +196,7 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
   }
 
   Widget _buildSquadTab(BuildContext context) {
-    // Bei Spieltag anzeigen wir die Startelf, ansonsten den ganzen Kader
+    // Bei Spieltag zeigen wir nur die Startelf, ansonsten den ganzen Kader
     if (widget.matchDay != null) {
       return _buildMatchDayStartingEleven(context);
     }
@@ -195,18 +207,27 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
 
     return squadAsync.when(
       data: (squadData) {
+        // API liefert Spielerliste unter 'it'
         final players =
-            squadData['p'] as List? ?? squadData['players'] as List? ?? [];
+            squadData['it'] as List? ?? squadData['p'] as List? ?? [];
 
         if (players.isEmpty) {
           return const Center(child: Text('Keine Spieler im Kader'));
         }
 
+        // Nach Position sortieren: 1=TW, 2=ABW, 3=MF, 4=ST
+        final sorted = List<dynamic>.from(players)
+          ..sort(
+            (a, b) => _positionOrder(
+              a['pos'] ?? a['position'] ?? 0,
+            ).compareTo(_positionOrder(b['pos'] ?? b['position'] ?? 0)),
+          );
+
         return ListView.builder(
           padding: const EdgeInsets.all(16.0),
-          itemCount: players.length,
+          itemCount: sorted.length,
           itemBuilder: (context, index) {
-            final player = players[index];
+            final player = sorted[index];
             return _buildPlayerCard(context, player);
           },
         );
@@ -227,12 +248,12 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
   }
 
   Widget _buildMatchDayStartingEleven(BuildContext context) {
-    // Fetch squad to display players
+    // Kader des Managers laden (aktueller Stand)
     final squadAsync = ref.watch(
       managerSquadProvider((leagueId: widget.leagueId, userId: widget.userId)),
     );
 
-    // Fetch ranking with matchDay to get starting XI IDs (lp field)
+    // Rangliste mit Spieltag laden → enthält 'lp' (Startelf-IDs für den Spieltag)
     final rankingAsync = ref.watch(
       leagueRankingProvider((
         leagueId: widget.leagueId,
@@ -242,14 +263,15 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
 
     return squadAsync.when(
       data: (squadData) {
+        // API liefert Spielerliste unter 'it'
         final players =
-            squadData['p'] as List? ?? squadData['players'] as List? ?? [];
+            squadData['it'] as List? ?? squadData['p'] as List? ?? [];
 
         if (players.isEmpty) {
           return const Center(child: Text('Keine Spieler im Kader'));
         }
 
-        // Get starting XI IDs from ranking
+        // Startelf-IDs aus der Rangliste ermitteln
         return rankingAsync.when(
           data: (rankingData) {
             final users = (rankingData['us'] as List? ?? [])
@@ -261,33 +283,50 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
               orElse: () => <String, dynamic>{},
             );
 
-            // lp ist ein Array von IDs oder null
-            final startingXIIds = (currentUser['lp'] as List? ?? [])
-                .whereType<int>()
+            // lp = Array von numerischen Spieler-IDs (Startelf des Spieltags)
+            final lineupIds = (currentUser['lp'] as List? ?? [])
+                .map((id) => id.toString())
                 .toSet();
 
-            // Filter players: show only starting XI
-            final startingElevenPlayers = players.where((player) {
-              final playerId = (player['i'] ?? player['id'])?.toString() ?? '';
-              return startingXIIds.any((id) => id.toString() == playerId);
-            }).toList();
+            if (lineupIds.isEmpty) {
+              // Kein lp-Eintrag → ganzen Kader anzeigen
+              final sorted = List<dynamic>.from(players)
+                ..sort(
+                  (a, b) => _positionOrder(
+                    a['pos'] ?? a['position'] ?? 0,
+                  ).compareTo(_positionOrder(b['pos'] ?? b['position'] ?? 0)),
+                );
+              return _buildPlayerList(
+                context,
+                sorted,
+                hint:
+                    'Spieltag ${widget.matchDay} – Startelf nicht verfügbar, zeige aktuellen Kader',
+              );
+            }
 
-            if (startingElevenPlayers.isEmpty) {
+            // Startelf filtern: 'pi' ist die Spieler-ID im Kader-Endpunkt
+            final lineupPlayers =
+                players.where((player) {
+                  final playerId =
+                      (player['pi'] ?? player['i'] ?? player['id'])
+                          ?.toString() ??
+                      '';
+                  return lineupIds.contains(playerId);
+                }).toList()..sort(
+                  (a, b) => _positionOrder(
+                    a['pos'] ?? a['position'] ?? 0,
+                  ).compareTo(_positionOrder(b['pos'] ?? b['position'] ?? 0)),
+                );
+
+            if (lineupPlayers.isEmpty) {
               return Center(
                 child: Text(
-                  'Keine Startelf für Spieltag ${widget.matchDay} verfügbar',
+                  'Keine Startelf für Spieltag ${widget.matchDay} gefunden',
                 ),
               );
             }
 
-            return ListView.builder(
-              padding: const EdgeInsets.all(16.0),
-              itemCount: startingElevenPlayers.length,
-              itemBuilder: (context, index) {
-                final player = startingElevenPlayers[index];
-                return _buildPlayerCard(context, player);
-              },
-            );
+            return _buildPlayerList(context, lineupPlayers);
           },
           loading: () => const Center(child: LoadingWidget()),
           error: (error, stack) => Center(
@@ -318,38 +357,115 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
     );
   }
 
+  /// Rendert eine ListView mit den übergebenen Spielern.
+  Widget _buildPlayerList(
+    BuildContext context,
+    List<dynamic> players, {
+    String? hint,
+  }) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16.0),
+      itemCount: players.length + (hint != null ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (hint != null && index == 0) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: Text(
+              hint,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          );
+        }
+        final player = players[hint != null ? index - 1 : index];
+        return _buildPlayerCard(context, player);
+      },
+    );
+  }
+
+  /// Reihenfolge der Positionen: TW → ABW → MF → ST
+  int _positionOrder(dynamic rawPos) {
+    final pos = int.tryParse(rawPos.toString()) ?? 0;
+    switch (pos) {
+      case 1:
+        return 0; // Torwart
+      case 2:
+        return 1; // Abwehr
+      case 3:
+        return 2; // Mittelfeld
+      case 4:
+        return 3; // Sturm
+      default:
+        return 4;
+    }
+  }
+
+  /// Positionsbezeichnung als Kurztext
+  String _positionLabel(dynamic rawPos) {
+    final pos = int.tryParse(rawPos.toString()) ?? 0;
+    switch (pos) {
+      case 1:
+        return 'TW';
+      case 2:
+        return 'ABW';
+      case 3:
+        return 'MF';
+      case 4:
+        return 'ST';
+      default:
+        return '?';
+    }
+  }
+
   Widget _buildPlayerCard(BuildContext context, dynamic player) {
-    final firstName = player['firstName'] ?? player['fn'] ?? '';
-    final lastName = player['lastName'] ?? player['ln'] ?? '';
-    final name = '$firstName $lastName'.trim();
-    final position = player['position'] ?? player['pos'] ?? '';
-    final marketValue = player['marketValue'] ?? player['mv'] ?? 0;
-    final points =
-        player['totalPoints'] ?? player['points'] ?? player['p'] ?? 0;
-    final teamName = player['teamName'] ?? player['t'] ?? '';
+    // Normalisierung der abgekürzten API-Felder
+    final normalized = normalizePlayerJson(
+      Map<String, dynamic>.from(player as Map),
+    );
+
+    final firstName = normalized['firstName'] as String? ?? '';
+    final lastName = normalized['lastName'] as String? ?? '';
+    final name = '$firstName $lastName'.trim().isEmpty
+        ? (normalized['id'] as String? ?? 'Unbekannt')
+        : '$firstName $lastName'.trim();
+    final posRaw = normalized['position'] ?? player['pos'] ?? 0;
+    final posLabel = _positionLabel(posRaw);
+    final marketValue = (normalized['marketValue'] as int?) ?? 0;
+    final points = (normalized['totalPoints'] as int?) ?? 0;
+    final avgPoints = (normalized['averagePoints'] as double?) ?? 0.0;
+
+    // Positionsfarbe
+    final posColor = _positionColor(context, posRaw);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8.0),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+          backgroundColor: posColor.withValues(alpha: 0.2),
           child: Text(
-            position.toString().toUpperCase(),
+            posLabel,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSecondaryContainer,
+              color: posColor,
             ),
           ),
         ),
         title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(teamName),
+        subtitle: Text(
+          'Ø ${avgPoints.toStringAsFixed(1)} Pkt/Spieltag',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              '${(marketValue / 1000000).toStringAsFixed(1)}M€',
+              '${(marketValue / 1_000_000).toStringAsFixed(1)}M€',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             Text(
@@ -362,6 +478,22 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
         ),
       ),
     );
+  }
+
+  Color _positionColor(BuildContext context, dynamic rawPos) {
+    final pos = int.tryParse(rawPos.toString()) ?? 0;
+    switch (pos) {
+      case 1:
+        return Colors.yellow.shade800; // TW
+      case 2:
+        return Colors.blue.shade600; // ABW
+      case 3:
+        return Colors.green.shade600; // MF
+      case 4:
+        return Colors.red.shade600; // ST
+      default:
+        return Theme.of(context).colorScheme.secondary;
+    }
   }
 
   Widget _buildPerformanceTab(BuildContext context) {

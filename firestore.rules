@@ -21,6 +21,12 @@ service cloud.firestore {
       allow write: if false; // Nur Admin SDK (Cloud Functions)
     }
 
+    // KI-Empfehlungen: Öffentlich les- und schreibbar
+    // (Lokal vom Gerät generierte Daten, kein sensibler Inhalt)
+    match /recommendations/{recommendationId} {
+      allow read, write: if true;
+    }
+
     // Alle anderen Dokumente: Zugriff verweigert
     match /{document=**} {
       allow read, write: if false;

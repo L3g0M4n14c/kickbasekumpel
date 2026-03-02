@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../data/models/player_model.dart';
 import '../../../data/providers/recommendation_providers.dart';
 import '../../../data/providers/league_providers.dart';
 import '../../../data/providers/player_providers.dart';
@@ -198,7 +199,7 @@ class _BuyRecommendationsTab extends ConsumerWidget {
 
     return RefreshIndicator(
       onRefresh: () async {
-        ref.invalidate(recommendationsProvider);
+        ref.invalidate(recommendationsProvider(leagueId));
       },
       child: recommendationsAsync.when(
         data: (recommendations) {
@@ -268,7 +269,7 @@ class _SellRecommendationsTab extends ConsumerWidget {
 
     return RefreshIndicator(
       onRefresh: () async {
-        ref.invalidate(recommendationsProvider);
+        ref.invalidate(recommendationsProvider(leagueId));
       },
       child: recommendationsAsync.when(
         data: (recommendations) {
@@ -462,9 +463,28 @@ class _GenerateButton extends ConsumerWidget {
   }
 
   Future<void> _startGeneration(BuildContext context, WidgetRef ref) async {
-    final playersResult = await ref.read(allPlayersProvider.future);
+    // Zeige sofort Feedback
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Lade Spielerdaten von Kickbase…'),
+        duration: Duration(seconds: 2),
+      ),
+    );
 
-    if (playersResult.isEmpty) {
+    final List<Player> players;
+    try {
+      // Spieler direkt von Kickbase API laden (nicht aus leerem Firestore-Cache)
+      players = await ref.read(leaguePlayersProvider(leagueId).future);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fehler beim Laden der Spieler: $e')),
+        );
+      }
+      return;
+    }
+
+    if (players.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Keine Spielerdaten verfügbar.')),
@@ -476,7 +496,7 @@ class _GenerateButton extends ConsumerWidget {
     // Alle Spieler analysieren (KI entscheidet buy/sell/hold)
     await ref
         .read(generateAIRecommendationsNotifierProvider.notifier)
-        .generateForPlayers(leagueId, playersResult);
+        .generateForPlayers(leagueId, players);
 
     if (context.mounted) {
       final state = ref.read(generateAIRecommendationsNotifierProvider);

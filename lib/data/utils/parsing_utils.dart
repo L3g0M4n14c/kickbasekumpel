@@ -2,9 +2,14 @@ Map<String, dynamic> normalizePlayerJson(Map<String, dynamic> json) {
   final Map<String, dynamic> copy = Map<String, dynamic>.from(json);
 
   // Ensure required string fields exist
-  copy['id'] = copy['id']?.toString() ?? copy['i']?.toString() ?? '';
+  // 'pi' is the player ID in manager-squad endpoint responses
+  copy['id'] =
+      copy['id']?.toString() ??
+      copy['pi']?.toString() ??
+      copy['i']?.toString() ??
+      '';
 
-  // Names - handle both long format (fn, ln) and squad format (n)
+  // Names - handle both long format (fn, ln) and squad format (n / pn)
   if ((copy['firstName'] == null || copy['firstName'] == '') &&
       copy['fn'] != null) {
     copy['firstName'] = copy['fn'];
@@ -18,6 +23,17 @@ Map<String, dynamic> normalizePlayerJson(Map<String, dynamic> json) {
   if ((copy['firstName'] == null || copy['firstName'] == '') &&
       copy['n'] != null) {
     final fullName = copy['n'].toString().trim();
+    final parts = fullName.split(' ');
+    if (parts.isNotEmpty) {
+      copy['firstName'] = parts.first;
+      copy['lastName'] = parts.length > 1 ? parts.skip(1).join(' ') : '';
+    }
+  }
+
+  // 'pn' = player name in manager-squad endpoint (full name in one field)
+  if ((copy['firstName'] == null || copy['firstName'] == '') &&
+      copy['pn'] != null) {
+    final fullName = copy['pn'].toString().trim();
     final parts = fullName.split(' ');
     if (parts.isNotEmpty) {
       copy['firstName'] = parts.first;
