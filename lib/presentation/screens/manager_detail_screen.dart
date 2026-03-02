@@ -248,108 +248,43 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
   }
 
   Widget _buildMatchDayStartingEleven(BuildContext context) {
-    // Kader des Managers laden (aktueller Stand)
-    final squadAsync = ref.watch(
-      managerSquadProvider((leagueId: widget.leagueId, userId: widget.userId)),
-    );
-
-    // Rangliste mit Spieltag laden → enthält 'lp' (Startelf-IDs für den Spieltag)
-    final rankingAsync = ref.watch(
-      leagueRankingProvider((
+    // Alle lp-Spieler für den Spieltag laden, inkl. Fallback auf API
+    final lineupAsync = ref.watch(
+      managerLineupPlayersProvider((
         leagueId: widget.leagueId,
-        matchDay: widget.matchDay,
+        userId: widget.userId,
+        matchDay: widget.matchDay!,
       )),
     );
 
-    return squadAsync.when(
-      data: (squadData) {
-        // API liefert Spielerliste unter 'it'
-        final players =
-            squadData['it'] as List? ?? squadData['p'] as List? ?? [];
-
+    return lineupAsync.when(
+      data: (players) {
         if (players.isEmpty) {
-          return const Center(child: Text('Keine Spieler im Kader'));
+          return Center(
+            child: Text(
+              'Keine Spieler für Spieltag ${widget.matchDay} gefunden',
+            ),
+          );
         }
 
-        // Startelf-IDs aus der Rangliste ermitteln
-        return rankingAsync.when(
-          data: (rankingData) {
-            final users = (rankingData['us'] as List? ?? [])
-                .whereType<Map<String, dynamic>>()
-                .toList();
+        final sorted = List<Map<String, dynamic>>.from(players)
+          ..sort(
+            (a, b) => _positionOrder(
+              a['pos'] ?? a['position'] ?? 0,
+            ).compareTo(_positionOrder(b['pos'] ?? b['position'] ?? 0)),
+          );
 
-            final currentUser = users.firstWhere(
-              (u) => u['i'] == widget.userId,
-              orElse: () => <String, dynamic>{},
-            );
-
-            // lp = Array von numerischen Spieler-IDs (Startelf des Spieltags)
-            final lineupIds = (currentUser['lp'] as List? ?? [])
-                .map((id) => id.toString())
-                .toSet();
-
-            if (lineupIds.isEmpty) {
-              // Kein lp-Eintrag → ganzen Kader anzeigen
-              final sorted = List<dynamic>.from(players)
-                ..sort(
-                  (a, b) => _positionOrder(
-                    a['pos'] ?? a['position'] ?? 0,
-                  ).compareTo(_positionOrder(b['pos'] ?? b['position'] ?? 0)),
-                );
-              return _buildPlayerList(
-                context,
-                sorted,
-                hint:
-                    'Spieltag ${widget.matchDay} – Startelf nicht verfügbar, zeige aktuellen Kader',
-              );
-            }
-
-            // Startelf filtern: 'pi' ist die Spieler-ID im Kader-Endpunkt
-            final lineupPlayers =
-                players.where((player) {
-                  final playerId =
-                      (player['pi'] ?? player['i'] ?? player['id'])
-                          ?.toString() ??
-                      '';
-                  return lineupIds.contains(playerId);
-                }).toList()..sort(
-                  (a, b) => _positionOrder(
-                    a['pos'] ?? a['position'] ?? 0,
-                  ).compareTo(_positionOrder(b['pos'] ?? b['position'] ?? 0)),
-                );
-
-            if (lineupPlayers.isEmpty) {
-              return Center(
-                child: Text(
-                  'Keine Startelf für Spieltag ${widget.matchDay} gefunden',
-                ),
-              );
-            }
-
-            return _buildPlayerList(context, lineupPlayers);
-          },
-          loading: () => const Center(child: LoadingWidget()),
-          error: (error, stack) => Center(
-            child: ErrorWidgetCustom(
-              error: error,
-              onRetry: () => ref.invalidate(
-                leagueRankingProvider((
-                  leagueId: widget.leagueId,
-                  matchDay: widget.matchDay,
-                )),
-              ),
-            ),
-          ),
-        );
+        return _buildPlayerList(context, sorted);
       },
       loading: () => const Center(child: LoadingWidget()),
       error: (error, stack) => Center(
         child: ErrorWidgetCustom(
           error: error,
           onRetry: () => ref.invalidate(
-            managerSquadProvider((
+            managerLineupPlayersProvider((
               leagueId: widget.leagueId,
               userId: widget.userId,
+              matchDay: widget.matchDay!,
             )),
           ),
         ),

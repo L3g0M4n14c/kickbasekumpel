@@ -52,7 +52,7 @@ final leaguePlayersProvider = FutureProvider.family<List<Player>, String>((
   if (result is Success<List<Player>>) {
     return result.data;
   } else if (result is Failure<List<Player>>) {
-    throw Exception((result as Failure<List<Player>>).message);
+    throw Exception((result).message);
   }
   throw Exception('Unknown error fetching league players');
 });

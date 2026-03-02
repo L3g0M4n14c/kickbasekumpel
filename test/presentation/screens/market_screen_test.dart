@@ -6,7 +6,6 @@ import 'package:kickbasekumpel/data/models/market_model.dart';
 import 'package:kickbasekumpel/data/models/common_models.dart';
 import 'package:kickbasekumpel/data/models/league_model.dart';
 import 'package:kickbasekumpel/data/providers/league_providers.dart';
-import 'package:kickbasekumpel/presentation/widgets/market/player_market_card.dart';
 import 'package:kickbasekumpel/data/providers/kickbase_api_provider.dart';
 import 'package:kickbasekumpel/data/services/kickbase_api_client.dart';
 import 'package:kickbasekumpel/presentation/providers/market_providers.dart';
