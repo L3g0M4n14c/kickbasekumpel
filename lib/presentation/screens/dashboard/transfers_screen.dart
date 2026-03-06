@@ -203,9 +203,10 @@ class _BuyRecommendationsTab extends ConsumerWidget {
       },
       child: recommendationsAsync.when(
         data: (recommendations) {
-          final buyRecs = recommendations
-              .where((r) => r.action.toLowerCase() == 'buy')
-              .toList();
+          final buyRecs = recommendations.where((r) {
+            final a = r.action.toLowerCase();
+            return a == 'buy' || a == 'strong-buy';
+          }).toList();
 
           if (buyRecs.isEmpty) {
             return Center(
@@ -273,9 +274,10 @@ class _SellRecommendationsTab extends ConsumerWidget {
       },
       child: recommendationsAsync.when(
         data: (recommendations) {
-          final sellRecs = recommendations
-              .where((r) => r.action.toLowerCase() == 'sell')
-              .toList();
+          final sellRecs = recommendations.where((r) {
+            final a = r.action.toLowerCase();
+            return a == 'sell' || a == 'strong-sell';
+          }).toList();
 
           if (sellRecs.isEmpty) {
             return Center(
@@ -531,8 +533,10 @@ class _RecommendationCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          // TODO: Navigate to player detail
-          context.push('/player/${recommendation.playerId}');
+          context.push(
+            '/player/${recommendation.playerId}/stats'
+            '?leagueId=${recommendation.leagueId}',
+          );
         },
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -574,13 +578,13 @@ class _RecommendationCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       CircularProgressIndicator(
-                        value: recommendation.score,
+                        value: recommendation.score / 100.0,
                         backgroundColor: Colors.grey.shade300,
                         valueColor: AlwaysStoppedAnimation<Color>(actionColor),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${(recommendation.score * 100).toInt()}%',
+                        '${recommendation.score.toInt()}%',
                         style: theme.textTheme.labelSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -634,8 +638,12 @@ class _RecommendationCard extends StatelessWidget {
 
   Color _getActionColor(String action) {
     switch (action.toLowerCase()) {
+      case 'strong-buy':
+        return Colors.green.shade800;
       case 'buy':
         return Colors.green;
+      case 'strong-sell':
+        return Colors.red.shade800;
       case 'sell':
         return Colors.red;
       case 'hold':
@@ -647,8 +655,10 @@ class _RecommendationCard extends StatelessWidget {
 
   IconData _getActionIcon(String action) {
     switch (action.toLowerCase()) {
+      case 'strong-buy':
       case 'buy':
         return Icons.add_shopping_cart;
+      case 'strong-sell':
       case 'sell':
         return Icons.remove_shopping_cart;
       case 'hold':

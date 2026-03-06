@@ -4,9 +4,11 @@ import '../models/player_model.dart';
 import '../models/market_value_model.dart';
 import '../models/performance_model.dart';
 import '../models/ligainsider_model.dart';
+import '../models/lineup_model.dart';
 import '../../domain/repositories/repository_interfaces.dart';
 import 'repository_providers.dart';
 import 'league_providers.dart';
+import 'kickbase_api_provider.dart';
 
 // ============================================================================
 // RECOMMENDATION STREAM PROVIDERS
@@ -499,6 +501,9 @@ class GenerateAIRecommendationsNotifier
 
   /// Generiert KI-Empfehlungen für eine Liste von Spielern (Einzelaufrufe).
   ///
+  /// Lädt für jeden Spieler automatisch Marktwert-Verlauf (90 Tage) und
+  /// bisherige Spieltag-Performances von der Kickbase-API, sofern sie nicht
+  /// manuell als optionale Maps übergeben wurden.
   /// Verarbeitet Spieler sequenziell und aktualisiert den Fortschritt.
   Future<void> generateForPlayers(
     String leagueId,
@@ -507,27 +512,175 @@ class GenerateAIRecommendationsNotifier
     Map<String, List<MatchPerformance>>? recentPerformances,
     Map<String, LigainsiderPlayer>? ligainsiderData,
   }) async {
-    if (players.isEmpty) return;
+    // 1. Verletzte / kranke / gesperrte / im Aufbautraining befindliche Spieler
+    //    werden NICHT analysiert (Status 2=verletzt, 4=krank, 8=gesperrt, 16=Aufbau)
+    const unhealthyStatuses = {2, 4, 8, 16};
+    final filteredPlayers = players
+        .where((p) => !unhealthyStatuses.contains(p.status))
+        .toList();
+
+    if (filteredPlayers.isEmpty) return;
 
     state = state.copyWith(
       isGenerating: true,
       generatedCount: 0,
-      totalCount: players.length,
+      totalCount: filteredPlayers.length,
     );
 
     final repo = ref.read(recommendationRepositoryProvider);
+    final apiClient = ref.read(kickbaseApiClientProvider);
     int successCount = 0;
     String? lastError;
 
-    for (final player in players) {
-      if (!state.isGenerating) break; // Abbruch möglich
+    // 2. Globale Kontextdaten einmalig laden (parallel)
+    final tableData = await _loadTable(apiClient);
+    final matchdaysData = await _loadMatchdays(apiClient);
+    final lineupData = await _loadLineup(apiClient, leagueId);
+
+    // 3. Tabellen-Positionen parsen: teamId/teamName → Tabellenplatz
+    final teamPositions = <String, int>{};
+    try {
+      final tableEntries = (tableData['it'] as List<dynamic>?) ?? [];
+      for (final entry in tableEntries) {
+        final m = entry as Map<String, dynamic>;
+        final tid = (m['tid'] as String?) ?? '';
+        final tp = (m['tp'] as int?) ?? 0;
+        final tn = (m['tn'] as String?) ?? '';
+        if (tid.isNotEmpty) teamPositions[tid] = tp;
+        if (tn.isNotEmpty) teamPositions[tn] = tp;
+      }
+    } catch (_) {}
+
+    // 4. Nächste 3 Spieltage pro Team parsen
+    final nextFixtures = <String, List<String>>{};
+    try {
+      final matchdays = (matchdaysData['it'] as List<dynamic>?) ?? [];
+      for (final md in matchdays) {
+        final m = md as Map<String, dynamic>;
+        final day = (m['day'] as int?) ?? 0;
+        final finished = (m['finished'] as bool?) ?? (m['f'] as bool?) ?? false;
+        if (finished) continue;
+        final matches =
+            (m['ms'] as List<dynamic>?) ?? (m['m'] as List<dynamic>?) ?? [];
+        for (final match in matches) {
+          final mm = match as Map<String, dynamic>;
+          final t1id = (mm['t1id'] as String?) ?? (mm['t1i'] as String?) ?? '';
+          final t2id = (mm['t2id'] as String?) ?? (mm['t2i'] as String?) ?? '';
+          final t1n = (mm['t1n'] as String?) ?? (mm['t1'] as String?) ?? '';
+          final t2n = (mm['t2n'] as String?) ?? (mm['t2'] as String?) ?? '';
+
+          // Heimteam-Eintrag
+          for (final key in [t1id, t1n]) {
+            if (key.isNotEmpty) {
+              nextFixtures.putIfAbsent(key, () => []);
+              if (nextFixtures[key]!.length < 3) {
+                final oppPos = teamPositions[t2id] ?? teamPositions[t2n] ?? 0;
+                nextFixtures[key]!.add(
+                  'Spieltag $day: vs $t2n'
+                  ' (Heimspiel, Platz $oppPos – ${_fixtureDifficulty(oppPos)})',
+                );
+              }
+            }
+          }
+
+          // Auswärtsteam-Eintrag
+          for (final key in [t2id, t2n]) {
+            if (key.isNotEmpty) {
+              nextFixtures.putIfAbsent(key, () => []);
+              if (nextFixtures[key]!.length < 3) {
+                final oppPos = teamPositions[t1id] ?? teamPositions[t1n] ?? 0;
+                nextFixtures[key]!.add(
+                  'Spieltag $day: vs $t1n'
+                  ' (Auswärtsspiel, Platz $oppPos – ${_fixtureDifficulty(oppPos)})',
+                );
+              }
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    // 5. Lineup parsen → Positionsverteilung im eigenen Team ermitteln
+    //    position: 1=TW, 2=Abwehr, 3=Mittelfeld, 4=Sturm
+    final positionCounts = <int, int>{1: 0, 2: 0, 3: 0, 4: 0};
+    if (lineupData != null) {
+      for (final lp in lineupData.players) {
+        if (lp.lineupOrder > 0 && lp.position > 0) {
+          positionCounts[lp.position] = (positionCounts[lp.position] ?? 0) + 1;
+        }
+      }
+    }
+    final lineupSummary =
+        'Mein aktuell gesetzter Kader – '
+        'TW: ${positionCounts[1]}, '
+        'ABW: ${positionCounts[2]}, '
+        'MF: ${positionCounts[3]}, '
+        'ST: ${positionCounts[4]}';
+
+    for (final player in filteredPlayers) {
+      if (!state.isGenerating) break;
+
+      // Marktwert-Verlauf und Performance parallel laden,
+      // sofern nicht manuell übergeben
+      final needsMv = marketValueHistories?[player.id] == null;
+      final needsPerf = recentPerformances?[player.id] == null;
+
+      List<MarketValueEntry> mvHistory = marketValueHistories?[player.id] ?? [];
+      List<MatchPerformance> performances =
+          recentPerformances?[player.id] ?? [];
+
+      if (needsMv || needsPerf) {
+        // Beide Requests starten, bevor auf eines gewartet wird → parallel
+        final mvFuture = needsMv
+            ? apiClient
+                  .getPlayerMarketValue(leagueId, player.id, timeframe: 90)
+                  .then((json) => MarketValueHistoryResponse.fromJson(json).it)
+                  .catchError((_) => <MarketValueEntry>[])
+            : Future.value(<MarketValueEntry>[]);
+
+        final perfFuture = needsPerf
+            ? apiClient
+                  .getPlayerStats(leagueId, player.id)
+                  .then(
+                    (r) =>
+                        r.it.isNotEmpty ? r.it.last.ph : <MatchPerformance>[],
+                  )
+                  .catchError((_) => <MatchPerformance>[])
+            : Future.value(<MatchPerformance>[]);
+
+        if (needsMv) mvHistory = await mvFuture;
+        if (needsPerf) performances = await perfFuture;
+      }
+
+      // Fixture-Kontext: Heimteam-ID, Heimteam-Name und Fallback prüfen
+      final teamFixtures =
+          nextFixtures[player.teamId] ?? nextFixtures[player.teamName] ?? [];
+      final fixtureContext = teamFixtures.isNotEmpty
+          ? teamFixtures.join('\n')
+          : null;
+
+      // Lineup-Kontext: Positionsname des Spielers + aktueller Kader
+      const posNames = {
+        1: 'Torwart',
+        2: 'Abwehrspieler',
+        3: 'Mittelfeldspieler',
+        4: 'Stürmer',
+      };
+      final posName = posNames[player.position] ?? 'Unbekannte Position';
+      final lineupContext = lineupData != null
+          ? '$lineupSummary. '
+                'Dieser Spieler ist ein $posName (Position ${player.position}). '
+                'Beachte ob ein Kauf/Verkauf die Positionsverteilung verbessert.'
+          : null;
 
       final result = await repo.generateAIRecommendation(
         leagueId: leagueId,
         player: player,
-        marketValueHistory: marketValueHistories?[player.id],
-        recentPerformances: recentPerformances?[player.id],
+        marketValueHistory: mvHistory.isNotEmpty ? mvHistory : null,
+        recentPerformances: performances.isNotEmpty ? performances : null,
         ligainsiderData: ligainsiderData?[player.id],
+        fixtureContext: fixtureContext,
+        lineupContext: lineupContext,
       );
 
       if (result is Success<Recommendation>) {
@@ -553,6 +706,46 @@ class GenerateAIRecommendationsNotifier
   /// Bricht einen laufenden Generierungsvorgang ab.
   void cancel() {
     state = state.copyWith(isGenerating: false);
+  }
+}
+
+// =============================================================================
+// Hilfsfunktionen (privat, modul-global)
+// =============================================================================
+
+/// Schwierigkeitsbewertung eines Gegners anhand seiner Tabellenposition.
+String _fixtureDifficulty(int tablePosition) {
+  if (tablePosition == 0) return 'Schwierigkeit unbekannt';
+  if (tablePosition <= 4) return 'sehr schwer (Top-4-Team)';
+  if (tablePosition <= 8) return 'schwer';
+  if (tablePosition <= 12) return 'mittel';
+  return 'leicht';
+}
+
+/// Lädt die Bundesliga-Tabelle. Gibt leere Map bei Fehler zurück.
+Future<Map<String, dynamic>> _loadTable(dynamic apiClient) async {
+  try {
+    return await apiClient.getCompetitionTable('1') as Map<String, dynamic>;
+  } catch (_) {
+    return {};
+  }
+}
+
+/// Lädt die Bundesliga-Spieltage. Gibt leere Map bei Fehler zurück.
+Future<Map<String, dynamic>> _loadMatchdays(dynamic apiClient) async {
+  try {
+    return await apiClient.getCompetitionMatchdays('1') as Map<String, dynamic>;
+  } catch (_) {
+    return {};
+  }
+}
+
+/// Lädt den aktuellen Lineup. Gibt null bei Fehler zurück.
+Future<LineupResponse?> _loadLineup(dynamic apiClient, String leagueId) async {
+  try {
+    return await apiClient.getLineup(leagueId) as LineupResponse;
+  } catch (_) {
+    return null;
   }
 }
 

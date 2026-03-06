@@ -508,27 +508,70 @@ class KickbaseAPIClient {
     );
   }
 
-  /// Get all players in a league
-  /// GET /v4/leagues/{leagueId}/players
+  /// Get all players relevant for a league (squad + market).
+  ///
+  /// Kombiniert:
+  ///   GET /v4/leagues/{leagueId}/squad  → eigene Spieler (Response-Key 'it')
+  ///   GET /v4/leagues/{leagueId}/market → Markt-Spieler  (Response-Key 'it')
+  ///
+  /// Squad-Spieler erhalten [userOwnsPlayer] = true,
+  /// Markt-Spieler erhalten [userOwnsPlayer] = false.
   Future<List<Player>> getLeaguePlayers(String leagueId) async {
-    final response = await _makeRequestWithRetry(
-      endpoint: '/$_apiVersion/leagues/$leagueId/players',
+    final squadResponse = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/squad',
+      method: 'GET',
+    );
+    final marketResponse = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/market',
       method: 'GET',
     );
 
-    final json = _parseJson(response.body);
-    final playersData = json['players'] as List<dynamic>?;
+    final List<Player> players = [];
 
-    if (playersData == null) {
-      throw const ParsingException('No players data in response');
+    // 1. Eigene Spieler (squad)
+    if (squadResponse.statusCode == 200) {
+      final squadJson = _parseJson(squadResponse.body);
+      final squadData = squadJson['it'] as List<dynamic>? ?? [];
+      for (final e in squadData) {
+        try {
+          final raw = Map<String, dynamic>.from(e as Map<String, dynamic>);
+          raw['userOwnsPlayer'] = true;
+          players.add(Player.fromJson(normalizePlayerJson(raw)));
+        } catch (err) {
+          _logger.w('⚠️ Skipping unparseable squad player: $err | raw: $e');
+        }
+      }
+      _logger.i('✅ Squad: ${squadData.length} eigene Spieler geladen');
+    } else {
+      _logger.w('⚠️ Squad-Endpoint HTTP ${squadResponse.statusCode}');
     }
 
-    return playersData
-        .map(
-          (e) =>
-              Player.fromJson(normalizePlayerJson(e as Map<String, dynamic>)),
-        )
-        .toList();
+    // 2. Markt-Spieler (market)
+    if (marketResponse.statusCode == 200) {
+      final marketJson = _parseJson(marketResponse.body);
+      final marketData = marketJson['it'] as List<dynamic>? ?? [];
+      for (final e in marketData) {
+        try {
+          final raw = Map<String, dynamic>.from(e as Map<String, dynamic>);
+          raw['userOwnsPlayer'] = false;
+          players.add(Player.fromJson(normalizePlayerJson(raw)));
+        } catch (err) {
+          _logger.w('⚠️ Skipping unparseable market player: $err | raw: $e');
+        }
+      }
+      _logger.i('✅ Market: ${marketData.length} Markt-Spieler geladen');
+    } else {
+      _logger.w('⚠️ Market-Endpoint HTTP ${marketResponse.statusCode}');
+    }
+
+    if (players.isEmpty) {
+      throw const ParsingException(
+        'Keine Spielerdaten in /squad und /market gefunden',
+      );
+    }
+
+    _logger.i('✅ getLeaguePlayers: ${players.length} Spieler gesamt');
+    return players;
   }
 
   /// Get current lineup

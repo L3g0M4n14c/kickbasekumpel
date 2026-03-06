@@ -16,6 +16,8 @@ import '../presentation/pages/league/league_standings_page.dart';
 import '../presentation/pages/league/league_players_page.dart';
 import '../presentation/pages/dashboard/league_rankings_page.dart';
 import '../presentation/pages/player/player_stats_page.dart';
+import '../presentation/screens/player/player_detail_screen.dart';
+import '../data/providers/league_providers.dart';
 import '../presentation/pages/player/player_history_page.dart';
 import '../presentation/pages/error_page.dart';
 import '../presentation/screens/ligainsider/ligainsider_screen.dart';
@@ -352,9 +354,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: 'player-stats',
         pageBuilder: (context, state) {
           final playerId = state.pathParameters['playerId']!;
+          final leagueIdParam = state.uri.queryParameters['leagueId'];
           return MaterialPage(
             key: state.pageKey,
-            child: PlayerStatsPage(playerId: playerId),
+            child: _PlayerDetailWrapper(
+              playerId: playerId,
+              leagueIdParam: leagueIdParam,
+            ),
           );
         },
       ),
@@ -461,4 +467,37 @@ class RouterKeys {
   static const playerHistory = 'player-history';
   static const managerDetail = 'manager-detail';
   static const competitionTable = 'competition-table';
+}
+
+// ============================================================================
+// PLAYER DETAIL WRAPPER
+// ============================================================================
+
+/// Wrapper-Widget das [leagueId] entweder aus dem Query-Parameter
+/// oder als Fallback aus dem [selectedLeagueIdProvider] liest und
+/// anschließend den vollständig implementierten [PlayerDetailScreen]
+/// rendert (statt des alten Platzhalters [PlayerStatsPage]).
+class _PlayerDetailWrapper extends ConsumerWidget {
+  final String playerId;
+  final String? leagueIdParam;
+
+  const _PlayerDetailWrapper({required this.playerId, this.leagueIdParam});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final leagueId =
+        (leagueIdParam?.isNotEmpty == true ? leagueIdParam : null) ??
+        ref.watch(selectedLeagueIdProvider);
+
+    if (leagueId == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Spieler')),
+        body: const Center(
+          child: Text('Keine Liga ausgewählt.', style: TextStyle(fontSize: 16)),
+        ),
+      );
+    }
+
+    return PlayerDetailScreen(playerId: playerId, leagueId: leagueId);
+  }
 }

@@ -512,21 +512,35 @@ class PlayerRepository extends BaseRepository<Player>
     };
   }
 
-  /// Get players by league with API-first pattern
-  /// Note: API method is getLeaguePlayers(leagueId)
+  /// Get players by league with API-first pattern.
+  ///
+  /// Kombiniert squad (eigene Spieler) + market (Markt-Spieler) über
+  /// [apiClient.getLeaguePlayers].
+  ///
+  /// Hinweis: Die Firestore-Rules erlauben für /players kein clientseitiges
+  /// Schreiben (nur Admin SDK via Cloud Functions). Das Caching wird daher
+  /// als optional behandelt – ein Fehler dabei verhindert nicht die Rückgabe
+  /// der API-Daten.
   Future<Result<List<Player>>> getByLeague(String leagueId) async {
     try {
-      // 1. Fetch from Kickbase API
+      // 1. Fetch from Kickbase API (squad + market)
       final players = await apiClient.getLeaguePlayers(leagueId);
 
-      // 2. Cache in Firestore
-      for (final player in players) {
-        await collection.doc(player.id).set(toFirestore(player));
+      // 2. Optionales Caching in Firestore (best-effort, kein Pflicht-Pfad).
+      //    Fehler (z. B. permission-denied) werden nur geloggt.
+      try {
+        for (final player in players) {
+          final data = toFirestore(player);
+          data['leagueId'] = leagueId;
+          await collection.doc(player.id).set(data);
+        }
+      } catch (cacheError) {
+        debugPrint('ℹ️ Firestore-Caching übersprungen: $cacheError');
       }
 
       return Success(players);
     } catch (e) {
-      // 3. Fallback: Load from Firestore cache
+      // 3. Fallback: Load from Firestore cache (nur bei echtem API-Fehler)
       debugPrint('⚠️ API error, falling back to Firestore cache: $e');
       return await queryWhere(field: 'leagueId', value: leagueId);
     }
@@ -1147,6 +1161,8 @@ class RecommendationRepository extends BaseRepository<Recommendation>
     List<MarketValueEntry>? marketValueHistory,
     List<MatchPerformance>? recentPerformances,
     LigainsiderPlayer? ligainsiderData,
+    String? fixtureContext,
+    String? lineupContext,
   }) async {
     final service = _geminiService;
     if (service == null) {
@@ -1171,6 +1187,8 @@ class RecommendationRepository extends BaseRepository<Recommendation>
       marketValueHistory: marketValueHistory,
       recentPerformances: recentPerformances,
       ligainsiderData: ligainsiderData,
+      fixtureContext: fixtureContext,
+      lineupContext: lineupContext,
     );
 
     if (aiResult is Failure<GeminiRecommendationResult>) {
@@ -1187,7 +1205,7 @@ class RecommendationRepository extends BaseRepository<Recommendation>
       id: '',
       leagueId: leagueId,
       playerId: player.id,
-      playerName: '${player.firstName} ${player.lastName}',
+      playerName: '${player.firstName} ${player.lastName}'.trim(),
       score: ai.score,
       reason: ai.reason,
       action: ai.action,
@@ -1241,7 +1259,7 @@ class RecommendationRepository extends BaseRepository<Recommendation>
         id: '',
         leagueId: leagueId,
         playerId: input.player.id,
-        playerName: '${input.player.firstName} ${input.player.lastName}',
+        playerName: '${input.player.firstName} ${input.player.lastName}'.trim(),
         score: ai.score,
         reason: ai.reason,
         action: ai.action,

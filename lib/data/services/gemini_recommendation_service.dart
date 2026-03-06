@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:firebase_vertexai/firebase_vertexai.dart';
+import 'package:flutter/foundation.dart';
 import '../../domain/repositories/repository_interfaces.dart';
 import '../models/player_model.dart';
 import '../models/market_value_model.dart';
@@ -113,6 +114,8 @@ class GeminiRecommendationService {
     List<MarketValueEntry>? marketValueHistory,
     List<MatchPerformance>? recentPerformances,
     LigainsiderPlayer? ligainsiderData,
+    String? fixtureContext,
+    String? lineupContext,
   }) async {
     try {
       final prompt = _buildPrompt(
@@ -120,13 +123,27 @@ class GeminiRecommendationService {
         marketValueHistory: marketValueHistory,
         recentPerformances: recentPerformances,
         ligainsiderData: ligainsiderData,
+        fixtureContext: fixtureContext,
+        lineupContext: lineupContext,
       );
+
+      debugPrint('\n══════════════════════════════════════════════════');
+      debugPrint('📤 GEMINI REQUEST (Einzelspieler)');
+      debugPrint('══════════════════════════════════════════════════');
+      debugPrint(prompt);
+      debugPrint('══════════════════════════════════════════════════\n');
 
       final response = await _generativeModel.generateContent([
         Content.text(prompt),
       ]);
 
       final text = response.text;
+      debugPrint('\n══════════════════════════════════════════════════');
+      debugPrint('📥 GEMINI RESPONSE (Einzelspieler)');
+      debugPrint('══════════════════════════════════════════════════');
+      debugPrint(text ?? '(null)');
+      debugPrint('══════════════════════════════════════════════════\n');
+
       if (text == null || text.isEmpty) {
         return const Failure(
           'Gemini hat keine Antwort zurückgegeben.',
@@ -174,9 +191,21 @@ class GeminiRecommendationService {
         ),
       );
 
+      debugPrint('\n══════════════════════════════════════════════════');
+      debugPrint('📤 GEMINI REQUEST (Batch – ${players.length} Spieler)');
+      debugPrint('══════════════════════════════════════════════════');
+      debugPrint(prompt);
+      debugPrint('══════════════════════════════════════════════════\n');
+
       final response = await batchModel.generateContent([Content.text(prompt)]);
 
       final text = response.text;
+      debugPrint('\n══════════════════════════════════════════════════');
+      debugPrint('📥 GEMINI RESPONSE (Batch)');
+      debugPrint('══════════════════════════════════════════════════');
+      debugPrint(text ?? '(null)');
+      debugPrint('══════════════════════════════════════════════════\n');
+
       if (text == null || text.isEmpty) {
         return const Failure(
           'Gemini hat keine Antwort zurückgegeben.',
@@ -215,6 +244,8 @@ class GeminiRecommendationService {
     List<MarketValueEntry>? marketValueHistory,
     List<MatchPerformance>? recentPerformances,
     LigainsiderPlayer? ligainsiderData,
+    String? fixtureContext,
+    String? lineupContext,
   }) {
     final buffer = StringBuffer();
 
@@ -223,8 +254,13 @@ class GeminiRecommendationService {
       'Gib eine fundierte Kaufs- oder Verkaufsempfehlung für folgenden Spieler auf Basis der Daten.',
     );
     buffer.writeln();
+    buffer.writeln('=== KONTEXT ===');
+    buffer.writeln(
+      'Spielerbesitz: ${player.userOwnsPlayer ? "Du besitzt diesen Spieler bereits (Kauf-Empfehlung sinnlos, nur SELL/HOLD/STRONG-SELL möglich)" : "Du besitzt diesen Spieler NICHT (Verkaufs-Empfehlung sinnlos, nur BUY/HOLD/STRONG-BUY möglich)"}',
+    );
+    buffer.writeln();
     buffer.writeln('=== SPIELER-STAMMDATEN ===');
-    buffer.writeln('Name: ${player.firstName} ${player.lastName}');
+    buffer.writeln('Name: ${player.firstName} ${player.lastName}'.trim());
     buffer.writeln('Position: ${_positionName(player.position)}');
     buffer.writeln('Team: ${player.teamName}');
     buffer.writeln('Trikotnummer: ${player.number}');
@@ -244,6 +280,47 @@ class GeminiRecommendationService {
           '(${perf.t1} vs ${perf.t2}, ${perf.t1g}:${perf.t2g})'
           '${perf.k != null && perf.k!.isNotEmpty ? ', ${perf.k!.length} Karte(n)' : ''}',
         );
+      }
+
+      // Heim/Auswärts-Bilanz aus den Performance-Daten ableiten
+      if (player.teamName.isNotEmpty) {
+        final homeGames = recentPerformances
+            .where((p) => p.t1 == player.teamName)
+            .toList();
+        final awayGames = recentPerformances
+            .where((p) => p.t2 == player.teamName)
+            .toList();
+        if (homeGames.isNotEmpty || awayGames.isNotEmpty) {
+          buffer.writeln();
+          buffer.writeln('=== HEIM/AUSWÄRTS-BILANZ (aktuelle Saison) ===');
+          if (homeGames.isNotEmpty) {
+            final homeAvg =
+                homeGames.fold<double>(0.0, (s, p) => s + (p.p ?? 0)) /
+                homeGames.length;
+            buffer.writeln(
+              'Heimspiele (${homeGames.length}): ${homeAvg.toStringAsFixed(1)} Ø Punkte',
+            );
+          }
+          if (awayGames.isNotEmpty) {
+            final awayAvg =
+                awayGames.fold<double>(0.0, (s, p) => s + (p.p ?? 0)) /
+                awayGames.length;
+            buffer.writeln(
+              'Auswärtsspiele (${awayGames.length}): ${awayAvg.toStringAsFixed(1)} Ø Punkte',
+            );
+          }
+
+          // Nächstes Spiel Heim oder Auswärts?
+          if (fixtureContext != null && fixtureContext.isNotEmpty) {
+            final isNextHome = fixtureContext.contains('Heimspiel');
+            final isNextAway = fixtureContext.contains('Auswärtsspiel');
+            if (isNextHome) {
+              buffer.writeln('Nächstes Spiel: HEIMSPIEL');
+            } else if (isNextAway) {
+              buffer.writeln('Nächstes Spiel: AUSWÄRTSSPIEL');
+            }
+          }
+        }
       }
     }
     buffer.writeln();
@@ -277,9 +354,7 @@ class GeminiRecommendationService {
     if (ligainsiderData != null) {
       buffer.writeln();
       buffer.writeln('=== LIGAINSIDER-DATEN ===');
-      buffer.writeln(
-        'Verletzungsstatus: ${ligainsiderData.injuryStatus ?? "unbekannt"}',
-      );
+      buffer.writeln('Verletzungsstatus: ${ligainsiderData.injuryStatus}');
       if (ligainsiderData.injuryDescription != null) {
         buffer.writeln('Details: ${ligainsiderData.injuryDescription}');
       }
@@ -293,12 +368,34 @@ class GeminiRecommendationService {
         buffer.writeln('Statustext: ${ligainsiderData.statusText}');
       }
     }
-    buffer.writeln();
 
+    if (fixtureContext != null && fixtureContext.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('=== NÄCHSTE 3 SPIELE ===');
+      buffer.writeln(
+        'Je niedriger der Tabellenplatz des Gegners, desto schwerer das Spiel:',
+      );
+      buffer.writeln(fixtureContext);
+    }
+
+    if (lineupContext != null && lineupContext.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('=== TEAM-ANALYSE ===');
+      buffer.writeln(lineupContext);
+    }
+
+    buffer.writeln();
     buffer.writeln(
       'Antworte ausschließlich als JSON gemäß dem vorgegebenen Schema. '
       'score=0 bedeutet klarer Verkauf, score=100 klarer Kauf. '
-      'Die reason-Begründung soll konkret, auf Kickbase bezogen und auf Deutsch sein.',
+      'Gewichte folgende Kriterien: '
+      '(1) Form der letzten 5 Spiele, '
+      '(2) Schwierigkeit der nächsten 3 Gegner (leichte Gegner → Aufwertung, Top-Teams → Abwertung), '
+      '(3) Heim/Auswärts-Stärke des Spielers für das nächste Spiel, '
+      '(4) ob ein Kauf das eigene Team positional stärkt. '
+      'Beachte den Spielerbesitz-Kontext: kein BUY für eigene Spieler, kein SELL für nicht-eigene. '
+      'Die reason-Begründung muss konkret auf diesen Spieler eingehen und auf Deutsch sein. '
+      'Nicht generisch – nutze die konkreten Datenpunkte aus den Sektionen oben.',
     );
 
     return buffer.toString();
