@@ -24,6 +24,7 @@ _$PlayerImpl _$$PlayerImplFromJson(Map<String, dynamic> json) => _$PlayerImpl(
   stl: (json['stl'] as num).toInt(),
   status: (json['status'] as num).toInt(),
   userOwnsPlayer: json['userOwnsPlayer'] as bool,
+  ligainsiderPhotoUrl: json['ligainsiderPhotoUrl'] as String? ?? '',
 );
 
 Map<String, dynamic> _$$PlayerImplToJson(_$PlayerImpl instance) =>
@@ -45,6 +46,7 @@ Map<String, dynamic> _$$PlayerImplToJson(_$PlayerImpl instance) =>
       'stl': instance.stl,
       'status': instance.status,
       'userOwnsPlayer': instance.userOwnsPlayer,
+      'ligainsiderPhotoUrl': instance.ligainsiderPhotoUrl,
     };
 
 _$PlayerDetailResponseImpl _$$PlayerDetailResponseImplFromJson(

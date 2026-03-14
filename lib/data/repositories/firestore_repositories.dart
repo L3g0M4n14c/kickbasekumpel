@@ -461,9 +461,23 @@ class LeagueRepository extends BaseRepository<League>
 class PlayerRepository extends BaseRepository<Player>
     implements PlayerRepositoryInterface {
   final KickbaseAPIClient apiClient;
+  final FirebaseAuth? _firebaseAuthOverride;
+  final http.Client? _httpClientOverride;
 
-  PlayerRepository({required super.firestore, required this.apiClient})
-    : super(collectionPath: 'players');
+  // Lazy getters so FirebaseAuth.instance is only accessed when needed,
+  // not at construction time (which helps in unit-test environments).
+  FirebaseAuth get _firebaseAuth =>
+      _firebaseAuthOverride ?? FirebaseAuth.instance;
+  http.Client get _httpClient => _httpClientOverride ?? http.Client();
+
+  PlayerRepository({
+    required super.firestore,
+    required this.apiClient,
+    FirebaseAuth? firebaseAuth,
+    http.Client? httpClient,
+  }) : _firebaseAuthOverride = firebaseAuth,
+       _httpClientOverride = httpClient,
+       super(collectionPath: 'players');
 
   @override
   Player fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -486,6 +500,7 @@ class PlayerRepository extends BaseRepository<Player>
       stl: data['stl'] ?? 0,
       status: data['status'] ?? 0,
       userOwnsPlayer: data['userOwnsPlayer'] ?? false,
+      ligainsiderPhotoUrl: data['ligainsiderPhotoUrl'] ?? '',
     );
   }
 
@@ -508,6 +523,7 @@ class PlayerRepository extends BaseRepository<Player>
       'stl': player.stl,
       'status': player.status,
       'userOwnsPlayer': player.userOwnsPlayer,
+      'ligainsiderPhotoUrl': player.ligainsiderPhotoUrl,
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -719,7 +735,22 @@ class PlayerRepository extends BaseRepository<Player>
   /// Returns: Success wenn die Function erfolgreich triggered wurde
   Future<Result<void>> triggerCloudFunctionPhotoUpdate() async {
     try {
-      final currentUser = FirebaseAuth.instance.currentUser;
+      var currentUser = _firebaseAuth.currentUser;
+
+      // Firebase Anonymous Auth kann durch einen Keychain-Fehler (macOS/iOS)
+      // beim App-Start fehlschlagen. Wir versuchen hier ein erneutes
+      // signInAnonymously(), bevor wir aufgeben.
+      if (currentUser == null) {
+        try {
+          final credential = await _firebaseAuth.signInAnonymously();
+          currentUser = credential.user;
+        } catch (e) {
+          debugPrint(
+            '⚠️ Re-auth attempt in triggerCloudFunctionPhotoUpdate failed: $e',
+          );
+        }
+      }
+
       if (currentUser == null) {
         return Failure('User not authenticated');
       }
@@ -728,7 +759,7 @@ class PlayerRepository extends BaseRepository<Player>
       final idToken = await currentUser.getIdToken();
 
       // Rufe Cloud Function auf
-      final response = await http
+      final response = await _httpClient
           .post(
             Uri.parse(
               'https://europe-west1-kickbasekumpel.cloudfunctions.net/updateLigainsiderPhotos',

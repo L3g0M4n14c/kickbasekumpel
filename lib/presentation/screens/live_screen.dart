@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/providers/providers.dart';
+import '../../data/providers/ligainsider_photo_provider.dart';
 import '../../data/models/ligainsider_model.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/error_widget.dart';
@@ -454,21 +455,30 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
       );
     }
 
-    // Resolve Ligainsider image (if available)
-    final ligainsiderAsync = ref.watch(ligainsiderServiceFutureProvider);
-    LigainsiderPlayer? ligPlayer;
-    ligainsiderAsync.maybeWhen(
-      data: (service) =>
-          ligPlayer = service.getLigainsiderPlayer(firstName, lastName),
-      orElse: () {},
-    );
+    // Resolve Ligainsider image:
+    // 1. Primär: ligainsiderPhotoMapProvider aus Firestore (funktioniert auch im Web)
+    // 2. Fallback: LigainsiderService (lokales Scraping, nur nativ/mit Proxy)
+    final playerId = player['i'] as String? ?? '';
+    final photoMapAsync = ref.watch(ligainsiderPhotoMapProvider);
+    final _rawPhotoUrl = photoMapAsync.asData?.value[playerId] ?? '';
+    String? ligImage = _rawPhotoUrl.isNotEmpty ? _rawPhotoUrl : null;
 
-    final ligImageRaw = ligPlayer?.imageUrl;
-    final String? ligImage = (ligImageRaw != null && ligImageRaw.isNotEmpty)
-        ? (ligImageRaw.startsWith('/')
-              ? 'https://www.ligainsider.de$ligImageRaw'
-              : ligImageRaw)
-        : null;
+    if (ligImage == null && !kIsWeb) {
+      // Fallback auf direktes Scraping für native Builds wenn Firestore leer
+      final ligainsiderAsync = ref.watch(ligainsiderServiceFutureProvider);
+      LigainsiderPlayer? ligPlayer;
+      ligainsiderAsync.maybeWhen(
+        data: (service) =>
+            ligPlayer = service.getLigainsiderPlayer(firstName, lastName),
+        orElse: () {},
+      );
+      final ligImageRaw = ligPlayer?.imageUrl;
+      if (ligImageRaw != null && ligImageRaw.isNotEmpty) {
+        ligImage = ligImageRaw.startsWith('/')
+            ? 'https://www.ligainsider.de$ligImageRaw'
+            : ligImageRaw;
+      }
+    }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8.0),
@@ -481,8 +491,8 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
           child: ligImage != null
               ? (() {
                   final displayImage = kIsWeb
-                      ? 'https://images.weserv.nl/?url=${Uri.encodeComponent(ligImage.replaceFirst(RegExp(r'^https?:\/\/'), ''))}&w=80&h=80&fit=cover'
-                      : ligImage;
+                      ? 'https://images.weserv.nl/?url=${Uri.encodeComponent(ligImage!.replaceFirst(RegExp(r'^https?:\/\/'), ''))}&w=80&h=80&fit=cover'
+                      : ligImage!;
                   return ClipOval(
                     child: Image.network(
                       displayImage,

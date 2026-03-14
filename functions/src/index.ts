@@ -98,28 +98,25 @@ export const updateLigainsiderPhotos = onRequest(
                 );
 
                 if (scraperResult.teamPhotos.has(normalizedPlayerName)) {
-                    // Nur updaten, wenn wir noch kein Foto haben
-                    if (!player.profileBigUrl || player.profileBigUrl === '') {
-                        const photoUrl = scraperResult.teamPhotos.get(normalizedPlayerName)!;
-                        const playerRef = firestore.collection('players').doc(player.id);
+                    const photoUrl = scraperResult.teamPhotos.get(normalizedPlayerName)!;
+                    const playerRef = firestore.collection('players').doc(player.id);
 
-                        batch.update(playerRef, {
-                            profileBigUrl: photoUrl,
-                            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-                            ligainsiderPhotoUpdatedAt: new Date().toISOString(),
-                        });
+                    batch.update(playerRef, {
+                        ligainsiderPhotoUrl: photoUrl,
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                        ligainsiderPhotoUpdatedAt: new Date().toISOString(),
+                    });
 
-                        updates.push({
-                            playerName: `${player.firstName} ${player.lastName}`,
-                            photoUrl,
-                        });
-                        totalUpdated++;
+                    updates.push({
+                        playerName: `${player.firstName} ${player.lastName}`,
+                        photoUrl,
+                    });
+                    totalUpdated++;
 
-                        logger.debug(
-                            { playerId: player.id, playerName: `${player.firstName} ${player.lastName}`, photoUrl },
-                            'Scheduled photo update'
-                        );
-                    }
+                    logger.debug(
+                        { playerId: player.id, playerName: `${player.firstName} ${player.lastName}`, photoUrl },
+                        'Scheduled photo update'
+                    );
                 }
             }
 

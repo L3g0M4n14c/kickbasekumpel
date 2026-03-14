@@ -1,11 +1,16 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:mocktail/mocktail.dart';
 
 import 'package:kickbasekumpel/data/repositories/firestore_repositories.dart';
 import '../../helpers/matchers.dart';
 import '../../helpers/test_data.dart';
 import '../../helpers/result_extension.dart';
 import '../../helpers/mock_firebase.dart';
+
+class MockHttpClient extends Mock implements http.Client {}
 
 void main() {
   group('PlayerRepository', () {
@@ -492,6 +497,78 @@ void main() {
           );
         });
       });
+    });
+
+    group('triggerCloudFunctionPhotoUpdate', () {
+      test(
+        'retries signInAnonymously and succeeds when currentUser is initially null',
+        () async {
+          // Arrange
+          final mockAuth = MockFirebaseSetup.createMockAuth(currentUser: null);
+          final mockUser = MockFirebaseSetup.createMockUser();
+          final mockCred = MockFirebaseSetup.createMockUserCredential(mockUser);
+
+          when(
+            () => mockAuth.signInAnonymously(),
+          ).thenAnswer((_) async => mockCred);
+          when(
+            () => mockUser.getIdToken(any()),
+          ).thenAnswer((_) async => 'test-token');
+
+          final mockHttpClient = MockHttpClient();
+          registerFallbackValue(Uri.parse('http://example.com'));
+          when(
+            () => mockHttpClient.post(
+              any(),
+              headers: any(named: 'headers'),
+              body: any(named: 'body'),
+              encoding: any(named: 'encoding'),
+            ),
+          ).thenAnswer((_) async => http.Response('{"status":"ok"}', 200));
+
+          final repoWithMocks = PlayerRepository(
+            firestore: fakeFirestore,
+            apiClient: mockApiClient,
+            firebaseAuth: mockAuth,
+            httpClient: mockHttpClient,
+          );
+
+          // Act
+          final result = await repoWithMocks.triggerCloudFunctionPhotoUpdate();
+
+          // Assert: should retry auth and succeed
+          expect(result, ResultMatchers.isSuccess());
+          verify(() => mockAuth.signInAnonymously()).called(1);
+        },
+      );
+
+      test(
+        'returns Failure when currentUser is null and signInAnonymously throws keychain-error',
+        () async {
+          // Arrange
+          final mockAuth = MockFirebaseSetup.createMockAuth(currentUser: null);
+
+          when(() => mockAuth.signInAnonymously()).thenThrow(
+            auth.FirebaseAuthException(
+              code: 'keychain-error',
+              message: 'An error occurred when accessing the keychain.',
+            ),
+          );
+
+          final repoWithMocks = PlayerRepository(
+            firestore: fakeFirestore,
+            apiClient: mockApiClient,
+            firebaseAuth: mockAuth,
+          );
+
+          // Act
+          final result = await repoWithMocks.triggerCloudFunctionPhotoUpdate();
+
+          // Assert: should attempt re-auth, then fail gracefully
+          expect(result, ResultMatchers.isFailure());
+          verify(() => mockAuth.signInAnonymously()).called(1);
+        },
+      );
     });
   });
 }

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../repositories/firestore_repositories.dart';
 import '../../domain/repositories/repository_interfaces.dart';
@@ -35,4 +36,25 @@ final triggerLigainsiderPhotoUpdateProvider = FutureProvider<void>((ref) async {
   if (result is Failure) {
     throw Exception(result.message);
   }
+});
+
+/// Lädt eine Karte von Spieler-ID → ligainsiderPhotoUrl aus Firestore.
+///
+/// Wird beim App-Start einmal geladen und cacht die URLs im Arbeitsspeicher,
+/// damit der Live-Screen für jeden Spieler keine einzelne Firestore-Anfrage
+/// stellen muss.
+///
+/// Funktioniert auch im Web, da die Daten aus Firestore kommen (kein CORS).
+final ligainsiderPhotoMapProvider = FutureProvider<Map<String, String>>((
+  ref,
+) async {
+  final snapshot = await FirebaseFirestore.instance
+      .collection('players')
+      .where('ligainsiderPhotoUrl', isNotEqualTo: '')
+      .get();
+
+  return {
+    for (final doc in snapshot.docs)
+      doc.id: (doc.data()['ligainsiderPhotoUrl'] as String? ?? ''),
+  };
 });

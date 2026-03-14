@@ -24,6 +24,7 @@ class Player with _$Player {
     required int stl,
     required int status,
     required bool userOwnsPlayer,
+    @Default('') String ligainsiderPhotoUrl,
   }) = _Player;
 
   factory Player.fromJson(Map<String, dynamic> json) => _$PlayerFromJson(json);

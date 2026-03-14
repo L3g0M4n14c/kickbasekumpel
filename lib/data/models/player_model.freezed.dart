@@ -38,6 +38,7 @@ mixin _$Player {
   int get stl => throw _privateConstructorUsedError;
   int get status => throw _privateConstructorUsedError;
   bool get userOwnsPlayer => throw _privateConstructorUsedError;
+  String get ligainsiderPhotoUrl => throw _privateConstructorUsedError;
 
   /// Serializes this Player to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -71,6 +72,7 @@ abstract class $PlayerCopyWith<$Res> {
     int stl,
     int status,
     bool userOwnsPlayer,
+    String ligainsiderPhotoUrl,
   });
 }
 
@@ -106,6 +108,7 @@ class _$PlayerCopyWithImpl<$Res, $Val extends Player>
     Object? stl = null,
     Object? status = null,
     Object? userOwnsPlayer = null,
+    Object? ligainsiderPhotoUrl = null,
   }) {
     return _then(
       _value.copyWith(
@@ -177,6 +180,10 @@ class _$PlayerCopyWithImpl<$Res, $Val extends Player>
                 ? _value.userOwnsPlayer
                 : userOwnsPlayer // ignore: cast_nullable_to_non_nullable
                       as bool,
+            ligainsiderPhotoUrl: null == ligainsiderPhotoUrl
+                ? _value.ligainsiderPhotoUrl
+                : ligainsiderPhotoUrl // ignore: cast_nullable_to_non_nullable
+                      as String,
           )
           as $Val,
     );
@@ -209,6 +216,7 @@ abstract class _$$PlayerImplCopyWith<$Res> implements $PlayerCopyWith<$Res> {
     int stl,
     int status,
     bool userOwnsPlayer,
+    String ligainsiderPhotoUrl,
   });
 }
 
@@ -243,6 +251,7 @@ class __$$PlayerImplCopyWithImpl<$Res>
     Object? stl = null,
     Object? status = null,
     Object? userOwnsPlayer = null,
+    Object? ligainsiderPhotoUrl = null,
   }) {
     return _then(
       _$PlayerImpl(
@@ -314,6 +323,10 @@ class __$$PlayerImplCopyWithImpl<$Res>
             ? _value.userOwnsPlayer
             : userOwnsPlayer // ignore: cast_nullable_to_non_nullable
                   as bool,
+        ligainsiderPhotoUrl: null == ligainsiderPhotoUrl
+            ? _value.ligainsiderPhotoUrl
+            : ligainsiderPhotoUrl // ignore: cast_nullable_to_non_nullable
+                  as String,
       ),
     );
   }
@@ -340,6 +353,7 @@ class _$PlayerImpl implements _Player {
     required this.stl,
     required this.status,
     required this.userOwnsPlayer,
+    this.ligainsiderPhotoUrl = '',
   });
 
   factory _$PlayerImpl.fromJson(Map<String, dynamic> json) =>
@@ -379,10 +393,13 @@ class _$PlayerImpl implements _Player {
   final int status;
   @override
   final bool userOwnsPlayer;
+  @override
+  @JsonKey()
+  final String ligainsiderPhotoUrl;
 
   @override
   String toString() {
-    return 'Player(id: $id, firstName: $firstName, lastName: $lastName, profileBigUrl: $profileBigUrl, teamName: $teamName, teamId: $teamId, position: $position, number: $number, averagePoints: $averagePoints, totalPoints: $totalPoints, marketValue: $marketValue, marketValueTrend: $marketValueTrend, tfhmvt: $tfhmvt, prlo: $prlo, stl: $stl, status: $status, userOwnsPlayer: $userOwnsPlayer)';
+    return 'Player(id: $id, firstName: $firstName, lastName: $lastName, profileBigUrl: $profileBigUrl, teamName: $teamName, teamId: $teamId, position: $position, number: $number, averagePoints: $averagePoints, totalPoints: $totalPoints, marketValue: $marketValue, marketValueTrend: $marketValueTrend, tfhmvt: $tfhmvt, prlo: $prlo, stl: $stl, status: $status, userOwnsPlayer: $userOwnsPlayer, ligainsiderPhotoUrl: $ligainsiderPhotoUrl)';
   }
 
   @override
@@ -416,7 +433,9 @@ class _$PlayerImpl implements _Player {
             (identical(other.stl, stl) || other.stl == stl) &&
             (identical(other.status, status) || other.status == status) &&
             (identical(other.userOwnsPlayer, userOwnsPlayer) ||
-                other.userOwnsPlayer == userOwnsPlayer));
+                other.userOwnsPlayer == userOwnsPlayer) &&
+            (identical(other.ligainsiderPhotoUrl, ligainsiderPhotoUrl) ||
+                other.ligainsiderPhotoUrl == ligainsiderPhotoUrl));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -440,6 +459,7 @@ class _$PlayerImpl implements _Player {
     stl,
     status,
     userOwnsPlayer,
+    ligainsiderPhotoUrl,
   );
 
   /// Create a copy of Player
@@ -475,6 +495,7 @@ abstract class _Player implements Player {
     required final int stl,
     required final int status,
     required final bool userOwnsPlayer,
+    final String ligainsiderPhotoUrl,
   }) = _$PlayerImpl;
 
   factory _Player.fromJson(Map<String, dynamic> json) = _$PlayerImpl.fromJson;
@@ -513,6 +534,8 @@ abstract class _Player implements Player {
   int get status;
   @override
   bool get userOwnsPlayer;
+  @override
+  String get ligainsiderPhotoUrl;
 
   /// Create a copy of Player
   /// with the given fields replaced by the non-null parameter values.
