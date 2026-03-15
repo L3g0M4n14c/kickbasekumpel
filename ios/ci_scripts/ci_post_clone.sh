@@ -13,18 +13,23 @@ FLUTTER_VERSION="${FLUTTER_VERSION:-3.32.2}"
 FLUTTER_HOME="$HOME/flutter"
 
 # ── Resolve download URL from Flutter releases JSON ──────────────────────────
-# Using the 'archive' field avoids guessing filename patterns (arm64 vs universal, etc.)
+# Uses the official 'archive' field to avoid guessing filename patterns
+# (arm64 vs universal, naming changes across Flutter versions).
 echo "=== Resolving Flutter download URL for ${FLUTTER_VERSION} ==="
+
 RELEASES_JSON="/tmp/flutter_releases.json"
-curl -fsSL "https://storage.googleapis.com/flutter_infra_release/releases/releases_macos.json" \
+RESOLVER_PY="/tmp/flutter_resolve.py"
+
+curl -fsSL \
+  "https://storage.googleapis.com/flutter_infra_release/releases/releases_macos.json" \
   -o "$RELEASES_JSON"
 
-FLUTTER_URL=$(VERSION_INPUT="$FLUTTER_VERSION" python3 - < "$RELEASES_JSON" <<'PYEOF'
+cat > "$RESOLVER_PY" << 'PYEOF'
 import sys, json, os
 
-data = json.load(sys.stdin)
+data = json.load(open(os.environ["RELEASES_JSON"]))
 base_url = data["base_url"]
-version_input = os.environ["VERSION_INPUT"]
+version_input = os.environ["FLUTTER_VERSION"]
 
 if version_input.endswith(".x"):
     prefix = version_input[:-2] + "."
@@ -44,12 +49,13 @@ print(f"  Resolved version : {release['version']}", file=sys.stderr)
 print(f"  Archive          : {release['archive']}", file=sys.stderr)
 print(f"{base_url}/{release['archive']}")
 PYEOF
-)
 
-rm -f "$RELEASES_JSON"
+FLUTTER_URL=$(RELEASES_JSON="$RELEASES_JSON" python3 "$RESOLVER_PY")
+
+rm -f "$RELEASES_JSON" "$RESOLVER_PY"
 
 echo "=== Installing Flutter ==="
-echo "URL: $FLUTTER_URL"
+echo "  URL: $FLUTTER_URL"
 curl -fL --progress-bar "$FLUTTER_URL" -o /tmp/flutter.tar.xz
 
 tar -xf /tmp/flutter.tar.xz -C "$HOME"
