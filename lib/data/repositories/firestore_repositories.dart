@@ -762,7 +762,7 @@ class PlayerRepository extends BaseRepository<Player>
       final response = await _httpClient
           .post(
             Uri.parse(
-              'https://europe-west1-kickbasekumpel.cloudfunctions.net/updateLigainsiderPhotos',
+              'https://us-central1-kickbasekumpel.cloudfunctions.net/updateLigainsiderPhotos',
             ),
             headers: {
               'Authorization': 'Bearer $idToken',

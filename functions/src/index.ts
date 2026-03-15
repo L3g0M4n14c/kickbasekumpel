@@ -118,7 +118,7 @@ export const updateLigainsiderPhotos = onRequest(
     {
         timeoutSeconds: 540,
         memory: '512MiB',
-        region: 'europe-west1',
+        region: 'us-central1',
     },
     async (req, res) => {
         try {
@@ -166,7 +166,7 @@ export const scheduledLigainsiderPhotoUpdate = onSchedule(
         timeZone: 'UTC',
         timeoutSeconds: 540,
         memory: '512MiB',
-        region: 'europe-west1',
+        region: 'us-central1',
     },
     async (_event) => {
         logger.info('Starting scheduled Ligainsider photo update...');
@@ -184,7 +184,7 @@ export const scheduledLigainsiderPhotoUpdate = onSchedule(
  * Gibt Informationen über den letzten erfolgreichen Scraping-Lauf zurück
  */
 export const getLigainsiderScraperStatus = onRequest(
-    { region: 'europe-west1' },
+    { region: 'us-central1' },
     async (req, res) => {
         try {
             const doc = await firestore.collection('system').doc('ligainsider-scraper').get();
@@ -217,7 +217,7 @@ export const getLigainsiderScraperStatus = onRequest(
  * Erstelle initiales "system" Dokument für Scraper-Tracking
  */
 export const initializeLigainsiderScraperMetadata = onDocumentCreated(
-    { document: 'players/{playerId}', region: 'europe-west1' },
+    { document: 'players/{playerId}', region: 'us-central1' },
     async (_event) => {
         try {
             const scraperDoc = await firestore.collection('system').doc('ligainsider-scraper').get();
