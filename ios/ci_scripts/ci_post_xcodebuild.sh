@@ -92,28 +92,8 @@ if [ -z "${IPA_PATH}" ]; then
     echo "  → Add these in App Store Connect → Xcode Cloud → Workflow → Environment."
     echo "    See docs/CI_CD_SETUP.md, section 'Xcode Cloud: iOS-Deploy konfigurieren'."
     echo ""
-    echo "Falling back to automatic signing."
-
-    TEAM_ID="${APPLE_TEAM_ID:-894UP99QHD}"
-    cat > /tmp/ExportOptions.plist << EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>method</key>
-    <string>ad-hoc</string>
-    <key>teamID</key>
-    <string>${TEAM_ID}</string>
-    <key>signingStyle</key>
-    <string>automatic</string>
-    <key>signingCertificate</key>
-    <string>Apple Distribution</string>
-    <key>stripSwiftSymbols</key>
-    <true/>
-</dict>
-</plist>
-EOF
-    EXPORT_OPTIONS="/tmp/ExportOptions.plist"
+    echo "Skipping IPA export and Firebase distribution (no signing credentials available)."
+    exit 0
   fi
 
   xcodebuild -exportArchive \

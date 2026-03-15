@@ -33,7 +33,7 @@ platform :ios do
       <plist version="1.0">
       <dict>
           <key>method</key>
-          <string>ad-hoc</string>
+          <string>release-testing</string>
           <key>teamID</key>
           <string>#{ENV["APPLE_TEAM_ID"]}</string>
           <key>provisioningProfiles</key>
