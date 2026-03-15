@@ -12,26 +12,45 @@ set -e
 FLUTTER_VERSION="${FLUTTER_VERSION:-3.32.2}"
 FLUTTER_HOME="$HOME/flutter"
 
-# Resolve "3.38.x" wildcard to the latest stable patch version.
-if [[ "$FLUTTER_VERSION" == *".x" ]]; then
-  PREFIX="${FLUTTER_VERSION%.x}"
-  echo "=== Resolving latest stable Flutter ${PREFIX}.* ==="
-  FLUTTER_VERSION=$(curl -fsSL "https://storage.googleapis.com/flutter_infra_release/releases/releases_macos.json" | \
-    python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-prefix = '${PREFIX}.'
-versions = [r['version'] for r in data['releases'] if r['channel'] == 'stable' and r['version'].startswith(prefix)]
-versions.sort(key=lambda v: [int(x) for x in v.split('.')])
-print(versions[-1]) if versions else sys.exit(1)
-")
-  echo "Resolved: $FLUTTER_VERSION"
-fi
+# ── Resolve download URL from Flutter releases JSON ──────────────────────────
+# Using the 'archive' field avoids guessing filename patterns (arm64 vs universal, etc.)
+echo "=== Resolving Flutter download URL for ${FLUTTER_VERSION} ==="
+RELEASES_JSON="/tmp/flutter_releases.json"
+curl -fsSL "https://storage.googleapis.com/flutter_infra_release/releases/releases_macos.json" \
+  -o "$RELEASES_JSON"
 
-echo "=== Installing Flutter $FLUTTER_VERSION ==="
-curl -fL --progress-bar \
-  "https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/flutter_macos_arm64_${FLUTTER_VERSION}-stable.tar.xz" \
-  -o /tmp/flutter.tar.xz
+FLUTTER_URL=$(VERSION_INPUT="$FLUTTER_VERSION" python3 - < "$RELEASES_JSON" <<'PYEOF'
+import sys, json, os
+
+data = json.load(sys.stdin)
+base_url = data["base_url"]
+version_input = os.environ["VERSION_INPUT"]
+
+if version_input.endswith(".x"):
+    prefix = version_input[:-2] + "."
+    releases = [r for r in data["releases"]
+                if r["channel"] == "stable" and r["version"].startswith(prefix)]
+else:
+    releases = [r for r in data["releases"]
+                if r["channel"] == "stable" and r["version"] == version_input]
+
+if not releases:
+    print(f"ERROR: No stable macOS release found for '{version_input}'", file=sys.stderr)
+    sys.exit(1)
+
+releases.sort(key=lambda r: [int(x) for x in r["version"].split(".")])
+release = releases[-1]
+print(f"  Resolved version : {release['version']}", file=sys.stderr)
+print(f"  Archive          : {release['archive']}", file=sys.stderr)
+print(f"{base_url}/{release['archive']}")
+PYEOF
+)
+
+rm -f "$RELEASES_JSON"
+
+echo "=== Installing Flutter ==="
+echo "URL: $FLUTTER_URL"
+curl -fL --progress-bar "$FLUTTER_URL" -o /tmp/flutter.tar.xz
 
 tar -xf /tmp/flutter.tar.xz -C "$HOME"
 rm /tmp/flutter.tar.xz
