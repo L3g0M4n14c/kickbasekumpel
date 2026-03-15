@@ -87,6 +87,11 @@ export PATH="$FLUTTER_HOME/bin:$PATH"
 echo "Flutter ready:"
 flutter --version --no-version-check
 
+# ci_post_clone.sh runs from ios/ci_scripts/ – all project commands need repo root.
+REPO_ROOT="${CI_PRIMARY_REPOSITORY_PATH:-$(cd "$(dirname "$0")/../.." && pwd)}"
+echo "Repo root: $REPO_ROOT"
+cd "$REPO_ROOT"
+
 echo "=== Installing Dart dependencies ==="
 # pub get also writes Generated.xcconfig with FLUTTER_ROOT so Xcode's
 # Run Script build phase can locate the Flutter SDK during xcodebuild.
@@ -98,6 +103,5 @@ flutter pub run build_runner build --delete-conflicting-outputs
 echo "=== Installing CocoaPods dependencies ==="
 cd ios
 pod install
-cd ..
 
 echo "=== ci_post_clone.sh complete ==="
