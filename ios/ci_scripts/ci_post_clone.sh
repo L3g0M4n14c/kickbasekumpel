@@ -11,11 +11,12 @@ set -e
 
 FLUTTER_VERSION="${FLUTTER_VERSION:-3.32.2}"
 FLUTTER_HOME="$HOME/flutter"
+MACHINE_ARCH="$(uname -m)"   # arm64 or x86_64
 
 # ── Resolve download URL from Flutter releases JSON ──────────────────────────
-# Uses the official 'archive' field to avoid guessing filename patterns
-# (arm64 vs universal, naming changes across Flutter versions).
-echo "=== Resolving Flutter download URL for ${FLUTTER_VERSION} ==="
+# Picks the correct architecture-specific archive from the official releases JSON,
+# avoiding both manual URL construction and CPU-type mismatches.
+echo "=== Resolving Flutter download URL for ${FLUTTER_VERSION} (arch: ${MACHINE_ARCH}) ==="
 
 RELEASES_JSON="/tmp/flutter_releases.json"
 RESOLVER_PY="/tmp/flutter_resolve.py"
@@ -30,36 +31,56 @@ import sys, json, os
 data = json.load(open(os.environ["RELEASES_JSON"]))
 base_url = data["base_url"]
 version_input = os.environ["FLUTTER_VERSION"]
+arch = os.environ["MACHINE_ARCH"]  # "arm64" or "x86_64"
 
+# Filter by channel + version pattern
 if version_input.endswith(".x"):
     prefix = version_input[:-2] + "."
-    releases = [r for r in data["releases"]
-                if r["channel"] == "stable" and r["version"].startswith(prefix)]
+    candidates = [r for r in data["releases"]
+                  if r["channel"] == "stable" and r["version"].startswith(prefix)]
 else:
-    releases = [r for r in data["releases"]
-                if r["channel"] == "stable" and r["version"] == version_input]
+    candidates = [r for r in data["releases"]
+                  if r["channel"] == "stable" and r["version"] == version_input]
 
-if not releases:
+if not candidates:
     print(f"ERROR: No stable macOS release found for '{version_input}'", file=sys.stderr)
     sys.exit(1)
 
-releases.sort(key=lambda r: [int(x) for x in r["version"].split(".")])
-release = releases[-1]
+# Pick the latest patch version first
+candidates.sort(key=lambda r: [int(x) for x in r["version"].split(".")])
+latest_version = candidates[-1]["version"]
+candidates = [r for r in candidates if r["version"] == latest_version]
+
+# Prefer architecture-specific archive; fall back to any if not found
+if arch == "arm64":
+    arch_matches = [r for r in candidates if "arm64" in r["archive"]]
+else:
+    arch_matches = [r for r in candidates if "arm64" not in r["archive"]]
+
+release = (arch_matches or candidates)[0]
 print(f"  Resolved version : {release['version']}", file=sys.stderr)
 print(f"  Archive          : {release['archive']}", file=sys.stderr)
 print(f"{base_url}/{release['archive']}")
 PYEOF
 
-FLUTTER_URL=$(RELEASES_JSON="$RELEASES_JSON" python3 "$RESOLVER_PY")
+FLUTTER_URL=$(RELEASES_JSON="$RELEASES_JSON" FLUTTER_VERSION="$FLUTTER_VERSION" \
+              MACHINE_ARCH="$MACHINE_ARCH" python3 "$RESOLVER_PY")
 
 rm -f "$RELEASES_JSON" "$RESOLVER_PY"
 
+# ── Download & extract ────────────────────────────────────────────────────────
 echo "=== Installing Flutter ==="
 echo "  URL: $FLUTTER_URL"
-curl -fL --progress-bar "$FLUTTER_URL" -o /tmp/flutter.tar.xz
 
-tar -xf /tmp/flutter.tar.xz -C "$HOME"
-rm /tmp/flutter.tar.xz
+FLUTTER_ARCHIVE="/tmp/flutter_sdk_download"
+curl -fL --progress-bar "$FLUTTER_URL" -o "$FLUTTER_ARCHIVE"
+
+if [[ "$FLUTTER_URL" == *.zip ]]; then
+  unzip -q "$FLUTTER_ARCHIVE" -d "$HOME"
+else
+  tar -xf "$FLUTTER_ARCHIVE" -C "$HOME"
+fi
+rm -f "$FLUTTER_ARCHIVE"
 
 export PATH="$FLUTTER_HOME/bin:$PATH"
 
