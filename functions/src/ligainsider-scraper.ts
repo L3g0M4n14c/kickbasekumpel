@@ -28,7 +28,6 @@ const DECOMPOSITION_MAP: Record<string, string> = {
  */
 export class LigainsiderScraperService {
     private static readonly BASE_URL = 'https://www.ligainsider.de';
-    private static readonly TEAM_MENU_COMMENT = '<!-- BEGINNNING TEAM MENU -->';
     private static readonly PLAYER_IMG_SELECTOR = 'player_img';
     private static readonly IMG_CIRCLE_SELECTOR = 'img-circle';
     private static readonly MAX_RETRIES = 3;
@@ -55,27 +54,17 @@ export class LigainsiderScraperService {
             logger.info('Fetching Ligainsider homepage...');
 
             const response = await this.retryFetch(LigainsiderScraperService.BASE_URL);
-            const html = response.data;
+            const $ = cheerio.load(response.data);
 
-            // Finde TEAM MENU Sektion
-            const teamMenuIndex = html.indexOf(LigainsiderScraperService.TEAM_MENU_COMMENT);
-            if (teamMenuIndex === -1) {
-                logger.warn('TEAM MENU comment not found in HTML');
-                return [];
-            }
-
-            // Parse HTML ab TEAM MENU
-            const teamMenuHtml = html.substring(teamMenuIndex);
-            const $ = cheerio.load(teamMenuHtml);
-
+            const seen = new Set<string>();
             const teamLinks: TeamKaderLink[] = [];
-            const links = $('a[href*="/kader/"]');
 
-            links.each((_, element) => {
+            $('a[href*="/kader/"]').each((_, element) => {
                 const href = $(element).attr('href');
                 const teamName = $(element).text().trim();
 
-                if (href && teamName) {
+                if (href && teamName && !seen.has(href)) {
+                    seen.add(href);
                     const absoluteUrl = href.startsWith('http')
                         ? href
                         : `${LigainsiderScraperService.BASE_URL}${href}`;

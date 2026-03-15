@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/zsh
 # Xcode Cloud Post-Xcodebuild Script
 # Runs after every xcodebuild invocation (build & archive).
 # Exports the IPA via Ad Hoc and uploads it to Firebase App Distribution.
