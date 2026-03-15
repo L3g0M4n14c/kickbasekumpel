@@ -51,7 +51,7 @@ if [ -z "${IPA_PATH}" ]; then
 <plist version="1.0">
 <dict>
     <key>method</key>
-    <string>ad-hoc</string>
+    <string>release-testing</string>
     <key>teamID</key>
     <string>${TEAM_ID}</string>
     <key>signingStyle</key>
@@ -67,8 +67,7 @@ EOF
   xcodebuild -exportArchive \
     -archivePath "${CI_ARCHIVE_PATH}" \
     -exportPath "${EXPORT_DIR}" \
-    -exportOptionsPlist /tmp/ExportOptions.plist \
-    -allowProvisioningUpdates
+    -exportOptionsPlist /tmp/ExportOptions.plist
 
   IPA_PATH="$(find "${EXPORT_DIR}" -name "*.ipa" | head -1)"
 fi

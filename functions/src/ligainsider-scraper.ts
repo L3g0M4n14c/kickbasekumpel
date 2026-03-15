@@ -28,8 +28,7 @@ const DECOMPOSITION_MAP: Record<string, string> = {
  */
 export class LigainsiderScraperService {
     private static readonly BASE_URL = 'https://www.ligainsider.de';
-    private static readonly PLAYER_IMG_SELECTOR = 'player_img';
-    private static readonly IMG_CIRCLE_SELECTOR = 'img-circle';
+    private static readonly PLAYER_CARD_SELECTOR = 'sub_child';
     private static readonly MAX_RETRIES = 3;
     private static readonly RETRY_DELAY_MS = 2000;
 
@@ -61,13 +60,15 @@ export class LigainsiderScraperService {
 
             $('a[href*="/kader/"]').each((_, element) => {
                 const href = $(element).attr('href');
-                const teamName = $(element).text().trim();
 
-                if (href && teamName && !seen.has(href)) {
+                if (href && !seen.has(href)) {
                     seen.add(href);
                     const absoluteUrl = href.startsWith('http')
                         ? href
                         : `${LigainsiderScraperService.BASE_URL}${href}`;
+
+                    // Teamnamen aus URL-Slug extrahieren: /fc-bayern-muenchen/1/kader/ → fc-bayern-muenchen
+                    const teamName = href.split('/').filter(Boolean)[0] ?? 'unknown';
 
                     teamLinks.push({ teamName, kaderUrl: absoluteUrl });
                     logger.debug(`Found team: ${teamName} → ${absoluteUrl}`);
@@ -101,24 +102,22 @@ export class LigainsiderScraperService {
 
             const playerPhotos = new Map<string, string>();
 
-            // Suche nach allen player_img divs
+            // Suche nach allen sub_child Spielerkarten
             const playerElements = $(
-                `div[class*="${LigainsiderScraperService.PLAYER_IMG_SELECTOR}"]`
+                `div[class*="${LigainsiderScraperService.PLAYER_CARD_SELECTOR}"]`
             );
 
             playerElements.each((_, playerDiv) => {
                 try {
-                    const imgCircle = $(playerDiv).find(
-                        `div[class*="${LigainsiderScraperService.IMG_CIRCLE_SELECTOR}"]`
-                    );
-                    const imgTag = imgCircle.find('img');
+                    const imgTag = $(playerDiv).find('img');
 
                     if (imgTag.length === 0) {
                         logger.debug('Skipping player div: no img tag found');
                         return;
                     }
 
-                    const photoUrl = imgTag.attr('src');
+                    // Ligainsider verwendet Lazy Loading: data-src hat die echte URL
+                    const photoUrl = imgTag.attr('data-src') ?? imgTag.attr('src');
                     const playerName = imgTag.attr('alt');
 
                     if (!photoUrl || !playerName) {
