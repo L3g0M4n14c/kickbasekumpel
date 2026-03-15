@@ -16,6 +16,13 @@ service cloud.firestore {
       allow write: if false; // Nur Admin SDK (Cloud Functions)
     }
 
+    // Ligainsider Spielerfotos: normalisierter Name → photoUrl
+    // Geschrieben von Cloud Functions (Admin SDK), öffentlich lesbar
+    match /ligainsider_photos/{docId} {
+      allow read: if true;
+      allow write: if false; // Nur Admin SDK (Cloud Functions)
+    }
+
     // Scraper Metadaten: Öffentlich lesbar (nur operative Metadaten)
     match /scraper_metadata/{docId} {
       allow read: if true;

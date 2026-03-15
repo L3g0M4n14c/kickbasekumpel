@@ -43,31 +43,83 @@ if [ -z "${IPA_PATH}" ]; then
   EXPORT_DIR="/tmp/ipa-adhoc-export"
   mkdir -p "${EXPORT_DIR}"
 
-  TEAM_ID="${APPLE_TEAM_ID:-894UP99QHD}"
+  # CI_WORKSPACE is set by Xcode Cloud to the root of the cloned repository.
+  REPO_ROOT="${CI_WORKSPACE:-/Volumes/workspace/repository}"
 
-  cat > /tmp/ExportOptions.plist << EOF
+  # ── Signing: prefer Fastlane Match when API-key env vars are present ────────
+  # Required Xcode Cloud environment variables (App Store Connect → Xcode Cloud →
+  # Workflow → Environment):
+  #   APP_STORE_CONNECT_API_KEY_ID         – App Store Connect API Key ID
+  #   APP_STORE_CONNECT_API_KEY_ISSUER_ID  – App Store Connect Issuer ID
+  #   APP_STORE_CONNECT_API_KEY_CONTENT    – Contents of the .p8 file (mark as Secret)
+  #   MATCH_GIT_URL                        – HTTPS URL of the private certificates repo
+  #   MATCH_PASSWORD                       – Fastlane Match encryption password (Secret)
+  #   MATCH_GIT_BASIC_AUTHORIZATION        – base64("username:PAT") for git repo access (Secret)
+
+  REQUIRED_SIGNING_VARS=(
+    "APP_STORE_CONNECT_API_KEY_ID"
+    "APP_STORE_CONNECT_API_KEY_ISSUER_ID"
+    "APP_STORE_CONNECT_API_KEY_CONTENT"
+    "MATCH_GIT_URL"
+    "MATCH_PASSWORD"
+  )
+
+  ALL_SIGNING_VARS_SET=true
+  for VAR in "${REQUIRED_SIGNING_VARS[@]}"; do
+    if [ -z "${(P)VAR}" ]; then
+      ALL_SIGNING_VARS_SET=false
+      break
+    fi
+  done
+
+  if [ "${ALL_SIGNING_VARS_SET}" = true ]; then
+    echo "=== Setting up code signing via Fastlane Match ==="
+    pushd "${REPO_ROOT}" > /dev/null
+
+    # Install Bundler if missing, then install gems from fastlane/Gemfile.
+    gem install bundler --no-document --quiet 2>/dev/null || true
+    BUNDLE_GEMFILE="${REPO_ROOT}/fastlane/Gemfile" bundle install --quiet
+
+    # Fetch Match certificates and generate ios/ExportOptions.plist.
+    BUNDLE_GEMFILE="${REPO_ROOT}/fastlane/Gemfile" bundle exec fastlane setup_signing
+
+    popd > /dev/null
+    EXPORT_OPTIONS="${REPO_ROOT}/ios/ExportOptions.plist"
+  else
+    echo "WARNING: One or more signing env vars are missing."
+    echo "  Required: APP_STORE_CONNECT_API_KEY_ID, APP_STORE_CONNECT_API_KEY_ISSUER_ID,"
+    echo "            APP_STORE_CONNECT_API_KEY_CONTENT, MATCH_GIT_URL, MATCH_PASSWORD"
+    echo "  → Add these in App Store Connect → Xcode Cloud → Workflow → Environment."
+    echo "    See docs/CI_CD_SETUP.md, section 'Xcode Cloud: iOS-Deploy konfigurieren'."
+    echo ""
+    echo "Falling back to automatic signing."
+
+    TEAM_ID="${APPLE_TEAM_ID:-894UP99QHD}"
+    cat > /tmp/ExportOptions.plist << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>method</key>
-    <string>release-testing</string>
+    <string>ad-hoc</string>
     <key>teamID</key>
     <string>${TEAM_ID}</string>
     <key>signingStyle</key>
     <string>automatic</string>
+    <key>signingCertificate</key>
+    <string>Apple Distribution</string>
     <key>stripSwiftSymbols</key>
     <true/>
-    <key>uploadBitcode</key>
-    <false/>
 </dict>
 </plist>
 EOF
+    EXPORT_OPTIONS="/tmp/ExportOptions.plist"
+  fi
 
   xcodebuild -exportArchive \
     -archivePath "${CI_ARCHIVE_PATH}" \
     -exportPath "${EXPORT_DIR}" \
-    -exportOptionsPlist /tmp/ExportOptions.plist
+    -exportOptionsPlist "${EXPORT_OPTIONS}"
 
   IPA_PATH="$(find "${EXPORT_DIR}" -name "*.ipa" | head -1)"
 fi

@@ -40,6 +40,23 @@ gh secret set FIREBASE_SERVICE_ACCOUNT_JSON \
 rm firebase-service-account.json
 ```
 
+### Wichtige IAM-Rolle für Scheduler-Deploys
+
+Wenn deine Functions einen `onSchedule` Trigger verwenden, muss der deployende Service Account
+Cloud Scheduler Jobs aktualisieren dürfen. Sonst schlägt der Deploy mit HTTP 403 fehl
+(`cloudscheduler.jobs.update`).
+
+Rolle einmalig vergeben:
+
+```bash
+gcloud projects add-iam-policy-binding kickbasekumpel \
+  --member="serviceAccount:DEIN_SERVICE_ACCOUNT@kickbasekumpel.iam.gserviceaccount.com" \
+  --role="roles/cloudscheduler.admin"
+```
+
+Hinweis: Der Service Account ist derjenige aus dem Secret `FIREBASE_SERVICE_ACCOUNT_JSON`
+im GitHub-Workflow.
+
 ---
 
 ## Schritt 2: Firebase App Distribution – Tester-Gruppe anlegen
@@ -243,13 +260,57 @@ Tester erhalten automatisch eine E-Mail mit Download-Anweisungen.
 
 ---
 
+---
+
+## Xcode Cloud: iOS-Deploy konfigurieren
+
+Damit `ci_post_xcodebuild.sh` die IPA mit Fastlane Match signieren kann, müssen die
+folgenden Environment Variables im Xcode Cloud Workflow hinterlegt werden:
+
+**App Store Connect → Xcode Cloud → Workflows → \<dein Workflow\> → Environment**
+
+| Variable | Beschreibung | Secret? |
+|----------|-------------|---------|
+| `FIREBASE_APP_ID_IOS` | Firebase iOS App ID (Schritt 5) | Nein |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | Firebase Service Account JSON (Schritt 1) | ✅ Ja |
+| `APPLE_TEAM_ID` | Apple Developer Team ID (z.B. `894UP99QHD`) | Nein |
+| `APP_STORE_CONNECT_API_KEY_ID` | App Store Connect Key ID (Schritt 6) | Nein |
+| `APP_STORE_CONNECT_API_KEY_ISSUER_ID` | App Store Connect Issuer ID (Schritt 6) | Nein |
+| `APP_STORE_CONNECT_API_KEY_CONTENT` | Inhalt der `.p8`-Datei (Schritt 6) | ✅ Ja |
+| `MATCH_GIT_URL` | HTTPS-URL des privaten Certificates-Repos (Schritt 7) | Nein |
+| `MATCH_PASSWORD` | Fastlane Match Verschlüsselungs-Passwort (Schritt 7) | ✅ Ja |
+| `MATCH_GIT_BASIC_AUTHORIZATION` | base64("username:PAT") für Git-Zugriff (siehe unten) | ✅ Ja |
+
+**`MATCH_GIT_BASIC_AUTHORIZATION` erstellen:**
+
+```bash
+# Personal Access Token (classic) mit `repo`-Scope auf github.com erstellen, dann:
+echo -n "L3g0M4n14c:DEIN_GITHUB_PAT" | base64
+# Den Base64-Output als Wert für MATCH_GIT_BASIC_AUTHORIZATION verwenden
+```
+
+> **Hinweis**: Xcode Cloud Workflows verwalten keine GitHub Secrets. Alle oben genannten
+> Variablen müssen direkt in App Store Connect unter dem Xcode Cloud Workflow eingetragen
+> werden – nicht in GitHub.
+
+---
+
 ## Troubleshooting
 
 **Firebase Deploy schlägt fehl mit "file not found"**
 → `firestore.rules` und `storage.rules` müssen im Root existieren (werden von Copilot angelegt)
 
+**Firebase Deploy schlägt fehl mit `cloudscheduler.jobs.update` (HTTP 403)**
+→ Der deployende Service Account hat keine Berechtigung, den bestehenden Scheduler-Job zu aktualisieren.
+Vergib einmalig `roles/cloudscheduler.admin` für den Service Account aus `FIREBASE_SERVICE_ACCOUNT_JSON`.
+
 **Android Build schlägt fehl mit Signing-Fehler**
 → Prüfe ob `ANDROID_KEYSTORE_BASE64` korrekt Base64-kodiert ist: `echo "$SECRET" | base64 -d | file -`
+
+**iOS Xcode Cloud Build schlägt fehl mit "No signing certificate 'iOS Distribution' found"**
+→ Die Fastlane-Match-Signierung greift nicht, weil Signing-Env-Vars im Xcode Cloud Workflow
+fehlen. Trage alle Variablen aus der Tabelle im Abschnitt "Xcode Cloud: iOS-Deploy konfigurieren"
+in App Store Connect → Xcode Cloud → Workflow → Environment ein.
 
 **iOS Build schlägt fehl mit "No matching provisioning profile"**
 → Fastlane Match erneut ausführen: `fastlane match adhoc --force_for_new_devices`

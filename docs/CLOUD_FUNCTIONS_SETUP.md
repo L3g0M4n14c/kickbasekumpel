@@ -370,6 +370,23 @@ firebase list functions --project=kickbasekumpel
 gcloud projects get-iam-policy kickbasekumpel
 ```
 
+### ❌ Deploy-Fehler: `cloudscheduler.jobs.update` (HTTP 403)
+
+Ursache: Der deployende Principal (User oder Service Account in CI) darf den bestehenden
+Cloud Scheduler Job nicht aktualisieren.
+
+```bash
+gcloud projects add-iam-policy-binding kickbasekumpel \
+  --member="serviceAccount:DEIN_SERVICE_ACCOUNT@kickbasekumpel.iam.gserviceaccount.com" \
+  --role="roles/cloudscheduler.admin"
+```
+
+Danach Deploy erneut ausführen:
+
+```bash
+firebase deploy --only functions --project=kickbasekumpel
+```
+
 ### ❌ "Scheduler Job antwortet nicht"
 
 ```bash

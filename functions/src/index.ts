@@ -4,7 +4,6 @@ import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { LigainsiderScraperService } from './ligainsider-scraper.js';
 import logger from './logger.js';
-import type { FirestorePlayer } from './types.js';
 
 // Initialisiere Firebase Admin SDK
 admin.initializeApp();
@@ -29,80 +28,58 @@ async function runLigainsiderPhotoUpdate(): Promise<{
         return { success: false, message: 'No photos scraped', errors: scraperResult.errors };
     }
 
-    // 2. Lade alle Spieler aus Firestore
-    logger.info('Fetching players from Firestore...');
-    const playersSnapshot = await firestore.collection('players').get();
+    // 2. Schreibe Fotos in eigene `ligainsider_photos`-Collection
+    //    Document-ID = normalisierter Spielername, dadurch kein Abhängigkeit
+    //    von der (möglicherweise leeren) `players`-Collection.
+    logger.info(`Writing ${scraperResult.teamPhotos.size} photos to ligainsider_photos...`);
 
-    if (playersSnapshot.empty) {
-        logger.warn('No players found in Firestore');
-        return { success: false, message: 'No players found in Firestore', errors: [] };
-    }
+    const BATCH_LIMIT = 500;
+    let batchCount = 0;
+    let batch = firestore.batch();
 
-    // 3. Aktualisiere Spieler mit neuen Fotos
-    let totalUpdated = 0;
-    let totalProcessed = 0;
-    const batch = firestore.batch();
+    for (const [normalizedName, photoUrl] of scraperResult.teamPhotos) {
+        const docRef = firestore.collection('ligainsider_photos').doc(normalizedName);
+        batch.set(docRef, {
+            photoUrl,
+            normalizedName,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
 
-    const players: FirestorePlayer[] = [];
-    playersSnapshot.forEach(doc => {
-        players.push({ id: doc.id, ...doc.data() } as FirestorePlayer);
-    });
-
-    for (const player of players) {
-        totalProcessed++;
-        const normalizedPlayerName = scraper.normalizePlayerName(
-            `${player.firstName} ${player.lastName}`
-        );
-
-        if (scraperResult.teamPhotos.has(normalizedPlayerName)) {
-            const photoUrl = scraperResult.teamPhotos.get(normalizedPlayerName)!;
-            const playerRef = firestore.collection('players').doc(player.id);
-
-            batch.update(playerRef, {
-                ligainsiderPhotoUrl: photoUrl,
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-                ligainsiderPhotoUpdatedAt: new Date().toISOString(),
-            });
-
-            totalUpdated++;
-            logger.debug(
-                { playerId: player.id, playerName: `${player.firstName} ${player.lastName}`, photoUrl },
-                'Scheduled photo update'
-            );
+        batchCount++;
+        if (batchCount >= BATCH_LIMIT) {
+            await batch.commit();
+            batch = firestore.batch();
+            batchCount = 0;
         }
     }
 
-    // 4. Committe Batch Update
-    if (totalUpdated > 0) {
-        logger.info(`Committing ${totalUpdated} photo updates...`);
+    if (batchCount > 0) {
         await batch.commit();
     }
 
-    // 5. Speichere Update-Metadaten
-    await firestore.collection('system').doc('ligainsider-scraper').update({
+    const totalPhotos = scraperResult.teamPhotos.size;
+
+    // 3. Speichere Update-Metadaten
+    await firestore.collection('system').doc('ligainsider-scraper').set({
         lastRun: admin.firestore.FieldValue.serverTimestamp(),
         lastRunDate: new Date().toISOString(),
         totalTeamsScraped: scraperResult.totalTeams,
-        totalPhotosFound: scraperResult.totalPhotos,
-        totalPlayersUpdated: totalUpdated,
-        totalPlayersProcessed: totalProcessed,
+        totalPhotosFound: totalPhotos,
         status: 'success',
         errors: scraperResult.errors,
-    });
+    }, { merge: true });
 
     logger.info(
-        { totalUpdated, totalTeams: scraperResult.totalTeams, totalPhotos: scraperResult.totalPhotos },
+        { totalPhotos, totalTeams: scraperResult.totalTeams },
         'Ligainsider photo update completed successfully'
     );
 
     return {
         success: true,
-        message: `Successfully updated ${totalUpdated} player photos`,
+        message: `Successfully stored ${totalPhotos} player photos`,
         stats: {
             totalTeamsScraped: scraperResult.totalTeams,
-            totalPhotosFound: scraperResult.totalPhotos,
-            totalPlayersUpdated: totalUpdated,
-            totalPlayersProcessed: totalProcessed,
+            totalPhotosFound: totalPhotos,
         },
         errors: scraperResult.errors,
     };

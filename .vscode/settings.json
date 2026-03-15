@@ -1,4 +1,5 @@
 {
     // enable the Dart & Flutter MCP server for this workspace
-    "dart.mcpServer": true
+    "dart.mcpServer": true,
+    "cmake.sourceDirectory": "/Users/marcocorro/Documents/vscode/kickbasekumpel/linux"
 }

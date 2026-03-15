@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../repositories/firestore_repositories.dart';
 import '../../domain/repositories/repository_interfaces.dart';
@@ -38,23 +39,31 @@ final triggerLigainsiderPhotoUpdateProvider = FutureProvider<void>((ref) async {
   }
 });
 
-/// Lädt eine Karte von Spieler-ID → ligainsiderPhotoUrl aus Firestore.
+/// Lädt eine Karte von normalisiertem Spielernamen → ligainsider Foto-URL aus Firestore.
+///
+/// Die Cloud Function schreibt Fotos in die `ligainsider_photos`-Collection,
+/// keyed by normalisierten Spielernamen (lowercase, ohne Diakritika).
+/// Damit ist kein Abhängigkeit zur `players`-Collection nötig.
 ///
 /// Wird beim App-Start einmal geladen und cacht die URLs im Arbeitsspeicher,
 /// damit der Live-Screen für jeden Spieler keine einzelne Firestore-Anfrage
 /// stellen muss.
-///
-/// Funktioniert auch im Web, da die Daten aus Firestore kommen (kein CORS).
 final ligainsiderPhotoMapProvider = FutureProvider<Map<String, String>>((
   ref,
 ) async {
-  final snapshot = await FirebaseFirestore.instance
-      .collection('players')
-      .where('ligainsiderPhotoUrl', isNotEqualTo: '')
-      .get();
+  try {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('ligainsider_photos')
+        .get();
 
-  return {
-    for (final doc in snapshot.docs)
-      doc.id: (doc.data()['ligainsiderPhotoUrl'] as String? ?? ''),
-  };
+    final result = {
+      for (final doc in snapshot.docs)
+        doc.id: (doc.data()['photoUrl'] as String? ?? ''),
+    };
+    debugPrint('✅ ligainsider_photos geladen: ${result.length} Einträge');
+    return result;
+  } catch (e) {
+    debugPrint('❌ ligainsider_photos Fehler: $e');
+    rethrow;
+  }
 });

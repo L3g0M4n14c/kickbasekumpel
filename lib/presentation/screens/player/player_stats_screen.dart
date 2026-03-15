@@ -31,10 +31,11 @@ class PlayerStatsScreen extends ConsumerWidget {
                   children: [
                     CircleAvatar(
                       radius: 40,
-                      backgroundImage: player.profileBigUrl.isNotEmpty
+                      backgroundImage:
+                          player.profileBigUrl.startsWith('https://')
                           ? NetworkImage(player.profileBigUrl)
                           : null,
-                      child: player.profileBigUrl.isEmpty
+                      child: !player.profileBigUrl.startsWith('https://')
                           ? const Icon(Icons.person, size: 40)
                           : null,
                     ),

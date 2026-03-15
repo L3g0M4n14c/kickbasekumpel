@@ -168,10 +168,10 @@ class _OverviewTab extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 56,
-                  backgroundImage: player.profileBigUrl.isNotEmpty
+                  backgroundImage: player.profileBigUrl.startsWith('https://')
                       ? NetworkImage(player.profileBigUrl)
                       : null,
-                  child: player.profileBigUrl.isEmpty
+                  child: !player.profileBigUrl.startsWith('https://')
                       ? const Icon(Icons.person, size: 64)
                       : null,
                 ),

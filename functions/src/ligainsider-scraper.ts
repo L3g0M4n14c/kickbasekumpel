@@ -28,7 +28,7 @@ const DECOMPOSITION_MAP: Record<string, string> = {
  */
 export class LigainsiderScraperService {
     private static readonly BASE_URL = 'https://www.ligainsider.de';
-    private static readonly PLAYER_CARD_SELECTOR = 'sub_child';
+    private static readonly PLAYER_CARD_SELECTOR = 'player_img';
     private static readonly MAX_RETRIES = 3;
     private static readonly RETRY_DELAY_MS = 2000;
 
@@ -104,7 +104,7 @@ export class LigainsiderScraperService {
 
             // Suche nach allen sub_child Spielerkarten
             const playerElements = $(
-                `div[class*="${LigainsiderScraperService.PLAYER_CARD_SELECTOR}"]`
+                `.${LigainsiderScraperService.PLAYER_CARD_SELECTOR}`
             );
 
             playerElements.each((_, playerDiv) => {
@@ -116,8 +116,8 @@ export class LigainsiderScraperService {
                         return;
                     }
 
-                    // Ligainsider verwendet Lazy Loading: data-src hat die echte URL
-                    const photoUrl = imgTag.attr('data-src') ?? imgTag.attr('src');
+                    // Ligainsider: Foto-URL direkt in src (kein Lazy Loading mehr)
+                    const photoUrl = imgTag.attr('src') ?? imgTag.attr('data-src');
                     const playerName = imgTag.attr('alt');
 
                     if (!photoUrl || !playerName) {

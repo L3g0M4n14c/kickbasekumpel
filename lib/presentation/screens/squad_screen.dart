@@ -259,11 +259,11 @@ class _PlayerTile extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundImage: player.profileBigUrl.isNotEmpty
+                backgroundImage: player.profileBigUrl.startsWith('https://')
                     ? NetworkImage(player.profileBigUrl)
                     : null,
                 backgroundColor: Colors.grey[300],
-                child: player.profileBigUrl.isEmpty
+                child: !player.profileBigUrl.startsWith('https://')
                     ? Icon(Icons.person, color: Colors.grey[600])
                     : null,
               ),

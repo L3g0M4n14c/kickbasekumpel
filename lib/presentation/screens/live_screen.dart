@@ -457,11 +457,69 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
 
     // Resolve Ligainsider image:
     // 1. Primär: ligainsiderPhotoMapProvider aus Firestore (funktioniert auch im Web)
+    //    Key = normalisierter Spielername (lowercase, ohne Diakritika)
     // 2. Fallback: LigainsiderService (lokales Scraping, nur nativ/mit Proxy)
-    final playerId = player['i'] as String? ?? '';
+    final normalizedName = '$firstName $lastName'
+        .toLowerCase()
+        .replaceAll('ä', 'a')
+        .replaceAll('ö', 'o')
+        .replaceAll('ü', 'u')
+        .replaceAll('ß', 'ss')
+        .replaceAll('é', 'e')
+        .replaceAll('è', 'e')
+        .replaceAll('ê', 'e')
+        .replaceAll('ë', 'e')
+        .replaceAll('á', 'a')
+        .replaceAll('à', 'a')
+        .replaceAll('â', 'a')
+        .replaceAll('ã', 'a')
+        .replaceAll('å', 'a')
+        .replaceAll('í', 'i')
+        .replaceAll('ì', 'i')
+        .replaceAll('ï', 'i')
+        .replaceAll('î', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ò', 'o')
+        .replaceAll('ô', 'o')
+        .replaceAll('õ', 'o')
+        .replaceAll('ø', 'o')
+        .replaceAll('ú', 'u')
+        .replaceAll('ù', 'u')
+        .replaceAll('û', 'u')
+        .replaceAll('ñ', 'n')
+        .replaceAll('ň', 'n')
+        .replaceAll('ç', 'c')
+        .replaceAll('č', 'c')
+        .replaceAll('ć', 'c')
+        .replaceAll('š', 's')
+        .replaceAll('ş', 's')
+        .replaceAll('ž', 'z')
+        .replaceAll('ź', 'z')
+        .replaceAll('ż', 'z')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
     final photoMapAsync = ref.watch(ligainsiderPhotoMapProvider);
-    final _rawPhotoUrl = photoMapAsync.asData?.value[playerId] ?? '';
-    String? ligImage = _rawPhotoUrl.isNotEmpty ? _rawPhotoUrl : null;
+    final photoMap = photoMapAsync.asData?.value;
+    // Primär-Lookup: vollständiger Name (z.B. "thomas mueller")
+    // Fallback: nur Nachname (z.B. "mueller") für APIs die nur Nachnamen liefern
+    final normalizedLastName = lastName
+        .toLowerCase()
+        .replaceAll('ä', 'a')
+        .replaceAll('ö', 'o')
+        .replaceAll('ü', 'u')
+        .replaceAll('ß', 'ss')
+        .replaceAll(RegExp(r'[^a-z0-9 ]'), '')
+        .trim();
+    final rawPhotoUrl =
+        photoMap?[normalizedName] ??
+        (normalizedLastName.isNotEmpty
+            ? photoMap?.entries
+                  .where((e) => e.key.endsWith(' $normalizedLastName'))
+                  .firstOrNull
+                  ?.value
+            : null) ??
+        '';
+    String? ligImage = rawPhotoUrl.isNotEmpty ? rawPhotoUrl : null;
 
     if (ligImage == null && !kIsWeb) {
       // Fallback auf direktes Scraping für native Builds wenn Firestore leer
