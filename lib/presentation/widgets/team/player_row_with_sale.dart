@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kickbasekumpel/data/models/player_model.dart';
+import 'package:kickbasekumpel/data/providers/ligainsider_photo_provider.dart';
+import 'package:kickbasekumpel/data/utils/parsing_utils.dart';
 import 'package:kickbasekumpel/presentation/utils/player_status_helper.dart';
 
 /// Spieler-Reihe mit erweiterten Informationen und Verkaufs-Toggle
@@ -10,7 +13,7 @@ import 'package:kickbasekumpel/presentation/utils/player_status_helper.dart';
 /// - Spalte 2: Status-Emoji (💪 = Fit, 💊 = Fraglich, 🚑 = Verletzt, 🟨 = Gelbe Karte)
 /// - Spalte 3: Durchschnittspunkte (groß) + Gesamtpunkte (klein darunter)
 /// - Spalte 4: Marktwert + Trend mit Pfeil (↑ grün oder ↓ rot)
-class PlayerRowWithSale extends StatelessWidget {
+class PlayerRowWithSale extends ConsumerWidget {
   final Player player;
   final bool isSelectedForSale;
   final Function(bool) onToggleSale;
@@ -27,7 +30,18 @@ class PlayerRowWithSale extends StatelessWidget {
   String get fullName => '${player.firstName} ${player.lastName}';
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Ligainsider-Foto-Lookup
+    final photoMap = ref.watch(ligainsiderPhotoMapProvider).asData?.value;
+    final ligaPhoto = lookupLigainsiderPhoto(
+      photoMap,
+      player.firstName,
+      player.lastName,
+    );
+    final photoUrl = (ligaPhoto?.isNotEmpty == true)
+        ? ligaPhoto!
+        : (_isValidHttpUrl(player.profileBigUrl) ? player.profileBigUrl : null);
+
     return Card(
       clipBehavior: Clip.hardEdge,
       child: InkWell(
@@ -40,11 +54,11 @@ class PlayerRowWithSale extends StatelessWidget {
               // Spielerfoto
               CircleAvatar(
                 radius: 20,
-                backgroundImage: _isValidHttpUrl(player.profileBigUrl)
-                    ? NetworkImage(player.profileBigUrl)
+                backgroundImage: photoUrl != null
+                    ? NetworkImage(photoUrl)
                     : null,
                 backgroundColor: Colors.grey[300],
-                child: !_isValidHttpUrl(player.profileBigUrl)
+                child: photoUrl == null
                     ? Icon(Icons.person, color: Colors.grey[600])
                     : null,
               ),

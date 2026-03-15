@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/providers/league_detail_providers.dart';
 import '../../data/providers/league_providers.dart';
+import '../../data/providers/ligainsider_photo_provider.dart';
 import '../../data/models/player_model.dart';
+import '../../data/utils/parsing_utils.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/error_widget.dart';
 import '../widgets/charts/position_badge.dart';
@@ -31,7 +33,11 @@ class SquadScreen extends ConsumerWidget {
         data: (squadData) {
           final players =
               (squadData['it'] as List?)
-                  ?.map((json) => Player.fromJson(json as Map<String, dynamic>))
+                  ?.map(
+                    (json) => Player.fromJson(
+                      normalizePlayerJson(json as Map<String, dynamic>),
+                    ),
+                  )
                   .toList() ??
               [];
 
@@ -228,15 +234,27 @@ class _SquadList extends StatelessWidget {
   }
 }
 
-class _PlayerTile extends StatelessWidget {
+class _PlayerTile extends ConsumerWidget {
   final Player player;
   final String leagueId;
 
   const _PlayerTile({required this.player, required this.leagueId});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+
+    final photoMap = ref.watch(ligainsiderPhotoMapProvider).asData?.value;
+    final ligaPhoto = lookupLigainsiderPhoto(
+      photoMap,
+      player.firstName,
+      player.lastName,
+    );
+    final photoUrl = (ligaPhoto?.isNotEmpty == true)
+        ? ligaPhoto!
+        : (player.profileBigUrl.startsWith('https://')
+              ? player.profileBigUrl
+              : null);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -259,11 +277,11 @@ class _PlayerTile extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundImage: player.profileBigUrl.startsWith('https://')
-                    ? NetworkImage(player.profileBigUrl)
+                backgroundImage: photoUrl != null
+                    ? NetworkImage(photoUrl)
                     : null,
                 backgroundColor: Colors.grey[300],
-                child: !player.profileBigUrl.startsWith('https://')
+                child: photoUrl == null
                     ? Icon(Icons.person, color: Colors.grey[600])
                     : null,
               ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/providers/player_detail_providers.dart';
 import '../../../data/providers/competition_providers.dart';
 import '../../../data/providers/league_detail_providers.dart';
+import '../../../data/providers/ligainsider_photo_provider.dart';
 import '../../../data/models/player_model.dart';
 import '../../../data/models/performance_model.dart';
 import '../../../data/utils/parsing_utils.dart';
@@ -139,7 +140,7 @@ class _PlayerDetailScreenState extends ConsumerState<PlayerDetailScreen>
   }
 }
 
-class _OverviewTab extends StatelessWidget {
+class _OverviewTab extends ConsumerWidget {
   final Player player;
   final bool isTablet;
 
@@ -154,8 +155,20 @@ class _OverviewTab extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+
+    final photoMap = ref.watch(ligainsiderPhotoMapProvider).asData?.value;
+    final ligaPhoto = lookupLigainsiderPhoto(
+      photoMap,
+      player.firstName,
+      player.lastName,
+    );
+    final photoUrl = (ligaPhoto?.isNotEmpty == true)
+        ? ligaPhoto!
+        : (player.profileBigUrl.startsWith('https://')
+              ? player.profileBigUrl
+              : null);
 
     return ListView(
       padding: EdgeInsets.all(isTablet ? 24.0 : 16.0),
@@ -168,10 +181,10 @@ class _OverviewTab extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 56,
-                  backgroundImage: player.profileBigUrl.startsWith('https://')
-                      ? NetworkImage(player.profileBigUrl)
+                  backgroundImage: photoUrl != null
+                      ? NetworkImage(photoUrl)
                       : null,
-                  child: !player.profileBigUrl.startsWith('https://')
+                  child: photoUrl == null
                       ? const Icon(Icons.person, size: 64)
                       : null,
                 ),

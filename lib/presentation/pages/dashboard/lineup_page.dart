@@ -5,6 +5,8 @@ import '../../../config/screen_size.dart';
 import '../../../data/models/lineup_model.dart';
 import '../../../data/providers/player_providers.dart';
 import '../../../data/providers/league_providers.dart';
+import '../../../data/providers/ligainsider_photo_provider.dart';
+import '../../../data/utils/parsing_utils.dart';
 import '../../widgets/responsive_layout.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/error_widget.dart';
@@ -314,13 +316,13 @@ class _PositionRow extends StatelessWidget {
   }
 }
 
-class _FieldPlayerBadge extends StatelessWidget {
+class _FieldPlayerBadge extends ConsumerWidget {
   final LineupPlayer player;
 
   const _FieldPlayerBadge({required this.player});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // Nachname (letztes Wort) – keine Kürzung, FittedBox passt die Schrift an
     final nameParts = player.name.trim().split(' ');
     final displayName = nameParts.length > 1 ? nameParts.last : nameParts.first;
@@ -334,6 +336,10 @@ class _FieldPlayerBadge extends StatelessWidget {
     // Aufstellungsnummer: Torwart (lo=0) zeigt 'TW' statt '0'
     final orderLabel = player.lineupOrder == 0 ? 'TW' : '${player.lineupOrder}';
 
+    final photoMap = ref.watch(ligainsiderPhotoMapProvider).asData?.value;
+    // player.name ist der Anzeigename (meist Nachname)
+    final ligaPhoto = lookupLigainsiderPhoto(photoMap, '', player.name);
+
     return SizedBox(
       width: 72,
       child: Column(
@@ -345,14 +351,19 @@ class _FieldPlayerBadge extends StatelessWidget {
               CircleAvatar(
                 radius: 20,
                 backgroundColor: Colors.white.withValues(alpha: 0.9),
-                child: Text(
-                  orderLabel,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1B5E20),
-                  ),
-                ),
+                backgroundImage: ligaPhoto != null
+                    ? NetworkImage(ligaPhoto)
+                    : null,
+                child: ligaPhoto == null
+                    ? Text(
+                        orderLabel,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1B5E20),
+                        ),
+                      )
+                    : null,
               ),
               if (statusColor != null)
                 Positioned(
@@ -529,13 +540,13 @@ class _BenchSection extends StatelessWidget {
   }
 }
 
-class _BenchPlayerTile extends StatelessWidget {
+class _BenchPlayerTile extends ConsumerWidget {
   final LineupPlayer player;
 
   const _BenchPlayerTile({required this.player});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final posLabel = switch (player.position) {
       1 => 'TW',
@@ -545,20 +556,26 @@ class _BenchPlayerTile extends StatelessWidget {
       _ => '?',
     };
 
+    final photoMap = ref.watch(ligainsiderPhotoMapProvider).asData?.value;
+    final ligaPhoto = lookupLigainsiderPhoto(photoMap, '', player.name);
+
     return ListTile(
       dense: true,
       contentPadding: EdgeInsets.zero,
       leading: CircleAvatar(
         radius: 16,
         backgroundColor: theme.colorScheme.surfaceContainerHighest,
-        child: Text(
-          posLabel,
-          style: TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
+        backgroundImage: ligaPhoto != null ? NetworkImage(ligaPhoto) : null,
+        child: ligaPhoto == null
+            ? Text(
+                posLabel,
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              )
+            : null,
       ),
       title: Text(
         player.name,

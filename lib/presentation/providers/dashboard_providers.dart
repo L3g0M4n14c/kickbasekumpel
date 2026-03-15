@@ -8,6 +8,7 @@ import 'package:kickbasekumpel/data/providers/kickbase_auth_provider.dart';
 import 'package:kickbasekumpel/data/providers/user_providers.dart';
 import 'package:kickbasekumpel/data/providers/league_providers.dart';
 import 'package:kickbasekumpel/data/providers/league_detail_providers.dart';
+import 'package:kickbasekumpel/data/providers/kickbase_api_provider.dart';
 import 'package:kickbasekumpel/data/utils/parsing_utils.dart';
 import 'package:kickbasekumpel/domain/exceptions/kickbase_exceptions.dart';
 
@@ -153,9 +154,6 @@ final teamPlayersProvider = FutureProvider<List<Player>>((ref) async {
     final players = rawPlayers.map((json) {
       try {
         final normalized = normalizePlayerJson(json as Map<String, dynamic>);
-        _logger.i(
-          '🔄 Normalized player: fn=${normalized['firstName']}, ln=${normalized['lastName']}, tn=${normalized['teamName']}',
-        );
         return Player.fromJson(normalized);
       } catch (e) {
         _logger.e('❌ Error normalizing player: $e');
@@ -163,8 +161,31 @@ final teamPlayersProvider = FutureProvider<List<Player>>((ref) async {
       }
     }).toList();
 
-    _logger.i('✅ Extracted ${players.length} players from squad data');
-    return players;
+    // Vorname + Nachname parallel vom Player-Detail-Endpunkt nachladen,
+    // da der Squad-Endpunkt nur den Anzeigenamen (fn = "Baumgartner") liefert.
+    final apiClient = ref.watch(kickbaseApiClientProvider);
+    final enrichedPlayers = await Future.wait(
+      players.map((player) async {
+        if (player.id.isEmpty) return player;
+        try {
+          final details = await apiClient.getPlayerDetails(leagueId, player.id);
+          final fn = (details['fn'] as String?) ?? '';
+          final ln = (details['ln'] as String?) ?? '';
+          if (fn.isNotEmpty || ln.isNotEmpty) {
+            _logger.i(
+              '🔄 Enriched player: fn=$fn, ln=$ln (was: fn=${player.firstName}, ln=${player.lastName})',
+            );
+            return player.copyWith(firstName: fn, lastName: ln);
+          }
+        } catch (e) {
+          _logger.w('⚠️ Name enrichment failed for player ${player.id}: $e');
+        }
+        return player;
+      }),
+    );
+
+    _logger.i('✅ Extracted ${enrichedPlayers.length} players from squad data');
+    return enrichedPlayers;
   } on AuthorizationException catch (e) {
     _logger.w('🔒 403 in teamPlayersProvider – Token abgelaufen: ${e.message}');
     // Logout erzwingen → Router leitet zur Login-Seite weiter

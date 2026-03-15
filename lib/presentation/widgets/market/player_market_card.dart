@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../data/models/market_model.dart';
+import '../../../data/providers/ligainsider_photo_provider.dart';
+import '../../../data/utils/parsing_utils.dart';
 
 /// Player Market Card Widget
 ///
@@ -37,6 +39,19 @@ class PlayerMarketCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
+    // Ligainsider-Foto-Lookup (gecacht, kein Extra-Request)
+    final photoMap = ref.watch(ligainsiderPhotoMapProvider).asData?.value;
+    final ligaPhoto = lookupLigainsiderPhoto(
+      photoMap,
+      player.firstName,
+      player.lastName,
+    );
+    final photoUrl = (ligaPhoto?.isNotEmpty == true)
+        ? ligaPhoto!
+        : (player.profileBigUrl.startsWith('https://')
+              ? player.profileBigUrl
+              : '');
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -51,7 +66,7 @@ class PlayerMarketCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Player Image
-                  _PlayerImage(imageUrl: player.profileBigUrl),
+                  _PlayerImage(imageUrl: photoUrl),
                   const SizedBox(width: 12),
 
                   // Player Info

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/providers/player_providers.dart';
 import '../../../data/providers/league_providers.dart';
+import '../../../data/providers/ligainsider_photo_provider.dart';
+import '../../../data/utils/parsing_utils.dart';
 import '../../../data/models/lineup_model.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/common/app_logo.dart';
@@ -335,15 +337,19 @@ class _LineupSection extends StatelessWidget {
   }
 }
 
-class _PlayerLineupCard extends StatelessWidget {
+class _PlayerLineupCard extends ConsumerWidget {
   final LineupPlayer player;
   final Color color;
 
   const _PlayerLineupCard({required this.player, required this.color});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+
+    final photoMap = ref.watch(ligainsiderPhotoMapProvider).asData?.value;
+    // player.name ist meist nur der Nachname (z.B. "Baumgartner")
+    final ligaPhoto = lookupLigainsiderPhoto(photoMap, '', player.name);
 
     final positionLabel = switch (player.position) {
       1 => 'TW',
@@ -367,14 +373,19 @@ class _PlayerLineupCard extends StatelessWidget {
           children: [
             CircleAvatar(
               backgroundColor: color.withValues(alpha: 0.2),
-              child: Text(
-                positionLabel,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-              ),
+              backgroundImage: ligaPhoto != null
+                  ? NetworkImage(ligaPhoto)
+                  : null,
+              child: ligaPhoto == null
+                  ? Text(
+                      positionLabel,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    )
+                  : null,
             ),
             if (statusIcon != null)
               Positioned(right: -4, top: -4, child: statusIcon),

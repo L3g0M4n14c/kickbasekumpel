@@ -220,9 +220,16 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
             String lastName = (p['ln'] as String?) ?? '';
             final fullName = (p['n'] as String?) ?? '';
             if (firstName.isEmpty && fullName.isNotEmpty) {
-              final parts = fullName.split(' ');
-              firstName = parts.isNotEmpty ? parts.first : fullName;
-              lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+              final parts = fullName.trim().split(' ');
+              if (parts.length >= 2) {
+                // Multiple words → first = Vorname, rest = Nachname
+                firstName = parts.first;
+                lastName = parts.sublist(1).join(' ');
+              } else if (parts.isNotEmpty && parts.first.isNotEmpty) {
+                // Einwortiger Anzeigename = Nachname (z.B. "Baumgartner")
+                firstName = '';
+                lastName = parts.first;
+              }
             }
 
             final teamName = (p['tn'] as String?) ?? '';

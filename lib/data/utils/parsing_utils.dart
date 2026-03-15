@@ -1,3 +1,83 @@
+/// Normalisiert einen Spielernamen für den Ligainsider-Foto-Lookup.
+///
+/// Muss identisch zur TypeScript `normalizePlayerName`-Funktion im Scraper sein,
+/// damit Dart-Lookup-Keys mit den Firestore-Document-IDs übereinstimmen.
+/// Abdeckung: deutsche, kroatische, spanische, französische, türkische,
+/// polnische, tschechische und weitere europäische Sonderzeichen.
+String normalizeForLigainsider(String name) {
+  var s = name.toLowerCase();
+  const map = {
+    'á': 'a',
+    'à': 'a',
+    'ä': 'a',
+    'â': 'a',
+    'ã': 'a',
+    'å': 'a',
+    'é': 'e',
+    'è': 'e',
+    'ë': 'e',
+    'ê': 'e',
+    'í': 'i',
+    'ì': 'i',
+    'ï': 'i',
+    'î': 'i',
+    'ó': 'o',
+    'ò': 'o',
+    'ö': 'o',
+    'ô': 'o',
+    'õ': 'o',
+    'ø': 'o',
+    'ú': 'u',
+    'ù': 'u',
+    'ü': 'u',
+    'û': 'u',
+    'ñ': 'n',
+    'ň': 'n',
+    'ç': 'c',
+    'č': 'c',
+    'ć': 'c',
+    'š': 's',
+    'ş': 's',
+    'ž': 'z',
+    'ź': 'z',
+    'ż': 'z',
+    'đ': 'd',
+    'ð': 'd',
+    'ß': 'ss',
+    'ł': 'l',
+    'ľ': 'l',
+    'ř': 'r',
+    'ť': 't',
+    'ď': 'd',
+  };
+  for (final entry in map.entries) {
+    s = s.replaceAll(entry.key, entry.value);
+  }
+  // Alle verbleibenden Nicht-ASCII-Buchstaben entfernen
+  s = s.replaceAll(RegExp(r'[^a-z0-9 ]'), '');
+  s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
+  return s;
+}
+
+/// Sucht eine Foto-URL in der Ligainsider-Foto-Map.
+/// Versucht zuerst den vollständigen Namen, dann Fallback auf Nachname-Endung.
+String? lookupLigainsiderPhoto(
+  Map<String, String>? photoMap,
+  String firstName,
+  String lastName,
+) {
+  if (photoMap == null || photoMap.isEmpty) return null;
+  final fullNorm = normalizeForLigainsider('$firstName $lastName'.trim());
+  final lastNorm = normalizeForLigainsider(lastName.trim());
+  return photoMap[fullNorm] ??
+      (lastNorm.isNotEmpty
+          ? photoMap.entries
+                .where((e) => e.key.endsWith(' $lastNorm'))
+                .firstOrNull
+                ?.value
+          : null);
+}
+
 Map<String, dynamic> normalizePlayerJson(Map<String, dynamic> json) {
   final Map<String, dynamic> copy = Map<String, dynamic>.from(json);
 
@@ -19,14 +99,20 @@ Map<String, dynamic> normalizePlayerJson(Map<String, dynamic> json) {
     copy['lastName'] = copy['ln'];
   }
 
-  // If only 'n' (name) exists, split it
+  // If only 'n' (name) exists, split it.
+  // A single-word display name (e.g. "Baumgartner") is the family/last name.
+  // Multiple words (e.g. "Thomas Müller") → first word = first name, rest = last name.
   if ((copy['firstName'] == null || copy['firstName'] == '') &&
       copy['n'] != null) {
     final fullName = copy['n'].toString().trim();
     final parts = fullName.split(' ');
-    if (parts.isNotEmpty) {
+    if (parts.length >= 2) {
       copy['firstName'] = parts.first;
-      copy['lastName'] = parts.length > 1 ? parts.skip(1).join(' ') : '';
+      copy['lastName'] = parts.skip(1).join(' ');
+    } else if (parts.isNotEmpty && parts.first.isNotEmpty) {
+      // Single word → this is the last/family name; first name is unknown
+      copy['firstName'] = '';
+      copy['lastName'] = parts.first;
     }
   }
 
