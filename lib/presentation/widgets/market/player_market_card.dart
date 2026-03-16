@@ -342,18 +342,27 @@ class _PlayerStats extends StatelessWidget {
         // Average Points
         Icon(Icons.star, size: 16, color: theme.colorScheme.primary),
         const SizedBox(width: 4),
-        Text(
-          '${player.averagePoints.toStringAsFixed(1)} Ø',
-          style: theme.textTheme.bodySmall?.copyWith(
-            fontWeight: FontWeight.bold,
+        Flexible(
+          child: Text(
+            '${player.averagePoints.toStringAsFixed(1)} Ø',
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 8),
 
         // Total Points
         Icon(Icons.emoji_events, size: 16, color: Colors.amber),
         const SizedBox(width: 4),
-        Text('${player.totalPoints} Pkt', style: theme.textTheme.bodySmall),
+        Flexible(
+          child: Text(
+            '${player.totalPoints} Pkt',
+            style: theme.textTheme.bodySmall,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ],
     );
   }
@@ -463,13 +472,16 @@ class _ExpiryBadge extends StatelessWidget {
       children: [
         Icon(Icons.timer_outlined, size: 13, color: color),
         const SizedBox(width: 3),
-        Text(
-          label,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: color,
-            fontWeight: diff.inHours < 3 && !diff.isNegative
-                ? FontWeight.bold
-                : FontWeight.normal,
+        Flexible(
+          child: Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: diff.inHours < 3 && !diff.isNegative
+                  ? FontWeight.bold
+                  : FontWeight.normal,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],

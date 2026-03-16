@@ -298,7 +298,7 @@ class _PositionRow extends StatelessWidget {
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -341,7 +341,7 @@ class _FieldPlayerBadge extends ConsumerWidget {
     final ligaPhoto = lookupLigainsiderPhoto(photoMap, '', player.name);
 
     return SizedBox(
-      width: 72,
+      width: 64,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -428,7 +428,7 @@ class _EmptyPlayerSlot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 72,
+      width: 64,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
