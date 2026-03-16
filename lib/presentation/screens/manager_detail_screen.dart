@@ -276,9 +276,11 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
   }
 
   Widget _buildMatchDayStartingEleven(BuildContext context) {
-    // Alle lp-Spieler für den Spieltag laden, inkl. Fallback auf API
+    // Angereicherte Spieler für den Spieltag laden:
+    // - vollständige Namen (fn + ln) für Ligainsider-Foto-Lookup
+    // - matchDayPoints: Punkte des Spielers an diesem Spieltag
     final lineupAsync = ref.watch(
-      managerLineupPlayersProvider((
+      managerLineupEnrichedProvider((
         leagueId: widget.leagueId,
         userId: widget.userId,
         matchDay: widget.matchDay!,
@@ -309,7 +311,7 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
         child: ErrorWidgetCustom(
           error: error,
           onRetry: () => ref.invalidate(
-            managerLineupPlayersProvider((
+            managerLineupEnrichedProvider((
               leagueId: widget.leagueId,
               userId: widget.userId,
               matchDay: widget.matchDay!,
@@ -399,6 +401,10 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
     final points = (normalized['totalPoints'] as int?) ?? 0;
     final avgPoints = (normalized['averagePoints'] as double?) ?? 0.0;
 
+    // Spieltag-spezifische Punkte (nur vorhanden wenn matchDay-Ansicht)
+    final matchDayPoints =
+        (player as Map<Object?, Object?>)['matchDayPoints'] as int?;
+
     // Positionsfarbe
     final posColor = _positionColor(context, posRaw);
 
@@ -449,27 +455,55 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
               ),
         title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(
-          'Ø ${avgPoints.toStringAsFixed(1)} Pkt/Spieltag',
+          matchDayPoints != null
+              ? 'Ø ${avgPoints.toStringAsFixed(1)} Pkt/Spieltag'
+              : 'Ø ${avgPoints.toStringAsFixed(1)} Pkt/Spieltag',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              '${(marketValue / 1_000_000).toStringAsFixed(1)}M€',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            ),
-            Text(
-              '$points Pkt',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: Colors.grey),
-            ),
-          ],
-        ),
+        trailing: matchDayPoints != null
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '$matchDayPoints Pkt',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: matchDayPoints > 0
+                          ? Colors.green.shade700
+                          : Colors.grey,
+                    ),
+                  ),
+                  Text(
+                    '${(marketValue / 1_000_000).toStringAsFixed(1)}M€',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                  ),
+                ],
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${(marketValue / 1_000_000).toStringAsFixed(1)}M€',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  Text(
+                    '$points Pkt',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                  ),
+                ],
+              ),
       ),
     );
   }

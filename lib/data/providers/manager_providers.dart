@@ -183,3 +183,75 @@ final managerLineupPlayersProvider =
 
       return result;
     });
+
+/// Manager Lineup Enriched Provider (für Spieltag-Ansicht)
+///
+/// Erweitert [managerLineupPlayersProvider] um:
+/// 1. Vollständige Spielernamen (`fn` + `ln`) für Kader-Spieler ohne Vornamen
+/// 2. Spieltag-spezifische Punkte (`matchDayPoints`) via Player-Stats-Endpunkt
+///
+/// Das Ergebnis ist eine Liste von Spieler-Maps mit dem zusätzlichen Key
+/// `matchDayPoints` (int), der die Punkte des Spielers an diesem Spieltag enthält.
+final managerLineupEnrichedProvider =
+    FutureProvider.family<
+      List<Map<String, dynamic>>,
+      ({String leagueId, String userId, int matchDay})
+    >((ref, params) async {
+      final apiClient = ref.watch(kickbaseApiClientProvider);
+
+      // 1. Basis-Lineup laden (inkl. Fallback auf Player-Details für nicht mehr
+      //    im Kader befindliche Spieler)
+      final players = await ref.watch(
+        managerLineupPlayersProvider(params).future,
+      );
+
+      // 2. Namen & Spieltag-Punkte für alle Spieler parallel anreichern
+      final enriched = await Future.wait(
+        players.map((p) async {
+          final id = (p['pi'] ?? p['i'] ?? p['id'])?.toString().trim() ?? '';
+
+          // Namen-Anreicherung: fn fehlt → Player-Details nachladen
+          Map<String, dynamic> enrichedPlayer = p;
+          final fn = (p['fn'] ?? '').toString().trim();
+          if (fn.isEmpty && id.isNotEmpty) {
+            try {
+              final details = await apiClient.getPlayerDetails(
+                params.leagueId,
+                id,
+              );
+              enrichedPlayer = {
+                ...p,
+                'fn': details['fn'] ?? '',
+                'ln': details['ln'] ?? p['n'] ?? '',
+              };
+            } catch (_) {
+              // Vorname bleibt leer, Foto-Lookup läuft trotzdem per Nachname
+            }
+          }
+
+          // Spieltag-Punkte über Performance-Endpunkt laden
+          int matchDayPoints = 0;
+          if (id.isNotEmpty) {
+            try {
+              final stats = await apiClient.getPlayerStats(params.leagueId, id);
+              // Aktuelle Saison ermitteln: neueste Saison mit cur==true-Spieltag,
+              // Fallback auf die letzte Saison in der Liste (= neueste).
+              final currentSeason = stats.it.reversed.firstWhere(
+                (s) => s.ph.any((m) => m.cur),
+                orElse: () => stats.it.last,
+              );
+              final match = currentSeason.ph
+                  .where((m) => m.day == params.matchDay)
+                  .firstOrNull;
+              matchDayPoints = match?.p ?? 0;
+            } catch (_) {
+              // Punkte bleiben 0
+            }
+          }
+
+          return {...enrichedPlayer, 'matchDayPoints': matchDayPoints};
+        }),
+      );
+
+      return enriched;
+    });
