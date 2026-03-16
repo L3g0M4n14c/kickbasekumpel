@@ -48,6 +48,51 @@ final managerSquadProvider =
       return await apiClient.getManagerSquad(params.leagueId, params.userId);
     });
 
+/// Manager Squad (angereichert mit vollständigen Namen)
+///
+/// Der Squad-Endpunkt liefert bei Spielern nur den Nachnamen (`n`) und
+/// kein `fn` (Vorname). Dieser Provider lädt für Spieler ohne Vorname
+/// die vollständigen Daten parallel via Player-Details-Endpunkt nach,
+/// damit der Ligainsider-Foto-Lookup (`fn + ln`) funktioniert.
+final managerSquadEnrichedProvider =
+    FutureProvider.family<
+      List<Map<String, dynamic>>,
+      ({String leagueId, String userId})
+    >((ref, params) async {
+      final apiClient = ref.watch(kickbaseApiClientProvider);
+      final squadData = await apiClient.getManagerSquad(
+        params.leagueId,
+        params.userId,
+      );
+      final players = (squadData['it'] as List? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .toList();
+
+      final enriched = await Future.wait(
+        players.map((p) async {
+          final fn = (p['fn'] ?? '').toString().trim();
+          if (fn.isNotEmpty) return p;
+          final id = (p['pi'] ?? p['i'] ?? p['id'])?.toString().trim() ?? '';
+          if (id.isEmpty) return p;
+          try {
+            final details = await apiClient.getPlayerDetails(
+              params.leagueId,
+              id,
+            );
+            return <String, dynamic>{
+              ...p,
+              'fn': details['fn'] ?? '',
+              'ln': details['ln'] ?? p['n'] ?? '',
+            };
+          } catch (_) {
+            return p;
+          }
+        }),
+      );
+
+      return enriched;
+    });
+
 /// Manager Lineup Players Provider
 ///
 /// Lädt die Spieler der Startelf (`lp`) eines Managers für einen bestimmten

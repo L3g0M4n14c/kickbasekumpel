@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -408,7 +409,8 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
               final index = entry.key;
               final user = entry.value;
               final position = index + 1;
-              final name = user['n'] ?? 'Unbekannt';
+              final name = (user['n'] ?? 'Unbekannt') as String;
+              final uim = user['uim'] as String?;
               final points = _getPoints(user, matchDay: matchDay);
               final teamValue = user['tv'] ?? 0;
               final isCurrentUser =
@@ -444,7 +446,21 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
                       ),
                     ),
                   ),
-                  DataCell(Text(name)),
+                  DataCell(
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildManagerPhotoAvatar(
+                          context,
+                          uim,
+                          name,
+                          radius: 14,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(name),
+                      ],
+                    ),
+                  ),
                   DataCell(Text('$points')),
                   DataCell(
                     Text('${(teamValue / 1000000).toStringAsFixed(1)}M€'),
@@ -490,6 +506,46 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
     );
   }
 
+  Widget _buildManagerPhotoAvatar(
+    BuildContext context,
+    String? uim,
+    String name, {
+    double radius = 20,
+  }) {
+    final photoUrl = uim != null && uim.isNotEmpty
+        ? 'https://kickbase.b-cdn.net/$uim'
+        : null;
+    if (photoUrl != null) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundColor: Colors.grey.shade300,
+        child: ClipOval(
+          child: CachedNetworkImage(
+            imageUrl: photoUrl,
+            width: radius * 2,
+            height: radius * 2,
+            fit: BoxFit.cover,
+            errorWidget: (context, url, error) => Text(
+              name.isNotEmpty ? name[0].toUpperCase() : '?',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: radius * 0.8,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+      child: Text(
+        name.isNotEmpty ? name[0].toUpperCase() : '?',
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: radius * 0.8),
+      ),
+    );
+  }
+
   Widget _buildUserCard(
     BuildContext context,
     Map<String, dynamic> user,
@@ -499,9 +555,10 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
     bool matchDay,
     int? matchDayNumber,
   ) {
-    final name = user['n'] ?? 'Unbekannt';
+    final name = (user['n'] ?? 'Unbekannt') as String;
     final teamValue = user['tv'] ?? 0;
     final userId = user['i'] ?? '';
+    final uim = user['uim'] as String?;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8.0),
@@ -519,16 +576,26 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
             );
           }
         },
-        leading: CircleAvatar(
-          backgroundColor: position <= 3
-              ? Colors.amber
-              : Theme.of(context).colorScheme.primaryContainer,
-          child: Text(
-            '$position',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: position <= 3 ? Colors.white : null,
-            ),
+        leading: SizedBox(
+          width: 64,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              SizedBox(
+                width: 22,
+                child: Text(
+                  '$position',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: position <= 3 ? Colors.amber[700] : null,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              _buildManagerPhotoAvatar(context, uim, name, radius: 18),
+            ],
           ),
         ),
         title: Text(
@@ -537,7 +604,7 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
             fontWeight: isCurrentUser ? FontWeight.bold : FontWeight.normal,
           ),
         ),
-        subtitle: const Text(''),
+        subtitle: null,
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -567,9 +634,10 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
     bool matchDay,
     int? matchDayNumber,
   ) {
-    final name = user['n'] ?? 'Unbekannt';
+    final name = (user['n'] ?? 'Unbekannt') as String;
     final teamValue = user['tv'] ?? 0;
     final userId = user['i'] ?? '';
+    final uim = user['uim'] as String?;
 
     return ResponsiveCard(
       color: isCurrentUser
@@ -588,20 +656,21 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
         },
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: position <= 3
-                  ? Colors.amber
-                  : Theme.of(context).colorScheme.primaryContainer,
+            SizedBox(
+              width: 28,
               child: Text(
                 '$position',
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: position <= 3 ? Colors.white : null,
+                  color: position <= 3 ? Colors.amber[700] : null,
+                  fontSize: 16,
                 ),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 8),
+            _buildManagerPhotoAvatar(context, uim, name, radius: 22),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

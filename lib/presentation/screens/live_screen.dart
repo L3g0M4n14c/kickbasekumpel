@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/providers/providers.dart';
 import '../../data/providers/ligainsider_photo_provider.dart';
+import '../../data/utils/parsing_utils.dart';
 import '../../data/models/ligainsider_model.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/error_widget.dart';
@@ -466,66 +467,10 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
     // 1. Primär: ligainsiderPhotoMapProvider aus Firestore (funktioniert auch im Web)
     //    Key = normalisierter Spielername (lowercase, ohne Diakritika)
     // 2. Fallback: LigainsiderService (lokales Scraping, nur nativ/mit Proxy)
-    final normalizedName = '$firstName $lastName'
-        .toLowerCase()
-        .replaceAll('ä', 'a')
-        .replaceAll('ö', 'o')
-        .replaceAll('ü', 'u')
-        .replaceAll('ß', 'ss')
-        .replaceAll('é', 'e')
-        .replaceAll('è', 'e')
-        .replaceAll('ê', 'e')
-        .replaceAll('ë', 'e')
-        .replaceAll('á', 'a')
-        .replaceAll('à', 'a')
-        .replaceAll('â', 'a')
-        .replaceAll('ã', 'a')
-        .replaceAll('å', 'a')
-        .replaceAll('í', 'i')
-        .replaceAll('ì', 'i')
-        .replaceAll('ï', 'i')
-        .replaceAll('î', 'i')
-        .replaceAll('ó', 'o')
-        .replaceAll('ò', 'o')
-        .replaceAll('ô', 'o')
-        .replaceAll('õ', 'o')
-        .replaceAll('ø', 'o')
-        .replaceAll('ú', 'u')
-        .replaceAll('ù', 'u')
-        .replaceAll('û', 'u')
-        .replaceAll('ñ', 'n')
-        .replaceAll('ň', 'n')
-        .replaceAll('ç', 'c')
-        .replaceAll('č', 'c')
-        .replaceAll('ć', 'c')
-        .replaceAll('š', 's')
-        .replaceAll('ş', 's')
-        .replaceAll('ž', 'z')
-        .replaceAll('ź', 'z')
-        .replaceAll('ż', 'z')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
     final photoMapAsync = ref.watch(ligainsiderPhotoMapProvider);
     final photoMap = photoMapAsync.asData?.value;
-    // Primär-Lookup: vollständiger Name (z.B. "thomas mueller")
-    // Fallback: nur Nachname (z.B. "mueller") für APIs die nur Nachnamen liefern
-    final normalizedLastName = lastName
-        .toLowerCase()
-        .replaceAll('ä', 'a')
-        .replaceAll('ö', 'o')
-        .replaceAll('ü', 'u')
-        .replaceAll('ß', 'ss')
-        .replaceAll(RegExp(r'[^a-z0-9 ]'), '')
-        .trim();
     final rawPhotoUrl =
-        photoMap?[normalizedName] ??
-        (normalizedLastName.isNotEmpty
-            ? photoMap?.entries
-                  .where((e) => e.key.endsWith(' $normalizedLastName'))
-                  .firstOrNull
-                  ?.value
-            : null) ??
-        '';
+        lookupLigainsiderPhoto(photoMap, firstName, lastName) ?? '';
     String? ligImage = rawPhotoUrl.isNotEmpty ? rawPhotoUrl : null;
 
     if (ligImage == null && !kIsWeb) {

@@ -1,7 +1,10 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/providers/providers.dart';
+import '../../data/providers/ligainsider_photo_provider.dart';
 import '../../data/utils/parsing_utils.dart';
 import '../widgets/charts/stats_bar_chart.dart';
 import '../widgets/loading_widget.dart';
@@ -112,6 +115,10 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
     final teamValue = dashboardData['teamValue'] ?? dashboardData['tv'] ?? 0;
     final budget = dashboardData['budget'] ?? dashboardData['b'] ?? 0;
     final points = dashboardData['points'] ?? dashboardData['p'] ?? 0;
+    final uim = dashboardData['uim'] as String?;
+    final photoUrl = uim != null && uim.isNotEmpty
+        ? 'https://kickbase.b-cdn.net/$uim'
+        : null;
 
     return Container(
       width: double.infinity,
@@ -128,17 +135,38 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
       ),
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 40,
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            child: Text(
-              name.isNotEmpty ? name[0].toUpperCase() : '?',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onPrimary,
-                fontWeight: FontWeight.bold,
+          if (photoUrl != null)
+            CircleAvatar(
+              radius: 40,
+              backgroundColor: Colors.grey.shade300,
+              child: ClipOval(
+                child: CachedNetworkImage(
+                  imageUrl: photoUrl,
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.cover,
+                  errorWidget: (context, url, error) => Text(
+                    name.isNotEmpty ? name[0].toUpperCase() : '?',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            )
+          else
+            CircleAvatar(
+              radius: 40,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              child: Text(
+                name.isNotEmpty ? name[0].toUpperCase() : '?',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ),
           const SizedBox(height: 12),
           Text(
             name,
@@ -203,15 +231,14 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
     }
 
     final squadAsync = ref.watch(
-      managerSquadProvider((leagueId: widget.leagueId, userId: widget.userId)),
+      managerSquadEnrichedProvider((
+        leagueId: widget.leagueId,
+        userId: widget.userId,
+      )),
     );
 
     return squadAsync.when(
-      data: (squadData) {
-        // API liefert Spielerliste unter 'it'
-        final players =
-            squadData['it'] as List? ?? squadData['p'] as List? ?? [];
-
+      data: (players) {
         if (players.isEmpty) {
           return const Center(child: Text('Keine Spieler im Kader'));
         }
@@ -238,7 +265,7 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
         child: ErrorWidgetCustom(
           error: error,
           onRetry: () => ref.invalidate(
-            managerSquadProvider((
+            managerSquadEnrichedProvider((
               leagueId: widget.leagueId,
               userId: widget.userId,
             )),
@@ -375,20 +402,51 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
     // Positionsfarbe
     final posColor = _positionColor(context, posRaw);
 
+    // Spielerfoto via Ligainsider
+    final photoMap = ref.watch(ligainsiderPhotoMapProvider).asData?.value;
+    final ligaPhoto = lookupLigainsiderPhoto(photoMap, firstName, lastName);
+    final String? photoUrl = ligaPhoto != null
+        ? (kIsWeb
+              ? 'https://images.weserv.nl/?url=${Uri.encodeComponent(ligaPhoto)}&w=80&h=80&fit=cover'
+              : ligaPhoto)
+        : null;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8.0),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: posColor.withValues(alpha: 0.2),
-          child: Text(
-            posLabel,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: posColor,
-            ),
-          ),
-        ),
+        leading: photoUrl != null
+            ? SizedBox(
+                width: 40,
+                height: 40,
+                child: ClipOval(
+                  child: Image.network(
+                    photoUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => CircleAvatar(
+                      backgroundColor: posColor.withValues(alpha: 0.2),
+                      child: Text(
+                        posLabel,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: posColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            : CircleAvatar(
+                backgroundColor: posColor.withValues(alpha: 0.2),
+                child: Text(
+                  posLabel,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: posColor,
+                  ),
+                ),
+              ),
         title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(
           'Ø ${avgPoints.toStringAsFixed(1)} Pkt/Spieltag',

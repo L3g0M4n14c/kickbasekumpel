@@ -116,6 +116,13 @@ Map<String, dynamic> normalizePlayerJson(Map<String, dynamic> json) {
     }
   }
 
+  // Squad endpoint liefert fn (Vorname) + n (Nachname) getrennt – aber kein ln.
+  // Falls firstName bereits via fn gesetzt, lastName aber noch leer ist, n als lastName verwenden.
+  if ((copy['lastName'] == null || copy['lastName'] == '') &&
+      copy['n'] != null) {
+    copy['lastName'] = copy['n'].toString().trim();
+  }
+
   // 'pn' = player name in manager-squad endpoint (full name in one field)
   if ((copy['firstName'] == null || copy['firstName'] == '') &&
       copy['pn'] != null) {
