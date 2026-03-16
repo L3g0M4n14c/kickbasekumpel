@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import '../../domain/exceptions/kickbase_exceptions.dart';
 import '../models/user_model.dart';
+import '../services/demo_kickbase_api_client.dart';
 import '../services/kickbase_api_client.dart';
+import 'demo_mode_provider.dart';
 import 'kickbase_api_provider.dart';
 
 final _logger = Logger();
@@ -76,6 +78,18 @@ class KickbaseAuthNotifier extends Notifier<KickbaseAuthState> {
   /// This is now called from initializeAuthProvider as a separate async operation
   Future<void> _checkAuthStatus() async {
     try {
+      // Demo-Modus hat Priorität: gespeicherter Flag wird vor jedem API-Call geprüft
+      final isDemoMode = await loadDemoModeFlag();
+      if (isDemoMode) {
+        _logger.i('🎮 Demo-Modus erkannt – überspringe echte API-Validierung');
+        ref.read(demoModeProvider.notifier).setDemoMode(true);
+        await _ensureFirebaseAuth();
+        final uid = firebase_auth.FirebaseAuth.instance.currentUser?.uid;
+        final demoUser = DemoKickbaseAPIClient.buildDemoUser(uid);
+        state = state.copyWith(isAuthenticated: true, currentUser: demoUser);
+        return;
+      }
+
       final hasToken = await _apiClient.hasAuthToken();
 
       if (!hasToken) {
@@ -144,6 +158,31 @@ class KickbaseAuthNotifier extends Notifier<KickbaseAuthState> {
   Future<bool> login({required String email, required String password}) async {
     state = state.copyWith(isLoading: true, error: null);
 
+    // ── Demo-Login ──────────────────────────────────────────────────────
+    if (email.trim().toLowerCase() == DemoKickbaseAPIClient.demoEmail &&
+        password == DemoKickbaseAPIClient.demoPassword) {
+      _logger.i('🎮 Demo-Login erkannt');
+      await saveDemoModeFlag(value: true);
+      ref.read(demoModeProvider.notifier).setDemoMode(true);
+
+      // Firebase Anonymous Auth bereitstellen, damit der Demo-User-Uid
+      // als Firestore-Dokument-ID funktioniert
+      await _ensureFirebaseAuth();
+
+      final uid = firebase_auth.FirebaseAuth.instance.currentUser?.uid;
+      final demoUser = DemoKickbaseAPIClient.buildDemoUser(uid);
+
+      state = state.copyWith(
+        isLoading: false,
+        isAuthenticated: true,
+        currentUser: demoUser,
+        successMessage: '🎮 Demo-Modus gestartet – viel Spaß!',
+      );
+      _logger.i('✅ Demo-Login erfolgreich');
+      return true;
+    }
+    // ────────────────────────────────────────────────────────────────────
+
     try {
       final loginResponse = await _apiClient.login(email, password);
 
@@ -192,6 +231,10 @@ class KickbaseAuthNotifier extends Notifier<KickbaseAuthState> {
     state = state.copyWith(isLoading: true);
 
     try {
+      // Demo-Modus-Flag löschen
+      await saveDemoModeFlag(value: false);
+      ref.read(demoModeProvider.notifier).setDemoMode(false);
+
       await _apiClient.clearAuthToken();
 
       // Firebase Auth auch abmelden

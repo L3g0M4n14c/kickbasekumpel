@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../data/providers/kickbase_auth_provider.dart';
+import '../../../data/services/demo_kickbase_api_client.dart';
 import '../../widgets/common/app_logo.dart';
 
 class SignInPage extends ConsumerStatefulWidget {
@@ -35,6 +36,17 @@ class _SignInPageState extends ConsumerState<SignInPage> {
 
     if (success && mounted) {
       // Navigation happens automatically via router redirect
+      context.go('/dashboard');
+    }
+  }
+
+  Future<void> _handleDemoLogin() async {
+    final notifier = ref.read(kickbaseAuthProvider.notifier);
+    final success = await notifier.login(
+      email: DemoKickbaseAPIClient.demoEmail,
+      password: DemoKickbaseAPIClient.demoPassword,
+    );
+    if (success && mounted) {
       context.go('/dashboard');
     }
   }
@@ -159,7 +171,18 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                         : const Text('Mit Kickbase anmelden'),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
+
+                // Demo-Button
+                OutlinedButton.icon(
+                  onPressed: authState.isLoading ? null : _handleDemoLogin,
+                  icon: const Icon(Icons.play_circle_outline),
+                  label: const Text('Demo ausprobieren'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.all(16.0),
+                  ),
+                ),
+                const SizedBox(height: 12),
 
                 // Info Text
                 Container(

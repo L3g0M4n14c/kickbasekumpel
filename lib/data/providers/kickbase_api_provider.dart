@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../services/demo_kickbase_api_client.dart';
 import '../services/kickbase_api_client.dart';
+import 'demo_mode_provider.dart';
 import 'service_providers.dart';
 
 // ============================================================================
@@ -9,8 +11,9 @@ import 'service_providers.dart';
 
 /// Provider für KickbaseAPIClient
 ///
-/// Der API Client verwaltet alle HTTP-Anfragen an die Kickbase API v4.
-/// Nutzt SharedPreferences für Token-Storage.
+/// Gibt im Demo-Modus einen [DemoKickbaseAPIClient] zurück, der statische
+/// Demodaten liefert, ohne die echte Kickbase-API zu kontaktieren.
+/// Im Normalbetrieb wird der echte [KickbaseAPIClient] verwendet.
 ///
 /// Verwendung:
 /// ```dart
@@ -18,14 +21,15 @@ import 'service_providers.dart';
 /// final user = await apiClient.getUser();
 /// ```
 final kickbaseApiClientProvider = Provider<KickbaseAPIClient>((ref) {
+  final isDemoMode = ref.watch(demoModeProvider);
+
+  if (isDemoMode) {
+    return DemoKickbaseAPIClient();
+  }
+
   final httpClient = ref.watch(httpClientProvider);
-
   final client = KickbaseAPIClient(httpClient: httpClient);
-
-  ref.onDispose(() {
-    client.dispose();
-  });
-
+  ref.onDispose(() => client.dispose());
   return client;
 });
 

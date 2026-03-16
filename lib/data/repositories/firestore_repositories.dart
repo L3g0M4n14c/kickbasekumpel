@@ -114,8 +114,14 @@ class UserRepository extends BaseRepository<User>
       // 1. Fetch from Kickbase API
       final user = await apiClient.getUser();
 
-      // 2. Cache in Firestore
-      await collection.doc(user.i).set(toFirestore(user));
+      // 2. Optionales Caching in Firestore (best-effort).
+      //    Im Demo-Modus entspricht user.i der Firebase-UID, daher klappt der
+      //    Write meist – bei Fehler trotzdem den Nutzer zurückgeben.
+      try {
+        await collection.doc(user.i).set(toFirestore(user));
+      } catch (cacheError) {
+        debugPrint('ℹ️ Firestore-Caching für User übersprungen: $cacheError');
+      }
 
       return Success(user);
     } catch (e) {
@@ -255,7 +261,7 @@ class LeagueRepository extends BaseRepository<League>
   /// Get all leagues with API-first pattern
   ///
   /// 1. Fetch from Kickbase API
-  /// 2. Cache in Firestore
+  /// 2. Cache in Firestore (best-effort – Fehler werden nicht propagiert)
   /// 3. Fallback to Firestore cache on error
   @override
   Future<Result<List<League>>> getAll() async {
@@ -263,9 +269,14 @@ class LeagueRepository extends BaseRepository<League>
       // 1. Fetch from Kickbase API
       final leagues = await apiClient.getLeagues();
 
-      // 2. Cache in Firestore
-      for (final league in leagues) {
-        await collection.doc(league.i).set(toFirestore(league));
+      // 2. Optionales Caching in Firestore (best-effort, kein Pflicht-Pfad).
+      //    Fehler (z. B. permission-denied im Demo-Modus) werden nur geloggt.
+      try {
+        for (final league in leagues) {
+          await collection.doc(league.i).set(toFirestore(league));
+        }
+      } catch (cacheError) {
+        debugPrint('ℹ️ Firestore-Caching für Ligen übersprungen: $cacheError');
       }
 
       return Success(leagues);
@@ -283,8 +294,12 @@ class LeagueRepository extends BaseRepository<League>
       // 1. Fetch from Kickbase API
       final league = await apiClient.getLeague(id);
 
-      // 2. Cache in Firestore
-      await collection.doc(league.i).set(toFirestore(league));
+      // 2. Optionales Caching (best-effort)
+      try {
+        await collection.doc(league.i).set(toFirestore(league));
+      } catch (cacheError) {
+        debugPrint('ℹ️ Firestore-Caching für Liga übersprungen: $cacheError');
+      }
 
       return Success(league);
     } catch (e) {
