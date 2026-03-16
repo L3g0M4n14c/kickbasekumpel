@@ -274,11 +274,22 @@ Map<String, dynamic> normalizeMarketPlayerJson(Map<String, dynamic> json) {
   );
   // price: 'prc' in market list, 'price' in other contexts
   copy['price'] = _toIntSafe(copy['price'] ?? copy['prc']);
-  copy['expiry'] = (copy['expiry'] ?? copy['dt'] ?? '').toString();
+
+  // exs = Sekunden bis zum Ablauf des Angebots (ab jetzt).
+  // Daraus berechnen wir den absoluten Ablaufzeitpunkt.
+  copy['exs'] = _toIntSafe(copy['exs']);
+  final exsSeconds = copy['exs'] as int;
+  if (exsSeconds > 0) {
+    copy['expiry'] = DateTime.now()
+        .add(Duration(seconds: exsSeconds))
+        .toIso8601String();
+  } else {
+    // Fallback: dt-Feld (Einstellungszeitpunkt) – bereits abgelaufen
+    copy['expiry'] = (copy['expiry'] ?? copy['dt'] ?? '').toString();
+  }
   copy['offers'] = _toIntSafe(copy['offers'] ?? copy['ofc']);
   copy['status'] = _toIntSafe(copy['status'] ?? copy['st']);
   copy['stl'] = _toIntSafe(copy['stl']);
-  copy['exs'] = _toIntSafe(copy['exs']);
   copy['prlo'] = copy['prlo'] != null ? _toIntSafe(copy['prlo']) : null;
 
   // seller: construct from 'uoid' (user-offer-id = seller's user id) when absent

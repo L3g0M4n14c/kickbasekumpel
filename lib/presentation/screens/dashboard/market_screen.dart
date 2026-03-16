@@ -170,39 +170,40 @@ class _MarketScreenState extends ConsumerState<MarketScreen>
             },
             itemBuilder: (context) => [
               const PopupMenuItem(
-                value: MarketSortOption.price,
-                child: Text('Preis (aufsteigend)'),
+                value: MarketSortOption.expiry,
+                child: Text('Ablaufzeit (bald abläuft zuerst)'),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: MarketSortOption.marketValueDesc,
+                child: Text('Marktwert (höchste zuerst)'),
               ),
               const PopupMenuItem(
-                value: MarketSortOption.priceDesc,
-                child: Text('Preis (absteigend)'),
+                value: MarketSortOption.marketValue,
+                child: Text('Marktwert (niedrigste zuerst)'),
               ),
               const PopupMenuDivider(),
               const PopupMenuItem(
                 value: MarketSortOption.points,
-                child: Text('Punkte (aufsteigend)'),
+                child: Text('Punkte (höchste zuerst)'),
               ),
               const PopupMenuItem(
                 value: MarketSortOption.pointsDesc,
-                child: Text('Punkte (absteigend)'),
+                child: Text('Punkte (niedrigste zuerst)'),
               ),
               const PopupMenuDivider(),
               const PopupMenuItem(
-                value: MarketSortOption.averagePoints,
-                child: Text('Ø Punkte (aufsteigend)'),
-              ),
-              const PopupMenuItem(
-                value: MarketSortOption.averagePointsDesc,
-                child: Text('Ø Punkte (absteigend)'),
+                value: MarketSortOption.position,
+                child: Text('Position'),
               ),
               const PopupMenuDivider(),
               const PopupMenuItem(
-                value: MarketSortOption.marketValue,
-                child: Text('Marktwert (aufsteigend)'),
+                value: MarketSortOption.priceDesc,
+                child: Text('Preis (höchste zuerst)'),
               ),
               const PopupMenuItem(
-                value: MarketSortOption.marketValueDesc,
-                child: Text('Marktwert (absteigend)'),
+                value: MarketSortOption.price,
+                child: Text('Preis (niedrigste zuerst)'),
               ),
               const PopupMenuDivider(),
               const PopupMenuItem(
@@ -229,7 +230,8 @@ class _MarketScreenState extends ConsumerState<MarketScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => const MarketFilters(),
+      builder: (bottomSheetContext) =>
+          MarketFilters(onClose: () => Navigator.pop(bottomSheetContext)),
     );
   }
 }

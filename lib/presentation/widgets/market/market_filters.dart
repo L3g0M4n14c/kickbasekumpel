@@ -5,13 +5,18 @@ import '../common/app_logo.dart';
 
 /// Market Filters Widget
 ///
-/// Bottom Sheet für Market Filtering mit:
-/// - Position Filter (Torwart, Abwehr, Mittelfeld, Sturm)
-/// - Price Range Slider (Min/Max)
-/// - Clear All Button
-/// - Apply Button
+/// Verwendbar als eingebettetes Sidebar-Widget (Desktop/Tablet)
+/// oder als Bottom-Sheet-Inhalt (Mobile).
+///
+/// [onClose] – wenn übergeben, wird dieser Callback nach dem Anwenden der
+/// Filter aufgerufen (z. B. `() => Navigator.pop(context)` beim BottomSheet).
+/// Im Sidebar-Modus (kein [onClose]) bleibt das Widget sichtbar und der
+/// "Abbrechen"-Button wird ausgeblendet.
 class MarketFilters extends ConsumerStatefulWidget {
-  const MarketFilters({super.key});
+  /// Optionaler Callback zum Schließen des Filters (z. B. BottomSheet).
+  final VoidCallback? onClose;
+
+  const MarketFilters({super.key, this.onClose});
 
   @override
   ConsumerState<MarketFilters> createState() => _MarketFiltersState();
@@ -266,16 +271,17 @@ class _MarketFiltersState extends ConsumerState<MarketFilters> {
                     minimumSize: const Size.fromHeight(56),
                   ),
                 ),
-                const SizedBox(height: 12),
-
-                // Cancel Button
-                OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
+                if (widget.onClose != null) ...[
+                  const SizedBox(height: 12),
+                  // Cancel Button – nur im BottomSheet-Modus
+                  OutlinedButton(
+                    onPressed: widget.onClose,
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                    ),
+                    child: const Text('Abbrechen'),
                   ),
-                  child: const Text('Abbrechen'),
-                ),
+                ],
               ],
             ),
           ),
@@ -304,7 +310,8 @@ class _MarketFiltersState extends ConsumerState<MarketFilters> {
           .setPriceRange(min: null, max: null);
     }
 
-    Navigator.pop(context);
+    // Im BottomSheet-Modus schließen; im Sidebar-Modus bleibt das Widget sichtbar
+    widget.onClose?.call();
   }
 }
 

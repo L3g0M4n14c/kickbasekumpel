@@ -23,7 +23,7 @@ class MarketFilterState {
     this.positionFilter,
     this.minPrice,
     this.maxPrice,
-    this.sortOption = MarketSortOption.price,
+    this.sortOption = MarketSortOption.expiry,
     this.searchQuery = '',
   });
 
@@ -53,14 +53,16 @@ class MarketFilterState {
 }
 
 enum MarketSortOption {
-  price,
-  priceDesc,
-  points,
-  pointsDesc,
-  averagePoints,
-  averagePointsDesc,
+  expiry,
   marketValue,
   marketValueDesc,
+  points,
+  pointsDesc,
+  position,
+  price,
+  priceDesc,
+  averagePoints,
+  averagePointsDesc,
   name,
 }
 
@@ -212,29 +214,39 @@ List<MarketPlayer> _applyFiltersAndSort(
 
   // Sorting
   switch (filter.sortOption) {
-    case MarketSortOption.price:
-      filtered.sort((a, b) => a.price.compareTo(b.price));
-      break;
-    case MarketSortOption.priceDesc:
-      filtered.sort((a, b) => b.price.compareTo(a.price));
-      break;
-    case MarketSortOption.points:
-      filtered.sort((a, b) => a.totalPoints.compareTo(b.totalPoints));
-      break;
-    case MarketSortOption.pointsDesc:
-      filtered.sort((a, b) => b.totalPoints.compareTo(a.totalPoints));
-      break;
-    case MarketSortOption.averagePoints:
-      filtered.sort((a, b) => a.averagePoints.compareTo(b.averagePoints));
-      break;
-    case MarketSortOption.averagePointsDesc:
-      filtered.sort((a, b) => b.averagePoints.compareTo(a.averagePoints));
+    case MarketSortOption.expiry:
+      filtered.sort((a, b) {
+        final dateA = DateTime.tryParse(a.expiry) ?? DateTime.utc(9999);
+        final dateB = DateTime.tryParse(b.expiry) ?? DateTime.utc(9999);
+        return dateA.compareTo(dateB);
+      });
       break;
     case MarketSortOption.marketValue:
       filtered.sort((a, b) => a.marketValue.compareTo(b.marketValue));
       break;
     case MarketSortOption.marketValueDesc:
       filtered.sort((a, b) => b.marketValue.compareTo(a.marketValue));
+      break;
+    case MarketSortOption.points:
+      filtered.sort((a, b) => b.totalPoints.compareTo(a.totalPoints));
+      break;
+    case MarketSortOption.pointsDesc:
+      filtered.sort((a, b) => a.totalPoints.compareTo(b.totalPoints));
+      break;
+    case MarketSortOption.position:
+      filtered.sort((a, b) => a.position.compareTo(b.position));
+      break;
+    case MarketSortOption.price:
+      filtered.sort((a, b) => a.price.compareTo(b.price));
+      break;
+    case MarketSortOption.priceDesc:
+      filtered.sort((a, b) => b.price.compareTo(a.price));
+      break;
+    case MarketSortOption.averagePoints:
+      filtered.sort((a, b) => b.averagePoints.compareTo(a.averagePoints));
+      break;
+    case MarketSortOption.averagePointsDesc:
+      filtered.sort((a, b) => a.averagePoints.compareTo(b.averagePoints));
       break;
     case MarketSortOption.name:
       filtered.sort(

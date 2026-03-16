@@ -317,15 +317,17 @@ class _MarketPageState extends ConsumerState<MarketPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => DraggableScrollableSheet(
+      builder: (bottomSheetContext) => DraggableScrollableSheet(
         initialChildSize: 0.7,
         minChildSize: 0.5,
         maxChildSize: 0.95,
         expand: false,
-        builder: (context, scrollController) => SingleChildScrollView(
+        builder: (_, scrollController) => SingleChildScrollView(
           controller: scrollController,
           padding: const EdgeInsets.all(16.0),
-          child: const MarketFilters(),
+          child: MarketFilters(
+            onClose: () => Navigator.pop(bottomSheetContext),
+          ),
         ),
       ),
     );

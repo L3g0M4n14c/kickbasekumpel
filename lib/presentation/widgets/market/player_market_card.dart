@@ -103,6 +103,10 @@ class PlayerMarketCard extends ConsumerWidget {
 
                         // Stats Row
                         _PlayerStats(player: player),
+                        const SizedBox(height: 6),
+
+                        // Expiry Time
+                        _ExpiryBadge(expiry: player.expiry),
                       ],
                     ),
                   ),
@@ -410,5 +414,77 @@ class _PriceDisplay extends StatelessWidget {
     if (trend > 0) return Colors.green;
     if (trend < 0) return Colors.red;
     return Colors.grey;
+  }
+}
+
+// ============================================================================
+// EXPIRY BADGE WIDGET
+// ============================================================================
+
+class _ExpiryBadge extends StatelessWidget {
+  final String expiry;
+
+  const _ExpiryBadge({required this.expiry});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final expiryDate = DateTime.tryParse(expiry)?.toLocal();
+    if (expiryDate == null) return const SizedBox.shrink();
+
+    final now = DateTime.now();
+    final diff = expiryDate.difference(now);
+
+    final Color color;
+    final String label;
+
+    if (diff.isNegative) {
+      color = theme.colorScheme.onSurfaceVariant;
+      label = 'Abgelaufen';
+    } else if (diff.inMinutes < 60) {
+      color = Colors.red;
+      label = 'Noch ${diff.inMinutes} Min – ${_formatTime(expiryDate)}';
+    } else if (diff.inHours < 3) {
+      color = Colors.orange;
+      final h = diff.inHours;
+      final m = diff.inMinutes % 60;
+      label = 'Noch ${h}h ${m}min – ${_formatTime(expiryDate)}';
+    } else if (diff.inHours < 24) {
+      color = theme.colorScheme.onSurfaceVariant;
+      label = 'Läuft ab um ${_formatTime(expiryDate)} Uhr';
+    } else {
+      color = theme.colorScheme.onSurfaceVariant;
+      label =
+          'Läuft ab am ${_formatDate(expiryDate)} ${_formatTime(expiryDate)}';
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.timer_outlined, size: 13, color: color),
+        const SizedBox(width: 3),
+        Text(
+          label,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: color,
+            fontWeight: diff.inHours < 3 && !diff.isNegative
+                ? FontWeight.bold
+                : FontWeight.normal,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatTime(DateTime dt) {
+    final h = dt.hour.toString().padLeft(2, '0');
+    final m = dt.minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
+  String _formatDate(DateTime dt) {
+    final d = dt.day.toString().padLeft(2, '0');
+    final mo = dt.month.toString().padLeft(2, '0');
+    return '$d.$mo.';
   }
 }
