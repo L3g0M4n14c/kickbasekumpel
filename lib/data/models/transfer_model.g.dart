@@ -53,6 +53,8 @@ _$RecommendationImpl _$$RecommendationImplFromJson(Map<String, dynamic> json) =>
       confidence: (json['confidence'] as num).toDouble(),
       timestamp: DateTime.parse(json['timestamp'] as String),
       category: json['category'] as String,
+      swapCandidateId: json['swapCandidateId'] as String?,
+      swapCandidateName: json['swapCandidateName'] as String?,
     );
 
 Map<String, dynamic> _$$RecommendationImplToJson(
@@ -71,6 +73,8 @@ Map<String, dynamic> _$$RecommendationImplToJson(
   'confidence': instance.confidence,
   'timestamp': instance.timestamp.toIso8601String(),
   'category': instance.category,
+  'swapCandidateId': instance.swapCandidateId,
+  'swapCandidateName': instance.swapCandidateName,
 };
 
 _$BidResponseImpl _$$BidResponseImplFromJson(Map<String, dynamic> json) =>

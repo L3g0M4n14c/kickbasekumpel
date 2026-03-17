@@ -15,6 +15,8 @@ class GeminiRecommendationResult {
   final double confidence;
   final int estimatedValue;
   final String category;
+  final String? swapCandidateId;
+  final String? swapCandidateName;
 
   const GeminiRecommendationResult({
     required this.score,
@@ -23,17 +25,38 @@ class GeminiRecommendationResult {
     required this.confidence,
     required this.estimatedValue,
     required this.category,
+    this.swapCandidateId,
+    this.swapCandidateName,
   });
 
   factory GeminiRecommendationResult.fromJson(Map<String, dynamic> json) {
+    final score = (json['score'] as num).toDouble().clamp(0.0, 100.0);
     return GeminiRecommendationResult(
-      score: (json['score'] as num).toDouble().clamp(0.0, 100.0),
-      action: json['action'] as String? ?? 'hold',
+      score: score,
+      action: _actionFromScore(score),
       reason: json['reason'] as String? ?? '',
       confidence: (json['confidence'] as num).toDouble().clamp(0.0, 1.0),
       estimatedValue: (json['estimatedValue'] as num).toInt(),
-      category: json['category'] as String? ?? 'general',
+      category: _categoryFromScore(score),
+      swapCandidateId: json['swapCandidateId'] as String?,
+      swapCandidateName: json['swapCandidateName'] as String?,
     );
+  }
+
+  static String _actionFromScore(double score) {
+    if (score >= 80) return 'strong-buy';
+    if (score >= 60) return 'buy';
+    if (score >= 40) return 'hold';
+    if (score >= 20) return 'sell';
+    return 'strong-sell';
+  }
+
+  static String _categoryFromScore(double score) {
+    if (score >= 80) return 'strong-buy';
+    if (score >= 60) return 'buy';
+    if (score >= 40) return 'general';
+    if (score >= 20) return 'sell';
+    return 'strong-sell';
   }
 }
 
@@ -53,7 +76,7 @@ class GeminiRecommendationResult {
 /// );
 /// ```
 class GeminiRecommendationService {
-  static const _model = 'gemini-2.0-flash';
+  static const _model = 'gemini-2.5-flash';
 
   /// JSON Schema für strukturierten Gemini-Output (einzelner Spieler)
   static Schema get _recommendationSchema => Schema.object(
@@ -61,16 +84,12 @@ class GeminiRecommendationService {
       'score': Schema.number(
         description:
             'Gesamtbewertung des Spielers von 0 bis 100. '
-            '0 = klarer Verkauf, 100 = klarer Kauf.',
-      ),
-      'action': Schema.enumString(
-        enumValues: ['buy', 'strong-buy', 'sell', 'strong-sell', 'hold'],
-        description: 'Empfohlene Aktion',
+            '0 = klar schlechte Option, 100 = klar beste Option.',
       ),
       'reason': Schema.string(
         description:
-            'Begründung der Empfehlung in 2-3 Sätzen auf Deutsch. '
-            'Konkret und auf Kickbase-Kontext bezogen.',
+            'Begründung in 2-3 Sätzen auf Deutsch. '
+            'Konkret mit Zahlen aus den Datensektionen.',
       ),
       'confidence': Schema.number(
         description:
@@ -80,13 +99,16 @@ class GeminiRecommendationService {
       'estimatedValue': Schema.integer(
         description: 'Geschätzter fairer Marktwert in Euro (ganze Zahl).',
       ),
-      'category': Schema.enumString(
-        enumValues: ['strong-buy', 'buy', 'general', 'sell', 'strong-sell'],
-        description: 'Kategorie der Empfehlung',
+      'swapCandidateId': Schema.string(
+        description:
+            'ID des empfohlenen Tauschspielers. '
+            'Nur setzen wenn ein Tausch klar empfehlenswert ist.',
+      ),
+      'swapCandidateName': Schema.string(
+        description: 'Name des empfohlenen Tauschspielers.',
       ),
     },
-    // Alle Properties sind Pflicht – optionalProperties leer lassen
-    optionalProperties: const [],
+    optionalProperties: const ['swapCandidateId', 'swapCandidateName'],
   );
 
   late final GenerativeModel _generativeModel;
@@ -97,6 +119,7 @@ class GeminiRecommendationService {
       generationConfig: GenerationConfig(
         responseMimeType: 'application/json',
         responseSchema: _recommendationSchema,
+        temperature: 0.7,
       ),
     );
   }
@@ -116,6 +139,7 @@ class GeminiRecommendationService {
     LigainsiderPlayer? ligainsiderData,
     String? fixtureContext,
     String? lineupContext,
+    List<Player>? swapCandidates,
   }) async {
     try {
       final prompt = _buildPrompt(
@@ -125,6 +149,7 @@ class GeminiRecommendationService {
         ligainsiderData: ligainsiderData,
         fixtureContext: fixtureContext,
         lineupContext: lineupContext,
+        swapCandidates: swapCandidates,
       );
 
       debugPrint('\n══════════════════════════════════════════════════');
@@ -153,14 +178,34 @@ class GeminiRecommendationService {
 
       final Map<String, dynamic> json = jsonDecode(text);
       final result = GeminiRecommendationResult.fromJson(json);
+
+      debugPrint('\n══════════════════════════════════════════════════');
+      debugPrint('✅ GEMINI PARSED (${player.firstName} ${player.lastName})');
+      debugPrint('  score      : ${result.score}');
+      debugPrint('  action     : ${result.action}');
+      debugPrint('  category   : ${result.category}');
+      debugPrint('  confidence : ${result.confidence}');
+      debugPrint('  estValue   : ${result.estimatedValue}');
+      debugPrint('  swap       : ${result.swapCandidateName ?? "-"}');
+      debugPrint('  reason     : ${result.reason}');
+      debugPrint('══════════════════════════════════════════════════\n');
+
       return Success(result);
+    } on FormatException catch (e) {
+      debugPrint('❌ GEMINI JSON PARSE ERROR: $e');
+      return Failure(
+        'Gemini-Antwort konnte nicht geparst werden: $e',
+        code: 'parse_error',
+      );
     } on Exception catch (e) {
+      debugPrint('❌ GEMINI EXCEPTION: $e');
       return Failure(
         'KI-Analyse fehlgeschlagen: ${e.toString()}',
         code: 'gemini_error',
         exception: e,
       );
     } catch (e) {
+      debugPrint('❌ GEMINI UNKNOWN ERROR: $e');
       return Failure(
         'Unerwarteter Fehler bei der KI-Analyse: $e',
         code: 'unknown_error',
@@ -188,6 +233,7 @@ class GeminiRecommendationService {
         model: _model,
         generationConfig: GenerationConfig(
           responseMimeType: 'application/json',
+          temperature: 0.7,
         ),
       );
 
@@ -246,6 +292,7 @@ class GeminiRecommendationService {
     LigainsiderPlayer? ligainsiderData,
     String? fixtureContext,
     String? lineupContext,
+    List<Player>? swapCandidates,
   }) {
     final buffer = StringBuffer();
 
@@ -256,7 +303,7 @@ class GeminiRecommendationService {
     buffer.writeln();
     buffer.writeln('=== KONTEXT ===');
     buffer.writeln(
-      'Spielerbesitz: ${player.userOwnsPlayer ? "Du besitzt diesen Spieler bereits (Kauf-Empfehlung sinnlos, nur SELL/HOLD/STRONG-SELL möglich)" : "Du besitzt diesen Spieler NICHT (Verkaufs-Empfehlung sinnlos, nur BUY/HOLD/STRONG-BUY möglich)"}',
+      'Spielerbesitz: ${player.userOwnsPlayer ? "Du besitzt diesen Spieler bereits." : "Du besitzt diesen Spieler NICHT."}',
     );
     buffer.writeln();
     buffer.writeln('=== SPIELER-STAMMDATEN ===');
@@ -384,18 +431,38 @@ class GeminiRecommendationService {
       buffer.writeln(lineupContext);
     }
 
+    if (swapCandidates != null &&
+        swapCandidates.isNotEmpty &&
+        player.userOwnsPlayer) {
+      buffer.writeln();
+      buffer.writeln('=== TAUSCHKANDIDATEN (gleiche Position, verfügbar) ===');
+      buffer.writeln(
+        'Überlege, ob ein Tausch von ${player.firstName} ${player.lastName} '
+        'gegen einen der folgenden Spieler sinnvoll wäre. '
+        'Falls ja, setze swapCandidateId und swapCandidateName. '
+        'Falls kein Tausch empfehlenswert ist, lass beide Felder weg.',
+      );
+      for (final c in swapCandidates) {
+        buffer.writeln(
+          '  - ID:${c.id} | ${c.firstName} ${c.lastName} | '
+          '${c.teamName} | Ø ${c.averagePoints.toStringAsFixed(1)} Pkt | '
+          '${_formatEuro(c.marketValue)} | Status: ${_statusName(c.status)}',
+        );
+      }
+    }
+
     buffer.writeln();
     buffer.writeln(
       'Antworte ausschließlich als JSON gemäß dem vorgegebenen Schema. '
-      'score=0 bedeutet klarer Verkauf, score=100 klarer Kauf. '
-      'Gewichte folgende Kriterien: '
-      '(1) Form der letzten 5 Spiele, '
-      '(2) Schwierigkeit der nächsten 3 Gegner (leichte Gegner → Aufwertung, Top-Teams → Abwertung), '
-      '(3) Heim/Auswärts-Stärke des Spielers für das nächste Spiel, '
-      '(4) ob ein Kauf das eigene Team positional stärkt. '
-      'Beachte den Spielerbesitz-Kontext: kein BUY für eigene Spieler, kein SELL für nicht-eigene. '
-      'Die reason-Begründung muss konkret auf diesen Spieler eingehen und auf Deutsch sein. '
-      'Nicht generisch – nutze die konkreten Datenpunkte aus den Sektionen oben.',
+      'score=0 = eindeutig schlechte Option, score=100 = eindeutig beste Option. '
+      'Berechne den Score ausgehend von 50 mit diesen konkreten Anpassungen:\n'
+      '  Form (letzte 5 Spiele): Ø > 8 Pkt → +20 | Ø 6-8 Pkt → +8 | Ø 4-6 Pkt → 0 | Ø < 4 Pkt → -20\n'
+      '  Nächster Gegner: Tabellenplatz 1-4 → -15 | Platz 5-8 → -5 | Platz 9-13 → +5 | Platz 14+ → +15\n'
+      '  Marktwert (letzte 30 Einträge): > +10% → +10 | +3-10% → +3 | ±3% → 0 | -3 bis -10% → -8 | < -10% → -15\n'
+      '  Status: Fit → +5 | Fraglich → -10 | Verletzt/Gesperrt → -40\n'
+      '  Stammspieler (stl): ≥ 2 → +8 | 1 → 0 | 0 → -10\n'
+      '${player.userOwnsPlayer ? "Halte-/Verkaufsanalyse: Wann lohnt sich ein Verkauf?" : "Kaufanalyse: Lohnt sich die Investition?"}\n'
+      'reason muss auf Deutsch mit konkreten Zahlen aus den obigen Sektionen begründet sein. Keine generischen Floskeln.',
     );
 
     return buffer.toString();
@@ -417,6 +484,9 @@ class GeminiRecommendationService {
           marketValueHistory: input.marketValueHistory,
           recentPerformances: input.recentPerformances,
           ligainsiderData: input.ligainsiderData,
+          fixtureContext: input.fixtureContext,
+          lineupContext: input.lineupContext,
+          swapCandidates: input.swapCandidates,
         ),
       );
       buffer.writeln();
@@ -471,11 +541,17 @@ class PlayerAnalysisInput {
   final List<MarketValueEntry>? marketValueHistory;
   final List<MatchPerformance>? recentPerformances;
   final LigainsiderPlayer? ligainsiderData;
+  final String? fixtureContext;
+  final String? lineupContext;
+  final List<Player>? swapCandidates;
 
   const PlayerAnalysisInput({
     required this.player,
     this.marketValueHistory,
     this.recentPerformances,
     this.ligainsiderData,
+    this.fixtureContext,
+    this.lineupContext,
+    this.swapCandidates,
   });
 }

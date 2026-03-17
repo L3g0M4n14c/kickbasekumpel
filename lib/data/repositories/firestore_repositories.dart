@@ -1192,6 +1192,8 @@ class RecommendationRepository extends BaseRepository<Recommendation>
       confidence: (data['confidence'] ?? 0).toDouble(),
       timestamp: timestampToDateTime(data['timestamp']) ?? DateTime.now(),
       category: data['category'] ?? 'general',
+      swapCandidateId: data['swapCandidateId'] as String?,
+      swapCandidateName: data['swapCandidateName'] as String?,
     );
   }
 
@@ -1210,8 +1212,24 @@ class RecommendationRepository extends BaseRepository<Recommendation>
       'confidence': recommendation.confidence,
       'timestamp': dateTimeToTimestamp(recommendation.timestamp),
       'category': recommendation.category,
+      if (recommendation.swapCandidateId != null)
+        'swapCandidateId': recommendation.swapCandidateId,
+      if (recommendation.swapCandidateName != null)
+        'swapCandidateName': recommendation.swapCandidateName,
       'updatedAt': FieldValue.serverTimestamp(),
     };
+  }
+
+  /// Löscht alle Empfehlungen einer Liga.
+  Future<void> deleteByLeague(String leagueId) async {
+    final snapshot = await collection
+        .where('leagueId', isEqualTo: leagueId)
+        .get();
+    final batch = firestore.batch();
+    for (final doc in snapshot.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
   }
 
   @override
@@ -1254,6 +1272,7 @@ class RecommendationRepository extends BaseRepository<Recommendation>
     LigainsiderPlayer? ligainsiderData,
     String? fixtureContext,
     String? lineupContext,
+    List<Player>? swapCandidates,
   }) async {
     final service = _geminiService;
     if (service == null) {
@@ -1280,6 +1299,7 @@ class RecommendationRepository extends BaseRepository<Recommendation>
       ligainsiderData: ligainsiderData,
       fixtureContext: fixtureContext,
       lineupContext: lineupContext,
+      swapCandidates: swapCandidates,
     );
 
     if (aiResult is Failure<GeminiRecommendationResult>) {
@@ -1306,6 +1326,8 @@ class RecommendationRepository extends BaseRepository<Recommendation>
       confidence: ai.confidence,
       timestamp: DateTime.now(),
       category: ai.category,
+      swapCandidateId: ai.swapCandidateId,
+      swapCandidateName: ai.swapCandidateName,
     );
 
     return await create(recommendation);

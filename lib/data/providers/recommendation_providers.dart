@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/transfer_model.dart';
 import '../models/player_model.dart';
@@ -519,7 +520,16 @@ class GenerateAIRecommendationsNotifier
         .where((p) => !unhealthyStatuses.contains(p.status))
         .toList();
 
-    if (filteredPlayers.isEmpty) return;
+    if (filteredPlayers.isEmpty) {
+      debugPrint(
+        '⚠️ generateForPlayers: Alle ${players.length} Spieler gefiltert (krank/verletzt), Abbruch.',
+      );
+      return;
+    }
+
+    debugPrint(
+      '🚀 generateForPlayers: ${filteredPlayers.length} von ${players.length} Spielern werden analysiert.',
+    );
 
     state = state.copyWith(
       isGenerating: true,
@@ -528,6 +538,12 @@ class GenerateAIRecommendationsNotifier
     );
 
     final repo = ref.read(recommendationRepositoryProvider);
+    // Alte Empfehlungen dieser Liga vor dem neuen Lauf löschen
+    debugPrint(
+      '🗑️ generateForPlayers: Lösche alte Empfehlungen für Liga $leagueId...',
+    );
+    await repo.deleteByLeague(leagueId);
+    debugPrint('✅ generateForPlayers: Alte Empfehlungen gelöscht.');
     final apiClient = ref.read(kickbaseApiClientProvider);
     int successCount = 0;
     String? lastError;
@@ -673,6 +689,25 @@ class GenerateAIRecommendationsNotifier
                 'Beachte ob ein Kauf/Verkauf die Positionsverteilung verbessert.'
           : null;
 
+      // Swap-Kandidaten für eigene Spieler: Top-3 nicht-eigene Alternativen
+      // gleicher Position, sortiert nach Durchschnittspunkten
+      List<Player>? swapCandidates;
+      if (player.userOwnsPlayer) {
+        final candidates =
+            filteredPlayers
+                .where(
+                  (p) =>
+                      p.position == player.position &&
+                      !p.userOwnsPlayer &&
+                      !unhealthyStatuses.contains(p.status),
+                )
+                .toList()
+              ..sort((a, b) => b.averagePoints.compareTo(a.averagePoints));
+        if (candidates.isNotEmpty) {
+          swapCandidates = candidates.take(3).toList();
+        }
+      }
+
       final result = await repo.generateAIRecommendation(
         leagueId: leagueId,
         player: player,
@@ -681,6 +716,7 @@ class GenerateAIRecommendationsNotifier
         ligainsiderData: ligainsiderData?[player.id],
         fixtureContext: fixtureContext,
         lineupContext: lineupContext,
+        swapCandidates: swapCandidates,
       );
 
       if (result is Success<Recommendation>) {

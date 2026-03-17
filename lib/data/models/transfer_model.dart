@@ -42,6 +42,8 @@ class Recommendation with _$Recommendation {
     required double confidence,
     required DateTime timestamp,
     required String category,
+    String? swapCandidateId,
+    String? swapCandidateName,
   }) = _Recommendation;
 
   factory Recommendation.fromJson(Map<String, dynamic> json) =>

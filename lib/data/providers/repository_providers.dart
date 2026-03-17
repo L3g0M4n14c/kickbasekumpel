@@ -63,7 +63,11 @@ final recommendationRepositoryProvider = Provider<RecommendationRepository>((
   ref,
 ) {
   final firestore = ref.watch(firestoreProvider);
-  return RecommendationRepository(firestore: firestore);
+  final geminiService = ref.watch(geminiRecommendationServiceProvider);
+  return RecommendationRepository(
+    firestore: firestore,
+    geminiService: geminiService,
+  );
 });
 
 /// Auth Repository Provider

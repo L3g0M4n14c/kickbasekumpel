@@ -438,6 +438,8 @@ mixin _$Recommendation {
   double get confidence => throw _privateConstructorUsedError;
   DateTime get timestamp => throw _privateConstructorUsedError;
   String get category => throw _privateConstructorUsedError;
+  String? get swapCandidateId => throw _privateConstructorUsedError;
+  String? get swapCandidateName => throw _privateConstructorUsedError;
 
   /// Serializes this Recommendation to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -470,6 +472,8 @@ abstract class $RecommendationCopyWith<$Res> {
     double confidence,
     DateTime timestamp,
     String category,
+    String? swapCandidateId,
+    String? swapCandidateName,
   });
 }
 
@@ -501,6 +505,8 @@ class _$RecommendationCopyWithImpl<$Res, $Val extends Recommendation>
     Object? confidence = null,
     Object? timestamp = null,
     Object? category = null,
+    Object? swapCandidateId = freezed,
+    Object? swapCandidateName = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -556,6 +562,14 @@ class _$RecommendationCopyWithImpl<$Res, $Val extends Recommendation>
                 ? _value.category
                 : category // ignore: cast_nullable_to_non_nullable
                       as String,
+            swapCandidateId: freezed == swapCandidateId
+                ? _value.swapCandidateId
+                : swapCandidateId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            swapCandidateName: freezed == swapCandidateName
+                ? _value.swapCandidateName
+                : swapCandidateName // ignore: cast_nullable_to_non_nullable
+                      as String?,
           )
           as $Val,
     );
@@ -585,6 +599,8 @@ abstract class _$$RecommendationImplCopyWith<$Res>
     double confidence,
     DateTime timestamp,
     String category,
+    String? swapCandidateId,
+    String? swapCandidateName,
   });
 }
 
@@ -615,6 +631,8 @@ class __$$RecommendationImplCopyWithImpl<$Res>
     Object? confidence = null,
     Object? timestamp = null,
     Object? category = null,
+    Object? swapCandidateId = freezed,
+    Object? swapCandidateName = freezed,
   }) {
     return _then(
       _$RecommendationImpl(
@@ -670,6 +688,14 @@ class __$$RecommendationImplCopyWithImpl<$Res>
             ? _value.category
             : category // ignore: cast_nullable_to_non_nullable
                   as String,
+        swapCandidateId: freezed == swapCandidateId
+            ? _value.swapCandidateId
+            : swapCandidateId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        swapCandidateName: freezed == swapCandidateName
+            ? _value.swapCandidateName
+            : swapCandidateName // ignore: cast_nullable_to_non_nullable
+                  as String?,
       ),
     );
   }
@@ -692,6 +718,8 @@ class _$RecommendationImpl implements _Recommendation {
     required this.confidence,
     required this.timestamp,
     required this.category,
+    this.swapCandidateId,
+    this.swapCandidateName,
   });
 
   factory _$RecommendationImpl.fromJson(Map<String, dynamic> json) =>
@@ -723,10 +751,14 @@ class _$RecommendationImpl implements _Recommendation {
   final DateTime timestamp;
   @override
   final String category;
+  @override
+  final String? swapCandidateId;
+  @override
+  final String? swapCandidateName;
 
   @override
   String toString() {
-    return 'Recommendation(id: $id, leagueId: $leagueId, playerId: $playerId, playerName: $playerName, score: $score, reason: $reason, action: $action, suggestedPrice: $suggestedPrice, currentMarketValue: $currentMarketValue, estimatedValue: $estimatedValue, confidence: $confidence, timestamp: $timestamp, category: $category)';
+    return 'Recommendation(id: $id, leagueId: $leagueId, playerId: $playerId, playerName: $playerName, score: $score, reason: $reason, action: $action, suggestedPrice: $suggestedPrice, currentMarketValue: $currentMarketValue, estimatedValue: $estimatedValue, confidence: $confidence, timestamp: $timestamp, category: $category, swapCandidateId: $swapCandidateId, swapCandidateName: $swapCandidateName)';
   }
 
   @override
@@ -755,7 +787,11 @@ class _$RecommendationImpl implements _Recommendation {
             (identical(other.timestamp, timestamp) ||
                 other.timestamp == timestamp) &&
             (identical(other.category, category) ||
-                other.category == category));
+                other.category == category) &&
+            (identical(other.swapCandidateId, swapCandidateId) ||
+                other.swapCandidateId == swapCandidateId) &&
+            (identical(other.swapCandidateName, swapCandidateName) ||
+                other.swapCandidateName == swapCandidateName));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -775,6 +811,8 @@ class _$RecommendationImpl implements _Recommendation {
     confidence,
     timestamp,
     category,
+    swapCandidateId,
+    swapCandidateName,
   );
 
   /// Create a copy of Recommendation
@@ -809,6 +847,8 @@ abstract class _Recommendation implements Recommendation {
     required final double confidence,
     required final DateTime timestamp,
     required final String category,
+    final String? swapCandidateId,
+    final String? swapCandidateName,
   }) = _$RecommendationImpl;
 
   factory _Recommendation.fromJson(Map<String, dynamic> json) =
@@ -840,6 +880,10 @@ abstract class _Recommendation implements Recommendation {
   DateTime get timestamp;
   @override
   String get category;
+  @override
+  String? get swapCandidateId;
+  @override
+  String? get swapCandidateName;
 
   /// Create a copy of Recommendation
   /// with the given fields replaced by the non-null parameter values.
