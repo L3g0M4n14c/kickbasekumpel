@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
@@ -129,18 +128,6 @@ class HttpClientWrapper {
         }
 
         // Retry on timeout
-        final delay = _calculateExponentialDelay(attempts);
-        _logRetry(method, url, attempts + 1, delay);
-        await Future.delayed(delay);
-        attempts++;
-      } on SocketException catch (e) {
-        _logError(method, url, 'NetworkException', e.message);
-
-        if (attempts >= _maxRetries - 1) {
-          throw NetworkException(e.message);
-        }
-
-        // Retry on network error
         final delay = _calculateExponentialDelay(attempts);
         _logRetry(method, url, attempts + 1, delay);
         await Future.delayed(delay);

@@ -32,15 +32,8 @@ Diese Datei enthält:
 
 ### Zusätzliche Dokumentation
 
-Detaillierte Feature-spezifische Dokumentation im `docs/` Verzeichnis:
+Detaillierte technische Dokumentation im `docs/` Verzeichnis:
 
-- [Phase 1: Setup](docs/PHASE_1_SETUP.md) - Projekt-Setup & Konfiguration
-- [Phase 2: Models](docs/PHASE_2_MODELS.md) - Datenmodell-Definitionen
-- [Phase 3: Firebase](docs/PHASE_3_FIREBASE.md) - Firebase Integration
-- [Phase 4: Services](docs/PHASE_4_SERVICES.md) - Service Layer & API Client
-- [Phase 5: UI](docs/PHASE_5_UI.md) - UI-Komponenten & Screens
-- [Phase 6: Testing](docs/PHASE_6_TESTING.md) - Testing-Strategie
-- [Phase 7: Deployment](docs/PHASE_7_DEPLOYMENT.md) - Deployment-Prozess
 - [Riverpod Providers](docs/RIVERPOD_PROVIDERS.md) - Provider-Patterns
 - [Router Setup](docs/ROUTER_QUICKSTART.md) - Navigation-Konfiguration
 - [Repository Usage](docs/REPOSITORY_USAGE_EXAMPLES.md) - Repository-Beispiele
@@ -139,19 +132,45 @@ flutter test
 
 Siehe **"Wie man neuen Code hinzufügt"** in [ARCHITECTURE.md](ARCHITECTURE.md#wie-man-neuen-code-hinzufügt)
 
-## 📱 Features
+## 📱 Views & Features
 
-- ✅ Kickbase API Integration (v4)
-- ✅ User Authentication (Kickbase)
-- ✅ Team Management
-- ✅ Player Market
-- ✅ Lineup Editor
-- ✅ Transfer History
-- ✅ League Standings
-- ✅ Player Statistics
-- ✅ Real-time Updates
-- ✅ Responsive Design (Mobile/Tablet/Desktop)
-- ✅ Offline Support
+### Authentifizierung
+
+| View | Beschreibung |
+|------|-------------|
+| **Anmelden** | Melde dich mit E-Mail und Passwort an. Alternativ steht ein Demo-Login zur Verfügung. |
+| **Registrieren** | Erstelle ein neues Konto mit E-Mail-Adresse und Passwort. |
+| **Passwort vergessen** | Gib deine E-Mail ein und erhalte einen Link zum Zurücksetzen deines Passworts. |
+| **E-Mail bestätigen** | Nach der Registrierung erhältst du eine Bestätigungs-E-Mail – klicke auf den Link, um dein Konto zu aktivieren. |
+
+### Dashboard
+
+| View | Beschreibung |
+|------|-------------|
+| **Home** | Dein persönliches Dashboard mit einer Übersicht deiner Ligen, Benachrichtigungen und nützlichen Links. |
+| **Ligen** | Alle deine Kickbase-Ligen auf einen Blick. Tritt bestehenden Ligen bei oder erstelle eine neue. |
+| **Team** | Zeigt dein aktuelles Team mit allen Spielern, deinem Budget und Gesamtmarktwert. Sortierbar nach Name, Marktwert oder Punkte. |
+| **Transfermarkt** | Durchsuche und filtere alle verfügbaren Spieler im Markt – kaufe gezielt nach Preis, Position oder Verein. |
+| **Aufstellung** | Deine aktuelle Startelf und die Ersatzspieler in einer übersichtlichen Felddarstellung – für alle Bildschirmgrößen optimiert. |
+| **Transfers** | Smarte Kauf- und Verkaufsempfehlungen mit verschiedenen Optimierungszielen wie Budgetausgleich oder Gewinnmaximierung. |
+| **Liga-Rangliste** | Deine aktuelle Platzierung in der Liga mit einer Übersicht aller Teilnehmer und deren Punktestand. |
+| **Verkaufsempfehlungen** | KI-gestützte Empfehlungen, welche Spieler du verkaufen solltest – mit wählbaren Zielen wie Budgetausgleich oder maximaler Gewinn. |
+| **Einstellungen** | Verwalte dein Profil, sammle Boni und melde dich ab. |
+
+### Liga-Details
+
+| View | Beschreibung |
+|------|-------------|
+| **Liga-Übersicht** | Detaillierte Infos zu einer einzelnen Liga: Schnellzugriffe, Statistiken und aktuelle Ligaaktivitäten. |
+| **Liga-Spieler** | Alle Spieler einer Liga mit Such- und Filteroptionen – z. B. nach Position, Verein oder Verfügbarkeit. |
+| **Liga-Tabelle** | Die aktuelle Tabelle deiner Liga mit Platzierungen für ausgewählte Spieltage. |
+
+### Spieler
+
+| View | Beschreibung |
+|------|-------------|
+| **Spieler-Statistiken** | Detaillierte Statistiken eines Spielers: Punkte, Marktwertentwicklung und Leistungskennzahlen. Spieler können als Favorit gespeichert oder geteilt werden. |
+| **Spieler-Historie** | Vollständige Transferhistorie, Leistungsverlauf und Marktwertentwicklung eines Spielers im Zeitverlauf. |
 
 ## 🧪 Testing
 

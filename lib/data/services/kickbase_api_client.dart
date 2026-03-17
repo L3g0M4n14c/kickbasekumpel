@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -31,6 +31,11 @@ class KickbaseAPIClient {
   static const Duration _timeout = Duration(seconds: 30);
   static const int _maxRetries = 3;
   static const Duration _initialRetryDelay = Duration(milliseconds: 500);
+
+  /// Proxy-URL für Flutter Web (umgeht CORS-Blockierung).
+  /// Leitet Requests serverseitig an api.kickbase.com weiter.
+  static const String _webProxyUrl =
+      'https://us-central1-kickbasekumpel.cloudfunctions.net/kickbaseProxy';
 
   final http.Client _httpClient;
   final TokenStorage _tokenStorage;
@@ -111,10 +116,16 @@ class KickbaseAPIClient {
       throw const AuthenticationException('No authentication token available');
     }
 
-    final url = Uri.parse('$_baseUrl$endpoint');
+    // Auf Flutter Web: Requests über Cloud Function Proxy umleiten (CORS)
+    // Auf native Plattformen: direkt an api.kickbase.com
+    final url = kIsWeb
+        ? Uri.parse(_webProxyUrl)
+        : Uri.parse('$_baseUrl$endpoint');
+
     final requestHeaders = <String, String>{
       'Accept': 'application/json',
       'Content-Type': 'application/json',
+      if (kIsWeb) 'X-Kickbase-Endpoint': endpoint,
       if (requiresAuth && token != null) 'Authorization': 'Bearer $token',
       ...?headers,
     };
@@ -134,8 +145,6 @@ class KickbaseAPIClient {
           .send(request)
           .timeout(_timeout);
       response = await http.Response.fromStream(streamedResponse);
-    } on SocketException catch (e) {
-      throw NetworkException('No internet connection', originalError: e);
     } on TimeoutException catch (e) {
       throw TimeoutException(
         'Request timeout after ${_timeout.inSeconds}s',

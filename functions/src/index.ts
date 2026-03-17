@@ -347,3 +347,104 @@ export const getLigainsiderLineups = onRequest(
         }
     }
 );
+
+// ============================================================================
+// Kickbase API Proxy für Flutter Web (CORS-Umgehung)
+// ============================================================================
+
+const KICKBASE_BASE_URL = 'https://api.kickbase.com';
+
+/**
+ * Cloud Function: Kickbase API Proxy für Flutter Web.
+ *
+ * Browser-Requests an api.kickbase.com werden durch CORS blockiert, da die
+ * Kickbase-API keine `Access-Control-Allow-Origin`-Header sendet.
+ * Diese Funktion leitet Requests serverseitig weiter und fügt CORS-Header hinzu.
+ *
+ * Verwendung (Flutter Web):
+ *   URL: https://us-central1-kickbasekumpel.cloudfunctions.net/kickbaseProxy
+ *   Header: X-Kickbase-Endpoint: /v4/user
+ *   Header: Authorization: Bearer <kickbase_token>   (optional beim Login)
+ *   Body: gleich wie der ursprüngliche Kickbase-Request
+ *
+ * Sicherheit:
+ *   - Erlaubt nur Zugriff auf /v4/* Endpunkte der Kickbase-API (Whitelist)
+ *   - Kickbase-Token selbst ist die Authentifizierung
+ */
+export const kickbaseProxy = onRequest(
+    {
+        timeoutSeconds: 30,
+        memory: '256MiB',
+        region: 'us-central1',
+        invoker: 'public',
+    },
+    async (req, res) => {
+        // CORS-Header für alle Antworten setzen
+        res.set('Access-Control-Allow-Origin', '*');
+        res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Kickbase-Endpoint');
+
+        // Preflight-Request sofort beantworten
+        if (req.method === 'OPTIONS') {
+            res.status(204).send('');
+            return;
+        }
+
+        // Kickbase-Endpunkt aus Header lesen
+        const endpoint = req.headers['x-kickbase-endpoint'];
+        if (!endpoint || typeof endpoint !== 'string') {
+            res.status(400).json({ error: 'Fehlender Header: X-Kickbase-Endpoint' });
+            return;
+        }
+
+        // Nur Kickbase v4-Endpunkte erlauben (Sicherheits-Whitelist)
+        if (!endpoint.startsWith('/v4/')) {
+            res.status(400).json({ error: 'Ungültiger Endpunkt: nur /v4/* erlaubt' });
+            return;
+        }
+
+        const kickbaseUrl = `${KICKBASE_BASE_URL}${endpoint}`;
+
+        // Weitergeleitete Header aufbauen
+        const forwardedHeaders: Record<string, string> = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+        };
+        if (req.headers.authorization) {
+            forwardedHeaders['Authorization'] = req.headers.authorization;
+        }
+
+        try {
+            const fetchOptions: RequestInit = {
+                method: req.method,
+                headers: forwardedHeaders,
+            };
+
+            // Body nur bei POST/PUT/PATCH mitschicken
+            if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
+                fetchOptions.body = JSON.stringify(req.body);
+            }
+
+            logger.info({ endpoint, method: req.method }, '🔀 Forwarding to Kickbase API');
+
+            const kickbaseResponse = await fetch(kickbaseUrl, fetchOptions);
+            const responseBody = await kickbaseResponse.text();
+
+            logger.info(
+                { endpoint, status: kickbaseResponse.status },
+                '✅ Kickbase API response received'
+            );
+
+            res
+                .status(kickbaseResponse.status)
+                .set('Content-Type', 'application/json')
+                .send(responseBody);
+        } catch (error) {
+            logger.error({ error, endpoint }, '❌ Kickbase proxy error');
+            res.status(502).json({
+                error: 'Kickbase API nicht erreichbar',
+                details: error instanceof Error ? error.message : 'Unbekannter Fehler',
+            });
+        }
+    }
+);
