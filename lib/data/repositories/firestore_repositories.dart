@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/foundation.dart';
@@ -12,6 +13,7 @@ import '../models/transfer_model.dart';
 import '../models/market_value_model.dart';
 import '../models/performance_model.dart';
 import '../models/ligainsider_model.dart';
+import '../models/ligainsider_match_model.dart';
 import '../services/kickbase_api_client.dart';
 import '../services/gemini_recommendation_service.dart';
 import '../providers/kickbase_api_provider.dart';
@@ -740,8 +742,51 @@ class PlayerRepository extends BaseRepository<Player>
     return await batchWrite(operations);
   }
 
-  /// Triggert die Cloud Function für Ligainsider Photo-Updates
+  /// Ruft voraussichtliche Aufstellungen von der `getLigainsiderLineups` Cloud Function ab.
   ///
+  /// Die Cloud Function cached Ergebnisse für 2 Stunden in Firestore.
+  /// Bei Erstaufruf oder veraltetem Cache wird Ligainsider neu gescraped.
+  ///
+  /// Identisches Auth-Muster wie [triggerCloudFunctionPhotoUpdate].
+  ///
+  /// Returns: [Success<List<LigainsiderMatch>>] oder [Failure]
+  Future<Result<List<LigainsiderMatch>>> fetchLigainsiderLineups() async {
+    try {
+      final response = await _httpClient
+          .get(
+            Uri.parse(
+              'https://us-central1-kickbasekumpel.cloudfunctions.net/getLigainsiderLineups',
+            ),
+          )
+          .timeout(
+            const Duration(minutes: 5),
+            onTimeout: () => throw TimeoutException(
+              'getLigainsiderLineups Timeout',
+              const Duration(minutes: 5),
+            ),
+          );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final matchesJson = data['matches'] as List<dynamic>;
+        final matches = matchesJson
+            .map((m) => LigainsiderMatch.fromJson(m as Map<String, dynamic>))
+            .toList();
+        debugPrint('✅ Ligainsider Lineups geladen: ${matches.length} Spiele');
+        return Success(matches);
+      } else {
+        debugPrint('❌ getLigainsiderLineups: HTTP ${response.statusCode}');
+        return Failure('Cloud Function Fehler: ${response.statusCode}');
+      }
+    } catch (e, st) {
+      debugPrint('❌ fetchLigainsiderLineups Fehler: $e\n$st');
+      return Failure(
+        'Aufstellungen konnten nicht geladen werden: $e',
+        exception: e as Exception?,
+      );
+    }
+  }
+
   /// Ruft die Google Cloud Function auf, die automatisch Spielerfotos
   /// von ligainsider.de scraped und in Firestore speichert.
   ///

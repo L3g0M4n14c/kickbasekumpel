@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/ligainsider_service.dart';
 import '../models/ligainsider_match_model.dart';
+import '../repositories/firestore_repositories.dart';
+import '../../domain/repositories/repository_interfaces.dart';
 
 import 'service_providers.dart';
-// 'kickbase_api_provider.dart' is not required here and would conflict with imports
 
 // ============================================================================
 // Ligainsider Service Provider
@@ -78,15 +79,27 @@ final ligainsiderInitProvider = FutureProvider<void>((ref) async {
 });
 
 /// Provider exposing parsed match lineups
+///
+/// Ruft die `getLigainsiderLineups` Cloud Function auf.
+/// Die Function cached Ergebnisse 2 Stunden in Firestore – sofortige Rückgabe
+/// bei frischem Cache, ansonsten wird Ligainsider.de neu gescraped.
+///
+/// Verwendung:
+/// ```dart
+/// final matchesAsync = ref.watch(ligainsiderMatchesProvider);
+/// matchesAsync.when(
+///   data: (matches) => ...,
+///   loading: () => ...,
+///   error: (err, _) => ...,
+/// );
+/// ```
 final ligainsiderMatchesProvider = FutureProvider<List<LigainsiderMatch>>((
   ref,
 ) async {
-  // Use async service provider to ensure SharedPreferences is available
-  final service = await ref.watch(ligainsiderServiceFutureProvider.future);
-  // Ensure initial player fetch is triggered
-  await ref.watch(ligainsiderInitProvider.future);
-
-  // Try to fetch matches (may be cached)
-  await service.fetchMatchLineups();
-  return service.matches;
+  final playerRepository = ref.watch(playerRepositoryProvider);
+  final result = await playerRepository.fetchLigainsiderLineups();
+  return switch (result) {
+    Success(data: final matches) => matches,
+    Failure(message: final msg) => throw Exception(msg),
+  };
 });

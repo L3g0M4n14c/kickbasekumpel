@@ -97,26 +97,49 @@ class _MatchTileState extends State<_MatchTile> {
 
     return Column(
       children: [
-        ListTile(
+        InkWell(
           onTap: () => setState(() => isExpanded = !isExpanded),
-          leading: m.homeLogo != null
-              ? Image.network(
-                  (kIsWeb
-                      ? 'https://images.weserv.nl/?url=${Uri.encodeComponent(m.homeLogo!.replaceFirst(RegExp(r'^https?:\/\/'), ''))}&w=60&h=60&fit=cover'
-                      : m.homeLogo!),
-                  width: 30,
-                  height: 30,
-                  fit: BoxFit.cover,
-                )
-              : const CircleAvatar(child: Icon(Icons.shield)),
-          title: Row(
-            children: [
-              Expanded(child: Text(m.homeTeam, textAlign: TextAlign.left)),
-              const Text('vs', style: TextStyle(color: Colors.grey)),
-              Expanded(child: Text(m.awayTeam, textAlign: TextAlign.right)),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: [
+                _TeamLogo(url: m.homeLogo),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    m.homeTeam,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    'vs',
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    m.awayTeam,
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _TeamLogo(url: m.awayLogo),
+                const SizedBox(width: 8),
+                Icon(
+                  isExpanded ? Icons.expand_less : Icons.expand_more,
+                  size: 20,
+                  color: Colors.grey,
+                ),
+              ],
+            ),
           ),
-          trailing: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
         ),
         if (isExpanded)
           Padding(
@@ -133,6 +156,36 @@ class _MatchTileState extends State<_MatchTile> {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _TeamLogo extends StatelessWidget {
+  final String? url;
+  const _TeamLogo({this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    if (url == null) {
+      return const SizedBox(
+        width: 30,
+        height: 30,
+        child: Icon(Icons.shield_outlined, size: 22, color: Colors.grey),
+      );
+    }
+    final displayUrl = kIsWeb
+        ? 'https://images.weserv.nl/?url=${Uri.encodeComponent(url!.replaceFirst(RegExp(r'^https?:\/\/'), ''))}&w=60&h=60&fit=contain'
+        : url!;
+    return Image.network(
+      displayUrl,
+      width: 30,
+      height: 30,
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => const SizedBox(
+        width: 30,
+        height: 30,
+        child: Icon(Icons.shield_outlined, size: 22, color: Colors.grey),
+      ),
     );
   }
 }
@@ -155,13 +208,16 @@ class _PitchView extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Container(
+          width: double.infinity,
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.green.shade600, Colors.green.shade400],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.green.shade700, Colors.green.shade500],
             ),
             borderRadius: BorderRadius.circular(8),
           ),
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           child: Column(
             children: rows.map((r) => _LineupRowView(row: r)).toList(),
           ),
@@ -180,6 +236,7 @@ class _LineupRowView extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: row.players.map((p) => _PlayerPill(player: p)).toList(),
       ),
     );
@@ -192,9 +249,8 @@ class _PlayerPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 80,
-      margin: const EdgeInsets.symmetric(horizontal: 4),
+    return SizedBox(
+      width: 64,
       child: Column(
         children: [
           if (player.imageUrl != null)
@@ -203,36 +259,46 @@ class _PlayerPill extends StatelessWidget {
                 (kIsWeb
                     ? 'https://images.weserv.nl/?url=${Uri.encodeComponent(player.imageUrl!.replaceFirst(RegExp(r'^https?:\/\/'), ''))}&w=72&h=72&fit=cover'
                     : player.imageUrl!),
-                width: 36,
-                height: 36,
+                width: 40,
+                height: 40,
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => CircleAvatar(
+                  radius: 20,
                   child: Text(player.name.isNotEmpty ? player.name[0] : '?'),
                 ),
               ),
             )
           else
             CircleAvatar(
+              radius: 20,
               child: Text(player.name.isNotEmpty ? player.name[0] : '?'),
             ),
           const SizedBox(height: 4),
           Text(
             player.name,
-            style: const TextStyle(color: Colors.white, fontSize: 11),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              shadows: [Shadow(color: Colors.black45, blurRadius: 2)],
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
           ),
           if (player.alternative != null)
             Container(
-              margin: const EdgeInsets.only(top: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              margin: const EdgeInsets.only(top: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
               decoration: BoxDecoration(
-                color: Colors.black26,
+                color: Colors.black38,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 'Alt: ${player.alternative}',
-                style: const TextStyle(fontSize: 9),
+                style: const TextStyle(fontSize: 8, color: Colors.white70),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
         ],

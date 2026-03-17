@@ -27,3 +27,40 @@ export interface ScraperResult {
     totalPhotos: number;
     errors: string[];
 }
+
+// ============================================================================
+// Lineup / Match Aufstellung Types
+// ============================================================================
+
+/** Einzelner Spieler in einer Aufstellungszeile */
+export interface LineupPlayer {
+    name: string;
+    ligainsiderId?: string;
+    imageUrl?: string;
+    alternative?: string;
+}
+
+/** Aufstellungszeile (z.B. Tor, Abwehr, Mittelfeld, Sturm) */
+export interface LineupRow {
+    rowName: string;
+    players: LineupPlayer[];
+}
+
+/** Einzelnes Spiel mit Heim- und Gastaufstellung */
+export interface LineupMatch {
+    id: string;
+    homeTeam: string;
+    awayTeam: string;
+    homeLogo?: string;
+    awayLogo?: string;
+    homeLineup: LineupRow[];
+    awayLineup: LineupRow[];
+}
+
+/** Ergebnis des Lineup-Scrapers */
+export interface LineupScraperResult {
+    matches: LineupMatch[];
+    matchday: number | null;
+    scrapedAt: string;
+    errors: string[];
+}
