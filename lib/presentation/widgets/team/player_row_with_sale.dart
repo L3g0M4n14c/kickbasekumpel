@@ -47,13 +47,12 @@ class PlayerRowWithSale extends ConsumerWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 14.0),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // Spielerfoto
               CircleAvatar(
-                radius: 20,
+                radius: 22,
                 backgroundImage: photoUrl != null
                     ? NetworkImage(photoUrl)
                     : null,
@@ -62,18 +61,17 @@ class PlayerRowWithSale extends ConsumerWidget {
                     ? Icon(Icons.person, color: Colors.grey[600])
                     : null,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
 
               // Spalte 1: Name + Teamname
               Expanded(
-                flex: 2,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       fullName,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                       maxLines: 1,
@@ -82,64 +80,75 @@ class PlayerRowWithSale extends ConsumerWidget {
                     const SizedBox(height: 2),
                     Text(
                       player.teamName,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.labelSmall?.copyWith(color: Colors.grey),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
 
               // Spalte 2: Status-Emoji
-              Expanded(
-                flex: 1,
+              SizedBox(
+                width: 28,
                 child: Center(
                   child: Text(
                     PlayerStatusHelper.getStatusEmoji(player.status),
-                    style: const TextStyle(fontSize: 16),
+                    style: const TextStyle(fontSize: 18),
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
 
               // Spalte 3: Durchschnitts- und Gesamtpunkte
-              Expanded(
-                flex: 1,
+              SizedBox(
+                width: 60,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       player.averagePoints.toStringAsFixed(1),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${player.totalPoints} gesamt',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.labelSmall?.copyWith(color: Colors.grey),
+                      '${player.totalPoints} ges.',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
 
               // Spalte 4: Marktwert + Trend
-              Expanded(
-                flex: 1,
+              SizedBox(
+                width: 76,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       '€${_formatValue(player.marketValue)}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -148,16 +157,24 @@ class PlayerRowWithSale extends ConsumerWidget {
                         color: PlayerStatusHelper.getTrendColor(player.tfhmvt),
                         fontWeight: FontWeight.bold,
                       ),
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
 
               // Sale Toggle
-              Checkbox(
-                value: isSelectedForSale,
-                onChanged: (value) => onToggleSale(value ?? false),
+              SizedBox(
+                width: 36,
+                height: 36,
+                child: Checkbox(
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                  value: isSelectedForSale,
+                  onChanged: (value) => onToggleSale(value ?? false),
+                ),
               ),
             ],
           ),

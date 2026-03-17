@@ -19,6 +19,102 @@ class DashboardShell extends StatelessWidget {
     );
   }
 
+  /// Mappt Branch-Index (0–8) auf NavBar-Slot (0–5).
+  /// Branches 2, 6, 7, 8 (Verkaufen, Tabelle, Live, Einstellungen)
+  /// landen alle auf Slot 5 = „Mehr".
+  int _getNavBarIndex(int branchIndex) {
+    // Slot-Reihenfolge: 0=Team, 1=Markt, 2=Lineup, 3=Insider, 4=Tipps, 5=Mehr
+    // Branch-Reihen: 0=Team,1=Markt,2=Verkaufen,3=Lineup,4=Transfers,5=Ligainsider,6-8=Mehr
+    const mapping = [0, 1, 5, 2, 4, 3, 5, 5, 5];
+    if (branchIndex < mapping.length) return mapping[branchIndex];
+    return 5;
+  }
+
+  /// Wertet einen NavBar-Tap aus und navigiert zum Branch oder öffnet das More-Sheet.
+  void _onNavBarTap(int navIndex, BuildContext context) {
+    switch (navIndex) {
+      case 0:
+        _onDestinationSelected(0); // Team
+      case 1:
+        _onDestinationSelected(1); // Markt
+      case 2:
+        _onDestinationSelected(3); // Aufstellung
+      case 3:
+        _onDestinationSelected(5); // Ligainsider
+      case 4:
+        _onDestinationSelected(4); // Transfer-Tipps
+      case 5:
+        _showMoreMenu(context); // Mehr
+    }
+  }
+
+  /// Zeigt das „Mehr"-Bottom-Sheet mit den versteckten Tabs.
+  void _showMoreMenu(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(Icons.sell_outlined),
+              title: const Text('Verkaufen'),
+              selected: navigationShell.currentIndex == 2,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _onDestinationSelected(2);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.leaderboard_outlined),
+              title: const Text('Tabelle'),
+              selected: navigationShell.currentIndex == 6,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _onDestinationSelected(6);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.sports_soccer_outlined),
+              title: const Text('Live'),
+              selected: navigationShell.currentIndex == 7,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _onDestinationSelected(7);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings_outlined),
+              title: const Text('Einstellungen'),
+              selected: navigationShell.currentIndex == 8,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _onDestinationSelected(8);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (ScreenSize.isMobile(context)) {
@@ -30,13 +126,13 @@ class DashboardShell extends StatelessWidget {
     }
   }
 
-  /// Mobile Layout: Bottom Navigation Bar
+  /// Mobile Layout: Bottom Navigation Bar (5 sichtbare Items + Mehr-Button)
   Widget _buildMobileLayout(BuildContext context) {
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
-        selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: _onDestinationSelected,
+        selectedIndex: _getNavBarIndex(navigationShell.currentIndex),
+        onDestinationSelected: (index) => _onNavBarTap(index, context),
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.person_outline),
@@ -49,40 +145,21 @@ class DashboardShell extends StatelessWidget {
             label: 'Markt',
           ),
           NavigationDestination(
-            icon: Icon(Icons.sell_outlined),
-            selectedIcon: Icon(Icons.sell),
-            label: 'Verkaufen',
-          ),
-          NavigationDestination(
             icon: Icon(Icons.people_outline),
             selectedIcon: Icon(Icons.people),
-            label: 'Aufstellung',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.trending_up_outlined),
-            selectedIcon: Icon(Icons.trending_up),
-            label: 'Transfer-Tipps',
+            label: 'Lineup',
           ),
           NavigationDestination(
             icon: Icon(Icons.list_outlined),
             selectedIcon: Icon(Icons.list),
-            label: 'Ligainsider',
+            label: 'Insider',
           ),
           NavigationDestination(
-            icon: Icon(Icons.leaderboard_outlined),
-            selectedIcon: Icon(Icons.leaderboard),
-            label: 'Tabelle',
+            icon: Icon(Icons.trending_up_outlined),
+            selectedIcon: Icon(Icons.trending_up),
+            label: 'Tipps',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.sports_soccer_outlined),
-            selectedIcon: Icon(Icons.sports_soccer),
-            label: 'Live',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Einstellungen',
-          ),
+          NavigationDestination(icon: Icon(Icons.more_horiz), label: 'Mehr'),
         ],
       ),
     );
