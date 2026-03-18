@@ -151,11 +151,18 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
                     ),
                   ),
                 ),
-              // Hinweis: Wenn Web + kein Ligainsider-Cache vorhanden
+              // Hinweis: Wenn Web + weder Ligainsider-Service-Cache noch
+              // Firestore-Fotos vorhanden (Firestore ist der primäre Web-Pfad)
               if (kIsWeb &&
                   (ref.watch(ligainsiderCacheCountProvider).asData?.value ??
                           0) ==
-                      0)
+                      0 &&
+                  (ref
+                          .watch(ligainsiderPhotoMapProvider)
+                          .asData
+                          ?.value
+                          .isEmpty ??
+                      true))
                 Card(
                   margin: const EdgeInsets.symmetric(
                     horizontal: 16.0,

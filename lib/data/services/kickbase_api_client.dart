@@ -374,7 +374,8 @@ class KickbaseAPIClient {
     _logger.d('🌐 Testing network connectivity...');
 
     try {
-      final url = Uri.parse(_baseUrl);
+      // Auf Web: Proxy-URL nutzen (direkter HEAD auf api.kickbase.com wäre CORS-blockiert)
+      final url = kIsWeb ? Uri.parse(_webProxyUrl) : Uri.parse(_baseUrl);
       final response = await _httpClient
           .head(url)
           .timeout(const Duration(seconds: 5));
