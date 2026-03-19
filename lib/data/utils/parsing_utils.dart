@@ -53,8 +53,12 @@ String normalizeForLigainsider(String name) {
   for (final entry in map.entries) {
     s = s.replaceAll(entry.key, entry.value);
   }
-  // Alle verbleibenden Nicht-ASCII-Buchstaben entfernen
-  s = s.replaceAll(RegExp(r'[^a-z0-9 ]'), '');
+  // Alle verbleibenden Nicht-ASCII-Buchstaben entfernen.
+  // Bindestriche (-) und Punkte (.) BLEIBEN erhalten – identisch zum
+  // TypeScript normalizePlayerName() im Ligainsider-Scraper, damit die
+  // Firestore-Document-IDs (z. B. "a. amaimouni-echghouyab") korrekt
+  // als Lookup-Keys erkannt werden.
+  s = s.replaceAll(RegExp(r'[^a-z0-9 .\-]'), '');
   s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
   return s;
 }

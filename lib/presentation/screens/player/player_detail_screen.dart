@@ -426,9 +426,13 @@ class _OverviewTab extends ConsumerWidget {
       case 0:
         return Colors.green;
       case 1:
-        return Colors.orange;
-      case 2:
         return Colors.red;
+      case 2:
+        return Colors.orange;
+      case 4:
+        return Colors.blue;
+      case 32:
+        return Colors.yellow;
       default:
         return Colors.grey;
     }
@@ -439,9 +443,11 @@ class _OverviewTab extends ConsumerWidget {
       case 0:
         return 'Fit';
       case 1:
-        return 'Fraglich';
-      case 2:
         return 'Verletzt';
+      case 2:
+        return 'Angeschlagen';
+      case 4:
+        return 'Aufbautraining';
       default:
         return 'Unbekannt';
     }

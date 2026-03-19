@@ -3,21 +3,16 @@ import 'package:flutter/material.dart';
 /// Helper-Funktionen für Player-Status-Darstellung
 class PlayerStatusHelper {
   /// Maps Player-Status-Integer zu einem Emoji
-  ///
-  /// Status-Werte:
-  /// - 0: Fit (💪)
-  /// - 1: Fraglich/Angeschlagen (💊)
-  /// - 2: Verletzt (🚑)
-  /// - 32: Gelbe Karte (🟨)
-  /// - default: Unbekannt (❓)
   static String getStatusEmoji(int status) {
     switch (status) {
       case 0:
         return '💪'; // Fit
       case 1:
-        return '�'; // Fraglich/Angeschlagen (Krankenwagen)
+        return '❌'; // Verletzt
       case 2:
-        return '💊'; // Verletzt (Tabletten)
+        return '💊'; // Angeschlagen (Tabletten)
+      case 4:
+        return '🏋️‍♂️'; // Aufbautraining
       case 32:
         return '🟨'; // Gelbe Karte
       default:
@@ -31,11 +26,13 @@ class PlayerStatusHelper {
       case 0:
         return 'Fit';
       case 1:
-        return 'Fraglich';
-      case 2:
         return 'Verletzt';
+      case 2:
+        return 'Angeschlagen';
+      case 4:
+        return 'Aufbautraining';
       case 32:
-        return 'Gelbe Karte';
+        return 'Gelbsperre';
       default:
         return 'Unbekannt';
     }
@@ -47,9 +44,11 @@ class PlayerStatusHelper {
       case 0:
         return Colors.green;
       case 1:
-        return Colors.orange;
-      case 2:
         return Colors.red;
+      case 2:
+        return Colors.orange;
+      case 4:
+        return Colors.blue;
       case 32:
         return Colors.yellow;
       default:
