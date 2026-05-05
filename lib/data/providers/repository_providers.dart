@@ -1,8 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../repositories/firestore_repositories.dart';
 import '../repositories/auth_repository.dart';
+import '../services/secure_api_key_service.dart';
+import '../services/mistral_recommendation_service.dart';
 import 'kickbase_api_provider.dart';
 
 // ============================================================================
@@ -57,16 +60,32 @@ final transferRepositoryProvider = Provider<TransferRepository>((ref) {
   return TransferRepository(firestore: firestore, apiClient: apiClient);
 });
 
+/// Mistral Recommendation Service Provider
+/// Erstellt den Service nur, wenn ein API-Key verfügbar ist (nach init())
+final mistralRecommendationServiceProvider =
+    Provider<MistralRecommendationService?>((ref) {
+  // Synchrone Abfrage nach init()
+  final apiKey = SecureApiKeyService.getApiKeySync();
+  if (apiKey == null || apiKey.isEmpty) {
+    debugPrint('ℹ️ MistralRecommendationService: Kein API-Key verfügbar - Service nicht erstellt');
+    return null;
+  }
+  return MistralRecommendationService(apiKey: apiKey);
+});
+
 /// Recommendation Repository Provider
-/// Manages all recommendation-related Firestore operations
+/// Manages all recommendation-related operations
+/// Nutzt Mistral API statt Firestore für KI-Empfehlungen
+/// Ergebnisse werden NICHT in Firestore gespeichert, sondern direkt zurückgegeben
 final recommendationRepositoryProvider = Provider<RecommendationRepository>((
   ref,
 ) {
   final firestore = ref.watch(firestoreProvider);
-  final geminiService = ref.watch(geminiRecommendationServiceProvider);
+  final mistralService = ref.watch(mistralRecommendationServiceProvider);
+  
   return RecommendationRepository(
     firestore: firestore,
-    geminiService: geminiService,
+    mistralService: mistralService,
   );
 });
 

@@ -354,7 +354,7 @@ class _AIGenerateBanner extends ConsumerWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'KI-Empfehlungen (Gemini)',
+                  'KI-Empfehlungen (Mistral)',
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -374,7 +374,7 @@ class _AIGenerateBanner extends ConsumerWidget {
             if (!isGenerating) ...[
               const SizedBox(height: 4),
               Text(
-                'Analysiert Spielerdaten mit Gemini AI und gibt '
+                'Analysiert Spielerdaten mit Mistral AI und gibt '
                 'Kauf-/Verkaufsempfehlungen mit Begründungen.',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'data/services/secure_api_key_service.dart';
 import 'config/router.dart';
 import 'config/theme.dart';
 import 'firebase_options.dart';
@@ -23,6 +24,19 @@ void main() async {
       stackTrace: stackTrace,
     );
     // Continue anyway - might work later
+  }
+
+  // Initialize Secure API Key Service für Mistral API
+  // **MUSS vor dem ersten Zugriff auf MistralRecommendationService aufgerufen werden!**
+  try {
+    await SecureApiKeyService.init();
+    _logger.i('✅ SecureApiKeyService initialized - Mistral API Key geladen');
+  } catch (e, stackTrace) {
+    _logger.e(
+      '⚠️ SecureApiKeyService initialization warning: $e',
+      stackTrace: stackTrace,
+    );
+    // App kann trotzdem gestartet werden, aber KI-Empfehlungen funktionieren nicht
   }
 
   // Setup global error handlers

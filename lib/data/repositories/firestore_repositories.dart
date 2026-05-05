@@ -15,7 +15,7 @@ import '../models/performance_model.dart';
 import '../models/ligainsider_model.dart';
 import '../models/ligainsider_match_model.dart';
 import '../services/kickbase_api_client.dart';
-import '../services/gemini_recommendation_service.dart';
+import '../services/mistral_recommendation_service.dart';
 import '../providers/kickbase_api_provider.dart';
 import 'base_repository.dart';
 
@@ -53,20 +53,8 @@ final transferRepositoryProvider = Provider<TransferRepository>((ref) {
   );
 });
 
-/// Provider für [GeminiRecommendationService].
-final geminiRecommendationServiceProvider =
-    Provider<GeminiRecommendationService>((ref) {
-      return GeminiRecommendationService();
-    });
-
-final recommendationRepositoryProvider = Provider<RecommendationRepository>((
-  ref,
-) {
-  return RecommendationRepository(
-    firestore: ref.watch(firestoreProvider),
-    geminiService: ref.watch(geminiRecommendationServiceProvider),
-  );
-});
+// Provider wurde nach repository_providers.dart verschoben
+// und nutzt jetzt MistralRecommendationService statt Gemini
 
 // ============================================================================
 // USER REPOSITORY
@@ -1167,12 +1155,12 @@ class TransferRepository extends BaseRepository<Transfer>
 
 class RecommendationRepository extends BaseRepository<Recommendation>
     implements RecommendationRepositoryInterface {
-  final GeminiRecommendationService? _geminiService;
+  final MistralRecommendationService? _mistralService;
 
   RecommendationRepository({
     required super.firestore,
-    GeminiRecommendationService? geminiService,
-  }) : _geminiService = geminiService,
+    MistralRecommendationService? mistralService,
+  }) : _mistralService = mistralService,
        super(collectionPath: 'recommendations');
 
   @override
@@ -1256,13 +1244,14 @@ class RecommendationRepository extends BaseRepository<Recommendation>
     );
   }
 
-  /// Generiert eine KI-gestützte Empfehlung für einen Spieler via Gemini.
+  /// Generiert eine KI-gestützte Empfehlung für einen Spieler via Mistral.
   ///
   /// Benötigt [player] als Stammdaten. Die optionalen Parameter verbessern
   /// die Qualität der Analyse erheblich wenn vorhanden.
-  /// Speichert das Ergebnis in Firestore und gibt das [Recommendation]-Objekt zurück.
+  /// **ACHTUNG: Ergebnisse werden NICHT in Firestore gespeichert!**
+  /// Sie werden direkt an den Client zurückgegeben und können dort angezeigt werden.
   ///
-  /// Falls [GeminiRecommendationService] nicht initialisiert, fällt auf den
+  /// Falls [MistralRecommendationService] nicht initialisiert, fällt auf den
   /// regelbasierten Algorithmus zurück.
   Future<Result<Recommendation>> generateAIRecommendation({
     required String leagueId,
@@ -1274,7 +1263,7 @@ class RecommendationRepository extends BaseRepository<Recommendation>
     String? lineupContext,
     List<Player>? swapCandidates,
   }) async {
-    final service = _geminiService;
+    final service = _mistralService;
     if (service == null) {
       // Fallback auf regelbasierte Logik
       return generateRecommendation(
@@ -1302,7 +1291,7 @@ class RecommendationRepository extends BaseRepository<Recommendation>
       swapCandidates: swapCandidates,
     );
 
-    if (aiResult is Failure<GeminiRecommendationResult>) {
+    if (aiResult is Failure<MistralRecommendationResult>) {
       return Failure(
         aiResult.message,
         code: aiResult.code,
@@ -1310,10 +1299,12 @@ class RecommendationRepository extends BaseRepository<Recommendation>
       );
     }
 
-    final ai = (aiResult as Success<GeminiRecommendationResult>).data;
+    final ai = (aiResult as Success<MistralRecommendationResult>).data;
 
+    // **WICHTIG: NICHT in Firestore speichern!**
+    // Die Empfehlung wird direkt zurückgegeben und kann im Client angezeigt werden
     final recommendation = Recommendation(
-      id: '',
+      id: '', // Keine Firestore-ID, da nicht gespeichert
       leagueId: leagueId,
       playerId: player.id,
       playerName: '${player.firstName} ${player.lastName}'.trim(),
@@ -1330,17 +1321,19 @@ class RecommendationRepository extends BaseRepository<Recommendation>
       swapCandidateName: ai.swapCandidateName,
     );
 
-    return await create(recommendation);
+    // Direkte Rückgabe ohne Firestore-Speicherung
+    return Success(recommendation);
   }
 
   /// Generiert KI-Empfehlungen für eine ganze Spielerliste (Batch).
   ///
-  /// Alle Spieler werden in einem einzigen Gemini-Aufruf analysiert.
+  /// Alle Spieler werden in einem einzigen Mistral-Aufruf analysiert.
+  /// **ACHTUNG: Ergebnisse werden NICHT in Firestore gespeichert!**
   Future<Result<List<Recommendation>>> generateAIBatchRecommendations({
     required String leagueId,
     required List<PlayerAnalysisInput> players,
   }) async {
-    final service = _geminiService;
+    final service = _mistralService;
     if (service == null) {
       return const Failure(
         'KI-Service nicht verfügbar.',
@@ -1352,7 +1345,7 @@ class RecommendationRepository extends BaseRepository<Recommendation>
       players: players,
     );
 
-    if (batchResult is Failure<Map<String, GeminiRecommendationResult>>) {
+    if (batchResult is Failure<Map<String, MistralRecommendationResult>>) {
       return Failure(
         batchResult.message,
         code: batchResult.code,
@@ -1361,7 +1354,7 @@ class RecommendationRepository extends BaseRepository<Recommendation>
     }
 
     final aiMap =
-        (batchResult as Success<Map<String, GeminiRecommendationResult>>).data;
+        (batchResult as Success<Map<String, MistralRecommendationResult>>).data;
     final recommendations = <Recommendation>[];
 
     for (final input in players) {
@@ -1369,7 +1362,7 @@ class RecommendationRepository extends BaseRepository<Recommendation>
       if (ai == null) continue;
 
       final rec = Recommendation(
-        id: '',
+        id: '', // Keine Firestore-ID, da nicht gespeichert
         leagueId: leagueId,
         playerId: input.player.id,
         playerName: '${input.player.firstName} ${input.player.lastName}'.trim(),
@@ -1382,12 +1375,13 @@ class RecommendationRepository extends BaseRepository<Recommendation>
         confidence: ai.confidence,
         timestamp: DateTime.now(),
         category: ai.category,
+        swapCandidateId: ai.swapCandidateId,
+        swapCandidateName: ai.swapCandidateName,
       );
 
-      final saveResult = await create(rec);
-      if (saveResult is Success<Recommendation>) {
-        recommendations.add(saveResult.data);
-      }
+      // **WICHTIG: NICHT in Firestore speichern!**
+      // Direkte Rückgabe
+      recommendations.add(rec);
     }
 
     return Success(recommendations);

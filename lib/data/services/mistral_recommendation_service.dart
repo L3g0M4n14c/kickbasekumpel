@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:firebase_vertexai/firebase_vertexai.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import '../../domain/repositories/repository_interfaces.dart';
 import '../models/player_model.dart';
@@ -7,8 +7,9 @@ import '../models/market_value_model.dart';
 import '../models/performance_model.dart';
 import '../models/ligainsider_model.dart';
 
-/// Ergebnis einer KI-Empfehlung von Gemini
-class GeminiRecommendationResult {
+/// Ergebnis einer KI-Empfehlung von Mistral
+/// Identisch zum alten GeminiRecommendationResult für Kompatibilität
+class MistralRecommendationResult {
   final double score;
   final String action;
   final String reason;
@@ -18,7 +19,7 @@ class GeminiRecommendationResult {
   final String? swapCandidateId;
   final String? swapCandidateName;
 
-  const GeminiRecommendationResult({
+  const MistralRecommendationResult({
     required this.score,
     required this.action,
     required this.reason,
@@ -29,9 +30,9 @@ class GeminiRecommendationResult {
     this.swapCandidateName,
   });
 
-  factory GeminiRecommendationResult.fromJson(Map<String, dynamic> json) {
+  factory MistralRecommendationResult.fromJson(Map<String, dynamic> json) {
     final score = (json['score'] as num).toDouble().clamp(0.0, 100.0);
-    return GeminiRecommendationResult(
+    return MistralRecommendationResult(
       score: score,
       action: _actionFromScore(score),
       reason: json['reason'] as String? ?? '',
@@ -58,16 +59,31 @@ class GeminiRecommendationResult {
     if (score >= 20) return 'sell';
     return 'strong-sell';
   }
+
+  /// Konvertiert zu Map für JSON-Serialisierung
+  Map<String, dynamic> toJson() => {
+    'score': score,
+    'action': action,
+    'reason': reason,
+    'confidence': confidence,
+    'estimatedValue': estimatedValue,
+    'category': category,
+    if (swapCandidateId != null) 'swapCandidateId': swapCandidateId,
+    if (swapCandidateName != null) 'swapCandidateName': swapCandidateName,
+  };
 }
 
-/// Service für KI-gestützte Spielerempfehlungen via Firebase Vertex AI (Gemini).
+/// Service für KI-gestützte Spielerempfehlungen via Mistral API.
 ///
 /// Analysiert Spielerdaten (Punkte, Marktwert-Verlauf, Status, Form) und
 /// gibt strukturierte Kauf-/Verkaufsempfehlungen auf Deutsch zurück.
 ///
+/// Ergebnisse werden NICHT in Firestore gespeichert, sondern direkt
+/// an den Client zurückgegeben.
+///
 /// Verwendung:
 /// ```dart
-/// final service = GeminiRecommendationService();
+/// final service = MistralRecommendationService(apiKey: 'YOUR_KEY');
 /// final result = await service.generateRecommendation(
 ///   player: player,
 ///   marketValueHistory: history,
@@ -75,54 +91,15 @@ class GeminiRecommendationResult {
 ///   ligainsiderData: ligainsiderPlayer,
 /// );
 /// ```
-class GeminiRecommendationService {
-  static const _model = 'gemini-2.5-flash';
+class MistralRecommendationService {
+  static const _model = 'mistral-small-latest';
+  static const _baseUrl = 'https://api.mistral.ai/v1';
+  static const _cacheTtl = Duration(hours: 2);
 
-  /// JSON Schema für strukturierten Gemini-Output (einzelner Spieler)
-  static Schema get _recommendationSchema => Schema.object(
-    properties: {
-      'score': Schema.number(
-        description:
-            'Gesamtbewertung des Spielers von 0 bis 100. '
-            '0 = klar schlechte Option, 100 = klar beste Option.',
-      ),
-      'reason': Schema.string(
-        description:
-            'Begründung in 2-3 Sätzen auf Deutsch. '
-            'Konkret mit Zahlen aus den Datensektionen.',
-      ),
-      'confidence': Schema.number(
-        description:
-            'Konfidenz der Empfehlung von 0.0 bis 1.0. '
-            '1.0 = sehr sicher, 0.0 = sehr unsicher.',
-      ),
-      'estimatedValue': Schema.integer(
-        description: 'Geschätzter fairer Marktwert in Euro (ganze Zahl).',
-      ),
-      'swapCandidateId': Schema.string(
-        description:
-            'ID des empfohlenen Tauschspielers. '
-            'Nur setzen wenn ein Tausch klar empfehlenswert ist.',
-      ),
-      'swapCandidateName': Schema.string(
-        description: 'Name des empfohlenen Tauschspielers.',
-      ),
-    },
-    optionalProperties: const ['swapCandidateId', 'swapCandidateName'],
-  );
+  final String _apiKey;
+  final Map<String, _CacheEntry> _cache = {};
 
-  late final GenerativeModel _generativeModel;
-
-  GeminiRecommendationService() {
-    _generativeModel = FirebaseVertexAI.instance.generativeModel(
-      model: _model,
-      generationConfig: GenerationConfig(
-        responseMimeType: 'application/json',
-        responseSchema: _recommendationSchema,
-        temperature: 0.7,
-      ),
-    );
-  }
+  MistralRecommendationService({required String apiKey}) : _apiKey = apiKey;
 
   /// Generiert eine KI-Empfehlung für einen Spieler.
   ///
@@ -130,9 +107,12 @@ class GeminiRecommendationService {
   /// [marketValueHistory] Die Marktwert-Zeitreihe (optional, verbessert Analyse).
   /// [recentPerformances] Die letzten Spieltag-Leistungen (optional).
   /// [ligainsiderData] Ligainsider-Verletzungs- und Formstatus (optional).
+  /// [fixtureContext] Kontext zu den nächsten Spielen (optional).
+  /// [lineupContext] Team-Analyse Kontext (optional).
+  /// [swapCandidates] Liste der Tauschkandidaten (optional).
   ///
-  /// Returns [Result<GeminiRecommendationResult>] – niemals Exceptions.
-  Future<Result<GeminiRecommendationResult>> generateRecommendation({
+  /// Returns [Result<MistralRecommendationResult>] – niemals Exceptions.
+  Future<Result<MistralRecommendationResult>> generateRecommendation({
     required Player player,
     List<MarketValueEntry>? marketValueHistory,
     List<MatchPerformance>? recentPerformances,
@@ -141,6 +121,24 @@ class GeminiRecommendationService {
     String? lineupContext,
     List<Player>? swapCandidates,
   }) async {
+    final cacheKey = _generateCacheKey(
+      playerId: player.id,
+      marketValue: player.marketValue,
+      status: player.status,
+      averagePoints: player.averagePoints,
+      marketValueTrend: player.marketValueTrend,
+      stl: player.stl,
+      userOwnsPlayer: player.userOwnsPlayer,
+      recentPerformances: recentPerformances,
+      ligainsiderData: ligainsiderData,
+    );
+
+    // Cache prüfen
+    if (_cache.containsKey(cacheKey) && !_cache[cacheKey]!.isExpired) {
+      debugPrint('✅ MISTRAL CACHE HIT: ${player.firstName} ${player.lastName}');
+      return Success(_cache[cacheKey]!.result);
+    }
+
     try {
       final prompt = _buildPrompt(
         player: player,
@@ -153,34 +151,32 @@ class GeminiRecommendationService {
       );
 
       debugPrint('\n══════════════════════════════════════════════════');
-      debugPrint('📤 GEMINI REQUEST (Einzelspieler)');
+      debugPrint('📤 MISTRAL REQUEST (Einzelspieler)');
       debugPrint('══════════════════════════════════════════════════');
       debugPrint(prompt);
       debugPrint('══════════════════════════════════════════════════\n');
 
-      final response = await _generativeModel.generateContent([
-        Content.text(prompt),
-      ]);
+      final response = await _callMistralApi(prompt);
 
-      final text = response.text;
       debugPrint('\n══════════════════════════════════════════════════');
-      debugPrint('📥 GEMINI RESPONSE (Einzelspieler)');
+      debugPrint('📥 MISTRAL RESPONSE (Einzelspieler)');
       debugPrint('══════════════════════════════════════════════════');
-      debugPrint(text ?? '(null)');
+      debugPrint(response ?? '(null)');
       debugPrint('══════════════════════════════════════════════════\n');
 
-      if (text == null || text.isEmpty) {
+      if (response == null || response.isEmpty) {
         return const Failure(
-          'Gemini hat keine Antwort zurückgegeben.',
+          'Mistral hat keine Antwort zurückgegeben.',
           code: 'empty_response',
         );
       }
 
-      final Map<String, dynamic> json = jsonDecode(text);
-      final result = GeminiRecommendationResult.fromJson(json);
+      // Mistral gibt direkt JSON zurück (mit response_format: json_object)
+      final Map<String, dynamic> json = jsonDecode(response);
+      final result = MistralRecommendationResult.fromJson(json);
 
       debugPrint('\n══════════════════════════════════════════════════');
-      debugPrint('✅ GEMINI PARSED (${player.firstName} ${player.lastName})');
+      debugPrint('✅ MISTRAL PARSED (${player.firstName} ${player.lastName})');
       debugPrint('  score      : ${result.score}');
       debugPrint('  action     : ${result.action}');
       debugPrint('  category   : ${result.category}');
@@ -190,22 +186,25 @@ class GeminiRecommendationService {
       debugPrint('  reason     : ${result.reason}');
       debugPrint('══════════════════════════════════════════════════\n');
 
+      // In Cache speichern
+      _cache[cacheKey] = _CacheEntry(result, DateTime.now().add(_cacheTtl));
+
       return Success(result);
     } on FormatException catch (e) {
-      debugPrint('❌ GEMINI JSON PARSE ERROR: $e');
+      debugPrint('❌ MISTRAL JSON PARSE ERROR: $e');
       return Failure(
-        'Gemini-Antwort konnte nicht geparst werden: $e',
+        'Mistral-Antwort konnte nicht geparst werden: $e',
         code: 'parse_error',
       );
     } on Exception catch (e) {
-      debugPrint('❌ GEMINI EXCEPTION: $e');
+      debugPrint('❌ MISTRAL EXCEPTION: $e');
       return Failure(
         'KI-Analyse fehlgeschlagen: ${e.toString()}',
-        code: 'gemini_error',
+        code: 'mistral_error',
         exception: e,
       );
     } catch (e) {
-      debugPrint('❌ GEMINI UNKNOWN ERROR: $e');
+      debugPrint('❌ MISTRAL UNKNOWN ERROR: $e');
       return Failure(
         'Unerwarteter Fehler bei der KI-Analyse: $e',
         code: 'unknown_error',
@@ -215,74 +214,186 @@ class GeminiRecommendationService {
 
   /// Generiert Empfehlungen für mehrere Spieler in einem einzigen API-Aufruf.
   ///
-  /// Schickt alle Spielerdaten in einem Prompt und erwartet eine JSON-Map
-  /// von Spieler-ID → Empfehlung zurück.
-  ///
   /// [players] Liste der Spieler mit jeweils optionalen Zusatzdaten.
-  /// Returns [Result<Map<String, GeminiRecommendationResult>>].
-  Future<Result<Map<String, GeminiRecommendationResult>>>
-  generateBatchRecommendations({
+  /// Returns [Result<Map<String, MistralRecommendationResult>>].
+  Future<Result<Map<String, MistralRecommendationResult>>> generateBatchRecommendations({
     required List<PlayerAnalysisInput> players,
   }) async {
-    try {
-      final prompt = _buildBatchPrompt(players);
+    // Für Batch: Cache pro Spieler prüfen
+    final uncachedPlayers = <PlayerAnalysisInput>[];
+    final cachedResults = <String, MistralRecommendationResult>{};
 
-      // Für Batch: freies JSON ohne streng erzwungenes Schema,
-      // da Gemini bei variablen Map-Keys besser ohne responseSchema arbeitet.
-      final batchModel = FirebaseVertexAI.instance.generativeModel(
-        model: _model,
-        generationConfig: GenerationConfig(
-          responseMimeType: 'application/json',
-          temperature: 0.7,
-        ),
+    for (final input in players) {
+      final cacheKey = _generateCacheKey(
+        playerId: input.player.id,
+        marketValue: input.player.marketValue,
+        status: input.player.status,
+        averagePoints: input.player.averagePoints,
+        marketValueTrend: input.player.marketValueTrend,
+        stl: input.player.stl,
+        userOwnsPlayer: input.player.userOwnsPlayer,
+        recentPerformances: input.recentPerformances,
+        ligainsiderData: input.ligainsiderData,
       );
 
-      debugPrint('\n══════════════════════════════════════════════════');
-      debugPrint('📤 GEMINI REQUEST (Batch – ${players.length} Spieler)');
-      debugPrint('══════════════════════════════════════════════════');
-      debugPrint(prompt);
-      debugPrint('══════════════════════════════════════════════════\n');
-
-      final response = await batchModel.generateContent([Content.text(prompt)]);
-
-      final text = response.text;
-      debugPrint('\n══════════════════════════════════════════════════');
-      debugPrint('📥 GEMINI RESPONSE (Batch)');
-      debugPrint('══════════════════════════════════════════════════');
-      debugPrint(text ?? '(null)');
-      debugPrint('══════════════════════════════════════════════════\n');
-
-      if (text == null || text.isEmpty) {
-        return const Failure(
-          'Gemini hat keine Antwort zurückgegeben.',
-          code: 'empty_response',
-        );
+      if (_cache.containsKey(cacheKey) && !_cache[cacheKey]!.isExpired) {
+        cachedResults[input.player.id] = _cache[cacheKey]!.result;
+      } else {
+        uncachedPlayers.add(input);
       }
-
-      final Map<String, dynamic> rawJson = jsonDecode(text);
-      final results = <String, GeminiRecommendationResult>{};
-      for (final entry in rawJson.entries) {
-        results[entry.key] = GeminiRecommendationResult.fromJson(
-          entry.value as Map<String, dynamic>,
-        );
-      }
-      return Success(results);
-    } on Exception catch (e) {
-      return Failure(
-        'Batch-KI-Analyse fehlgeschlagen: ${e.toString()}',
-        code: 'gemini_batch_error',
-        exception: e,
-      );
-    } catch (e) {
-      return Failure(
-        'Unerwarteter Fehler bei der Batch-Analyse: $e',
-        code: 'unknown_error',
-      );
     }
+
+    // Alle gecachten Ergebnisse bereits hinzufügen
+    final results = Map<String, MistralRecommendationResult>.from(cachedResults);
+
+    // Nur nicht-gecachte Spieler verarbeiten
+    if (uncachedPlayers.isNotEmpty) {
+      try {
+        final prompt = _buildBatchPrompt(uncachedPlayers);
+
+        debugPrint('\n══════════════════════════════════════════════════');
+        debugPrint('📤 MISTRAL REQUEST (Batch – ${uncachedPlayers.length} Spieler)');
+        debugPrint('══════════════════════════════════════════════════');
+        debugPrint(prompt);
+        debugPrint('══════════════════════════════════════════════════\n');
+
+        final response = await _callMistralApi(prompt);
+
+        debugPrint('\n══════════════════════════════════════════════════');
+        debugPrint('📥 MISTRAL RESPONSE (Batch)');
+        debugPrint('══════════════════════════════════════════════════');
+        debugPrint(response ?? '(null)');
+        debugPrint('══════════════════════════════════════════════════\n');
+
+        if (response == null || response.isEmpty) {
+          return Failure(
+            'Mistral hat keine Antwort zurückgegeben.',
+            code: 'empty_response',
+          );
+        }
+
+        // Mistral gibt JSON-Objekt mit Spieler-IDs als Keys zurück
+        final Map<String, dynamic> rawJson = jsonDecode(response);
+
+        for (final entry in rawJson.entries) {
+          final playerId = entry.key;
+          final result = MistralRecommendationResult.fromJson(
+            entry.value as Map<String, dynamic>,
+          );
+          results[playerId] = result;
+
+          // In Cache speichern
+          final uncachedInput = uncachedPlayers.firstWhere(
+            (p) => p.player.id == playerId,
+            orElse: () => uncachedPlayers.first,
+          );
+          final cacheKey = _generateCacheKey(
+            playerId: uncachedInput.player.id,
+            marketValue: uncachedInput.player.marketValue,
+            status: uncachedInput.player.status,
+            averagePoints: uncachedInput.player.averagePoints,
+            marketValueTrend: uncachedInput.player.marketValueTrend,
+            stl: uncachedInput.player.stl,
+            userOwnsPlayer: uncachedInput.player.userOwnsPlayer,
+            recentPerformances: uncachedInput.recentPerformances,
+            ligainsiderData: uncachedInput.ligainsiderData,
+          );
+          _cache[cacheKey] = _CacheEntry(result, DateTime.now().add(_cacheTtl));
+        }
+      } on Exception catch (e) {
+        debugPrint('❌ MISTRAL BATCH EXCEPTION: $e');
+        return Failure(
+          'Batch-KI-Analyse fehlgeschlagen: ${e.toString()}',
+          code: 'mistral_batch_error',
+          exception: e,
+        );
+      } catch (e) {
+        debugPrint('❌ MISTRAL BATCH UNKNOWN ERROR: $e');
+        return Failure(
+          'Unerwarteter Fehler bei der Batch-Analyse: $e',
+          code: 'unknown_error',
+        );
+      }
+    }
+
+    return Success(results);
   }
 
   // ---------------------------------------------------------------------------
-  // Private Helper: Prompt-Aufbau
+  // Private Helper: Mistral API Aufruf
+  // ---------------------------------------------------------------------------
+
+  Future<String?> _callMistralApi(String prompt) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/chat/completions'),
+        headers: {
+          'Authorization': 'Bearer $_apiKey',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'model': _model,
+          'messages': [
+            {
+              'role': 'user',
+              'content': prompt,
+            },
+          ],
+          'response_format': {'type': 'json_object'},
+          'temperature': 0.7,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        final choices = json['choices'] as List<dynamic>?;
+        if (choices != null && choices.isNotEmpty) {
+          final message = choices.first as Map<String, dynamic>?;
+          return message?['message']?['content'] as String?;
+        }
+      } else if (response.statusCode == 401) {
+        throw Exception('Mistral API: Ungültiger API-Key (401 Unauthorized)');
+      } else if (response.statusCode == 429) {
+        throw Exception('Mistral API: Rate Limit erreicht (429 Too Many Requests)');
+      } else {
+        throw Exception(
+          'Mistral API Fehler: ${response.statusCode} - ${response.body}',
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ MISTRAL API CALL ERROR: $e');
+      rethrow;
+    }
+    return null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private Helper: Cache
+  // ---------------------------------------------------------------------------
+
+  String _generateCacheKey({
+    required String playerId,
+    required int marketValue,
+    required int status,
+    required double averagePoints,
+    required int marketValueTrend,
+    required int stl,
+    required bool userOwnsPlayer,
+    List<MatchPerformance>? recentPerformances,
+    LigainsiderPlayer? ligainsiderData,
+  }) {
+    // Einfacher Hash aus den relevanten Parametern
+    // Ändert sich nur, wenn sich die Input-Daten ändern
+    final ligainsiderHash = ligainsiderData != null
+        ? ligainsiderData.injuryStatus.hashCode
+        : 0;
+
+    return 'mistral_${playerId}_${marketValue}_${status}_${averagePoints.toStringAsFixed(1)}_'
+        '${marketValueTrend}_${stl}_${userOwnsPlayer}_${recentPerformances?.length ?? 0}_$ligainsiderHash';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private Helper: Prompt-Aufbau (identisch zu Gemini für Konsistenz)
   // ---------------------------------------------------------------------------
 
   String _buildPrompt({
@@ -325,11 +436,10 @@ class GeminiRecommendationService {
         buffer.writeln(
           '  - Spieltag ${perf.day}: ${perf.p} Punkte '
           '(${perf.t1} vs ${perf.t2}, ${perf.t1g}:${perf.t2g})'
-          '${perf.k != null && perf.k!.isNotEmpty ? ', ${perf.k!.length} Karte(n)' : ''}',
+          '${perf.k != null && perf.k!.isNotEmpty ? ", ${perf.k!.length} Karte(n)" : ""}',
         );
       }
 
-      // Heim/Auswärts-Bilanz aus den Performance-Daten ableiten
       if (player.teamName.isNotEmpty) {
         final homeGames = recentPerformances
             .where((p) => p.t1 == player.teamName)
@@ -357,7 +467,6 @@ class GeminiRecommendationService {
             );
           }
 
-          // Nächstes Spiel Heim oder Auswärts?
           if (fixtureContext != null && fixtureContext.isNotEmpty) {
             final isNextHome = fixtureContext.contains('Heimspiel');
             final isNextAway = fixtureContext.contains('Auswärtsspiel');
@@ -379,8 +488,7 @@ class GeminiRecommendationService {
     );
     buffer.writeln('24h-Veränderung: ${_formatEuro(player.tfhmvt)}');
     if (marketValueHistory != null && marketValueHistory.isNotEmpty) {
-      final sorted = [...marketValueHistory]
-        ..sort((a, b) => b.dt.compareTo(a.dt));
+      final sorted = [...marketValueHistory]..sort((a, b) => b.dt.compareTo(a.dt));
       final last30 = sorted.take(30).toList();
       if (last30.length >= 2) {
         final oldest = last30.last.mv;
@@ -535,6 +643,16 @@ class GeminiRecommendationService {
   }
 }
 
+/// Cache-Eintrag für Empfehlungen
+class _CacheEntry {
+  final MistralRecommendationResult result;
+  final DateTime expiry;
+
+  _CacheEntry(this.result, this.expiry);
+
+  bool get isExpired => DateTime.now().isAfter(expiry);
+}
+
 /// Input-Datenstruktur für Batch-Analyse.
 class PlayerAnalysisInput {
   final Player player;
@@ -555,3 +673,5 @@ class PlayerAnalysisInput {
     this.swapCandidates,
   });
 }
+
+// Result, Success, Failure Typen werden aus repository_interfaces.dart importiert
