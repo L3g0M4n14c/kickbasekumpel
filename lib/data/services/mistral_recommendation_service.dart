@@ -73,17 +73,20 @@ class MistralRecommendationResult {
   };
 }
 
-/// Service für KI-gestützte Spielerempfehlungen via Mistral API.
+/// Service für KI-gestützte Spielerempfehlungen via Firebase Cloud Function Proxy.
 ///
 /// Analysiert Spielerdaten (Punkte, Marktwert-Verlauf, Status, Form) und
 /// gibt strukturierte Kauf-/Verkaufsempfehlungen auf Deutsch zurück.
+///
+/// **Sicherheit:** Der Mistral API-Key bleibt serverseitig in der Cloud Function.
+/// Die App ruft nur die Cloud Function auf, die dann Mistral kontaktiert.
 ///
 /// Ergebnisse werden NICHT in Firestore gespeichert, sondern direkt
 /// an den Client zurückgegeben.
 ///
 /// Verwendung:
 /// ```dart
-/// final service = MistralRecommendationService(apiKey: 'YOUR_KEY');
+/// final service = MistralRecommendationService();
 /// final result = await service.generateRecommendation(
 ///   player: player,
 ///   marketValueHistory: history,
@@ -92,14 +95,17 @@ class MistralRecommendationResult {
 /// );
 /// ```
 class MistralRecommendationService {
-  static const _model = 'mistral-small-latest';
-  static const _baseUrl = 'https://api.mistral.ai/v1';
+  static const _functionUrl =
+      'https://us-central1-kickbasekumpel.cloudfunctions.net/callMistral';
   static const _cacheTtl = Duration(hours: 2);
 
-  final String _apiKey;
+  // Mistral Agent Konfiguration
+  static const _agentId = 'ag_019e09566ba573479511b072fd9efe1a';
+  static const _agentVersion = 0;
+
   final Map<String, _CacheEntry> _cache = {};
 
-  MistralRecommendationService({required String apiKey}) : _apiKey = apiKey;
+  MistralRecommendationService();
 
   /// Generiert eine KI-Empfehlung für einen Spieler.
   ///
@@ -171,8 +177,21 @@ class MistralRecommendationService {
         );
       }
 
-      // Mistral gibt direkt JSON zurück (mit response_format: json_object)
-      final Map<String, dynamic> json = jsonDecode(response);
+      final normalizedResponse = _normalizeJsonResponse(response);
+
+      // Mistral gibt JSON zurück, gelegentlich aber noch in Markdown-Fences.
+      final Map<String, dynamic> json = jsonDecode(normalizedResponse);
+
+      // Validierung der Antwort
+      final validationError = _validateRecommendationJson(json);
+      if (validationError != null) {
+        debugPrint('❌ MISTRAL VALIDATION ERROR: $validationError');
+        return Failure(
+          'Mistral-Antwort hat ungültiges Format: $validationError',
+          code: 'validation_error',
+        );
+      }
+
       final result = MistralRecommendationResult.fromJson(json);
 
       debugPrint('\n══════════════════════════════════════════════════');
@@ -216,7 +235,8 @@ class MistralRecommendationService {
   ///
   /// [players] Liste der Spieler mit jeweils optionalen Zusatzdaten.
   /// Returns [Result<Map<String, MistralRecommendationResult>>].
-  Future<Result<Map<String, MistralRecommendationResult>>> generateBatchRecommendations({
+  Future<Result<Map<String, MistralRecommendationResult>>>
+  generateBatchRecommendations({
     required List<PlayerAnalysisInput> players,
   }) async {
     // Für Batch: Cache pro Spieler prüfen
@@ -244,7 +264,9 @@ class MistralRecommendationService {
     }
 
     // Alle gecachten Ergebnisse bereits hinzufügen
-    final results = Map<String, MistralRecommendationResult>.from(cachedResults);
+    final results = Map<String, MistralRecommendationResult>.from(
+      cachedResults,
+    );
 
     // Nur nicht-gecachte Spieler verarbeiten
     if (uncachedPlayers.isNotEmpty) {
@@ -252,7 +274,9 @@ class MistralRecommendationService {
         final prompt = _buildBatchPrompt(uncachedPlayers);
 
         debugPrint('\n══════════════════════════════════════════════════');
-        debugPrint('📤 MISTRAL REQUEST (Batch – ${uncachedPlayers.length} Spieler)');
+        debugPrint(
+          '📤 MISTRAL REQUEST (Batch – ${uncachedPlayers.length} Spieler)',
+        );
         debugPrint('══════════════════════════════════════════════════');
         debugPrint(prompt);
         debugPrint('══════════════════════════════════════════════════\n');
@@ -272,14 +296,35 @@ class MistralRecommendationService {
           );
         }
 
+        final normalizedResponse = _normalizeJsonResponse(response);
+
         // Mistral gibt JSON-Objekt mit Spieler-IDs als Keys zurück
-        final Map<String, dynamic> rawJson = jsonDecode(response);
+        final Map<String, dynamic> rawJson = jsonDecode(normalizedResponse);
+
+        // Validierung der Batch-Antwort
+        if (rawJson.isEmpty) {
+          return Failure(
+            'Mistral hat leere Batch-Antwort zurückgegeben.',
+            code: 'empty_batch_response',
+          );
+        }
 
         for (final entry in rawJson.entries) {
           final playerId = entry.key;
-          final result = MistralRecommendationResult.fromJson(
-            entry.value as Map<String, dynamic>,
-          );
+          final playerJson = entry.value as Map<String, dynamic>;
+
+          // Einzelne Empfehlung validieren
+          final validationError = _validateRecommendationJson(playerJson);
+          if (validationError != null) {
+            debugPrint(
+              '❌ MISTRAL BATCH VALIDATION ERROR für $playerId: $validationError',
+            );
+            // trotzdem weiterverarbeiten, aber Fehler loggen
+            debugPrint('⚠️  Überspringe ungültige Empfehlung für $playerId');
+            continue;
+          }
+
+          final result = MistralRecommendationResult.fromJson(playerJson);
           results[playerId] = result;
 
           // In Cache speichern
@@ -320,51 +365,158 @@ class MistralRecommendationService {
   }
 
   // ---------------------------------------------------------------------------
-  // Private Helper: Mistral API Aufruf
+  // Private Helper: Cloud Function Proxy Aufruf
   // ---------------------------------------------------------------------------
 
+  /// Ruft die Firebase Cloud Function auf, die als Proxy zu Mistral dient.
+  /// Funktion ist öffentlich (invoker: 'public') - keine Authentifizierung nötig.
+  /// Verwendet die Conversations API mit Agenten.
   Future<String?> _callMistralApi(String prompt) async {
     try {
+      debugPrint('🔐 MISTRAL PROXY: Rufe Cloud Function auf...');
+
       final response = await http.post(
-        Uri.parse('$_baseUrl/chat/completions'),
-        headers: {
-          'Authorization': 'Bearer $_apiKey',
-          'Content-Type': 'application/json',
-        },
+        Uri.parse(_functionUrl),
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'model': _model,
-          'messages': [
-            {
-              'role': 'user',
-              'content': prompt,
-            },
-          ],
-          'response_format': {'type': 'json_object'},
-          'temperature': 0.7,
+          'prompt': prompt,
+          'agent_id': _agentId,
+          'agent_version': _agentVersion,
+          'temperature': 0.2,
+          'top_p': 0.9,
         }),
       );
 
       if (response.statusCode == 200) {
-        final json = jsonDecode(response.body) as Map<String, dynamic>;
-        final choices = json['choices'] as List<dynamic>?;
-        if (choices != null && choices.isNotEmpty) {
-          final message = choices.first as Map<String, dynamic>?;
-          return message?['message']?['content'] as String?;
-        }
-      } else if (response.statusCode == 401) {
-        throw Exception('Mistral API: Ungültiger API-Key (401 Unauthorized)');
+        // Die Cloud Function gibt direkt den JSON-Content zurück
+        return response.body;
       } else if (response.statusCode == 429) {
-        throw Exception('Mistral API: Rate Limit erreicht (429 Too Many Requests)');
+        debugPrint('❌ MISTRAL PROXY: Rate Limit erreicht (429)');
+        throw Exception('Cloud Function: Rate Limit erreicht');
       } else {
+        debugPrint('❌ MISTRAL PROXY: Fehler ${response.statusCode}');
+        debugPrint('    → Response: ${response.body}');
         throw Exception(
-          'Mistral API Fehler: ${response.statusCode} - ${response.body}',
+          'Cloud Function Fehler: ${response.statusCode} - ${response.body}',
         );
       }
     } catch (e) {
-      debugPrint('❌ MISTRAL API CALL ERROR: $e');
+      debugPrint('❌ MISTRAL PROXY: Fehler: $e');
       rethrow;
     }
-    return null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private Helper: Output Validierung
+  // ---------------------------------------------------------------------------
+
+  String _normalizeJsonResponse(String response) {
+    final trimmedResponse = response.trim();
+
+    final normalizedMarkdownResponse = trimmedResponse.startsWith('```')
+        ? trimmedResponse
+              .replaceFirst(RegExp(r'^```(?:json)?\s*'), '')
+              .replaceFirst(RegExp(r'\s*```$'), '')
+              .trim()
+        : trimmedResponse;
+
+    return _normalizeEstimatedValueShorthand(normalizedMarkdownResponse);
+  }
+
+  String _normalizeEstimatedValueShorthand(String response) {
+    return response.replaceAllMapped(
+      RegExp(r'("estimatedValue"\s*:\s*)(-?\d+(?:[\.,]\d+)?)\s*([kKmMbB])\b'),
+      (match) {
+        final prefix = match.group(1)!;
+        final numberPart = match.group(2)!.replaceAll(',', '.');
+        final suffix = match.group(3)!.toUpperCase();
+        final numericValue = double.tryParse(numberPart);
+
+        if (numericValue == null) {
+          return match.group(0)!;
+        }
+
+        final multiplier = switch (suffix) {
+          'K' => 1000,
+          'M' => 1000000,
+          'B' => 1000000000,
+          _ => 1,
+        };
+
+        final normalizedValue = (numericValue * multiplier).round();
+        return '$prefix$normalizedValue';
+      },
+    );
+  }
+
+  /// Validiert die JSON-Antwort von Mistral
+  String? _validateRecommendationJson(Map<String, dynamic> json) {
+    // Pflichtfelder prüfen
+    final requiredFields = [
+      'score',
+      'action',
+      'reason',
+      'confidence',
+      'estimatedValue',
+      'category',
+    ];
+    for (final field in requiredFields) {
+      if (!json.containsKey(field)) {
+        return 'Fehlendes Pflichtfeld: $field';
+      }
+    }
+
+    // Typen prüfen
+    try {
+      final score = json['score'] as num?;
+      if (score == null || score.isNaN) {
+        return 'score muss eine gültige Zahl sein';
+      }
+      if (score < 0 || score > 100) {
+        return 'score muss zwischen 0 und 100 liegen (ist: $score)';
+      }
+
+      final confidence = json['confidence'] as num?;
+      if (confidence == null || confidence.isNaN) {
+        return 'confidence muss eine gültige Zahl sein';
+      }
+      if (confidence < 0 || confidence > 1) {
+        return 'confidence muss zwischen 0 und 1 liegen (ist: $confidence)';
+      }
+
+      final estimatedValue = json['estimatedValue'] as num?;
+      if (estimatedValue == null || estimatedValue.isNaN) {
+        return 'estimatedValue muss eine gültige Zahl sein';
+      }
+
+      final action = json['action'] as String?;
+      if (action == null || !action.isNotEmpty) {
+        return 'action muss ein nicht-leerer String sein';
+      }
+      if (![
+        'strong-buy',
+        'buy',
+        'hold',
+        'sell',
+        'strong-sell',
+      ].contains(action)) {
+        return 'action muss einer der Werte sein: strong-buy, buy, hold, sell, strong-sell (ist: $action)';
+      }
+
+      final reason = json['reason'] as String?;
+      if (reason == null || reason.isEmpty) {
+        return 'reason muss ein nicht-leerer String sein';
+      }
+
+      final category = json['category'] as String?;
+      if (category == null || category.isEmpty) {
+        return 'category muss ein nicht-leerer String sein';
+      }
+    } catch (e) {
+      return 'Ungültiger Typ: $e';
+    }
+
+    return null; // Kein Fehler
   }
 
   // ---------------------------------------------------------------------------
@@ -407,9 +559,14 @@ class MistralRecommendationService {
   }) {
     final buffer = StringBuffer();
 
+    // Positionsspezifische Erwartungswerte für bessere Differenzierung
+    final position = player.position;
+    final positionName = _positionName(position);
+
     buffer.writeln(
-      'Du bist ein Kickbase-Experte und analysierst Spieler für Fantasy-Football-Empfehlungen. '
-      'Gib eine fundierte Kaufs- oder Verkaufsempfehlung für folgenden Spieler auf Basis der Daten.',
+      'Analysiere den folgenden Spieler für eine Kickbase-Fantasy-Football-Empfehlung. '
+      'Jeder Spieler muss INDIVIDUELL und UNTERSCHIEDLICH bewertet werden. '
+      'Nutze die Position ($positionName) als Kontext für die Erwartungswerte.',
     );
     buffer.writeln();
     buffer.writeln('=== KONTEXT ===');
@@ -488,7 +645,8 @@ class MistralRecommendationService {
     );
     buffer.writeln('24h-Veränderung: ${_formatEuro(player.tfhmvt)}');
     if (marketValueHistory != null && marketValueHistory.isNotEmpty) {
-      final sorted = [...marketValueHistory]..sort((a, b) => b.dt.compareTo(a.dt));
+      final sorted = [...marketValueHistory]
+        ..sort((a, b) => b.dt.compareTo(a.dt));
       final last30 = sorted.take(30).toList();
       if (last30.length >= 2) {
         final oldest = last30.last.mv;
@@ -561,16 +719,94 @@ class MistralRecommendationService {
 
     buffer.writeln();
     buffer.writeln(
-      'Antworte ausschließlich als JSON gemäß dem vorgegebenen Schema. '
-      'score=0 = eindeutig schlechte Option, score=100 = eindeutig beste Option. '
-      'Berechne den Score ausgehend von 50 mit diesen konkreten Anpassungen:\n'
-      '  Form (letzte 5 Spiele): Ø > 8 Pkt → +20 | Ø 6-8 Pkt → +8 | Ø 4-6 Pkt → 0 | Ø < 4 Pkt → -20\n'
-      '  Nächster Gegner: Tabellenplatz 1-4 → -15 | Platz 5-8 → -5 | Platz 9-13 → +5 | Platz 14+ → +15\n'
-      '  Marktwert (letzte 30 Einträge): > +10% → +10 | +3-10% → +3 | ±3% → 0 | -3 bis -10% → -8 | < -10% → -15\n'
-      '  Status: Fit → +5 | Fraglich → -10 | Verletzt/Gesperrt → -40\n'
-      '  Stammspieler (stl): ≥ 2 → +8 | 1 → 0 | 0 → -10\n'
-      '${player.userOwnsPlayer ? "Halte-/Verkaufsanalyse: Wann lohnt sich ein Verkauf?" : "Kaufanalyse: Lohnt sich die Investition?"}\n'
-      'reason muss auf Deutsch mit konkreten Zahlen aus den obigen Sektionen begründet sein. Keine generischen Floskeln.',
+      'Antworte AUSSCHLIESSLICH als JSON gemäß dem Schema: '
+      '{"score": <0-100>, "action": "strong-buy"|"buy"|"hold"|"sell"|"strong-sell", '
+      '"reason": "<detaillierte Begründung mit konkreten Zahlen>", "confidence": <0-1>, '
+      '"estimatedValue": <geschätzter Marktwert>, "category": "...", '
+      '"swapCandidateId": "..." (optional), "swapCandidateName": "..." (optional)}',
+    );
+    buffer.writeln();
+    buffer.writeln('SCORE-BERECHNUNG (Positionsspezifisch, Basisscore = 50):');
+    buffer.writeln();
+
+    // Positionsspezifische Form-Bewertung
+    buffer.writeln('--- FORM (letzte 5 Spiele, Ø Punkte) ---');
+    if (position == 1) {
+      buffer.writeln(
+        '  Torwart: Ø > 7 Pkt → +18 | Ø 5-7 → +8 | Ø 3-5 → 0 | Ø < 3 → -15',
+      );
+    } else if (position == 2) {
+      buffer.writeln(
+        '  Abwehr:   Ø > 8 Pkt → +18 | Ø 6-8 → +8 | Ø 4-6 → 0 | Ø < 4 → -15',
+      );
+    } else if (position == 3) {
+      buffer.writeln(
+        '  Mittelfeld: Ø > 9 Pkt → +18 | Ø 7-9 → +8 | Ø 5-7 → 0 | Ø < 5 → -15',
+      );
+    } else if (position == 4) {
+      buffer.writeln(
+        '  Sturm:    Ø > 10 Pkt → +18 | Ø 8-10 → +8 | Ø 6-8 → 0 | Ø < 6 → -15',
+      );
+    } else {
+      buffer.writeln(
+        '  Unbekannt: Ø > 8 Pkt → +15 | Ø 6-8 → +5 | Ø 4-6 → 0 | Ø < 4 → -10',
+      );
+    }
+
+    buffer.writeln('--- NÄCHSTER GEGNER (Tabellenplatz) ---');
+    buffer.writeln(
+      '  Platz 1-4 (Top-Team) → -15 | Platz 5-8 → -8 | Platz 9-13 → +5 | Platz 14-18 → +15',
+    );
+
+    buffer.writeln('--- MARKTWERT-TREND (letzte 30 Einträge) ---');
+    buffer.writeln(
+      '  > +15% → +12 | +10-15% → +8 | +5-10% → +5 | +0-5% → +2 | ±0% → 0',
+    );
+    buffer.writeln('  -0-5% → -3 | -5-10% → -8 | -10-15% → -12 | < -15% → -20');
+
+    buffer.writeln('--- STATUS & VERFÜGBARKEIT ---');
+    buffer.writeln(
+      '  Fit → +10 | Fraglich/ Aufbautraining → -8 | Verletzt → -35 | Gesperrt → -40 | Krank → -30',
+    );
+
+    buffer.writeln('--- STAMMSPIELER-INDIKATOR (stl) ---');
+    buffer.writeln(
+      '  stl = 3 → +10 | stl = 2 → +5 | stl = 1 → 0 | stl = 0 → -15',
+    );
+
+    buffer.writeln('--- HEIM/AUSWÄRTS-LEISTUNG ---');
+    buffer.writeln(
+      '  Heim-Ø > Auswärts-Ø → +5 | Heim-Ø = Auswärts-Ø → 0 | Heim-Ø < Auswärts-Ø → -5',
+    );
+
+    buffer.writeln();
+    buffer.writeln('WICHTIG:');
+    buffer.writeln(
+      '  • score = 0-20 = strong-sell, 21-40 = sell, 41-60 = hold, 61-80 = buy, 81-100 = strong-buy',
+    );
+    buffer.writeln(
+      '  • reason MUSS konkrete Zahlen aus den Daten enthalten (z.B. "Ø 9,2 Pkt in letzten 5 Spielen")',
+    );
+    buffer.writeln(
+      '  • Vergleiche den Spieler mit typischen Werten für seine Position',
+    );
+    buffer.writeln(
+      '  • Sehr gute Spieler einer Position müssen score > 75 erreichen',
+    );
+    buffer.writeln(
+      '  • Sehr schlechte Spieler einer Position müssen score < 25 erreichen',
+    );
+    buffer.writeln(
+      '  • Nutze alle verfügbaren Daten für eine differenzierte Bewertung',
+    );
+    buffer.writeln(
+      '  • JEDER Spieler muss einen UNTERSCHIEDLICHEN Score erhalten - keine Duplikate!',
+    );
+    buffer.writeln();
+    buffer.writeln(
+      player.userOwnsPlayer
+          ? "Analyse als BESITZER: Lohnt sich Halten oder Verkauf? Begründe mit Marktchancen."
+          : "Analyse als KÄUFER: Lohnt sich die Investition? Begründe mit Potenzial.",
     );
 
     return buffer.toString();
@@ -578,27 +814,179 @@ class MistralRecommendationService {
 
   String _buildBatchPrompt(List<PlayerAnalysisInput> players) {
     final buffer = StringBuffer();
+
     buffer.writeln(
-      'Du bist ein Kickbase-Experte. Analysiere die folgenden Spieler und gib für jeden '
-      'eine Empfehlung zurück. Antworte als JSON-Objekt mit Spieler-ID als Key.',
+      'Du bist ein Kickbase-Experte. Analysiere die folgende LISTE von Spielern und gib '
+      'für JEDEN eine INDIVIDUELLE, UNTERSCHIEDLICHE Empfehlung zurück.',
     );
     buffer.writeln();
+    buffer.writeln(
+      'WICHTIG: Vergleiche die Spieler untereinander und differenziere die Scores deutlich. '
+      'Spieler mit besseren Daten müssen deutlich höhere Scores erhalten. '
+      'Nutze die Position jedes Spielers für die Bewertung.',
+    );
+    buffer.writeln();
+    buffer.writeln(
+      'Antworte AUSSCHLIESSLICH als JSON-Objekt mit Spieler-ID als Key:',
+    );
+    buffer.writeln(
+      '{"playerId1": {"score": X, "action": "...", "reason": "...", ...}, "playerId2": {...}, ...}',
+    );
+    buffer.writeln();
+    buffer.writeln('SCORE-BERECHNUNG (Positionsspezifisch, Basisscore = 50):');
+    buffer.writeln(
+      '  Torwart:   Ø > 7 → +18 | Ø 5-7 → +8 | Ø 3-5 → 0 | Ø < 3 → -15',
+    );
+    buffer.writeln(
+      '  Abwehr:    Ø > 8 → +18 | Ø 6-8 → +8 | Ø 4-6 → 0 | Ø < 4 → -15',
+    );
+    buffer.writeln(
+      '  Mittelfeld: Ø > 9 → +18 | Ø 7-9 → +8 | Ø 5-7 → 0 | Ø < 5 → -15',
+    );
+    buffer.writeln(
+      '  Sturm:     Ø > 10 → +18 | Ø 8-10 → +8 | Ø 6-8 → 0 | Ø < 6 → -15',
+    );
+    buffer.writeln(
+      '  Gegner:    Platz 1-4 → -15 | Platz 5-8 → -8 | Platz 9-13 → +5 | Platz 14-18 → +15',
+    );
+    buffer.writeln(
+      '  MW-Trend:  > +15% → +12 | +10-15% → +8 | +5-10% → +5 | -5-10% → -8 | < -15% → -20',
+    );
+    buffer.writeln(
+      '  Status:    Fit → +10 | Fraglich → -8 | Verletzt → -35 | Gesperrt → -40',
+    );
+    buffer.writeln('  stl:       3 → +10 | 2 → +5 | 1 → 0 | 0 → -15');
+    buffer.writeln();
+    buffer.writeln(
+      ' score = 0-20 = strong-sell, 21-40 = sell, 41-60 = hold, 61-80 = buy, 81-100 = strong-buy',
+    );
+    buffer.writeln(
+      ' reason MUSS konkrete Zahlen enthalten. Keine generischen Floskeln.',
+    );
+    buffer.writeln(
+      ' JEDER Spieler muss einen UNTERSCHIEDLICHEN Score erhalten!',
+    );
+    buffer.writeln();
+    buffer.writeln('=== SPIELER-DATEN (als Array) ===');
+    buffer.writeln();
 
+    // Strukturierte Daten als JSON-Array
+    final playersData = <Map<String, dynamic>>[];
     for (final input in players) {
-      buffer.writeln('--- Spieler-ID: ${input.player.id} ---');
-      buffer.writeln(
-        _buildPrompt(
-          player: input.player,
-          marketValueHistory: input.marketValueHistory,
-          recentPerformances: input.recentPerformances,
-          ligainsiderData: input.ligainsiderData,
-          fixtureContext: input.fixtureContext,
-          lineupContext: input.lineupContext,
-          swapCandidates: input.swapCandidates,
-        ),
-      );
-      buffer.writeln();
+      final p = input.player;
+      final playerData = <String, dynamic>{
+        'id': p.id,
+        'name': '${p.firstName} ${p.lastName}'.trim(),
+        'position': p.position,
+        'positionName': _positionName(p.position),
+        'team': p.teamName,
+        'userOwnsPlayer': p.userOwnsPlayer,
+        'averagePoints': p.averagePoints,
+        'totalPoints': p.totalPoints,
+        'marketValue': p.marketValue,
+        'marketValueTrend': p.marketValueTrend,
+        'tfhmvt': p.tfhmvt,
+        'stl': p.stl,
+        'status': p.status,
+        'statusName': _statusName(p.status),
+      };
+
+      // Recent performances
+      if (input.recentPerformances != null &&
+          input.recentPerformances!.isNotEmpty) {
+        final last5 = input.recentPerformances!.take(5).toList();
+        playerData['recentPerformances'] = last5
+            .map(
+              (perf) => {
+                'day': perf.day,
+                'points': perf.p,
+                'match': '${perf.t1} vs ${perf.t2}',
+                'score': '${perf.t1g}:${perf.t2g}',
+                'cards': perf.k?.length ?? 0,
+              },
+            )
+            .toList();
+
+        // Calculate home/away averages
+        final playerTeam = p.teamName;
+        final homeGames = last5.where((perf) => perf.t1 == playerTeam).toList();
+        final awayGames = last5.where((perf) => perf.t2 == playerTeam).toList();
+        if (homeGames.isNotEmpty) {
+          final homeAvg =
+              homeGames.fold<double>(0.0, (s, perf) => s + (perf.p ?? 0)) /
+              homeGames.length;
+          playerData['homeAvg'] = homeAvg;
+        }
+        if (awayGames.isNotEmpty) {
+          final awayAvg =
+              awayGames.fold<double>(0.0, (s, perf) => s + (perf.p ?? 0)) /
+              awayGames.length;
+          playerData['awayAvg'] = awayAvg;
+        }
+      }
+
+      // Market value history
+      if (input.marketValueHistory != null &&
+          input.marketValueHistory!.isNotEmpty) {
+        final sorted = [...input.marketValueHistory!]
+          ..sort((a, b) => b.dt.compareTo(a.dt));
+        final last30 = sorted.take(30).toList();
+        if (last30.length >= 2) {
+          final oldest = last30.last.mv;
+          final newest = last30.first.mv;
+          final change = newest - oldest;
+          final pct = oldest > 0 ? (change / oldest * 100.0) : 0.0;
+          playerData['marketValueChange'] = {
+            'absolute': change,
+            'percentage': pct,
+            'oldValue': oldest,
+            'newValue': newest,
+          };
+        }
+      }
+
+      // Ligainsider data
+      if (input.ligainsiderData != null) {
+        final li = input.ligainsiderData!;
+        playerData['ligainsider'] = {
+          'injuryStatus': li.injuryStatus,
+          'formRating': li.formRating,
+          'expectedReturn': li.expectedReturn?.toIso8601String(),
+          'statusText': li.statusText,
+        };
+      }
+
+      // Fixture context
+      if (input.fixtureContext != null && input.fixtureContext!.isNotEmpty) {
+        playerData['nextFixtures'] = input.fixtureContext;
+      }
+
+      // Swap candidates
+      if (input.swapCandidates != null &&
+          input.swapCandidates!.isNotEmpty &&
+          p.userOwnsPlayer) {
+        playerData['swapCandidates'] = input.swapCandidates!
+            .map(
+              (c) => {
+                'id': c.id,
+                'name': '${c.firstName} ${c.lastName}'.trim(),
+                'team': c.teamName,
+                'averagePoints': c.averagePoints,
+                'marketValue': c.marketValue,
+                'status': _statusName(c.status),
+              },
+            )
+            .toList();
+      }
+
+      playersData.add(playerData);
     }
+
+    buffer.writeln(jsonEncode(playersData));
+    buffer.writeln();
+    buffer.writeln(
+      'Analysiere JEDEN Spieler individuell und gib unterschiedliche Scores zurück.',
+    );
 
     return buffer.toString();
   }

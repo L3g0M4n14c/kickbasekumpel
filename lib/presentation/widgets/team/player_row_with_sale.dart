@@ -10,7 +10,7 @@ import 'package:kickbasekumpel/presentation/utils/player_status_helper.dart';
 /// Zeigt folgende Informationen pro Spieler:
 /// - Foto: Spielerfoto in Kreis (oder Person-Icon als Fallback)
 /// - Spalte 1: Vor- + Nachname (groß) + Teamname (klein darunter)
-/// - Spalte 2: Status-Emoji (💪 = Fit, 💊 = Fraglich, 🚑 = Verletzt, 🟨 = Gelbe Karte)
+/// - Spalte 2: Status-Emoji (💪 = Fit, 💊 = Fraglich, 🚑 = Verletzt, 🟨 = Gelbe Karte, ✈️ = Abwesend)
 /// - Spalte 3: Durchschnittspunkte (groß) + Gesamtpunkte (klein darunter)
 /// - Spalte 4: Marktwert + Trend mit Pfeil (↑ grün oder ↓ rot)
 class PlayerRowWithSale extends ConsumerWidget {

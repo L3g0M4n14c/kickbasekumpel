@@ -32,16 +32,19 @@ class SecureApiKeyService {
   static Future<void> init() async {
     try {
       _remoteConfig = FirebaseRemoteConfig.instance;
+      debugPrint('ℹ️ SecureApiKeyService: Starte fetchAndActivate...');
       await _remoteConfig!.fetchAndActivate();
       _cachedApiKey = _remoteConfig!.getString('mistral_api_key');
       
       if (_cachedApiKey != null && _cachedApiKey!.isNotEmpty) {
-        debugPrint('✅ SecureApiKeyService: Mistral API-Key aus Remote Config geladen');
+        debugPrint('✅ SecureApiKeyService: Mistral API-Key aus Remote Config geladen (${_cachedApiKey!.length} Zeichen)');
       } else {
-        debugPrint('⚠️ SecureApiKeyService: Kein Mistral API-Key in Remote Config gefunden');
+        debugPrint('❌ SecureApiKeyService: Kein Mistral API-Key in Remote Config gefunden!');
+        debugPrint('    → Bitte prüfe: Parameter "mistral_api_key" existiert und ist gesetzt');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('❌ SecureApiKeyService: Fehler beim Laden: $e');
+      debugPrint('    Stack: $stackTrace');
       _cachedApiKey = null;
     }
   }

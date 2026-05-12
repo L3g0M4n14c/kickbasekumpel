@@ -15,6 +15,8 @@ class PlayerStatusHelper {
         return '🏋️‍♂️'; // Aufbautraining
       case 32:
         return '🟨'; // Gelbe Karte
+      case 256:
+        return '✈️'; // Abwesend
       default:
         return '❓'; // Unbekannt
     }
@@ -33,6 +35,8 @@ class PlayerStatusHelper {
         return 'Aufbautraining';
       case 32:
         return 'Gelbsperre';
+      case 256:
+        return 'Abwesend';
       default:
         return 'Unbekannt';
     }
@@ -51,6 +55,8 @@ class PlayerStatusHelper {
         return Colors.blue;
       case 32:
         return Colors.yellow;
+      case 256:
+        return Colors.grey;
       default:
         return Colors.grey;
     }

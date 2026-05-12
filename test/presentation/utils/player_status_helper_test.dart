@@ -9,16 +9,20 @@ void main() {
         expect(PlayerStatusHelper.getStatusEmoji(0), '💪');
       });
 
-      test('returns 💊 for status 1 (Fraglich)', () {
-        expect(PlayerStatusHelper.getStatusEmoji(1), '💊');
+      test('returns ❌ for status 1 (Verletzt)', () {
+        expect(PlayerStatusHelper.getStatusEmoji(1), '❌');
       });
 
-      test('returns 🚑 for status 2 (Verletzt)', () {
-        expect(PlayerStatusHelper.getStatusEmoji(2), '🚑');
+      test('returns 💊 for status 2 (Angeschlagen)', () {
+        expect(PlayerStatusHelper.getStatusEmoji(2), '💊');
       });
 
       test('returns 🟨 for status 32 (Gelbe Karte)', () {
         expect(PlayerStatusHelper.getStatusEmoji(32), '🟨');
+      });
+
+      test('returns ✈️ for status 256 (Abwesend)', () {
+        expect(PlayerStatusHelper.getStatusEmoji(256), '✈️');
       });
 
       test('returns ❓ for unknown status', () {
@@ -32,16 +36,20 @@ void main() {
         expect(PlayerStatusHelper.getStatusName(0), 'Fit');
       });
 
-      test('returns "Fraglich" for status 1', () {
-        expect(PlayerStatusHelper.getStatusName(1), 'Fraglich');
+      test('returns "Verletzt" for status 1', () {
+        expect(PlayerStatusHelper.getStatusName(1), 'Verletzt');
       });
 
-      test('returns "Verletzt" for status 2', () {
-        expect(PlayerStatusHelper.getStatusName(2), 'Verletzt');
+      test('returns "Angeschlagen" for status 2', () {
+        expect(PlayerStatusHelper.getStatusName(2), 'Angeschlagen');
       });
 
-      test('returns "Gelbe Karte" for status 32', () {
-        expect(PlayerStatusHelper.getStatusName(32), 'Gelbe Karte');
+      test('returns "Gelbsperre" for status 32', () {
+        expect(PlayerStatusHelper.getStatusName(32), 'Gelbsperre');
+      });
+
+      test('returns "Abwesend" for status 256', () {
+        expect(PlayerStatusHelper.getStatusName(256), 'Abwesend');
       });
 
       test('returns "Unbekannt" for unknown status', () {
@@ -55,16 +63,20 @@ void main() {
         expect(PlayerStatusHelper.getStatusColor(0), Colors.green);
       });
 
-      test('returns orange for status 1 (Fraglich)', () {
-        expect(PlayerStatusHelper.getStatusColor(1), Colors.orange);
+      test('returns red for status 1 (Verletzt)', () {
+        expect(PlayerStatusHelper.getStatusColor(1), Colors.red);
       });
 
-      test('returns red for status 2 (Verletzt)', () {
-        expect(PlayerStatusHelper.getStatusColor(2), Colors.red);
+      test('returns orange for status 2 (Angeschlagen)', () {
+        expect(PlayerStatusHelper.getStatusColor(2), Colors.orange);
       });
 
       test('returns yellow for status 32 (Gelbe Karte)', () {
         expect(PlayerStatusHelper.getStatusColor(32), Colors.yellow);
+      });
+
+      test('returns grey for status 256 (Abwesend)', () {
+        expect(PlayerStatusHelper.getStatusColor(256), Colors.grey);
       });
 
       test('returns grey for unknown status', () {

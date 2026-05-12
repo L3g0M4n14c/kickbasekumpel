@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../repositories/firestore_repositories.dart';
 import '../repositories/auth_repository.dart';
-import '../services/secure_api_key_service.dart';
 import '../services/mistral_recommendation_service.dart';
 import 'kickbase_api_provider.dart';
 
@@ -61,16 +60,11 @@ final transferRepositoryProvider = Provider<TransferRepository>((ref) {
 });
 
 /// Mistral Recommendation Service Provider
-/// Erstellt den Service nur, wenn ein API-Key verfügbar ist (nach init())
+/// Nutzt jetzt eine Cloud Function als Proxy - kein API-Key in der App nötig
 final mistralRecommendationServiceProvider =
-    Provider<MistralRecommendationService?>((ref) {
-  // Synchrone Abfrage nach init()
-  final apiKey = SecureApiKeyService.getApiKeySync();
-  if (apiKey == null || apiKey.isEmpty) {
-    debugPrint('ℹ️ MistralRecommendationService: Kein API-Key verfügbar - Service nicht erstellt');
-    return null;
-  }
-  return MistralRecommendationService(apiKey: apiKey);
+    Provider<MistralRecommendationService>((ref) {
+  debugPrint('ℹ️ MistralRecommendationService: Service erstellt (nutzt Cloud Function Proxy)');
+  return MistralRecommendationService();
 });
 
 /// Recommendation Repository Provider

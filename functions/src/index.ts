@@ -4,7 +4,73 @@ import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { LigainsiderScraperService } from './ligainsider-scraper.js';
 import { LigainsiderLineupScraper } from './ligainsider-lineup-scraper.js';
+import { Request, Response } from 'express';
+import axios from 'axios';
 import logger from './logger.js';
+
+// Interfaces für Mistral
+interface MistralRequest {
+    prompt: string;
+    model?: string;
+    temperature?: number;
+    top_p?: number;
+    agent_id?: string;
+    agent_version?: number;
+}
+
+interface MistralChoice {
+    message: { content: string };
+}
+
+interface MistralResponse {
+    choices: MistralChoice[];
+    outputs?: Array<{
+        content?: string | Array<{
+            text?: string;
+            content?: string;
+        }>;
+    }>;
+    output_text?: string;
+}
+
+function extractMistralContent(data: MistralResponse): string | null {
+    const choiceContent = data.choices?.[0]?.message?.content;
+    if (typeof choiceContent === 'string' && choiceContent.trim().length > 0) {
+        return choiceContent;
+    }
+
+    if (typeof data.output_text === 'string' && data.output_text.trim().length > 0) {
+        return data.output_text;
+    }
+
+    const outputContent = data.outputs?.[0]?.content;
+    if (typeof outputContent === 'string' && outputContent.trim().length > 0) {
+        return outputContent;
+    }
+
+    if (Array.isArray(outputContent)) {
+        const text = outputContent
+            .map((part) => {
+                if (typeof part.text === 'string' && part.text.trim().length > 0) {
+                    return part.text;
+                }
+
+                if (typeof part.content === 'string' && part.content.trim().length > 0) {
+                    return part.content;
+                }
+
+                return '';
+            })
+            .join('')
+            .trim();
+
+        if (text.length > 0) {
+            return text;
+        }
+    }
+
+    return null;
+}
 
 // Initialisiere Firebase Admin SDK
 admin.initializeApp();
@@ -445,6 +511,205 @@ export const kickbaseProxy = onRequest(
                 error: 'Kickbase API nicht erreichbar',
                 details: error instanceof Error ? error.message : 'Unbekannter Fehler',
             });
+        }
+    }
+);
+
+// ============================================================================
+// Mistral AI Proxy Function
+// ============================================================================
+
+/**
+ * Cloud Function: Mistral API Proxy
+ * 
+ * Empfängt Anfragen von der App und leitet sie an die Mistral API weiter.
+ * Der Mistral API-Key bleibt serverseitig und wird nie an den Client gesendet.
+ * 
+ * Security:
+ * - Funktion ist öffentlich (invoker: 'public') - keine Nutzer-Authentifizierung
+ * - Der Mistral API-Key kommt aus Google Cloud Secret Manager
+ */
+export const callMistral = onRequest(
+    {
+        timeoutSeconds: 60,
+        memory: '256MiB',
+        region: 'us-central1',
+        maxInstances: 10,
+        invoker: 'public',
+    },
+    async (request: Request, response: Response) => {
+        // CORS für Flutter Web
+        response.set('Access-Control-Allow-Origin', '*');
+        response.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+        response.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+        // Preflight-Request beantworten
+        if (request.method === 'OPTIONS') {
+            response.status(204).send('');
+            return;
+        }
+
+        logger.info('Mistral Proxy: Request erhalten');
+
+        // Mistral API-Key aus Secret Manager laden
+        let mistralApiKey: string;
+        try {
+            const { SecretManagerServiceClient } = await import('@google-cloud/secret-manager');
+            const secretManagerClient = new SecretManagerServiceClient();
+
+            const secretName = `projects/kickbasekumpel/secrets/mistral-api-key/versions/latest`;
+            const [version] = await secretManagerClient.accessSecretVersion({
+                name: secretName,
+            });
+
+            const payload = version.payload?.data;
+            mistralApiKey = payload ? Buffer.from(payload).toString('utf8') : '';
+            logger.info('Mistral Proxy: API-Key aus Secret Manager geladen');
+        } catch (error) {
+            logger.error(`Mistral Proxy: Fehler beim Laden des API-Keys: ${error}`);
+            response.status(500).json({
+                error: 'Server Configuration Error',
+                message: 'Mistral API-Key nicht verfügbar',
+            });
+            return;
+        }
+
+        if (!mistralApiKey) {
+            logger.error('Mistral Proxy: API-Key ist leer');
+            response.status(500).json({
+                error: 'Server Configuration Error',
+                message: 'Mistral API-Key ist leer',
+            });
+            return;
+        }
+
+        // 4. Request Body parsen
+        let requestBody: MistralRequest;
+        try {
+            requestBody = request.body as MistralRequest;
+
+            if (!requestBody.prompt) {
+                response.status(400).json({
+                    error: 'Invalid Request',
+                    message: 'prompt ist erforderlich',
+                });
+                return;
+            }
+        } catch (parseError) {
+            logger.error(`Mistral Proxy: Ungültiges Request-Format: ${parseError}`);
+            response.status(400).json({
+                error: 'Invalid Request',
+                message: 'Ungültiges JSON-Format',
+            });
+            return;
+        }
+
+        // 5. Mistral API aufrufen (Conversations API für Agenten)
+        try {
+            logger.info('Mistral Proxy: Rufe Mistral Conversations API auf...');
+
+            // Baue den Request Body für Conversations API
+            const requestBodyFinal: any = {
+                inputs: [
+                    {
+                        role: 'user',
+                        content: requestBody.prompt,
+                    },
+                ],
+            };
+
+            // Falls Agent-ID mitgesendet wird, verwende Conversations API
+            if (requestBody.agent_id) {
+                requestBodyFinal.agent_id = requestBody.agent_id;
+                if (requestBody.agent_version !== undefined) {
+                    requestBodyFinal.agent_version = requestBody.agent_version;
+                }
+            } else {
+                // Fallback zur Chat Completions API für Kompatibilität
+                requestBodyFinal.model = requestBody.model || 'mistral-small-latest';
+                requestBodyFinal.messages = requestBodyFinal.inputs;
+                requestBodyFinal.response_format = { type: 'json_object' };
+                delete requestBodyFinal.inputs;
+
+                // Temperatur und Top-P nur für Chat Completions hinzufügen
+                if (requestBody.temperature !== undefined) {
+                    requestBodyFinal.temperature = requestBody.temperature;
+                }
+                if (requestBody.top_p !== undefined) {
+                    requestBodyFinal.top_p = requestBody.top_p;
+                }
+            }
+
+            // Endpoint basierend auf Agent-ID wählen
+            const endpoint = requestBody.agent_id
+                ? 'https://api.mistral.ai/v1/conversations'
+                : 'https://api.mistral.ai/v1/chat/completions';
+
+            const mistralResponse = await axios.post(
+                endpoint,
+                requestBodyFinal,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${mistralApiKey}`,
+                        'Content-Type': 'application/json',
+                    },
+                    timeout: 30000,
+                }
+            );
+
+            // 6. Antwort verarbeiten
+            const data: MistralResponse = mistralResponse.data;
+
+            const content = extractMistralContent(data);
+
+            if (!content) {
+                logger.warn('Mistral Proxy: Keine Choices in der Antwort');
+                response.status(500).json({
+                    error: 'Empty Response',
+                    message: 'Mistral hat keine Antwort zurückgegeben',
+                });
+                return;
+            }
+
+            // 7. JSON-Content zurückgeben
+            logger.info('Mistral Proxy: Antwort erfolgreich erhalten');
+            response.set('Content-Type', 'application/json');
+            response.status(200).send(content);
+
+        } catch (mistralError: any) {
+            logger.error(`Mistral Proxy: Mistral API Fehler: ${mistralError.message}`);
+
+            if (mistralError.response) {
+                const status = mistralError.response.status;
+                const errorData = mistralError.response.data;
+
+                if (status === 401) {
+                    response.status(500).json({
+                        error: 'Mistral API Error',
+                        message: 'Ungültiger Mistral API-Key',
+                    });
+                } else if (status === 429) {
+                    response.status(429).json({
+                        error: 'Rate Limit',
+                        message: 'Mistral Rate Limit erreicht - bitte warte',
+                    });
+                } else {
+                    response.status(500).json({
+                        error: 'Mistral API Error',
+                        message: `Mistral Fehler: ${status} - ${JSON.stringify(errorData)}`,
+                    });
+                }
+            } else if (mistralError.code === 'ECONNABORTED') {
+                response.status(504).json({
+                    error: 'Timeout',
+                    message: 'Mistral API timeout nach 30 Sekunden',
+                });
+            } else {
+                response.status(500).json({
+                    error: 'Unknown Error',
+                    message: mistralError.message || 'Unbekannter Fehler',
+                });
+            }
         }
     }
 );

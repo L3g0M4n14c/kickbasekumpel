@@ -1155,11 +1155,11 @@ class TransferRepository extends BaseRepository<Transfer>
 
 class RecommendationRepository extends BaseRepository<Recommendation>
     implements RecommendationRepositoryInterface {
-  final MistralRecommendationService? _mistralService;
+  final MistralRecommendationService _mistralService;
 
   RecommendationRepository({
     required super.firestore,
-    MistralRecommendationService? mistralService,
+    required MistralRecommendationService mistralService,
   }) : _mistralService = mistralService,
        super(collectionPath: 'recommendations');
 
@@ -1264,22 +1264,9 @@ class RecommendationRepository extends BaseRepository<Recommendation>
     List<Player>? swapCandidates,
   }) async {
     final service = _mistralService;
-    if (service == null) {
-      // Fallback auf regelbasierte Logik
-      return generateRecommendation(
-        leagueId: leagueId,
-        playerId: player.id,
-        analysisData: {
-          'playerName': '${player.firstName} ${player.lastName}',
-          'averagePoints': player.averagePoints,
-          'marketValue': player.marketValue,
-          'marketValueTrend': player.marketValueTrend,
-          'status': player.status,
-          'currentMarketValue': player.marketValue,
-          'estimatedValue': player.marketValue,
-        },
-      );
-    }
+
+    // Service ist jetzt immer verfügbar (nutzt Cloud Function Proxy)
+    debugPrint('🔐 MISTRAL PROXY: Nutze Cloud Function als Proxy');
 
     final aiResult = await service.generateRecommendation(
       player: player,
@@ -1292,6 +1279,13 @@ class RecommendationRepository extends BaseRepository<Recommendation>
     );
 
     if (aiResult is Failure<MistralRecommendationResult>) {
+      debugPrint('');
+      debugPrint('═══════════════════════════════════════════════════════════');
+      debugPrint('❌ MISTRAL API FEHLER: ${aiResult.message}');
+      debugPrint('   Code: ${aiResult.code}');
+      debugPrint('═══════════════════════════════════════════════════════════');
+      debugPrint('');
+
       return Failure(
         aiResult.message,
         code: aiResult.code,
@@ -1321,6 +1315,17 @@ class RecommendationRepository extends BaseRepository<Recommendation>
       swapCandidateName: ai.swapCandidateName,
     );
 
+    // Debug: Status am Ende der Logs
+    debugPrint('');
+    debugPrint('═══════════════════════════════════════════════════════════');
+    debugPrint(
+      '✅ MISTRAL EMPFEHLUNG ERFOLGREICH für ${player.firstName} ${player.lastName}',
+    );
+    debugPrint(
+      '   Score: ${ai.score}, Action: ${ai.action}, Reason: ${ai.reason}',
+    );
+    debugPrint('═══════════════════════════════════════════════════════════');
+
     // Direkte Rückgabe ohne Firestore-Speicherung
     return Success(recommendation);
   }
@@ -1334,12 +1339,8 @@ class RecommendationRepository extends BaseRepository<Recommendation>
     required List<PlayerAnalysisInput> players,
   }) async {
     final service = _mistralService;
-    if (service == null) {
-      return const Failure(
-        'KI-Service nicht verfügbar.',
-        code: 'service_unavailable',
-      );
-    }
+
+    debugPrint('🔐 MISTRAL PROXY: Batch-Anfrage für ${players.length} Spieler');
 
     final batchResult = await service.generateBatchRecommendations(
       players: players,
