@@ -37,6 +37,17 @@ void main() {
     });
 
     test(
+      'falls back to partial-squad evaluation when no legal XI exists yet',
+      () {
+        final result = service.buildPlans(_buildPartialSquadInput());
+
+        expect(result.noPlanReason, isNull);
+        expect(result.scenarios, hasLength(1));
+        expect(result.scenarios.first.score.startingElevenGain, 3.0);
+      },
+    );
+
+    test(
       'uses legal formation starters when evaluating same-position upgrades',
       () {
         final result = service.buildPlans(
@@ -347,6 +358,56 @@ TransferPlannerInput _buildInputForLegalFormationUpgrade() {
       ),
     ],
     currentBudget: 1000000,
+  );
+}
+
+TransferPlannerInput _buildPartialSquadInput() {
+  return TransferPlannerInput(
+    squadPlayers: [
+      _player(
+        id: 'partial-gk',
+        firstName: 'Partial',
+        lastName: 'Goalie',
+        position: 1,
+        averagePoints: 5.0,
+        marketValue: 6000000,
+      ),
+      _player(
+        id: 'partial-def-weak',
+        firstName: 'Partial',
+        lastName: 'Def Weak',
+        position: 2,
+        averagePoints: 2.0,
+        marketValue: 3000000,
+      ),
+      _player(
+        id: 'partial-mid',
+        firstName: 'Partial',
+        lastName: 'Mid',
+        position: 3,
+        averagePoints: 6.0,
+        marketValue: 5000000,
+      ),
+      _player(
+        id: 'partial-fwd',
+        firstName: 'Partial',
+        lastName: 'Fwd',
+        position: 4,
+        averagePoints: 4.0,
+        marketValue: 4000000,
+      ),
+    ],
+    marketPlayers: [
+      _player(
+        id: 'partial-market-def',
+        firstName: 'Market',
+        lastName: 'Def Better',
+        position: 2,
+        averagePoints: 5.0,
+        marketValue: 2500000,
+      ),
+    ],
+    currentBudget: 0,
   );
 }
 

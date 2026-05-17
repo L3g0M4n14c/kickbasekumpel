@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:kickbasekumpel/data/models/optimal_lineup_model.dart';
 import 'package:kickbasekumpel/data/models/player_model.dart';
 import 'package:kickbasekumpel/data/models/transfer_planner_model.dart';
 
@@ -8,8 +7,10 @@ import 'package:kickbasekumpel/data/models/transfer_planner_model.dart';
 class TransferPlannerService {
   /// Baut ausführbare Transfer-Pläne basierend auf Kader, Markt und Budget.
   TransferPlannerResult buildPlans(TransferPlannerInput input) {
-    final currentSelection = _selectBestLegalLineup(input.squadPlayers);
-    if (currentSelection == null) {
+    final currentSelection =
+        _selectBestLegalLineup(input.squadPlayers) ??
+        _selectSimpleLineup(input.squadPlayers);
+    if (currentSelection.starters.isEmpty) {
       return const TransferPlannerResult(
         scenarios: [],
         noPlanReason: 'Aktuell wurde kein echter Verstaerkungsplan gefunden.',
@@ -77,11 +78,15 @@ class TransferPlannerService {
         soldPlayers: sells,
         marketPlayer: marketPlayer,
       );
-      final resultingSelection = _selectBestLegalLineup(resultingSquad);
-      if (resultingSelection == null) {
+      final resultingSelection = currentSelection.isLegal
+          ? _selectBestLegalLineup(resultingSquad)
+          : null;
+      if (currentSelection.isLegal && resultingSelection == null) {
         continue;
       }
-      final resultingStarters = resultingSelection.starters;
+      final resultingStarters =
+          resultingSelection?.starters ??
+          _selectSimpleLineup(resultingSquad).starters;
       if (!resultingStarters.any((player) => player.id == marketPlayer.id)) {
         continue;
       }
@@ -155,7 +160,7 @@ class TransferPlannerService {
     }
 
     _LineupSelection? bestSelection;
-    for (final formation in Formation.allFormations) {
+    for (final formation in _plannerFormations) {
       if (defenders.length < formation.defenders ||
           midfielders.length < formation.midfielders ||
           forwards.length < formation.forwards) {
@@ -175,11 +180,27 @@ class TransferPlannerService {
       );
 
       if (bestSelection == null || score > bestSelection.score) {
-        bestSelection = _LineupSelection(starters: starters, score: score);
+        bestSelection = _LineupSelection(
+          starters: starters,
+          score: score,
+          isLegal: true,
+        );
       }
     }
 
     return bestSelection;
+  }
+
+  _LineupSelection _selectSimpleLineup(List<Player> squadPlayers) {
+    final starters = [...squadPlayers]
+      ..sort((a, b) => b.averagePoints.compareTo(a.averagePoints));
+
+    final selected = starters.take(min(11, starters.length)).toList();
+    final score = selected.fold<double>(
+      0.0,
+      (sum, player) => sum + player.averagePoints,
+    );
+    return _LineupSelection(starters: selected, score: score, isLegal: false);
   }
 
   List<Player> _buildResultingSquad({
@@ -194,8 +215,38 @@ class TransferPlannerService {
 }
 
 class _LineupSelection {
-  const _LineupSelection({required this.starters, required this.score});
+  const _LineupSelection({
+    required this.starters,
+    required this.score,
+    required this.isLegal,
+  });
 
   final List<Player> starters;
   final double score;
+  final bool isLegal;
 }
+
+class _PlannerFormation {
+  const _PlannerFormation({
+    required this.defenders,
+    required this.midfielders,
+    required this.forwards,
+  });
+
+  final int defenders;
+  final int midfielders;
+  final int forwards;
+}
+
+const List<_PlannerFormation> _plannerFormations = [
+  _PlannerFormation(defenders: 4, midfielders: 4, forwards: 2),
+  _PlannerFormation(defenders: 4, midfielders: 2, forwards: 4),
+  _PlannerFormation(defenders: 3, midfielders: 4, forwards: 3),
+  _PlannerFormation(defenders: 4, midfielders: 3, forwards: 3),
+  _PlannerFormation(defenders: 5, midfielders: 3, forwards: 2),
+  _PlannerFormation(defenders: 3, midfielders: 5, forwards: 2),
+  _PlannerFormation(defenders: 5, midfielders: 4, forwards: 1),
+  _PlannerFormation(defenders: 4, midfielders: 5, forwards: 1),
+  _PlannerFormation(defenders: 3, midfielders: 6, forwards: 1),
+  _PlannerFormation(defenders: 5, midfielders: 2, forwards: 3),
+];
