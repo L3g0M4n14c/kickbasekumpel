@@ -215,7 +215,9 @@ class TransferPlannerService {
     }
 
     return TransferPlanScenario(
-      id: weakestStarter != null
+      id:
+          weakestStarter != null &&
+              sells.any((sell) => sell.id == weakestStarter.id)
           ? '${weakestStarter.id}-${marketPlayer.id}'
           : 'add-${marketPlayer.id}',
       title:

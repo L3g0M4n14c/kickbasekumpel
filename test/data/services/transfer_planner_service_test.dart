@@ -181,7 +181,7 @@ void main() {
         final result = service.buildPlans(_buildTieBreakerInput());
         final scenario = result.scenarios.single;
 
-        expect(scenario.id, startsWith('starter-def-a-'));
+        expect(scenario.id, 'add-market-def-tie-upgrade');
         expect(scenario.sells, isEmpty);
       },
     );
