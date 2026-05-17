@@ -24,13 +24,6 @@ void main() {
               .toList(),
           orderedEquals([5.0, 4.0, 3.0]),
         );
-        expect(
-          result.scenarios.every(
-            (scenario) =>
-                scenario.sells.length == 1 && scenario.buys.length == 1,
-          ),
-          isTrue,
-        );
       },
     );
 
@@ -42,6 +35,73 @@ void main() {
         isTrue,
       );
     });
+
+    test(
+      'uses legal formation starters when evaluating same-position upgrades',
+      () {
+        final result = service.buildPlans(
+          _buildInputForLegalFormationUpgrade(),
+        );
+
+        final scenario = result.scenarios.singleWhere(
+          (candidate) => candidate.buys.any(
+            (buy) => buy.player.id == 'market-def-upgrade',
+          ),
+        );
+
+        expect(scenario.score.startingElevenGain, 4.0);
+        expect(
+          scenario.sells.any((sell) => sell.player.id == 'starter-def-weak'),
+          isTrue,
+        );
+      },
+    );
+
+    test('keeps resulting starters in a legal 1-3-6-1 to 1-5-2-3 range', () {
+      final result = service.buildPlans(_buildInputWithUpgrades());
+
+      for (final scenario in result.scenarios) {
+        final gk = scenario.resultingStarters
+            .where((p) => p.position == 1)
+            .length;
+        final def = scenario.resultingStarters
+            .where((p) => p.position == 2)
+            .length;
+        final mid = scenario.resultingStarters
+            .where((p) => p.position == 3)
+            .length;
+        final fwd = scenario.resultingStarters
+            .where((p) => p.position == 4)
+            .length;
+
+        expect(gk, 1);
+        expect(def + mid + fwd, 10);
+        expect(def, inInclusiveRange(3, 5));
+        expect(mid, inInclusiveRange(2, 6));
+        expect(fwd, inInclusiveRange(1, 4));
+      }
+    });
+
+    test(
+      'creates multi-move scenario when two sells are needed for one upgrade',
+      () {
+        final result = service.buildPlans(_buildInputRequiringTwoSells());
+
+        final multiMoveScenario = result.scenarios.singleWhere(
+          (scenario) =>
+              scenario.buys.any((buy) => buy.player.id == 'market-star-fwd'),
+        );
+
+        expect(multiMoveScenario.sells, hasLength(2));
+        expect(multiMoveScenario.buys, hasLength(1));
+        expect(
+          multiMoveScenario.sells.map((move) => move.player.id),
+          containsAll(['starter-fwd-3', 'bench-def-low']),
+        );
+        expect(multiMoveScenario.budgetAfter, 1000000);
+        expect(multiMoveScenario.score.startingElevenGain, 4.0);
+      },
+    );
 
     test('returns noPlanReason when no upgrade beats current starters', () {
       final input = TransferPlannerInput(
@@ -141,6 +201,155 @@ TransferPlannerInput _buildInputWithUpgrades() {
   );
 }
 
+TransferPlannerInput _buildInputRequiringTwoSells() {
+  return TransferPlannerInput(
+    squadPlayers: _buildSquadPlayersWithBench(),
+    marketPlayers: [
+      _player(
+        id: 'market-star-fwd',
+        firstName: 'Star',
+        lastName: 'Forward',
+        position: 4,
+        averagePoints: 8.0,
+        marketValue: 7000000,
+        marketValueTrend: 4,
+      ),
+    ],
+    currentBudget: 0,
+  );
+}
+
+TransferPlannerInput _buildInputForLegalFormationUpgrade() {
+  return TransferPlannerInput(
+    squadPlayers: [
+      _player(
+        id: 'starter-gk',
+        firstName: 'Starter',
+        lastName: 'Goalie',
+        position: 1,
+        averagePoints: 8.0,
+        marketValue: 9000000,
+      ),
+      _player(
+        id: 'starter-def-1',
+        firstName: 'Starter',
+        lastName: 'Def One',
+        position: 2,
+        averagePoints: 9.0,
+        marketValue: 9000000,
+      ),
+      _player(
+        id: 'starter-def-2',
+        firstName: 'Starter',
+        lastName: 'Def Two',
+        position: 2,
+        averagePoints: 8.0,
+        marketValue: 8500000,
+      ),
+      _player(
+        id: 'starter-def-weak',
+        firstName: 'Starter',
+        lastName: 'Def Weak',
+        position: 2,
+        averagePoints: 1.0,
+        marketValue: 2000000,
+      ),
+      _player(
+        id: 'bench-def-extra',
+        firstName: 'Bench',
+        lastName: 'Def Extra',
+        position: 2,
+        averagePoints: 0.5,
+        marketValue: 1000000,
+      ),
+      _player(
+        id: 'starter-mid-1',
+        firstName: 'Starter',
+        lastName: 'Mid One',
+        position: 3,
+        averagePoints: 8.0,
+        marketValue: 7000000,
+      ),
+      _player(
+        id: 'starter-mid-2',
+        firstName: 'Starter',
+        lastName: 'Mid Two',
+        position: 3,
+        averagePoints: 8.0,
+        marketValue: 7000000,
+      ),
+      _player(
+        id: 'starter-mid-3',
+        firstName: 'Starter',
+        lastName: 'Mid Three',
+        position: 3,
+        averagePoints: 8.0,
+        marketValue: 7000000,
+      ),
+      _player(
+        id: 'starter-mid-4',
+        firstName: 'Starter',
+        lastName: 'Mid Four',
+        position: 3,
+        averagePoints: 8.0,
+        marketValue: 7000000,
+      ),
+      _player(
+        id: 'starter-fwd-1',
+        firstName: 'Starter',
+        lastName: 'Fwd One',
+        position: 4,
+        averagePoints: 10.0,
+        marketValue: 10000000,
+      ),
+      _player(
+        id: 'starter-fwd-2',
+        firstName: 'Starter',
+        lastName: 'Fwd Two',
+        position: 4,
+        averagePoints: 10.0,
+        marketValue: 10000000,
+      ),
+      _player(
+        id: 'starter-fwd-3',
+        firstName: 'Starter',
+        lastName: 'Fwd Three',
+        position: 4,
+        averagePoints: 10.0,
+        marketValue: 10000000,
+      ),
+      _player(
+        id: 'starter-fwd-4',
+        firstName: 'Starter',
+        lastName: 'Fwd Four',
+        position: 4,
+        averagePoints: 10.0,
+        marketValue: 10000000,
+      ),
+      _player(
+        id: 'bench-fwd-5',
+        firstName: 'Bench',
+        lastName: 'Fwd Five',
+        position: 4,
+        averagePoints: 9.0,
+        marketValue: 9000000,
+      ),
+    ],
+    marketPlayers: [
+      _player(
+        id: 'market-def-upgrade',
+        firstName: 'Market',
+        lastName: 'Def Upgrade',
+        position: 2,
+        averagePoints: 5.0,
+        marketValue: 2500000,
+        marketValueTrend: 1,
+      ),
+    ],
+    currentBudget: 1000000,
+  );
+}
+
 List<Player> _buildSquadPlayers() {
   return [
     _player(
@@ -230,6 +439,28 @@ List<Player> _buildSquadPlayers() {
       position: 4,
       averagePoints: 4.0,
       marketValue: 5000000,
+    ),
+  ];
+}
+
+List<Player> _buildSquadPlayersWithBench() {
+  return [
+    ..._buildSquadPlayers(),
+    _player(
+      id: 'bench-def-low',
+      firstName: 'Bench',
+      lastName: 'Def Low',
+      position: 2,
+      averagePoints: 2.0,
+      marketValue: 3000000,
+    ),
+    _player(
+      id: 'bench-mid-low',
+      firstName: 'Bench',
+      lastName: 'Mid Low',
+      position: 3,
+      averagePoints: 1.0,
+      marketValue: 1000000,
     ),
   ];
 }
