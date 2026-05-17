@@ -40,26 +40,28 @@ class TransferPlannerNotifier extends Notifier<TransferPlannerState> {
   TransferPlannerState build() => const TransferPlannerState();
 
   Future<void> calculate() async {
-    await ref.read(autoSelectFirstLeagueProvider.future);
-
-    final leagueId = ref.read(selectedLeagueIdProvider);
-    if (leagueId == null) {
-      state = const TransferPlannerState(
-        errorMessage:
-            'Keine Liga ausgewählt. Bitte wähle zuerst eine Liga aus.',
-      );
-      return;
-    }
-
-    state = state.copyWith(isLoading: true, errorMessage: () => null);
-
-    final marketPlayersSubscription = ref
-        .listen<AsyncValue<List<MarketPlayer>>>(
-          marketPlayersProvider,
-          (previous, next) {},
-        );
+    ProviderSubscription<AsyncValue<List<MarketPlayer>>>?
+    marketPlayersSubscription;
 
     try {
+      await ref.watch(autoSelectFirstLeagueProvider.future);
+
+      final leagueId = ref.read(selectedLeagueIdProvider);
+      if (leagueId == null) {
+        state = const TransferPlannerState(
+          errorMessage:
+              'Keine Liga ausgewählt. Bitte wähle zuerst eine Liga aus.',
+        );
+        return;
+      }
+
+      state = state.copyWith(isLoading: true, errorMessage: () => null);
+
+      marketPlayersSubscription = ref.listen<AsyncValue<List<MarketPlayer>>>(
+        marketPlayersProvider,
+        (previous, next) {},
+      );
+
       final results = await Future.wait<dynamic>([
         ref.read(teamPlayersProvider.future),
         ref.read(teamBudgetProvider.future),
@@ -85,7 +87,7 @@ class TransferPlannerNotifier extends Notifier<TransferPlannerState> {
         errorMessage: 'Planung fehlgeschlagen: ${_readableErrorMessage(error)}',
       );
     } finally {
-      marketPlayersSubscription.close();
+      marketPlayersSubscription?.close();
     }
   }
 }

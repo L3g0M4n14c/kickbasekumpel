@@ -189,6 +189,23 @@ void main() {
         expect(state.errorMessage, 'Planung fehlgeschlagen: kaputt');
       },
     );
+
+    test('calculate stores error message when auto-select fails', () async {
+      final container = ProviderContainer(
+        overrides: [
+          autoSelectFirstLeagueProvider.overrideWithValue(
+            AsyncValue.error(Exception('auto-select kaputt'), StackTrace.empty),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await container.read(transferPlannerProvider.notifier).calculate();
+
+      final state = container.read(transferPlannerProvider);
+      expect(state.result, isNull);
+      expect(state.errorMessage, 'Planung fehlgeschlagen: auto-select kaputt');
+    });
   });
 }
 
