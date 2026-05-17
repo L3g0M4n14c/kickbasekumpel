@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kickbasekumpel/data/models/market_model.dart';
 import 'package:kickbasekumpel/data/models/common_models.dart';
+import 'package:kickbasekumpel/data/models/league_model.dart';
 import 'package:kickbasekumpel/data/models/player_model.dart';
 import 'package:kickbasekumpel/data/models/transfer_planner_model.dart';
 import 'package:kickbasekumpel/data/providers/league_providers.dart';
@@ -72,6 +73,7 @@ void main() {
         expect(capturedInput.marketPlayers, hasLength(1));
         expect(capturedInput.marketPlayers.first.id, 'market-1');
         expect(capturedInput.marketPlayers.first.userOwnsPlayer, isFalse);
+        expect(capturedInput.marketPlayers.first.marketValue, 9000000);
         expect(
           capturedInput.marketPlayers.first.tfhmvt,
           marketPlayers.first.marketValueTrend,
@@ -80,6 +82,39 @@ void main() {
           capturedInput.marketPlayers.first.prlo,
           marketPlayers.first.prlo ?? 0,
         );
+      },
+    );
+
+    test(
+      'calculate waits for auto league selection before no-league decision',
+      () async {
+        final plannerService = _RecordingTransferPlannerService(
+          const TransferPlannerResult(scenarios: []),
+        );
+
+        final container = ProviderContainer(
+          overrides: [
+            autoSelectFirstLeagueProvider.overrideWith((ref) async {
+              await Future<void>.delayed(const Duration(milliseconds: 20));
+              ref.read(selectedLeagueProvider.notifier).select(_buildLeague());
+            }),
+            teamPlayersProvider.overrideWith(
+              (ref) => Future.value([_buildPlayer(id: 'starter-1')]),
+            ),
+            teamBudgetProvider.overrideWith((ref) => Future.value(1000000)),
+            marketPlayersProvider.overrideWith(
+              (ref) => Stream.value([_buildMarketPlayer(id: 'market-1')]),
+            ),
+            transferPlannerServiceProvider.overrideWithValue(plannerService),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await container.read(transferPlannerProvider.notifier).calculate();
+
+        final state = container.read(transferPlannerProvider);
+        expect(state.errorMessage, isNull);
+        expect(plannerService.lastInput, isNotNull);
       },
     );
 
@@ -126,6 +161,34 @@ void main() {
       expect(state.result!.scenarios, isEmpty);
       expect(state.result!.noPlanReason, noPlanReason);
     });
+
+    test(
+      'calculate stores readable error message on service failure',
+      () async {
+        final container = ProviderContainer(
+          overrides: [
+            selectedLeagueIdProvider.overrideWithValue('league-1'),
+            teamPlayersProvider.overrideWith(
+              (ref) => Future.value([_buildPlayer(id: 'starter-1')]),
+            ),
+            teamBudgetProvider.overrideWith((ref) => Future.value(1000000)),
+            marketPlayersProvider.overrideWith(
+              (ref) => Stream.value([_buildMarketPlayer(id: 'market-1')]),
+            ),
+            transferPlannerServiceProvider.overrideWithValue(
+              _ThrowingTransferPlannerService(),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await container.read(transferPlannerProvider.notifier).calculate();
+
+        final state = container.read(transferPlannerProvider);
+        expect(state.result, isNull);
+        expect(state.errorMessage, 'Planung fehlgeschlagen: kaputt');
+      },
+    );
   });
 }
 
@@ -139,6 +202,13 @@ class _RecordingTransferPlannerService extends TransferPlannerService {
   TransferPlannerResult buildPlans(TransferPlannerInput input) {
     lastInput = input;
     return _result;
+  }
+}
+
+class _ThrowingTransferPlannerService extends TransferPlannerService {
+  @override
+  TransferPlannerResult buildPlans(TransferPlannerInput input) {
+    throw Exception('kaputt');
   }
 }
 
@@ -178,7 +248,7 @@ MarketPlayer _buildMarketPlayer({required String id}) {
     totalPoints: 81,
     marketValue: 12000000,
     marketValueTrend: 250000,
-    price: 12000000,
+    price: 9000000,
     expiry: '2026-01-01T00:00:00.000Z',
     offers: 0,
     seller: const MarketSeller(id: 'seller-1', name: 'Seller'),
@@ -186,5 +256,26 @@ MarketPlayer _buildMarketPlayer({required String id}) {
     status: 0,
     prlo: null,
     exs: 0,
+  );
+}
+
+League _buildLeague() {
+  return const League(
+    i: 'league-auto',
+    n: 'Auto League',
+    cu: LeagueUser(
+      id: 'user-1',
+      name: 'User',
+      teamName: 'Team',
+      budget: 0,
+      teamValue: 0,
+      points: 0,
+      placement: 1,
+      won: 0,
+      drawn: 0,
+      lost: 0,
+      se11: 0,
+      ttm: 0,
+    ),
   );
 }

@@ -40,6 +40,8 @@ class TransferPlannerNotifier extends Notifier<TransferPlannerState> {
   TransferPlannerState build() => const TransferPlannerState();
 
   Future<void> calculate() async {
+    await ref.read(autoSelectFirstLeagueProvider.future);
+
     final leagueId = ref.read(selectedLeagueIdProvider);
     if (leagueId == null) {
       state = const TransferPlannerState(
@@ -105,7 +107,7 @@ Player _mapMarketPlayerToPlayer(MarketPlayer marketPlayer) {
     number: marketPlayer.number,
     averagePoints: marketPlayer.averagePoints,
     totalPoints: marketPlayer.totalPoints,
-    marketValue: marketPlayer.marketValue,
+    marketValue: marketPlayer.price,
     marketValueTrend: marketPlayer.marketValueTrend,
     tfhmvt: marketPlayer.marketValueTrend,
     prlo: marketPlayer.prlo ?? 0,
