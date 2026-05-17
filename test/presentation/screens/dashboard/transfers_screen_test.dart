@@ -5,6 +5,7 @@ import 'package:kickbasekumpel/data/models/player_model.dart';
 import 'package:kickbasekumpel/data/models/transfer_planner_model.dart';
 import 'package:kickbasekumpel/presentation/providers/transfer_planner_provider.dart';
 import 'package:kickbasekumpel/presentation/screens/dashboard/transfers_screen.dart';
+import 'package:kickbasekumpel/presentation/widgets/transfers/transfer_plan_card.dart';
 
 void main() {
   group('TransfersScreen', () {
@@ -33,6 +34,25 @@ void main() {
       expect(find.text('Beste Transferplaene berechnen'), findsOneWidget);
       expect(find.text(scenario.title), findsOneWidget);
       expect(find.text(scenario.summary), findsOneWidget);
+    });
+
+    testWidgets('shows one card per scenario when three plans exist', (
+      tester,
+    ) async {
+      await _pumpTransfersScreen(
+        tester,
+        initialState: TransferPlannerState(
+          result: TransferPlannerResult(
+            scenarios: [
+              _buildScenario(id: 's1', title: 'Plan 1'),
+              _buildScenario(id: 's2', title: 'Plan 2'),
+              _buildScenario(id: 's3', title: 'Plan 3'),
+            ],
+          ),
+        ),
+      );
+
+      expect(find.byType(TransferPlanCard), findsNWidgets(3));
     });
 
     testWidgets('shows loading indicator while planner is running', (
@@ -77,7 +97,17 @@ void main() {
     testWidgets('opens detail sheet when a scenario card is tapped', (
       tester,
     ) async {
-      final scenario = _buildScenario();
+      final scenario = _buildScenario(
+        sells: [
+          _buildPlayer(id: 'sell-1', firstName: 'Nico', lastName: 'Abgang'),
+        ],
+        buys: [
+          _buildPlayer(id: 'buy-1', firstName: 'Paul', lastName: 'Zugang'),
+        ],
+        starters: [
+          _buildPlayer(id: 'start-1', firstName: 'Tim', lastName: 'Startelf'),
+        ],
+      );
 
       await _pumpTransfersScreen(
         tester,
@@ -90,6 +120,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Szenario-Details'), findsOneWidget);
+      expect(find.text('Paul Zugang'), findsOneWidget);
+      expect(find.text('Nico Abgang'), findsOneWidget);
+      expect(find.text('Tim Startelf'), findsOneWidget);
       expect(find.text('• Transfer unsicher'), findsOneWidget);
     });
 
@@ -148,7 +181,13 @@ class _FakeTransferPlannerNotifier extends TransferPlannerNotifier {
   }
 }
 
-TransferPlanScenario _buildScenario() {
+TransferPlanScenario _buildScenario({
+  String id = 'scenario-1',
+  String title = 'Max Alt -> Luca Neu',
+  List<Player>? sells,
+  List<Player>? buys,
+  List<Player>? starters,
+}) {
   final playerOut = _buildPlayer(id: 'p-1', firstName: 'Max', lastName: 'Alt');
   final playerIn = _buildPlayer(
     id: 'p-2',
@@ -157,13 +196,22 @@ TransferPlanScenario _buildScenario() {
     averagePoints: 9.2,
     marketValue: 22000000,
   );
+  final sellPlayers = sells ?? [playerOut];
+  final buyPlayers = buys ?? [playerIn];
+  final starterPlayers = starters ?? [playerIn];
 
   return TransferPlanScenario(
-    id: 'scenario-1',
-    title: 'Max Alt -> Luca Neu',
-    sells: [TransferPlanMove.sell(player: playerOut, amount: 12000000)],
-    buys: [TransferPlanMove.buy(player: playerIn, amount: 22000000)],
-    resultingStarters: [playerIn],
+    id: id,
+    title: title,
+    sells: sellPlayers
+        .map(
+          (player) => TransferPlanMove.sell(player: player, amount: 12000000),
+        )
+        .toList(),
+    buys: buyPlayers
+        .map((player) => TransferPlanMove.buy(player: player, amount: 22000000))
+        .toList(),
+    resultingStarters: starterPlayers,
     budgetBefore: 30000000,
     budgetAfter: 20000000,
     summary: 'Startelf verbessert sich deutlich.',

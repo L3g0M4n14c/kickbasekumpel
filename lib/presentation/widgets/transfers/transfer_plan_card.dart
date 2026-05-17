@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kickbasekumpel/data/models/transfer_planner_model.dart';
+import 'package:kickbasekumpel/presentation/widgets/transfers/transfer_plan_formatters.dart';
 
 class TransferPlanCard extends StatelessWidget {
   const TransferPlanCard({
@@ -44,7 +45,7 @@ class TransferPlanCard extends StatelessWidget {
                   ),
                   Chip(
                     label: Text(
-                      'Budget: ${_formatCurrency(scenario.budgetAfter)}',
+                      'Budget: ${formatTransferCurrency(scenario.budgetAfter)}',
                     ),
                   ),
                 ],
@@ -55,21 +56,4 @@ class TransferPlanCard extends StatelessWidget {
       ),
     );
   }
-}
-
-String _formatCurrency(int value) {
-  final sign = value < 0 ? '-' : '';
-  final abs = value.abs();
-  final raw = abs.toString();
-  final buffer = StringBuffer();
-
-  for (var i = 0; i < raw.length; i++) {
-    final reverseIndex = raw.length - i;
-    buffer.write(raw[i]);
-    if (reverseIndex > 1 && reverseIndex % 3 == 1) {
-      buffer.write('.');
-    }
-  }
-
-  return '$sign${buffer.toString()} €';
 }

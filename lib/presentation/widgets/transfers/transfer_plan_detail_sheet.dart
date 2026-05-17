@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kickbasekumpel/data/models/transfer_planner_model.dart';
+import 'package:kickbasekumpel/presentation/widgets/transfers/transfer_plan_formatters.dart';
 
 class TransferPlanDetailSheet extends StatelessWidget {
   const TransferPlanDetailSheet({super.key, required this.scenario});
@@ -11,7 +12,7 @@ class TransferPlanDetailSheet extends StatelessWidget {
     final theme = Theme.of(context);
 
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -33,12 +34,49 @@ class TransferPlanDetailSheet extends StatelessWidget {
             const SizedBox(height: 8),
             Text(scenario.summary),
             const SizedBox(height: 16),
-            Text('Verkaeufe: ${scenario.sells.length}'),
-            Text('Kaeufe: ${scenario.buys.length}'),
+            _SectionTitle(title: 'Kaeufe'),
+            if (scenario.buys.isEmpty)
+              const Text('Keine')
+            else
+              ...scenario.buys.map(
+                (move) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(formatPlayerName(move.player)),
+                  subtitle: Text(formatTransferCurrency(move.amount)),
+                ),
+              ),
             const SizedBox(height: 8),
-            Text('Budget vorher: ${_formatCurrency(scenario.budgetBefore)}'),
-            Text('Budget nachher: ${_formatCurrency(scenario.budgetAfter)}'),
+            _SectionTitle(title: 'Verkaeufe'),
+            if (scenario.sells.isEmpty)
+              const Text('Keine')
+            else
+              ...scenario.sells.map(
+                (move) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(formatPlayerName(move.player)),
+                  subtitle: Text(formatTransferCurrency(move.amount)),
+                ),
+              ),
             const SizedBox(height: 8),
+            _SectionTitle(title: 'Resultierende Startelf'),
+            if (scenario.resultingStarters.isEmpty)
+              const Text('Keine Spieler')
+            else
+              ...scenario.resultingStarters.map(
+                (player) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(formatPlayerName(player)),
+                ),
+              ),
+            const SizedBox(height: 8),
+            _SectionTitle(title: 'Budget'),
+            Text('Vorher: ${formatTransferCurrency(scenario.budgetBefore)}'),
+            Text('Nachher: ${formatTransferCurrency(scenario.budgetAfter)}'),
+            const SizedBox(height: 8),
+            _SectionTitle(title: 'Warnungen'),
             if (scenario.warnings.isEmpty)
               const Text('Keine Warnungen')
             else
@@ -50,19 +88,18 @@ class TransferPlanDetailSheet extends StatelessWidget {
   }
 }
 
-String _formatCurrency(int value) {
-  final sign = value < 0 ? '-' : '';
-  final abs = value.abs();
-  final raw = abs.toString();
-  final buffer = StringBuffer();
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.title});
 
-  for (var i = 0; i < raw.length; i++) {
-    final reverseIndex = raw.length - i;
-    buffer.write(raw[i]);
-    if (reverseIndex > 1 && reverseIndex % 3 == 1) {
-      buffer.write('.');
-    }
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: Theme.of(
+        context,
+      ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+    );
   }
-
-  return '$sign${buffer.toString()} €';
 }
