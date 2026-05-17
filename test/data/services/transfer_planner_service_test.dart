@@ -60,6 +60,21 @@ void main() {
     });
 
     test(
+      'rejects missing-position candidates without positive upgrade signal',
+      () {
+        final result = service.buildPlans(
+          _buildPartialSquadMissingDefenderWithoutGain(),
+        );
+
+        expect(result.scenarios, isEmpty);
+        expect(
+          result.noPlanReason,
+          'Aktuell wurde kein echter Verstaerkungsplan gefunden.',
+        );
+      },
+    );
+
+    test(
       'uses legal formation starters when evaluating same-position upgrades',
       () {
         final result = service.buildPlans(
@@ -140,6 +155,44 @@ void main() {
         expect(scenario.sells.length, 2);
         expect(
           scenario.sells.any((sell) => sell.player.id == 'starter-mid-4'),
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'recomputes a legal XI after partial-squad transfer when now possible',
+      () {
+        final result = service.buildPlans(_buildPartialBecomesLegalAfterBuy());
+
+        final scenario = result.scenarios.singleWhere(
+          (candidate) => candidate.buys.any(
+            (buy) => buy.player.id == 'market-low-forward',
+          ),
+        );
+
+        final gk = scenario.resultingStarters
+            .where((p) => p.position == 1)
+            .length;
+        final def = scenario.resultingStarters
+            .where((p) => p.position == 2)
+            .length;
+        final mid = scenario.resultingStarters
+            .where((p) => p.position == 3)
+            .length;
+        final fwd = scenario.resultingStarters
+            .where((p) => p.position == 4)
+            .length;
+
+        expect(gk, 1);
+        expect(def + mid + fwd, 10);
+        expect(def, inInclusiveRange(3, 5));
+        expect(mid, inInclusiveRange(2, 6));
+        expect(fwd, inInclusiveRange(1, 4));
+        expect(
+          scenario.resultingStarters.any(
+            (player) => player.id == 'market-low-forward',
+          ),
           isTrue,
         );
       },
@@ -481,6 +534,154 @@ TransferPlannerInput _buildPartialSquadMissingDefender() {
       ),
     ],
     currentBudget: 0,
+  );
+}
+
+TransferPlannerInput _buildPartialSquadMissingDefenderWithoutGain() {
+  return TransferPlannerInput(
+    squadPlayers: [
+      _player(
+        id: 'partial-gk-only',
+        firstName: 'Partial',
+        lastName: 'Goalie',
+        position: 1,
+        averagePoints: 5.0,
+        marketValue: 6000000,
+      ),
+      _player(
+        id: 'partial-mid-only',
+        firstName: 'Partial',
+        lastName: 'Mid',
+        position: 3,
+        averagePoints: 6.0,
+        marketValue: 5000000,
+      ),
+      _player(
+        id: 'partial-fwd-only',
+        firstName: 'Partial',
+        lastName: 'Fwd',
+        position: 4,
+        averagePoints: 4.0,
+        marketValue: 4000000,
+      ),
+    ],
+    marketPlayers: [
+      _player(
+        id: 'partial-market-def-flat',
+        firstName: 'Market',
+        lastName: 'Flat Defender',
+        position: 2,
+        averagePoints: 0.0,
+        marketValue: 2500000,
+      ),
+    ],
+    currentBudget: 3000000,
+  );
+}
+
+TransferPlannerInput _buildPartialBecomesLegalAfterBuy() {
+  return TransferPlannerInput(
+    squadPlayers: [
+      _player(
+        id: 'partial-gk',
+        firstName: 'Partial',
+        lastName: 'Goalie',
+        position: 1,
+        averagePoints: 8.0,
+        marketValue: 9000000,
+      ),
+      _player(
+        id: 'partial-def-1',
+        firstName: 'Partial',
+        lastName: 'Def One',
+        position: 2,
+        averagePoints: 9.0,
+        marketValue: 9000000,
+      ),
+      _player(
+        id: 'partial-def-2',
+        firstName: 'Partial',
+        lastName: 'Def Two',
+        position: 2,
+        averagePoints: 8.0,
+        marketValue: 8000000,
+      ),
+      _player(
+        id: 'partial-def-3',
+        firstName: 'Partial',
+        lastName: 'Def Three',
+        position: 2,
+        averagePoints: 7.0,
+        marketValue: 7000000,
+      ),
+      _player(
+        id: 'partial-def-4',
+        firstName: 'Partial',
+        lastName: 'Def Four',
+        position: 2,
+        averagePoints: 6.0,
+        marketValue: 6000000,
+      ),
+      _player(
+        id: 'partial-def-5',
+        firstName: 'Partial',
+        lastName: 'Def Five',
+        position: 2,
+        averagePoints: 5.0,
+        marketValue: 5000000,
+      ),
+      _player(
+        id: 'partial-mid-1',
+        firstName: 'Partial',
+        lastName: 'Mid One',
+        position: 3,
+        averagePoints: 9.0,
+        marketValue: 9000000,
+      ),
+      _player(
+        id: 'partial-mid-2',
+        firstName: 'Partial',
+        lastName: 'Mid Two',
+        position: 3,
+        averagePoints: 8.0,
+        marketValue: 8000000,
+      ),
+      _player(
+        id: 'partial-mid-3',
+        firstName: 'Partial',
+        lastName: 'Mid Three',
+        position: 3,
+        averagePoints: 7.0,
+        marketValue: 7000000,
+      ),
+      _player(
+        id: 'partial-mid-4',
+        firstName: 'Partial',
+        lastName: 'Mid Four',
+        position: 3,
+        averagePoints: 6.0,
+        marketValue: 6000000,
+      ),
+      _player(
+        id: 'partial-mid-5',
+        firstName: 'Partial',
+        lastName: 'Mid Five',
+        position: 3,
+        averagePoints: 5.0,
+        marketValue: 5000000,
+      ),
+    ],
+    marketPlayers: [
+      _player(
+        id: 'market-low-forward',
+        firstName: 'Market',
+        lastName: 'Low Forward',
+        position: 4,
+        averagePoints: 1.0,
+        marketValue: 1000000,
+      ),
+    ],
+    currentBudget: 1000000,
   );
 }
 

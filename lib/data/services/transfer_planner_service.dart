@@ -34,6 +34,9 @@ class TransferPlannerService {
           continue;
         }
         startingGain = marketPlayer.averagePoints;
+        if (startingGain <= 0) {
+          continue;
+        }
       } else {
         weakestStarter = samePositionStarters.reduce(
           (weakest, candidate) =>
@@ -76,14 +79,12 @@ class TransferPlannerService {
         soldPlayers: sells,
         marketPlayer: marketPlayer,
       );
-      final resultingSelection = currentSelection.isLegal
-          ? _selectBestLegalLineup(resultingSquad)
-          : null;
-      if (currentSelection.isLegal && resultingSelection == null) {
+      final resultingLegalSelection = _selectBestLegalLineup(resultingSquad);
+      if (currentSelection.isLegal && resultingLegalSelection == null) {
         continue;
       }
       final resultingStarters =
-          resultingSelection?.starters ??
+          resultingLegalSelection?.starters ??
           _selectSimpleLineup(resultingSquad).starters;
       if (!resultingStarters.any((player) => player.id == marketPlayer.id)) {
         continue;
