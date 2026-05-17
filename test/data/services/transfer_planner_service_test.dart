@@ -181,7 +181,25 @@ void main() {
         final result = service.buildPlans(_buildTieBreakerInput());
         final scenario = result.scenarios.single;
 
-        expect(scenario.sells.single.player.id, 'starter-def-a');
+        expect(scenario.id, startsWith('starter-def-a-'));
+        expect(scenario.sells, isEmpty);
+      },
+    );
+
+    test(
+      'keeps candidate with negative direct swap delta when final XI gain is positive',
+      () {
+        final result = service.buildPlans(
+          _buildNegativeDirectDeltaButPositiveFinalGainInput(),
+        );
+        final scenario = result.scenarios.singleWhere(
+          (candidate) => candidate.buys.any(
+            (buy) => buy.player.id == 'market-def-weaker-but-useful',
+          ),
+        );
+
+        expect(scenario.sells, isEmpty);
+        expect(scenario.score.startingElevenGain, 1.0);
       },
     );
 
@@ -877,6 +895,104 @@ TransferPlannerInput _buildInputForMinimalExtraSales() {
       ),
     ],
     currentBudget: 0,
+  );
+}
+
+TransferPlannerInput _buildNegativeDirectDeltaButPositiveFinalGainInput() {
+  return TransferPlannerInput(
+    squadPlayers: [
+      _player(
+        id: 'partial-gk-core',
+        firstName: 'Core',
+        lastName: 'Goalie',
+        position: 1,
+        averagePoints: 8.0,
+        marketValue: 9000000,
+      ),
+      _player(
+        id: 'partial-def-strong-1',
+        firstName: 'Core',
+        lastName: 'Def One',
+        position: 2,
+        averagePoints: 9.0,
+        marketValue: 9000000,
+      ),
+      _player(
+        id: 'partial-def-strong-2',
+        firstName: 'Core',
+        lastName: 'Def Two',
+        position: 2,
+        averagePoints: 8.0,
+        marketValue: 8000000,
+      ),
+      _player(
+        id: 'partial-def-weak',
+        firstName: 'Core',
+        lastName: 'Def Weak',
+        position: 2,
+        averagePoints: 2.0,
+        marketValue: 3000000,
+      ),
+      _player(
+        id: 'partial-mid-1',
+        firstName: 'Core',
+        lastName: 'Mid One',
+        position: 3,
+        averagePoints: 8.0,
+        marketValue: 8000000,
+      ),
+      _player(
+        id: 'partial-mid-2',
+        firstName: 'Core',
+        lastName: 'Mid Two',
+        position: 3,
+        averagePoints: 7.0,
+        marketValue: 7000000,
+      ),
+      _player(
+        id: 'partial-mid-3',
+        firstName: 'Core',
+        lastName: 'Mid Three',
+        position: 3,
+        averagePoints: 6.0,
+        marketValue: 6000000,
+      ),
+      _player(
+        id: 'partial-mid-4',
+        firstName: 'Core',
+        lastName: 'Mid Four',
+        position: 3,
+        averagePoints: 5.0,
+        marketValue: 5000000,
+      ),
+      _player(
+        id: 'partial-fwd-1',
+        firstName: 'Core',
+        lastName: 'Fwd One',
+        position: 4,
+        averagePoints: 7.0,
+        marketValue: 7000000,
+      ),
+      _player(
+        id: 'partial-fwd-2',
+        firstName: 'Core',
+        lastName: 'Fwd Two',
+        position: 4,
+        averagePoints: 6.0,
+        marketValue: 6000000,
+      ),
+    ],
+    marketPlayers: [
+      _player(
+        id: 'market-def-weaker-but-useful',
+        firstName: 'Market',
+        lastName: 'Def Utility',
+        position: 2,
+        averagePoints: 1.0,
+        marketValue: 2000000,
+      ),
+    ],
+    currentBudget: 3000000,
   );
 }
 
