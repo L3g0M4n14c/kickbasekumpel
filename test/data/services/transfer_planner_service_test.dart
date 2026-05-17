@@ -161,6 +161,45 @@ void main() {
     );
 
     test(
+      'drops scenarios where extra starter sales turn final XI into regression',
+      () {
+        final result = service.buildPlans(
+          _buildInputWithRegressionAfterSales(),
+        );
+
+        expect(result.scenarios, isEmpty);
+        expect(
+          result.noPlanReason,
+          'Aktuell wurde kein echter Verstaerkungsplan gefunden.',
+        );
+      },
+    );
+
+    test(
+      'uses deterministic tie-breakers for same-score same-position starter selection',
+      () {
+        final result = service.buildPlans(_buildTieBreakerInput());
+        final scenario = result.scenarios.single;
+
+        expect(scenario.sells.single.player.id, 'starter-def-a');
+      },
+    );
+
+    test('prefers minimal deterministic extra-sale chain', () {
+      final result = service.buildPlans(_buildInputForMinimalExtraSales());
+      final scenario = result.scenarios.singleWhere(
+        (candidate) =>
+            candidate.buys.any((buy) => buy.player.id == 'market-fwd-costly'),
+      );
+
+      expect(scenario.sells.map((sell) => sell.player.id), hasLength(3));
+      expect(
+        scenario.sells.map((sell) => sell.player.id),
+        containsAll(['starter-fwd-3', 'bench-def-five', 'bench-def-six']),
+      );
+    });
+
+    test(
       'recomputes a legal XI after partial-squad transfer when now possible',
       () {
         final result = service.buildPlans(_buildPartialBecomesLegalAfterBuy());
@@ -533,7 +572,7 @@ TransferPlannerInput _buildPartialSquadMissingDefender() {
         marketValue: 2500000,
       ),
     ],
-    currentBudget: 0,
+    currentBudget: 3000000,
   );
 }
 
@@ -677,7 +716,7 @@ TransferPlannerInput _buildPartialBecomesLegalAfterBuy() {
         firstName: 'Market',
         lastName: 'Low Forward',
         position: 4,
-        averagePoints: 1.0,
+        averagePoints: 9.0,
         marketValue: 1000000,
       ),
     ],
@@ -704,9 +743,137 @@ TransferPlannerInput _buildInputRequiringStarterFunding() {
         firstName: 'Market',
         lastName: 'Fwd Premium',
         position: 4,
-        averagePoints: 8.0,
+        averagePoints: 12.0,
         marketValue: 10000000,
         marketValueTrend: 3,
+      ),
+    ],
+    currentBudget: 0,
+  );
+}
+
+TransferPlannerInput _buildInputWithRegressionAfterSales() {
+  return TransferPlannerInput(
+    squadPlayers: [
+      ..._buildSquadPlayers(),
+      _player(
+        id: 'bench-mid-tiny',
+        firstName: 'Bench',
+        lastName: 'Mid Tiny',
+        position: 3,
+        averagePoints: 0.0,
+        marketValue: 1000000,
+      ),
+    ],
+    marketPlayers: [
+      _player(
+        id: 'market-fwd-regression',
+        firstName: 'Market',
+        lastName: 'Fwd Regression',
+        position: 4,
+        averagePoints: 8.0,
+        marketValue: 10000000,
+      ),
+    ],
+    currentBudget: 0,
+  );
+}
+
+TransferPlannerInput _buildTieBreakerInput() {
+  return TransferPlannerInput(
+    squadPlayers: [
+      _player(
+        id: 'starter-gk',
+        firstName: 'Starter',
+        lastName: 'Goalie',
+        position: 1,
+        averagePoints: 8.0,
+        marketValue: 9000000,
+      ),
+      _player(
+        id: 'starter-def-b',
+        firstName: 'Starter',
+        lastName: 'Def B',
+        position: 2,
+        averagePoints: 3.0,
+        marketValue: 4000000,
+      ),
+      _player(
+        id: 'starter-def-a',
+        firstName: 'Starter',
+        lastName: 'Def A',
+        position: 2,
+        averagePoints: 3.0,
+        marketValue: 3000000,
+      ),
+      _player(
+        id: 'starter-mid',
+        firstName: 'Starter',
+        lastName: 'Mid',
+        position: 3,
+        averagePoints: 6.0,
+        marketValue: 5000000,
+      ),
+      _player(
+        id: 'starter-fwd',
+        firstName: 'Starter',
+        lastName: 'Fwd',
+        position: 4,
+        averagePoints: 6.0,
+        marketValue: 5000000,
+      ),
+    ],
+    marketPlayers: [
+      _player(
+        id: 'market-def-tie-upgrade',
+        firstName: 'Market',
+        lastName: 'Def Upgrade',
+        position: 2,
+        averagePoints: 5.0,
+        marketValue: 2000000,
+      ),
+    ],
+    currentBudget: 2000000,
+  );
+}
+
+TransferPlannerInput _buildInputForMinimalExtraSales() {
+  return TransferPlannerInput(
+    squadPlayers: [
+      ..._buildSquadPlayers(),
+      _player(
+        id: 'bench-def-tiny',
+        firstName: 'Bench',
+        lastName: 'Def Tiny',
+        position: 2,
+        averagePoints: 0.0,
+        marketValue: 2000000,
+      ),
+      _player(
+        id: 'bench-def-five',
+        firstName: 'Bench',
+        lastName: 'Def Five',
+        position: 2,
+        averagePoints: 1.0,
+        marketValue: 5000000,
+      ),
+      _player(
+        id: 'bench-def-six',
+        firstName: 'Bench',
+        lastName: 'Def Six',
+        position: 2,
+        averagePoints: 2.0,
+        marketValue: 6000000,
+      ),
+    ],
+    marketPlayers: [
+      _player(
+        id: 'market-fwd-costly',
+        firstName: 'Market',
+        lastName: 'Fwd Costly',
+        position: 4,
+        averagePoints: 9.0,
+        marketValue: 16000000,
       ),
     ],
     currentBudget: 0,

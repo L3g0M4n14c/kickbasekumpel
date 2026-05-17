@@ -38,12 +38,8 @@ class TransferPlannerService {
           continue;
         }
       } else {
-        weakestStarter = samePositionStarters.reduce(
-          (weakest, candidate) =>
-              candidate.averagePoints < weakest.averagePoints
-              ? candidate
-              : weakest,
-        );
+        samePositionStarters.sort(_comparePlayersByWeakness);
+        weakestStarter = samePositionStarters.first;
 
         startingGain =
             marketPlayer.averagePoints - weakestStarter.averagePoints;
@@ -83,10 +79,14 @@ class TransferPlannerService {
       if (currentSelection.isLegal && resultingLegalSelection == null) {
         continue;
       }
-      final resultingStarters =
-          resultingLegalSelection?.starters ??
-          _selectSimpleLineup(resultingSquad).starters;
+      final resultingSelection =
+          resultingLegalSelection ?? _selectSimpleLineup(resultingSquad);
+      final resultingStarters = resultingSelection.starters;
       if (!resultingStarters.any((player) => player.id == marketPlayer.id)) {
+        continue;
+      }
+      final finalGain = resultingSelection.score - currentSelection.score;
+      if (finalGain <= 0) {
         continue;
       }
 
@@ -116,10 +116,10 @@ class TransferPlannerService {
           budgetBefore: input.currentBudget,
           budgetAfter: budgetAfter,
           summary:
-              'Startelf-Upgrade um ${startingGain.toStringAsFixed(1)} Punkte durch Transfer-Kette mit ${sells.length} Verkauf(en).',
+              'Finales Startelf-Upgrade um ${finalGain.toStringAsFixed(1)} Punkte durch Transfer-Kette mit ${sells.length} Verkauf(en).',
           warnings: const [],
           score: TransferPlanScore(
-            startingElevenGain: startingGain,
+            startingElevenGain: finalGain,
             executionRisk: 0.0,
             valueStability: max(0, marketPlayer.marketValueTrend).toDouble(),
           ),
@@ -127,10 +127,21 @@ class TransferPlannerService {
       );
     }
 
-    scenarios.sort(
-      (a, b) =>
-          b.score.startingElevenGain.compareTo(a.score.startingElevenGain),
-    );
+    scenarios.sort((a, b) {
+      final gainCompare = b.score.startingElevenGain.compareTo(
+        a.score.startingElevenGain,
+      );
+      if (gainCompare != 0) {
+        return gainCompare;
+      }
+      final stabilityCompare = b.score.valueStability.compareTo(
+        a.score.valueStability,
+      );
+      if (stabilityCompare != 0) {
+        return stabilityCompare;
+      }
+      return a.id.compareTo(b.id);
+    });
 
     final topScenarios = scenarios.take(3).toList();
     if (topScenarios.isEmpty) {
@@ -146,16 +157,16 @@ class TransferPlannerService {
   _LineupSelection? _selectBestLegalLineup(List<Player> squadPlayers) {
     final goalkeepers =
         squadPlayers.where((player) => player.position == 1).toList()
-          ..sort((a, b) => b.averagePoints.compareTo(a.averagePoints));
+          ..sort(_comparePlayersByStrength);
     final defenders =
         squadPlayers.where((player) => player.position == 2).toList()
-          ..sort((a, b) => b.averagePoints.compareTo(a.averagePoints));
+          ..sort(_comparePlayersByStrength);
     final midfielders =
         squadPlayers.where((player) => player.position == 3).toList()
-          ..sort((a, b) => b.averagePoints.compareTo(a.averagePoints));
+          ..sort(_comparePlayersByStrength);
     final forwards =
         squadPlayers.where((player) => player.position == 4).toList()
-          ..sort((a, b) => b.averagePoints.compareTo(a.averagePoints));
+          ..sort(_comparePlayersByStrength);
 
     if (goalkeepers.isEmpty) {
       return null;
@@ -181,7 +192,13 @@ class TransferPlannerService {
         (sum, player) => sum + player.averagePoints,
       );
 
-      if (bestSelection == null || score > bestSelection.score) {
+      if (bestSelection == null ||
+          score > bestSelection.score ||
+          (score == bestSelection.score &&
+              _lineupSignature(
+                    starters,
+                  ).compareTo(_lineupSignature(bestSelection.starters)) <
+                  0)) {
         bestSelection = _LineupSelection(
           starters: starters,
           score: score,
@@ -194,8 +211,7 @@ class TransferPlannerService {
   }
 
   _LineupSelection _selectSimpleLineup(List<Player> squadPlayers) {
-    final starters = [...squadPlayers]
-      ..sort((a, b) => b.averagePoints.compareTo(a.averagePoints));
+    final starters = [...squadPlayers]..sort(_comparePlayersByStrength);
 
     final selected = starters.take(min(11, starters.length)).toList();
     final score = selected.fold<double>(
@@ -224,31 +240,127 @@ class TransferPlannerService {
         .where((player) => !excludedIds.contains(player.id))
         .toList();
 
-    candidates.sort((a, b) {
-      final avgCompare = a.averagePoints.compareTo(b.averagePoints);
-      if (avgCompare != 0) {
-        return avgCompare;
-      }
-      return a.marketValue.compareTo(b.marketValue);
-    });
+    candidates.sort(_compareSalesCandidate);
 
-    for (final candidate in candidates) {
-      if (candidate.marketValue >= requiredAmount) {
-        return [candidate];
-      }
-    }
+    for (var chainLength = 1; chainLength <= candidates.length; chainLength++) {
+      List<Player>? bestChain;
+      _searchSalesChains(
+        candidates: candidates,
+        requiredAmount: requiredAmount,
+        chainLength: chainLength,
+        startIndex: 0,
+        currentSelection: <Player>[],
+        currentAmount: 0,
+        onCandidate: (candidate) {
+          if (bestChain == null ||
+              _compareSalesChains(candidate, bestChain!) < 0) {
+            bestChain = List<Player>.from(candidate);
+          }
+        },
+      );
 
-    final selected = <Player>[];
-    var coveredAmount = 0;
-    for (final candidate in candidates) {
-      selected.add(candidate);
-      coveredAmount += candidate.marketValue;
-      if (coveredAmount >= requiredAmount) {
-        return selected;
+      if (bestChain != null) {
+        return bestChain;
       }
     }
 
     return null;
+  }
+
+  void _searchSalesChains({
+    required List<Player> candidates,
+    required int requiredAmount,
+    required int chainLength,
+    required int startIndex,
+    required List<Player> currentSelection,
+    required int currentAmount,
+    required void Function(List<Player>) onCandidate,
+  }) {
+    if (currentSelection.length == chainLength) {
+      if (currentAmount >= requiredAmount) {
+        onCandidate(currentSelection);
+      }
+      return;
+    }
+
+    final remainingSlots = chainLength - currentSelection.length;
+    final maxStart = candidates.length - remainingSlots;
+    for (var index = startIndex; index <= maxStart; index++) {
+      currentSelection.add(candidates[index]);
+      _searchSalesChains(
+        candidates: candidates,
+        requiredAmount: requiredAmount,
+        chainLength: chainLength,
+        startIndex: index + 1,
+        currentSelection: currentSelection,
+        currentAmount: currentAmount + candidates[index].marketValue,
+        onCandidate: onCandidate,
+      );
+      currentSelection.removeLast();
+    }
+  }
+
+  int _comparePlayersByStrength(Player a, Player b) {
+    final avgCompare = b.averagePoints.compareTo(a.averagePoints);
+    if (avgCompare != 0) {
+      return avgCompare;
+    }
+    final valueCompare = b.marketValue.compareTo(a.marketValue);
+    if (valueCompare != 0) {
+      return valueCompare;
+    }
+    return a.id.compareTo(b.id);
+  }
+
+  int _comparePlayersByWeakness(Player a, Player b) {
+    final avgCompare = a.averagePoints.compareTo(b.averagePoints);
+    if (avgCompare != 0) {
+      return avgCompare;
+    }
+    final valueCompare = a.marketValue.compareTo(b.marketValue);
+    if (valueCompare != 0) {
+      return valueCompare;
+    }
+    return a.id.compareTo(b.id);
+  }
+
+  int _compareSalesCandidate(Player a, Player b) {
+    final weaknessCompare = _comparePlayersByWeakness(a, b);
+    if (weaknessCompare != 0) {
+      return weaknessCompare;
+    }
+    return a.id.compareTo(b.id);
+  }
+
+  int _compareSalesChains(List<Player> a, List<Player> b) {
+    final aAvg = a.fold<double>(0, (sum, player) => sum + player.averagePoints);
+    final bAvg = b.fold<double>(0, (sum, player) => sum + player.averagePoints);
+    final avgCompare = aAvg.compareTo(bAvg);
+    if (avgCompare != 0) {
+      return avgCompare;
+    }
+
+    final aValue = a.fold<int>(0, (sum, player) => sum + player.marketValue);
+    final bValue = b.fold<int>(0, (sum, player) => sum + player.marketValue);
+    final valueCompare = aValue.compareTo(bValue);
+    if (valueCompare != 0) {
+      return valueCompare;
+    }
+
+    final sortedA = [...a]..sort((x, y) => x.id.compareTo(y.id));
+    final sortedB = [...b]..sort((x, y) => x.id.compareTo(y.id));
+    for (var index = 0; index < sortedA.length; index++) {
+      final idCompare = sortedA[index].id.compareTo(sortedB[index].id);
+      if (idCompare != 0) {
+        return idCompare;
+      }
+    }
+    return 0;
+  }
+
+  String _lineupSignature(List<Player> starters) {
+    final ids = starters.map((player) => player.id).toList()..sort();
+    return ids.join('|');
   }
 }
 
