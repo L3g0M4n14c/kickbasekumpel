@@ -25,52 +25,50 @@ class TransferPlannerService {
           .where((starter) => starter.position == marketPlayer.position)
           .toList();
 
+      final sells = <Player>[];
+      Player? weakestStarter;
+      late final double startingGain;
+
       if (samePositionStarters.isEmpty) {
-        continue;
+        if (currentSelection.isLegal) {
+          continue;
+        }
+        startingGain = marketPlayer.averagePoints;
+      } else {
+        weakestStarter = samePositionStarters.reduce(
+          (weakest, candidate) =>
+              candidate.averagePoints < weakest.averagePoints
+              ? candidate
+              : weakest,
+        );
+
+        startingGain =
+            marketPlayer.averagePoints - weakestStarter.averagePoints;
+        if (startingGain <= 0) {
+          continue;
+        }
+        sells.add(weakestStarter);
       }
 
-      final weakestStarter = samePositionStarters.reduce(
-        (weakest, candidate) => candidate.averagePoints < weakest.averagePoints
-            ? candidate
-            : weakest,
-      );
-
-      final startingGain =
-          marketPlayer.averagePoints - weakestStarter.averagePoints;
-      if (startingGain <= 0) {
-        continue;
-      }
-
-      final sells = <Player>[weakestStarter];
       var budgetAfter =
           input.currentBudget +
-          weakestStarter.marketValue -
+          sells.fold<int>(0, (sum, player) => sum + player.marketValue) -
           marketPlayer.marketValue;
 
       if (budgetAfter < 0) {
-        final sellCandidates =
-            input.squadPlayers
-                .where(
-                  (player) =>
-                      !currentStarters.any(
-                        (starter) => starter.id == player.id,
-                      ) &&
-                      player.id != marketPlayer.id,
-                )
-                .toList()
-              ..sort((a, b) => b.marketValue.compareTo(a.marketValue));
-
-        for (final sellCandidate in sellCandidates) {
-          sells.add(sellCandidate);
-          budgetAfter += sellCandidate.marketValue;
-          if (budgetAfter >= 0) {
-            break;
-          }
-        }
-
-        if (budgetAfter < 0) {
+        final additionalSales = _findAdditionalSales(
+          squadPlayers: input.squadPlayers,
+          excludedIds: {...sells.map((player) => player.id), marketPlayer.id},
+          requiredAmount: -budgetAfter,
+        );
+        if (additionalSales == null) {
           continue;
         }
+        sells.addAll(additionalSales);
+        budgetAfter += additionalSales.fold<int>(
+          0,
+          (sum, player) => sum + player.marketValue,
+        );
       }
 
       final resultingSquad = _buildResultingSquad(
@@ -93,9 +91,12 @@ class TransferPlannerService {
 
       scenarios.add(
         TransferPlanScenario(
-          id: '${weakestStarter.id}-${marketPlayer.id}',
-          title:
-              '${weakestStarter.firstName} ${weakestStarter.lastName} -> ${marketPlayer.firstName} ${marketPlayer.lastName}',
+          id: weakestStarter != null
+              ? '${weakestStarter.id}-${marketPlayer.id}'
+              : 'add-${marketPlayer.id}',
+          title: weakestStarter != null
+              ? '${weakestStarter.firstName} ${weakestStarter.lastName} -> ${marketPlayer.firstName} ${marketPlayer.lastName}'
+              : 'Add ${marketPlayer.firstName} ${marketPlayer.lastName}',
           sells: sells
               .map(
                 (sellPlayer) => TransferPlanMove.sell(
@@ -211,6 +212,42 @@ class TransferPlannerService {
     final soldIds = soldPlayers.map((player) => player.id).toSet();
     return squadPlayers.where((player) => !soldIds.contains(player.id)).toList()
       ..add(marketPlayer);
+  }
+
+  List<Player>? _findAdditionalSales({
+    required List<Player> squadPlayers,
+    required Set<String> excludedIds,
+    required int requiredAmount,
+  }) {
+    final candidates = squadPlayers
+        .where((player) => !excludedIds.contains(player.id))
+        .toList();
+
+    candidates.sort((a, b) {
+      final avgCompare = a.averagePoints.compareTo(b.averagePoints);
+      if (avgCompare != 0) {
+        return avgCompare;
+      }
+      return a.marketValue.compareTo(b.marketValue);
+    });
+
+    for (final candidate in candidates) {
+      if (candidate.marketValue >= requiredAmount) {
+        return [candidate];
+      }
+    }
+
+    final selected = <Player>[];
+    var coveredAmount = 0;
+    for (final candidate in candidates) {
+      selected.add(candidate);
+      coveredAmount += candidate.marketValue;
+      if (coveredAmount >= requiredAmount) {
+        return selected;
+      }
+    }
+
+    return null;
   }
 }
 

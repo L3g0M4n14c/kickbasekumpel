@@ -47,6 +47,18 @@ void main() {
       },
     );
 
+    test('proposes filling a missing position in partial-squad fallback', () {
+      final result = service.buildPlans(_buildPartialSquadMissingDefender());
+
+      expect(result.noPlanReason, isNull);
+      expect(result.scenarios, hasLength(1));
+      expect(
+        result.scenarios.single.buys.single.player.id,
+        'partial-market-def-missing',
+      );
+      expect(result.scenarios.single.score.startingElevenGain, 4.0);
+    });
+
     test(
       'uses legal formation starters when evaluating same-position upgrades',
       () {
@@ -111,6 +123,25 @@ void main() {
         );
         expect(multiMoveScenario.budgetAfter, 1000000);
         expect(multiMoveScenario.score.startingElevenGain, 4.0);
+      },
+    );
+
+    test(
+      'supports starter-funded multi-sell chains when bench sales are not enough',
+      () {
+        final result = service.buildPlans(_buildInputRequiringStarterFunding());
+
+        final scenario = result.scenarios.singleWhere(
+          (candidate) => candidate.buys.any(
+            (buy) => buy.player.id == 'market-fwd-premium',
+          ),
+        );
+
+        expect(scenario.sells.length, 2);
+        expect(
+          scenario.sells.any((sell) => sell.player.id == 'starter-mid-4'),
+          isTrue,
+        );
       },
     );
 
@@ -405,6 +436,76 @@ TransferPlannerInput _buildPartialSquadInput() {
         position: 2,
         averagePoints: 5.0,
         marketValue: 2500000,
+      ),
+    ],
+    currentBudget: 0,
+  );
+}
+
+TransferPlannerInput _buildPartialSquadMissingDefender() {
+  return TransferPlannerInput(
+    squadPlayers: [
+      _player(
+        id: 'partial-gk-only',
+        firstName: 'Partial',
+        lastName: 'Goalie',
+        position: 1,
+        averagePoints: 5.0,
+        marketValue: 6000000,
+      ),
+      _player(
+        id: 'partial-mid-only',
+        firstName: 'Partial',
+        lastName: 'Mid',
+        position: 3,
+        averagePoints: 6.0,
+        marketValue: 5000000,
+      ),
+      _player(
+        id: 'partial-fwd-only',
+        firstName: 'Partial',
+        lastName: 'Fwd',
+        position: 4,
+        averagePoints: 4.0,
+        marketValue: 4000000,
+      ),
+    ],
+    marketPlayers: [
+      _player(
+        id: 'partial-market-def-missing',
+        firstName: 'Market',
+        lastName: 'Missing Defender',
+        position: 2,
+        averagePoints: 4.0,
+        marketValue: 2500000,
+      ),
+    ],
+    currentBudget: 0,
+  );
+}
+
+TransferPlannerInput _buildInputRequiringStarterFunding() {
+  return TransferPlannerInput(
+    squadPlayers: [
+      ..._buildSquadPlayers(),
+      _player(
+        id: 'bench-mid-tiny',
+        firstName: 'Bench',
+        lastName: 'Mid Tiny',
+        position: 3,
+        averagePoints: 0.0,
+        marketValue: 1000000,
+      ),
+    ],
+    marketPlayers: [
+      _player(
+        id: 'market-fwd-premium',
+        firstName: 'Market',
+        lastName: 'Fwd Premium',
+        position: 4,
+        averagePoints: 8.0,
+        marketValue: 10000000,
+        marketValueTrend: 3,
       ),
     ],
     currentBudget: 0,
