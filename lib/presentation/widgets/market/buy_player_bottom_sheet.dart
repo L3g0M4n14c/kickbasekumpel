@@ -6,6 +6,7 @@ import '../../../data/models/market_model.dart';
 import '../../../data/providers/league_providers.dart';
 import '../../../data/providers/user_providers.dart';
 import '../../../data/providers/kickbase_api_provider.dart';
+import '../../../data/providers/bid_recommendation_providers.dart';
 import '../../providers/market_providers.dart';
 
 /// Buy Player Bottom Sheet
@@ -54,6 +55,16 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
     final buyState = ref.watch(buyPlayerProvider);
     final currentUser = ref.watch(currentUserProvider).value;
     final budget = currentUser?.b ?? 0;
+    final leagueId = ref.watch(selectedLeagueIdProvider);
+    final recommendedBid = leagueId == null
+        ? null
+        : ref.watch(
+            recommendedBidProvider((
+              leagueId: leagueId,
+              currentMarketValue: widget.player.marketValue,
+              minimumBid: widget.player.price,
+            )),
+          );
 
     return Container(
       decoration: BoxDecoration(
@@ -166,6 +177,23 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
                     });
                   },
                 ),
+                if (recommendedBid != null) ...[
+                  const SizedBox(height: 16),
+                  recommendedBid.when(
+                    data: (price) => _RecommendedBid(
+                      price: price,
+                      onApply: () {
+                        setState(() {
+                          _selectedPrice = price;
+                          _priceController.text = (price / 1000000)
+                              .toStringAsFixed(2);
+                        });
+                      },
+                    ),
+                    loading: () => const LinearProgressIndicator(),
+                    error: (error, stackTrace) => const SizedBox.shrink(),
+                  ),
+                ],
                 const SizedBox(height: 24),
 
                 // Buy State Handler
@@ -508,12 +536,15 @@ class _BudgetDisplay extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Aktuelles Budget',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: isInsufficient
-                      ? theme.colorScheme.onErrorContainer
-                      : theme.colorScheme.onPrimaryContainer,
+              Expanded(
+                child: Text(
+                  'Aktuelles Budget',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: isInsufficient
+                        ? theme.colorScheme.onErrorContainer
+                        : theme.colorScheme.onPrimaryContainer,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               Text(
@@ -534,13 +565,16 @@ class _BudgetDisplay extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Nach Kauf',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: isInsufficient
-                        ? theme.colorScheme.onErrorContainer
-                        : theme.colorScheme.onPrimaryContainer,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    'Nach Kauf',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: isInsufficient
+                          ? theme.colorScheme.onErrorContainer
+                          : theme.colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Text(
@@ -562,8 +596,51 @@ class _BudgetDisplay extends StatelessWidget {
 }
 
 // ============================================================================
-// QUICK PRICE BUTTONS
+// RECOMMENDED BID
 // ============================================================================
+
+class _RecommendedBid extends StatelessWidget {
+  final int price;
+  final VoidCallback onApply;
+
+  const _RecommendedBid({required this.price, required this.onApply});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.insights_outlined,
+            color: theme.colorScheme.onSecondaryContainer,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Empfohlen: ${(price / 1000000).toStringAsFixed(2)}M €',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSecondaryContainer,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          IconButton(
+            onPressed: onApply,
+            icon: const Icon(Icons.check),
+            tooltip: 'Empfohlenes Gebot übernehmen',
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _QuickPriceButtons extends StatelessWidget {
   final int basePrice;

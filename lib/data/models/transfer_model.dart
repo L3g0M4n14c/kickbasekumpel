@@ -25,6 +25,26 @@ class Transfer with _$Transfer {
       _$TransferFromJson(json);
 }
 
+/// Ein historischer Transfer aus dem managerbezogenen Kickbase-Endpunkt.
+@freezed
+class ManagerTransferHistoryEntry with _$ManagerTransferHistoryEntry {
+  const factory ManagerTransferHistoryEntry({
+    required String id,
+    required String leagueId,
+    required String managerId,
+    required String managerName,
+    required String playerId,
+    required String playerName,
+    required int price,
+    required int transferType,
+    required DateTime timestamp,
+    int? marketValueAtTransfer,
+  }) = _ManagerTransferHistoryEntry;
+
+  factory ManagerTransferHistoryEntry.fromJson(Map<String, dynamic> json) =>
+      _$ManagerTransferHistoryEntryFromJson(json);
+}
+
 /// Recommendation Model - Transfer Empfehlung
 @freezed
 class Recommendation with _$Recommendation {

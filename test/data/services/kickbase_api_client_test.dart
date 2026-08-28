@@ -233,6 +233,43 @@ void main() {
       expect(leagues.first.i, 'league1');
     });
 
+    test(
+      'getManagerTransferHistory returns the raw transfer response',
+      () async {
+        // Arrange
+        final responseJson = {
+          'u': 'manager-1',
+          'unm': 'Konkurrent',
+          'it': [
+            {
+              'dt': '2025-01-15T12:00:00.000Z',
+              'pi': 'player-1',
+              'pn': 'Max Mustermann',
+              'tid': 'transfer-1',
+              'trp': 15000000,
+              'tty': 1,
+            },
+          ],
+        };
+        final mockResponse = http.Response(jsonEncode(responseJson), 200);
+        when(mockHttpClient.send(any)).thenAnswer(
+          (_) async =>
+              http.StreamedResponse(Stream.value(mockResponse.bodyBytes), 200),
+        );
+
+        // Act
+        final response = await apiClient.getManagerTransferHistory(
+          'league-1',
+          'manager-1',
+          start: '2025-01-01',
+        );
+
+        // Assert
+        expect(response['u'], 'manager-1');
+        expect(response['it'], hasLength(1));
+      },
+    );
+
     test('getLeaguePlayers supports compact player keys', () async {
       final playersJson = {
         'players': [

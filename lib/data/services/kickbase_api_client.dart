@@ -725,6 +725,29 @@ class KickbaseAPIClient {
         .toList();
   }
 
+  /// Get the raw transfer history for a league manager.
+  ///
+  /// The Kickbase endpoint uses compact fields which are normalized by
+  /// [ManagerTransferHistoryService].
+  /// [start] forwards the API pagination cursor when additional history is
+  /// available.
+  Future<Map<String, dynamic>> getManagerTransferHistory(
+    String leagueId,
+    String userId, {
+    String? start,
+  }) async {
+    final startQuery = start == null || start.isEmpty
+        ? ''
+        : '?start=${Uri.encodeQueryComponent(start)}';
+    final response = await _makeRequestWithRetry(
+      endpoint:
+          '/$_apiVersion/leagues/$leagueId/managers/$userId/transfer$startQuery',
+      method: 'GET',
+    );
+
+    return _parseJson(response.body);
+  }
+
   // MARK: - Schritt 1: Liga & User Endpoints
 
   /// Get user settings

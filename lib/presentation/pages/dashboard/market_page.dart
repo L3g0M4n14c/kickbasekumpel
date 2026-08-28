@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/screen_size.dart';
+import '../../../data/models/market_model.dart';
 import '../../../data/providers/league_providers.dart';
 import '../../widgets/responsive_layout.dart';
 import '../../providers/market_providers.dart';
 import '../../widgets/market/market_filters.dart';
 import '../../widgets/market/player_market_card.dart';
+import '../../widgets/market/buy_player_bottom_sheet.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/error_widget.dart';
 
@@ -109,9 +111,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                   final player = players[index];
                   return PlayerMarketCard(
                     player: player,
-                    onTap: () {
-                      // TODO: Navigate to player detail
-                    },
+                    onTap: () => _showBuyBottomSheet(context, player),
                   );
                 },
               );
@@ -151,9 +151,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                     final player = players[index];
                     return PlayerMarketCard(
                       player: player,
-                      onTap: () {
-                        // TODO: Navigate to player detail
-                      },
+                      onTap: () => _showBuyBottomSheet(context, player),
                     );
                   },
                 );
@@ -210,9 +208,7 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                         final player = players[index];
                         return PlayerMarketCard(
                           player: player,
-                          onTap: () {
-                            // TODO: Navigate to player detail
-                          },
+                          onTap: () => _showBuyBottomSheet(context, player),
                         );
                       },
                     );
@@ -228,6 +224,14 @@ class _MarketPageState extends ConsumerState<MarketPage> {
           ),
         ),
       ],
+    );
+  }
+
+  void _showBuyBottomSheet(BuildContext context, MarketPlayer player) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => BuyPlayerBottomSheet(player: player),
     );
   }
 

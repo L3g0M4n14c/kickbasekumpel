@@ -3,8 +3,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../data/models/transfer_model.dart';
 import '../../data/providers/providers.dart';
 import '../../data/providers/ligainsider_photo_provider.dart';
+import '../../data/providers/manager_transfer_history_providers.dart';
 import '../../data/utils/parsing_utils.dart';
 import '../widgets/charts/stats_bar_chart.dart';
 import '../widgets/loading_widget.dart';
@@ -34,7 +36,7 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -70,6 +72,7 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
           tabs: const [
             Tab(text: 'Kader', icon: Icon(Icons.people)),
             Tab(text: 'Performance', icon: Icon(Icons.trending_up)),
+            Tab(text: 'Transferhistorie', icon: Icon(Icons.history)),
           ],
         ),
       ),
@@ -86,6 +89,7 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
               children: [
                 _buildSquadTab(context),
                 _buildPerformanceTab(context),
+                _buildTransferHistoryTab(context),
               ],
             ),
           );
@@ -723,6 +727,188 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
                 : points >= 5
                 ? Colors.orange
                 : Colors.red,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTransferHistoryTab(BuildContext context) {
+    final transfersAsync = ref.watch(
+      managerTransferHistoryProvider((
+        leagueId: widget.leagueId,
+        managerId: widget.userId,
+      )),
+    );
+
+    return transfersAsync.when(
+      data: (transfers) {
+        if (transfers.isEmpty) {
+          return const Center(child: Text('Keine Transferhistorie verfügbar'));
+        }
+
+        // Sortieren nach Timestamp (neueste zuerst)
+        final sortedTransfers = List<ManagerTransferHistoryEntry>.from(
+          transfers,
+        )..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+        return ListView(
+          padding: const EdgeInsets.all(16.0),
+          children: [
+            // Tabellenheader
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Spieler',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      'Datum',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      'Gezahlt',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      'Marktwert',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      'Differenz',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Transfer-Einträge
+            ...sortedTransfers.map<Widget>((transfer) {
+              final playerName = transfer.playerName;
+              final timestamp = transfer.timestamp;
+              final price = transfer.price;
+              final marketValue = transfer.marketValueAtTransfer;
+
+              // Prozentuale Differenz berechnen (nur wenn Marktwert verfügbar)
+              final differencePercent = marketValue != null && marketValue > 0
+                  ? ((price - marketValue) / marketValue * 100).round()
+                  : null;
+
+              // Farbe für die Differenz
+              final differenceColor = differencePercent != null
+                  ? differencePercent > 0
+                        ? Colors.red
+                        : differencePercent < 0
+                        ? Colors.green
+                        : Colors.grey
+                  : Colors.grey;
+
+              return Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          playerName,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: Text(
+                          '${timestamp.day}.${timestamp.month}.${timestamp.year}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: Text(
+                          '${(price / 1000000).toStringAsFixed(2)}M',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: Text(
+                          marketValue != null
+                              ? '${(marketValue / 1000000).toStringAsFixed(2)}M'
+                              : 'N/A',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: Text(
+                          differencePercent != null
+                              ? '${differencePercent > 0 ? '+' : ''}$differencePercent%'
+                              : 'N/A',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: differenceColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ],
+        );
+      },
+      loading: () => const Center(child: LoadingWidget()),
+      error: (error, stack) => Center(
+        child: ErrorWidgetCustom(
+          error: error,
+          onRetry: () => ref.invalidate(
+            managerTransferHistoryProvider((
+              leagueId: widget.leagueId,
+              managerId: widget.userId,
+            )),
           ),
         ),
       ),

@@ -419,6 +419,388 @@ abstract class _Transfer implements Transfer {
       throw _privateConstructorUsedError;
 }
 
+ManagerTransferHistoryEntry _$ManagerTransferHistoryEntryFromJson(
+  Map<String, dynamic> json,
+) {
+  return _ManagerTransferHistoryEntry.fromJson(json);
+}
+
+/// @nodoc
+mixin _$ManagerTransferHistoryEntry {
+  String get id => throw _privateConstructorUsedError;
+  String get leagueId => throw _privateConstructorUsedError;
+  String get managerId => throw _privateConstructorUsedError;
+  String get managerName => throw _privateConstructorUsedError;
+  String get playerId => throw _privateConstructorUsedError;
+  String get playerName => throw _privateConstructorUsedError;
+  int get price => throw _privateConstructorUsedError;
+  int get transferType => throw _privateConstructorUsedError;
+  DateTime get timestamp => throw _privateConstructorUsedError;
+  int? get marketValueAtTransfer => throw _privateConstructorUsedError;
+
+  /// Serializes this ManagerTransferHistoryEntry to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of ManagerTransferHistoryEntry
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $ManagerTransferHistoryEntryCopyWith<ManagerTransferHistoryEntry>
+  get copyWith => throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $ManagerTransferHistoryEntryCopyWith<$Res> {
+  factory $ManagerTransferHistoryEntryCopyWith(
+    ManagerTransferHistoryEntry value,
+    $Res Function(ManagerTransferHistoryEntry) then,
+  ) =
+      _$ManagerTransferHistoryEntryCopyWithImpl<
+        $Res,
+        ManagerTransferHistoryEntry
+      >;
+  @useResult
+  $Res call({
+    String id,
+    String leagueId,
+    String managerId,
+    String managerName,
+    String playerId,
+    String playerName,
+    int price,
+    int transferType,
+    DateTime timestamp,
+    int? marketValueAtTransfer,
+  });
+}
+
+/// @nodoc
+class _$ManagerTransferHistoryEntryCopyWithImpl<
+  $Res,
+  $Val extends ManagerTransferHistoryEntry
+>
+    implements $ManagerTransferHistoryEntryCopyWith<$Res> {
+  _$ManagerTransferHistoryEntryCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of ManagerTransferHistoryEntry
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = null,
+    Object? leagueId = null,
+    Object? managerId = null,
+    Object? managerName = null,
+    Object? playerId = null,
+    Object? playerName = null,
+    Object? price = null,
+    Object? transferType = null,
+    Object? timestamp = null,
+    Object? marketValueAtTransfer = freezed,
+  }) {
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
+            leagueId: null == leagueId
+                ? _value.leagueId
+                : leagueId // ignore: cast_nullable_to_non_nullable
+                      as String,
+            managerId: null == managerId
+                ? _value.managerId
+                : managerId // ignore: cast_nullable_to_non_nullable
+                      as String,
+            managerName: null == managerName
+                ? _value.managerName
+                : managerName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            playerId: null == playerId
+                ? _value.playerId
+                : playerId // ignore: cast_nullable_to_non_nullable
+                      as String,
+            playerName: null == playerName
+                ? _value.playerName
+                : playerName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            price: null == price
+                ? _value.price
+                : price // ignore: cast_nullable_to_non_nullable
+                      as int,
+            transferType: null == transferType
+                ? _value.transferType
+                : transferType // ignore: cast_nullable_to_non_nullable
+                      as int,
+            timestamp: null == timestamp
+                ? _value.timestamp
+                : timestamp // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
+            marketValueAtTransfer: freezed == marketValueAtTransfer
+                ? _value.marketValueAtTransfer
+                : marketValueAtTransfer // ignore: cast_nullable_to_non_nullable
+                      as int?,
+          )
+          as $Val,
+    );
+  }
+}
+
+/// @nodoc
+abstract class _$$ManagerTransferHistoryEntryImplCopyWith<$Res>
+    implements $ManagerTransferHistoryEntryCopyWith<$Res> {
+  factory _$$ManagerTransferHistoryEntryImplCopyWith(
+    _$ManagerTransferHistoryEntryImpl value,
+    $Res Function(_$ManagerTransferHistoryEntryImpl) then,
+  ) = __$$ManagerTransferHistoryEntryImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({
+    String id,
+    String leagueId,
+    String managerId,
+    String managerName,
+    String playerId,
+    String playerName,
+    int price,
+    int transferType,
+    DateTime timestamp,
+    int? marketValueAtTransfer,
+  });
+}
+
+/// @nodoc
+class __$$ManagerTransferHistoryEntryImplCopyWithImpl<$Res>
+    extends
+        _$ManagerTransferHistoryEntryCopyWithImpl<
+          $Res,
+          _$ManagerTransferHistoryEntryImpl
+        >
+    implements _$$ManagerTransferHistoryEntryImplCopyWith<$Res> {
+  __$$ManagerTransferHistoryEntryImplCopyWithImpl(
+    _$ManagerTransferHistoryEntryImpl _value,
+    $Res Function(_$ManagerTransferHistoryEntryImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of ManagerTransferHistoryEntry
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = null,
+    Object? leagueId = null,
+    Object? managerId = null,
+    Object? managerName = null,
+    Object? playerId = null,
+    Object? playerName = null,
+    Object? price = null,
+    Object? transferType = null,
+    Object? timestamp = null,
+    Object? marketValueAtTransfer = freezed,
+  }) {
+    return _then(
+      _$ManagerTransferHistoryEntryImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as String,
+        leagueId: null == leagueId
+            ? _value.leagueId
+            : leagueId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        managerId: null == managerId
+            ? _value.managerId
+            : managerId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        managerName: null == managerName
+            ? _value.managerName
+            : managerName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        playerId: null == playerId
+            ? _value.playerId
+            : playerId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        playerName: null == playerName
+            ? _value.playerName
+            : playerName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        price: null == price
+            ? _value.price
+            : price // ignore: cast_nullable_to_non_nullable
+                  as int,
+        transferType: null == transferType
+            ? _value.transferType
+            : transferType // ignore: cast_nullable_to_non_nullable
+                  as int,
+        timestamp: null == timestamp
+            ? _value.timestamp
+            : timestamp // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
+        marketValueAtTransfer: freezed == marketValueAtTransfer
+            ? _value.marketValueAtTransfer
+            : marketValueAtTransfer // ignore: cast_nullable_to_non_nullable
+                  as int?,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$ManagerTransferHistoryEntryImpl
+    implements _ManagerTransferHistoryEntry {
+  const _$ManagerTransferHistoryEntryImpl({
+    required this.id,
+    required this.leagueId,
+    required this.managerId,
+    required this.managerName,
+    required this.playerId,
+    required this.playerName,
+    required this.price,
+    required this.transferType,
+    required this.timestamp,
+    this.marketValueAtTransfer,
+  });
+
+  factory _$ManagerTransferHistoryEntryImpl.fromJson(
+    Map<String, dynamic> json,
+  ) => _$$ManagerTransferHistoryEntryImplFromJson(json);
+
+  @override
+  final String id;
+  @override
+  final String leagueId;
+  @override
+  final String managerId;
+  @override
+  final String managerName;
+  @override
+  final String playerId;
+  @override
+  final String playerName;
+  @override
+  final int price;
+  @override
+  final int transferType;
+  @override
+  final DateTime timestamp;
+  @override
+  final int? marketValueAtTransfer;
+
+  @override
+  String toString() {
+    return 'ManagerTransferHistoryEntry(id: $id, leagueId: $leagueId, managerId: $managerId, managerName: $managerName, playerId: $playerId, playerName: $playerName, price: $price, transferType: $transferType, timestamp: $timestamp, marketValueAtTransfer: $marketValueAtTransfer)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$ManagerTransferHistoryEntryImpl &&
+            (identical(other.id, id) || other.id == id) &&
+            (identical(other.leagueId, leagueId) ||
+                other.leagueId == leagueId) &&
+            (identical(other.managerId, managerId) ||
+                other.managerId == managerId) &&
+            (identical(other.managerName, managerName) ||
+                other.managerName == managerName) &&
+            (identical(other.playerId, playerId) ||
+                other.playerId == playerId) &&
+            (identical(other.playerName, playerName) ||
+                other.playerName == playerName) &&
+            (identical(other.price, price) || other.price == price) &&
+            (identical(other.transferType, transferType) ||
+                other.transferType == transferType) &&
+            (identical(other.timestamp, timestamp) ||
+                other.timestamp == timestamp) &&
+            (identical(other.marketValueAtTransfer, marketValueAtTransfer) ||
+                other.marketValueAtTransfer == marketValueAtTransfer));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(
+    runtimeType,
+    id,
+    leagueId,
+    managerId,
+    managerName,
+    playerId,
+    playerName,
+    price,
+    transferType,
+    timestamp,
+    marketValueAtTransfer,
+  );
+
+  /// Create a copy of ManagerTransferHistoryEntry
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$ManagerTransferHistoryEntryImplCopyWith<_$ManagerTransferHistoryEntryImpl>
+  get copyWith =>
+      __$$ManagerTransferHistoryEntryImplCopyWithImpl<
+        _$ManagerTransferHistoryEntryImpl
+      >(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$ManagerTransferHistoryEntryImplToJson(this);
+  }
+}
+
+abstract class _ManagerTransferHistoryEntry
+    implements ManagerTransferHistoryEntry {
+  const factory _ManagerTransferHistoryEntry({
+    required final String id,
+    required final String leagueId,
+    required final String managerId,
+    required final String managerName,
+    required final String playerId,
+    required final String playerName,
+    required final int price,
+    required final int transferType,
+    required final DateTime timestamp,
+    final int? marketValueAtTransfer,
+  }) = _$ManagerTransferHistoryEntryImpl;
+
+  factory _ManagerTransferHistoryEntry.fromJson(Map<String, dynamic> json) =
+      _$ManagerTransferHistoryEntryImpl.fromJson;
+
+  @override
+  String get id;
+  @override
+  String get leagueId;
+  @override
+  String get managerId;
+  @override
+  String get managerName;
+  @override
+  String get playerId;
+  @override
+  String get playerName;
+  @override
+  int get price;
+  @override
+  int get transferType;
+  @override
+  DateTime get timestamp;
+  @override
+  int? get marketValueAtTransfer;
+
+  /// Create a copy of ManagerTransferHistoryEntry
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$ManagerTransferHistoryEntryImplCopyWith<_$ManagerTransferHistoryEntryImpl>
+  get copyWith => throw _privateConstructorUsedError;
+}
+
 Recommendation _$RecommendationFromJson(Map<String, dynamic> json) {
   return _Recommendation.fromJson(json);
 }

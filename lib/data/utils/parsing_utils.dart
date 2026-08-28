@@ -295,8 +295,7 @@ Map<String, dynamic> normalizeMarketPlayerJson(Map<String, dynamic> json) {
         .add(Duration(seconds: exsSeconds))
         .toIso8601String();
   } else {
-    // Fallback: dt-Feld (Einstellungszeitpunkt) – bereits abgelaufen
-    copy['expiry'] = (copy['expiry'] ?? copy['dt'] ?? '').toString();
+    copy['expiry'] = (copy['expiry'] ?? '').toString();
   }
   copy['offers'] = _toIntSafe(copy['offers'] ?? copy['ofc']);
   copy['status'] = _toIntSafe(copy['status'] ?? copy['st']);

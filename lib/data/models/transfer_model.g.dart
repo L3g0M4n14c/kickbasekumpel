@@ -38,6 +38,36 @@ Map<String, dynamic> _$$TransferImplToJson(_$TransferImpl instance) =>
       'status': instance.status,
     };
 
+_$ManagerTransferHistoryEntryImpl _$$ManagerTransferHistoryEntryImplFromJson(
+  Map<String, dynamic> json,
+) => _$ManagerTransferHistoryEntryImpl(
+  id: json['id'] as String,
+  leagueId: json['leagueId'] as String,
+  managerId: json['managerId'] as String,
+  managerName: json['managerName'] as String,
+  playerId: json['playerId'] as String,
+  playerName: json['playerName'] as String,
+  price: (json['price'] as num).toInt(),
+  transferType: (json['transferType'] as num).toInt(),
+  timestamp: DateTime.parse(json['timestamp'] as String),
+  marketValueAtTransfer: (json['marketValueAtTransfer'] as num?)?.toInt(),
+);
+
+Map<String, dynamic> _$$ManagerTransferHistoryEntryImplToJson(
+  _$ManagerTransferHistoryEntryImpl instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'leagueId': instance.leagueId,
+  'managerId': instance.managerId,
+  'managerName': instance.managerName,
+  'playerId': instance.playerId,
+  'playerName': instance.playerName,
+  'price': instance.price,
+  'transferType': instance.transferType,
+  'timestamp': instance.timestamp.toIso8601String(),
+  'marketValueAtTransfer': instance.marketValueAtTransfer,
+};
+
 _$RecommendationImpl _$$RecommendationImplFromJson(Map<String, dynamic> json) =>
     _$RecommendationImpl(
       id: json['id'] as String,

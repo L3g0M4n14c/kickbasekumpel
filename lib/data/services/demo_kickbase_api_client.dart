@@ -512,6 +512,31 @@ class DemoKickbaseAPIClient extends KickbaseAPIClient {
     ];
   }
 
+  @override
+  Future<Map<String, dynamic>> getManagerTransferHistory(
+    String leagueId,
+    String userId, {
+    String? start,
+  }) async {
+    return {
+      'u': userId,
+      'unm': userId == 'demo_user_002' ? 'Karl Demomann' : 'Demo Manager',
+      'it': [
+        {
+          'dt': DateTime.now()
+              .subtract(const Duration(days: 14))
+              .toUtc()
+              .toIso8601String(),
+          'pi': 'p07',
+          'pn': 'F. Vogel',
+          'tid': 'demo-history-$userId',
+          'trp': 45000000,
+          'tty': 1,
+        },
+      ],
+    };
+  }
+
   // ── Sonstige Endpunkte (Mindest-Implementierungen) ───────────────────
 
   @override
@@ -602,8 +627,13 @@ class DemoKickbaseAPIClient extends KickbaseAPIClient {
     String playerId, {
     int timeframe = 365,
   }) async {
+    final timestamp = DateTime.now()
+        .subtract(const Duration(days: 15))
+        .millisecondsSinceEpoch;
     return {
-      'mv': [15000000, 14800000, 15200000, 15500000, 15000000],
+      'it': [
+        {'dt': timestamp, 'mv': 40000000},
+      ],
     };
   }
 
