@@ -440,6 +440,7 @@ mixin _$Recommendation {
   String get category => throw _privateConstructorUsedError;
   String? get swapCandidateId => throw _privateConstructorUsedError;
   String? get swapCandidateName => throw _privateConstructorUsedError;
+  bool get userOwnsPlayer => throw _privateConstructorUsedError;
 
   /// Serializes this Recommendation to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -474,6 +475,7 @@ abstract class $RecommendationCopyWith<$Res> {
     String category,
     String? swapCandidateId,
     String? swapCandidateName,
+    bool userOwnsPlayer,
   });
 }
 
@@ -507,6 +509,7 @@ class _$RecommendationCopyWithImpl<$Res, $Val extends Recommendation>
     Object? category = null,
     Object? swapCandidateId = freezed,
     Object? swapCandidateName = freezed,
+    Object? userOwnsPlayer = null,
   }) {
     return _then(
       _value.copyWith(
@@ -570,6 +573,10 @@ class _$RecommendationCopyWithImpl<$Res, $Val extends Recommendation>
                 ? _value.swapCandidateName
                 : swapCandidateName // ignore: cast_nullable_to_non_nullable
                       as String?,
+            userOwnsPlayer: null == userOwnsPlayer
+                ? _value.userOwnsPlayer
+                : userOwnsPlayer // ignore: cast_nullable_to_non_nullable
+                      as bool,
           )
           as $Val,
     );
@@ -601,6 +608,7 @@ abstract class _$$RecommendationImplCopyWith<$Res>
     String category,
     String? swapCandidateId,
     String? swapCandidateName,
+    bool userOwnsPlayer,
   });
 }
 
@@ -633,6 +641,7 @@ class __$$RecommendationImplCopyWithImpl<$Res>
     Object? category = null,
     Object? swapCandidateId = freezed,
     Object? swapCandidateName = freezed,
+    Object? userOwnsPlayer = null,
   }) {
     return _then(
       _$RecommendationImpl(
@@ -696,6 +705,10 @@ class __$$RecommendationImplCopyWithImpl<$Res>
             ? _value.swapCandidateName
             : swapCandidateName // ignore: cast_nullable_to_non_nullable
                   as String?,
+        userOwnsPlayer: null == userOwnsPlayer
+            ? _value.userOwnsPlayer
+            : userOwnsPlayer // ignore: cast_nullable_to_non_nullable
+                  as bool,
       ),
     );
   }
@@ -720,6 +733,7 @@ class _$RecommendationImpl implements _Recommendation {
     required this.category,
     this.swapCandidateId,
     this.swapCandidateName,
+    this.userOwnsPlayer = false,
   });
 
   factory _$RecommendationImpl.fromJson(Map<String, dynamic> json) =>
@@ -755,10 +769,13 @@ class _$RecommendationImpl implements _Recommendation {
   final String? swapCandidateId;
   @override
   final String? swapCandidateName;
+  @override
+  @JsonKey()
+  final bool userOwnsPlayer;
 
   @override
   String toString() {
-    return 'Recommendation(id: $id, leagueId: $leagueId, playerId: $playerId, playerName: $playerName, score: $score, reason: $reason, action: $action, suggestedPrice: $suggestedPrice, currentMarketValue: $currentMarketValue, estimatedValue: $estimatedValue, confidence: $confidence, timestamp: $timestamp, category: $category, swapCandidateId: $swapCandidateId, swapCandidateName: $swapCandidateName)';
+    return 'Recommendation(id: $id, leagueId: $leagueId, playerId: $playerId, playerName: $playerName, score: $score, reason: $reason, action: $action, suggestedPrice: $suggestedPrice, currentMarketValue: $currentMarketValue, estimatedValue: $estimatedValue, confidence: $confidence, timestamp: $timestamp, category: $category, swapCandidateId: $swapCandidateId, swapCandidateName: $swapCandidateName, userOwnsPlayer: $userOwnsPlayer)';
   }
 
   @override
@@ -791,7 +808,9 @@ class _$RecommendationImpl implements _Recommendation {
             (identical(other.swapCandidateId, swapCandidateId) ||
                 other.swapCandidateId == swapCandidateId) &&
             (identical(other.swapCandidateName, swapCandidateName) ||
-                other.swapCandidateName == swapCandidateName));
+                other.swapCandidateName == swapCandidateName) &&
+            (identical(other.userOwnsPlayer, userOwnsPlayer) ||
+                other.userOwnsPlayer == userOwnsPlayer));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -813,6 +832,7 @@ class _$RecommendationImpl implements _Recommendation {
     category,
     swapCandidateId,
     swapCandidateName,
+    userOwnsPlayer,
   );
 
   /// Create a copy of Recommendation
@@ -849,6 +869,7 @@ abstract class _Recommendation implements Recommendation {
     required final String category,
     final String? swapCandidateId,
     final String? swapCandidateName,
+    final bool userOwnsPlayer,
   }) = _$RecommendationImpl;
 
   factory _Recommendation.fromJson(Map<String, dynamic> json) =
@@ -884,6 +905,8 @@ abstract class _Recommendation implements Recommendation {
   String? get swapCandidateId;
   @override
   String? get swapCandidateName;
+  @override
+  bool get userOwnsPlayer;
 
   /// Create a copy of Recommendation
   /// with the given fields replaced by the non-null parameter values.

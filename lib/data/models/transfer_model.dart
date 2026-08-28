@@ -44,6 +44,7 @@ class Recommendation with _$Recommendation {
     required String category,
     String? swapCandidateId,
     String? swapCandidateName,
+    @Default(false) bool userOwnsPlayer,
   }) = _Recommendation;
 
   factory Recommendation.fromJson(Map<String, dynamic> json) =>

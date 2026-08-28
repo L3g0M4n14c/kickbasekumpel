@@ -27,6 +27,8 @@ class TransferPlannerService {
       if (samePositionStarters.isEmpty && currentSelection.isLegal) {
         continue;
       }
+      final weakestCurrentStarters = [...currentStarters]
+        ..sort(_comparePlayersByWeakness);
 
       samePositionStarters.sort(_comparePlayersByWeakness);
       final weakestStarter = samePositionStarters.isEmpty
@@ -37,6 +39,10 @@ class TransferPlannerService {
         if (weakestStarter == null || !currentSelection.isLegal) <Player>[],
         if (weakestStarter != null) <Player>[weakestStarter],
       ];
+      final crossPositionFallbackSells = weakestCurrentStarters
+          .where((candidate) => candidate.id != weakestStarter?.id)
+          .take(4)
+          .toList();
 
       TransferPlanScenario? bestScenarioForMarket;
       for (final baseSells in baseSellOptions) {
@@ -53,6 +59,25 @@ class TransferPlannerService {
         if (bestScenarioForMarket == null ||
             _compareScenarioPriority(scenario, bestScenarioForMarket) < 0) {
           bestScenarioForMarket = scenario;
+        }
+      }
+
+      if (bestScenarioForMarket == null) {
+        for (final fallbackSell in crossPositionFallbackSells) {
+          final scenario = _buildScenario(
+            input: input,
+            currentSelection: currentSelection,
+            marketPlayer: marketPlayer,
+            weakestStarter: weakestStarter,
+            baseSells: [fallbackSell],
+          );
+          if (scenario == null) {
+            continue;
+          }
+          if (bestScenarioForMarket == null ||
+              _compareScenarioPriority(scenario, bestScenarioForMarket) < 0) {
+            bestScenarioForMarket = scenario;
+          }
         }
       }
 

@@ -10,6 +10,8 @@ import '../models/ligainsider_model.dart';
 /// Ergebnis einer KI-Empfehlung von Mistral
 /// Identisch zum alten GeminiRecommendationResult für Kompatibilität
 class MistralRecommendationResult {
+  static const defaultConfidence = 0.5;
+
   final double score;
   final String action;
   final String reason;
@@ -36,7 +38,11 @@ class MistralRecommendationResult {
       score: score,
       action: _actionFromScore(score),
       reason: json['reason'] as String? ?? '',
-      confidence: (json['confidence'] as num).toDouble().clamp(0.0, 1.0),
+      confidence:
+          ((json['confidence'] as num?)?.toDouble() ?? defaultConfidence).clamp(
+            0.0,
+            1.0,
+          ),
       estimatedValue: (json['estimatedValue'] as num).toInt(),
       category: _categoryFromScore(score),
       swapCandidateId: json['swapCandidateId'] as String?,
@@ -98,14 +104,65 @@ class MistralRecommendationService {
   static const _functionUrl =
       'https://us-central1-kickbasekumpel.cloudfunctions.net/callMistral';
   static const _cacheTtl = Duration(hours: 2);
+  static const _maxPlayersPerBatchCall = 10;
+  static const _injuryStatuses = {1, 2};
+  static const _suspensionStatuses = {8, 32};
+  static const _absenceStatuses = {256};
+  static const _injuryKeywords = {
+    'verletzt',
+    'verletzung',
+    'injury',
+    'out',
+    'ausfall',
+  };
+  static const _suspensionKeywords = {
+    'gesperrt',
+    'sperre',
+    'gelbsperre',
+    'suspended',
+  };
+  static const _absenceKeywords = {'abwesend', 'absence', 'absent'};
 
   // Mistral Agent Konfiguration
   static const _agentId = 'ag_019e09566ba573479511b072fd9efe1a';
   static const _agentVersion = 0;
 
+  final String _resolvedFunctionUrl;
+  final Future<http.Response> Function(
+    Uri uri, {
+    Map<String, String>? headers,
+    Object? body,
+    Encoding? encoding,
+  })
+  _postRequest;
+  final void Function(String message) _debugLogger;
   final Map<String, _CacheEntry> _cache = {};
 
-  MistralRecommendationService();
+  MistralRecommendationService({
+    String functionUrl = _functionUrl,
+    Future<http.Response> Function(
+      Uri uri, {
+      Map<String, String>? headers,
+      Object? body,
+      Encoding? encoding,
+    })?
+    postRequest,
+    void Function(String message)? debugLogger,
+  }) : _resolvedFunctionUrl = functionUrl,
+       _postRequest = postRequest ?? http.post,
+       _debugLogger = debugLogger ?? debugPrint;
+
+  /// Prüft, ob ein Spieler lokal als Verkaufskandidat behandelt werden soll.
+  static bool shouldUseLocalRecommendation({
+    required Player player,
+    LigainsiderPlayer? ligainsiderData,
+  }) {
+    return _resolveAvailabilityIssue(
+          player: player,
+          ligainsiderData: ligainsiderData,
+        ) !=
+        null;
+  }
 
   /// Generiert eine KI-Empfehlung für einen Spieler.
   ///
@@ -139,10 +196,24 @@ class MistralRecommendationService {
       ligainsiderData: ligainsiderData,
     );
 
+    _pruneExpiredCache();
+
     // Cache prüfen
     if (_cache.containsKey(cacheKey) && !_cache[cacheKey]!.isExpired) {
-      debugPrint('✅ MISTRAL CACHE HIT: ${player.firstName} ${player.lastName}');
+      _logDebug('✅ MISTRAL CACHE HIT: ${player.firstName} ${player.lastName}');
       return Success(_cache[cacheKey]!.result);
+    }
+
+    final shortcutRecommendation = _buildLocalShortcutRecommendation(
+      player: player,
+      ligainsiderData: ligainsiderData,
+    );
+    if (shortcutRecommendation != null) {
+      _cache[cacheKey] = _CacheEntry(
+        shortcutRecommendation,
+        DateTime.now().add(_cacheTtl),
+      );
+      return Success(shortcutRecommendation);
     }
 
     try {
@@ -155,20 +226,15 @@ class MistralRecommendationService {
         lineupContext: lineupContext,
         swapCandidates: swapCandidates,
       );
-
-      debugPrint('\n══════════════════════════════════════════════════');
-      debugPrint('📤 MISTRAL REQUEST (Einzelspieler)');
-      debugPrint('══════════════════════════════════════════════════');
-      debugPrint(prompt);
-      debugPrint('══════════════════════════════════════════════════\n');
+      _logDebug(
+        '📤 MISTRAL REQUEST: ${player.firstName} ${player.lastName} (single)',
+      );
+      _logPrompt(
+        prompt,
+        label: 'single ${player.firstName} ${player.lastName}'.trim(),
+      );
 
       final response = await _callMistralApi(prompt);
-
-      debugPrint('\n══════════════════════════════════════════════════');
-      debugPrint('📥 MISTRAL RESPONSE (Einzelspieler)');
-      debugPrint('══════════════════════════════════════════════════');
-      debugPrint(response ?? '(null)');
-      debugPrint('══════════════════════════════════════════════════\n');
 
       if (response == null || response.isEmpty) {
         return const Failure(
@@ -185,7 +251,7 @@ class MistralRecommendationService {
       // Validierung der Antwort
       final validationError = _validateRecommendationJson(json);
       if (validationError != null) {
-        debugPrint('❌ MISTRAL VALIDATION ERROR: $validationError');
+        _logDebug('❌ MISTRAL VALIDATION ERROR: $validationError');
         return Failure(
           'Mistral-Antwort hat ungültiges Format: $validationError',
           code: 'validation_error',
@@ -193,37 +259,30 @@ class MistralRecommendationService {
       }
 
       final result = MistralRecommendationResult.fromJson(json);
-
-      debugPrint('\n══════════════════════════════════════════════════');
-      debugPrint('✅ MISTRAL PARSED (${player.firstName} ${player.lastName})');
-      debugPrint('  score      : ${result.score}');
-      debugPrint('  action     : ${result.action}');
-      debugPrint('  category   : ${result.category}');
-      debugPrint('  confidence : ${result.confidence}');
-      debugPrint('  estValue   : ${result.estimatedValue}');
-      debugPrint('  swap       : ${result.swapCandidateName ?? "-"}');
-      debugPrint('  reason     : ${result.reason}');
-      debugPrint('══════════════════════════════════════════════════\n');
+      _logDebug(
+        '✅ MISTRAL PARSED (${player.firstName} ${player.lastName}): '
+        '${result.action} @ ${result.score}',
+      );
 
       // In Cache speichern
       _cache[cacheKey] = _CacheEntry(result, DateTime.now().add(_cacheTtl));
 
       return Success(result);
     } on FormatException catch (e) {
-      debugPrint('❌ MISTRAL JSON PARSE ERROR: $e');
+      _logDebug('❌ MISTRAL JSON PARSE ERROR: $e');
       return Failure(
         'Mistral-Antwort konnte nicht geparst werden: $e',
         code: 'parse_error',
       );
     } on Exception catch (e) {
-      debugPrint('❌ MISTRAL EXCEPTION: $e');
+      _logDebug('❌ MISTRAL EXCEPTION: $e');
       return Failure(
         'KI-Analyse fehlgeschlagen: ${e.toString()}',
         code: 'mistral_error',
         exception: e,
       );
     } catch (e) {
-      debugPrint('❌ MISTRAL UNKNOWN ERROR: $e');
+      _logDebug('❌ MISTRAL UNKNOWN ERROR: $e');
       return Failure(
         'Unerwarteter Fehler bei der KI-Analyse: $e',
         code: 'unknown_error',
@@ -231,7 +290,7 @@ class MistralRecommendationService {
     }
   }
 
-  /// Generiert Empfehlungen für mehrere Spieler in einem einzigen API-Aufruf.
+  /// Generiert Empfehlungen für mehrere Spieler in einem oder mehreren API-Aufrufen.
   ///
   /// [players] Liste der Spieler mit jeweils optionalen Zusatzdaten.
   /// Returns [Result<Map<String, MistralRecommendationResult>>].
@@ -239,9 +298,12 @@ class MistralRecommendationService {
   generateBatchRecommendations({
     required List<PlayerAnalysisInput> players,
   }) async {
+    _pruneExpiredCache();
+
     // Für Batch: Cache pro Spieler prüfen
     final uncachedPlayers = <PlayerAnalysisInput>[];
-    final cachedResults = <String, MistralRecommendationResult>{};
+    final results = <String, MistralRecommendationResult>{};
+    final uncachedCacheKeys = <String, String>{};
 
     for (final input in players) {
       final cacheKey = _generateCacheKey(
@@ -257,103 +319,112 @@ class MistralRecommendationService {
       );
 
       if (_cache.containsKey(cacheKey) && !_cache[cacheKey]!.isExpired) {
-        cachedResults[input.player.id] = _cache[cacheKey]!.result;
+        results[input.player.id] = _cache[cacheKey]!.result;
+        continue;
+      }
+
+      final shortcutRecommendation = _buildLocalShortcutRecommendation(
+        player: input.player,
+        ligainsiderData: input.ligainsiderData,
+      );
+      if (shortcutRecommendation != null) {
+        results[input.player.id] = shortcutRecommendation;
+        _cache[cacheKey] = _CacheEntry(
+          shortcutRecommendation,
+          DateTime.now().add(_cacheTtl),
+        );
       } else {
         uncachedPlayers.add(input);
+        uncachedCacheKeys[input.player.id] = cacheKey;
       }
     }
 
-    // Alle gecachten Ergebnisse bereits hinzufügen
-    final results = Map<String, MistralRecommendationResult>.from(
-      cachedResults,
-    );
-
     // Nur nicht-gecachte Spieler verarbeiten
     if (uncachedPlayers.isNotEmpty) {
+      final uncachedPlayerChunks = _chunkPlayerInputs(
+        uncachedPlayers,
+        _maxPlayersPerBatchCall,
+      );
+
       try {
-        final prompt = _buildBatchPrompt(uncachedPlayers);
-
-        debugPrint('\n══════════════════════════════════════════════════');
-        debugPrint(
-          '📤 MISTRAL REQUEST (Batch – ${uncachedPlayers.length} Spieler)',
-        );
-        debugPrint('══════════════════════════════════════════════════');
-        debugPrint(prompt);
-        debugPrint('══════════════════════════════════════════════════\n');
-
-        final response = await _callMistralApi(prompt);
-
-        debugPrint('\n══════════════════════════════════════════════════');
-        debugPrint('📥 MISTRAL RESPONSE (Batch)');
-        debugPrint('══════════════════════════════════════════════════');
-        debugPrint(response ?? '(null)');
-        debugPrint('══════════════════════════════════════════════════\n');
-
-        if (response == null || response.isEmpty) {
-          return Failure(
-            'Mistral hat keine Antwort zurückgegeben.',
-            code: 'empty_response',
+        for (var index = 0; index < uncachedPlayerChunks.length; index++) {
+          final chunk = uncachedPlayerChunks[index];
+          final prompt = _buildBatchPrompt(chunk);
+          _logDebug(
+            '📤 MISTRAL REQUEST: batch ${index + 1}/${uncachedPlayerChunks.length} '
+            'for ${chunk.length} Spieler',
           );
-        }
-
-        final normalizedResponse = _normalizeJsonResponse(response);
-
-        // Mistral gibt JSON-Objekt mit Spieler-IDs als Keys zurück
-        final Map<String, dynamic> rawJson = jsonDecode(normalizedResponse);
-
-        // Validierung der Batch-Antwort
-        if (rawJson.isEmpty) {
-          return Failure(
-            'Mistral hat leere Batch-Antwort zurückgegeben.',
-            code: 'empty_batch_response',
+          _logPrompt(
+            prompt,
+            label:
+                'batch ${index + 1}/${uncachedPlayerChunks.length} (${chunk.length} Spieler)',
           );
-        }
 
-        for (final entry in rawJson.entries) {
-          final playerId = entry.key;
-          final playerJson = entry.value as Map<String, dynamic>;
+          final response = await _callMistralApi(prompt);
 
-          // Einzelne Empfehlung validieren
-          final validationError = _validateRecommendationJson(playerJson);
-          if (validationError != null) {
-            debugPrint(
-              '❌ MISTRAL BATCH VALIDATION ERROR für $playerId: $validationError',
+          if (response == null || response.isEmpty) {
+            return Failure(
+              'Mistral hat keine Antwort zurückgegeben.',
+              code: 'empty_response',
             );
-            // trotzdem weiterverarbeiten, aber Fehler loggen
-            debugPrint('⚠️  Überspringe ungültige Empfehlung für $playerId');
-            continue;
           }
 
-          final result = MistralRecommendationResult.fromJson(playerJson);
-          results[playerId] = result;
+          final normalizedResponse = _normalizeJsonResponse(response);
 
-          // In Cache speichern
-          final uncachedInput = uncachedPlayers.firstWhere(
-            (p) => p.player.id == playerId,
-            orElse: () => uncachedPlayers.first,
-          );
-          final cacheKey = _generateCacheKey(
-            playerId: uncachedInput.player.id,
-            marketValue: uncachedInput.player.marketValue,
-            status: uncachedInput.player.status,
-            averagePoints: uncachedInput.player.averagePoints,
-            marketValueTrend: uncachedInput.player.marketValueTrend,
-            stl: uncachedInput.player.stl,
-            userOwnsPlayer: uncachedInput.player.userOwnsPlayer,
-            recentPerformances: uncachedInput.recentPerformances,
-            ligainsiderData: uncachedInput.ligainsiderData,
-          );
-          _cache[cacheKey] = _CacheEntry(result, DateTime.now().add(_cacheTtl));
+          // Mistral gibt JSON-Objekt mit Spieler-IDs als Keys zurück
+          final rawJson = _decodeBatchJsonResponse(normalizedResponse);
+
+          // Validierung der Batch-Antwort
+          if (rawJson.isEmpty) {
+            return Failure(
+              'Mistral hat leere Batch-Antwort zurückgegeben.',
+              code: 'empty_batch_response',
+            );
+          }
+
+          for (final entry in rawJson.entries) {
+            final playerId = entry.key;
+            final rawPlayerJson = entry.value;
+            if (rawPlayerJson is! Map<String, dynamic>) {
+              _logDebug(
+                '⚠️  Überspringe Batch-Eintrag mit ungültigem Format für $playerId',
+              );
+              continue;
+            }
+            final playerJson = rawPlayerJson;
+
+            // Einzelne Empfehlung validieren
+            final validationError = _validateRecommendationJson(playerJson);
+            if (validationError != null) {
+              _logDebug(
+                '❌ MISTRAL BATCH VALIDATION ERROR für $playerId: $validationError',
+              );
+              _logDebug('⚠️  Überspringe ungültige Empfehlung für $playerId');
+              continue;
+            }
+
+            final result = MistralRecommendationResult.fromJson(playerJson);
+            results[playerId] = result;
+
+            // In Cache speichern
+            final cacheKey = uncachedCacheKeys[playerId];
+            if (cacheKey != null) {
+              _cache[cacheKey] = _CacheEntry(
+                result,
+                DateTime.now().add(_cacheTtl),
+              );
+            }
+          }
         }
       } on Exception catch (e) {
-        debugPrint('❌ MISTRAL BATCH EXCEPTION: $e');
+        _logDebug('❌ MISTRAL BATCH EXCEPTION: $e');
         return Failure(
           'Batch-KI-Analyse fehlgeschlagen: ${e.toString()}',
           code: 'mistral_batch_error',
           exception: e,
         );
       } catch (e) {
-        debugPrint('❌ MISTRAL BATCH UNKNOWN ERROR: $e');
+        _logDebug('❌ MISTRAL BATCH UNKNOWN ERROR: $e');
         return Failure(
           'Unerwarteter Fehler bei der Batch-Analyse: $e',
           code: 'unknown_error',
@@ -362,6 +433,24 @@ class MistralRecommendationService {
     }
 
     return Success(results);
+  }
+
+  List<List<PlayerAnalysisInput>> _chunkPlayerInputs(
+    List<PlayerAnalysisInput> players,
+    int chunkSize,
+  ) {
+    if (players.isEmpty) {
+      return const [];
+    }
+
+    final chunks = <List<PlayerAnalysisInput>>[];
+    for (var index = 0; index < players.length; index += chunkSize) {
+      final end = (index + chunkSize < players.length)
+          ? index + chunkSize
+          : players.length;
+      chunks.add(players.sublist(index, end));
+    }
+    return chunks;
   }
 
   // ---------------------------------------------------------------------------
@@ -373,10 +462,10 @@ class MistralRecommendationService {
   /// Verwendet die Conversations API mit Agenten.
   Future<String?> _callMistralApi(String prompt) async {
     try {
-      debugPrint('🔐 MISTRAL PROXY: Rufe Cloud Function auf...');
+      _logDebug('🔐 MISTRAL PROXY: Rufe Cloud Function auf...');
 
-      final response = await http.post(
-        Uri.parse(_functionUrl),
+      final response = await _postRequest(
+        Uri.parse(_resolvedFunctionUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'prompt': prompt,
@@ -391,17 +480,16 @@ class MistralRecommendationService {
         // Die Cloud Function gibt direkt den JSON-Content zurück
         return response.body;
       } else if (response.statusCode == 429) {
-        debugPrint('❌ MISTRAL PROXY: Rate Limit erreicht (429)');
+        _logDebug('❌ MISTRAL PROXY: Rate Limit erreicht (429)');
         throw Exception('Cloud Function: Rate Limit erreicht');
       } else {
-        debugPrint('❌ MISTRAL PROXY: Fehler ${response.statusCode}');
-        debugPrint('    → Response: ${response.body}');
+        _logDebug('❌ MISTRAL PROXY: Fehler ${response.statusCode}');
         throw Exception(
           'Cloud Function Fehler: ${response.statusCode} - ${response.body}',
         );
       }
     } catch (e) {
-      debugPrint('❌ MISTRAL PROXY: Fehler: $e');
+      _logDebug('❌ MISTRAL PROXY: Fehler: $e');
       rethrow;
     }
   }
@@ -420,7 +508,11 @@ class MistralRecommendationService {
               .trim()
         : trimmedResponse;
 
-    return _normalizeEstimatedValueShorthand(normalizedMarkdownResponse);
+    final normalizedControlCharacters = _escapeControlCharactersInJsonStrings(
+      normalizedMarkdownResponse,
+    );
+
+    return _normalizeEstimatedValueShorthand(normalizedControlCharacters);
   }
 
   String _normalizeEstimatedValueShorthand(String response) {
@@ -449,6 +541,232 @@ class MistralRecommendationService {
     );
   }
 
+  Map<String, dynamic> _decodeBatchJsonResponse(String response) {
+    try {
+      return Map<String, dynamic>.from(jsonDecode(response) as Map);
+    } on FormatException catch (error, stackTrace) {
+      final salvagedResponse = _salvageBatchJsonResponse(response);
+      if (salvagedResponse == null) {
+        Error.throwWithStackTrace(error, stackTrace);
+      }
+
+      try {
+        final salvagedJson = jsonDecode(salvagedResponse);
+        if (salvagedJson is! Map) {
+          Error.throwWithStackTrace(error, stackTrace);
+        }
+
+        final salvagedMap = Map<String, dynamic>.from(salvagedJson);
+        if (salvagedMap.isEmpty) {
+          Error.throwWithStackTrace(error, stackTrace);
+        }
+
+        _logDebug(
+          '⚠️  MISTRAL BATCH RESPONSE war unvollständig - '
+          '${salvagedMap.length} vollständige Einträge übernommen.',
+        );
+        return salvagedMap;
+      } on FormatException {
+        Error.throwWithStackTrace(error, stackTrace);
+      }
+    }
+  }
+
+  String? _salvageBatchJsonResponse(String response) {
+    final startIndex = response.indexOf('{');
+    if (startIndex == -1) {
+      return null;
+    }
+
+    final entries = <String>[];
+    var depth = 0;
+    var isInsideString = false;
+    var isEscaped = false;
+    var currentEntryStart = -1;
+    var lastNonWhitespaceIndex = -1;
+
+    for (var index = startIndex; index < response.length; index++) {
+      final char = response[index];
+
+      if (char.trim().isNotEmpty) {
+        lastNonWhitespaceIndex = index;
+      }
+
+      if (isEscaped) {
+        isEscaped = false;
+        continue;
+      }
+
+      if (char == r'\') {
+        if (isInsideString) {
+          isEscaped = true;
+        }
+        continue;
+      }
+
+      if (char == '"') {
+        if (!isInsideString && depth == 1 && currentEntryStart == -1) {
+          currentEntryStart = index;
+        }
+        isInsideString = !isInsideString;
+        continue;
+      }
+
+      if (isInsideString) {
+        continue;
+      }
+
+      if (char == '{' || char == '[') {
+        depth++;
+        continue;
+      }
+
+      if (char == '}' || char == ']') {
+        if (char == '}' && depth == 1) {
+          final entry = _extractCompleteBatchEntry(
+            response,
+            start: currentEntryStart,
+            endExclusive: index,
+          );
+          if (entry != null) {
+            entries.add(entry);
+          }
+          return entries.isEmpty ? null : '{${entries.join(',')}}';
+        }
+
+        if (depth > 0) {
+          depth--;
+        }
+        continue;
+      }
+
+      if (depth != 1) {
+        continue;
+      }
+
+      if (char == ',') {
+        final entry = _extractCompleteBatchEntry(
+          response,
+          start: currentEntryStart,
+          endExclusive: index,
+        );
+        if (entry != null) {
+          entries.add(entry);
+        }
+        currentEntryStart = -1;
+        continue;
+      }
+
+      if (currentEntryStart == -1 && char.trim().isNotEmpty) {
+        currentEntryStart = index;
+      }
+    }
+
+    if (!isInsideString && depth == 1 && lastNonWhitespaceIndex >= 0) {
+      final entry = _extractCompleteBatchEntry(
+        response,
+        start: currentEntryStart,
+        endExclusive: lastNonWhitespaceIndex + 1,
+      );
+      if (entry != null) {
+        entries.add(entry);
+      }
+    }
+
+    return entries.isEmpty ? null : '{${entries.join(',')}}';
+  }
+
+  String? _extractCompleteBatchEntry(
+    String response, {
+    required int start,
+    required int endExclusive,
+  }) {
+    if (start < 0 || endExclusive <= start) {
+      return null;
+    }
+
+    final entry = response.substring(start, endExclusive).trim();
+    if (entry.isEmpty || !entry.contains(':')) {
+      return null;
+    }
+
+    final lastChar = entry[entry.length - 1];
+    if (lastChar != '}' && lastChar != ']') {
+      return null;
+    }
+
+    return entry.endsWith(',')
+        ? entry.substring(0, entry.length - 1).trim()
+        : entry;
+  }
+
+  String _escapeControlCharactersInJsonStrings(String response) {
+    final buffer = StringBuffer();
+    var isInsideString = false;
+    var isEscaped = false;
+
+    for (var index = 0; index < response.length; index++) {
+      final char = response[index];
+
+      if (isEscaped) {
+        buffer.write(char);
+        isEscaped = false;
+        continue;
+      }
+
+      if (char == r'\') {
+        buffer.write(char);
+        if (isInsideString) {
+          isEscaped = true;
+        }
+        continue;
+      }
+
+      if (char == '"') {
+        if (isInsideString &&
+            !_isLikelyStringTerminator(response, quoteIndex: index)) {
+          buffer.write(r'\"');
+          continue;
+        }
+
+        buffer.write(char);
+        isInsideString = !isInsideString;
+        continue;
+      }
+
+      if (isInsideString) {
+        switch (char) {
+          case '\n':
+            buffer.write(r'\n');
+            continue;
+          case '\r':
+            buffer.write(r'\r');
+            continue;
+          case '\t':
+            buffer.write(r'\t');
+            continue;
+        }
+      }
+
+      buffer.write(char);
+    }
+
+    return buffer.toString();
+  }
+
+  bool _isLikelyStringTerminator(String response, {required int quoteIndex}) {
+    for (var index = quoteIndex + 1; index < response.length; index++) {
+      final char = response[index];
+      if (char.trim().isEmpty) {
+        continue;
+      }
+
+      return char == ',' || char == '}' || char == ']' || char == ':';
+    }
+
+    return true;
+  }
+
   /// Validiert die JSON-Antwort von Mistral
   String? _validateRecommendationJson(Map<String, dynamic> json) {
     // Pflichtfelder prüfen
@@ -456,7 +774,6 @@ class MistralRecommendationService {
       'score',
       'action',
       'reason',
-      'confidence',
       'estimatedValue',
       'category',
     ];
@@ -477,11 +794,13 @@ class MistralRecommendationService {
       }
 
       final confidence = json['confidence'] as num?;
-      if (confidence == null || confidence.isNaN) {
-        return 'confidence muss eine gültige Zahl sein';
-      }
-      if (confidence < 0 || confidence > 1) {
-        return 'confidence muss zwischen 0 und 1 liegen (ist: $confidence)';
+      if (confidence != null) {
+        if (confidence.isNaN) {
+          return 'confidence muss eine gültige Zahl sein';
+        }
+        if (confidence < 0 || confidence > 1) {
+          return 'confidence muss zwischen 0 und 1 liegen (ist: $confidence)';
+        }
       }
 
       final estimatedValue = json['estimatedValue'] as num?;
@@ -558,6 +877,17 @@ class MistralRecommendationService {
     List<Player>? swapCandidates,
   }) {
     final buffer = StringBuffer();
+    final compactFixtureContext = _compactContext(
+      fixtureContext,
+      maxLines: 2,
+      maxLength: 180,
+    );
+    final compactLineupContext = _compactContext(
+      lineupContext,
+      maxLines: 2,
+      maxLength: 180,
+    );
+    final limitedSwapCandidates = swapCandidates?.take(2).toList();
 
     // Positionsspezifische Erwartungswerte für bessere Differenzierung
     final position = player.position;
@@ -587,9 +917,9 @@ class MistralRecommendationService {
     );
     buffer.writeln('Gesamtpunkte: ${player.totalPoints}');
     if (recentPerformances != null && recentPerformances.isNotEmpty) {
-      final last5 = recentPerformances.take(5).toList();
-      buffer.writeln('Letzte ${last5.length} Spieltage:');
-      for (final perf in last5) {
+      final lastGames = recentPerformances.take(3).toList();
+      buffer.writeln('Letzte ${lastGames.length} Spieltage:');
+      for (final perf in lastGames) {
         buffer.writeln(
           '  - Spieltag ${perf.day}: ${perf.p} Punkte '
           '(${perf.t1} vs ${perf.t2}, ${perf.t1g}:${perf.t2g})'
@@ -682,23 +1012,23 @@ class MistralRecommendationService {
       }
     }
 
-    if (fixtureContext != null && fixtureContext.isNotEmpty) {
+    if (compactFixtureContext != null) {
       buffer.writeln();
       buffer.writeln('=== NÄCHSTE 3 SPIELE ===');
       buffer.writeln(
         'Je niedriger der Tabellenplatz des Gegners, desto schwerer das Spiel:',
       );
-      buffer.writeln(fixtureContext);
+      buffer.writeln(compactFixtureContext);
     }
 
-    if (lineupContext != null && lineupContext.isNotEmpty) {
+    if (compactLineupContext != null) {
       buffer.writeln();
       buffer.writeln('=== TEAM-ANALYSE ===');
-      buffer.writeln(lineupContext);
+      buffer.writeln(compactLineupContext);
     }
 
-    if (swapCandidates != null &&
-        swapCandidates.isNotEmpty &&
+    if (limitedSwapCandidates != null &&
+        limitedSwapCandidates.isNotEmpty &&
         player.userOwnsPlayer) {
       buffer.writeln();
       buffer.writeln('=== TAUSCHKANDIDATEN (gleiche Position, verfügbar) ===');
@@ -708,7 +1038,7 @@ class MistralRecommendationService {
         'Falls ja, setze swapCandidateId und swapCandidateName. '
         'Falls kein Tausch empfehlenswert ist, lass beide Felder weg.',
       );
-      for (final c in swapCandidates) {
+      for (final c in limitedSwapCandidates) {
         buffer.writeln(
           '  - ID:${c.id} | ${c.firstName} ${c.lastName} | '
           '${c.teamName} | Ø ${c.averagePoints.toStringAsFixed(1)} Pkt | '
@@ -830,7 +1160,10 @@ class MistralRecommendationService {
       'Antworte AUSSCHLIESSLICH als JSON-Objekt mit Spieler-ID als Key:',
     );
     buffer.writeln(
-      '{"playerId1": {"score": X, "action": "...", "reason": "...", ...}, "playerId2": {...}, ...}',
+      '{"playerId1": {"score": X, "action": "...", "reason": "...", "confidence": 0.0-1.0, "estimatedValue": 12345678, "category": "..."}, "playerId2": {...}, ...}',
+    );
+    buffer.writeln(
+      'Jeder Spieler-Eintrag soll score, action, reason, confidence, estimatedValue und category enthalten.',
     );
     buffer.writeln();
     buffer.writeln('SCORE-BERECHNUNG (Positionsspezifisch, Basisscore = 50):');
@@ -867,35 +1200,44 @@ class MistralRecommendationService {
       ' JEDER Spieler muss einen UNTERSCHIEDLICHEN Score erhalten!',
     );
     buffer.writeln();
-    buffer.writeln('=== SPIELER-DATEN (als Array) ===');
+    buffer.writeln('=== SPIELER-DATEN (als Objekt nach Spieler-ID) ===');
     buffer.writeln();
 
-    // Strukturierte Daten als JSON-Array
-    final playersData = <Map<String, dynamic>>[];
+    // Strukturierte Daten als JSON-Objekt mit Spieler-ID als Key
+    final playersData = <String, Map<String, dynamic>>{};
     for (final input in players) {
       final p = input.player;
       final playerData = <String, dynamic>{
-        'id': p.id,
         'name': '${p.firstName} ${p.lastName}'.trim(),
-        'position': p.position,
         'positionName': _positionName(p.position),
         'team': p.teamName,
         'userOwnsPlayer': p.userOwnsPlayer,
         'averagePoints': p.averagePoints,
         'totalPoints': p.totalPoints,
         'marketValue': p.marketValue,
-        'marketValueTrend': p.marketValueTrend,
-        'tfhmvt': p.tfhmvt,
-        'stl': p.stl,
-        'status': p.status,
         'statusName': _statusName(p.status),
       };
+
+      if (input.nextOpponent != null && input.nextOpponent!.isNotEmpty) {
+        playerData['nextOpponent'] = input.nextOpponent;
+      }
+      if (input.nextOpponentTablePosition != null) {
+        playerData['nextOpponentTablePosition'] =
+            input.nextOpponentTablePosition;
+      }
+      if (input.ownTeamTablePosition != null) {
+        playerData['ownTeamTablePosition'] = input.ownTeamTablePosition;
+      }
+      if (input.nextMatchLocation != null &&
+          input.nextMatchLocation!.isNotEmpty) {
+        playerData['nextMatchLocation'] = input.nextMatchLocation;
+      }
 
       // Recent performances
       if (input.recentPerformances != null &&
           input.recentPerformances!.isNotEmpty) {
-        final last5 = input.recentPerformances!.take(5).toList();
-        playerData['recentPerformances'] = last5
+        final lastGames = input.recentPerformances!.take(3).toList();
+        playerData['recentPerformances'] = lastGames
             .map(
               (perf) => {
                 'day': perf.day,
@@ -909,8 +1251,12 @@ class MistralRecommendationService {
 
         // Calculate home/away averages
         final playerTeam = p.teamName;
-        final homeGames = last5.where((perf) => perf.t1 == playerTeam).toList();
-        final awayGames = last5.where((perf) => perf.t2 == playerTeam).toList();
+        final homeGames = lastGames
+            .where((perf) => perf.t1 == playerTeam)
+            .toList();
+        final awayGames = lastGames
+            .where((perf) => perf.t2 == playerTeam)
+            .toList();
         if (homeGames.isNotEmpty) {
           final homeAvg =
               homeGames.fold<double>(0.0, (s, perf) => s + (perf.p ?? 0)) /
@@ -958,7 +1304,11 @@ class MistralRecommendationService {
 
       // Fixture context
       if (input.fixtureContext != null && input.fixtureContext!.isNotEmpty) {
-        playerData['nextFixtures'] = input.fixtureContext;
+        playerData['nextFixtures'] = _compactContext(
+          input.fixtureContext,
+          maxLines: 2,
+          maxLength: 180,
+        );
       }
 
       // Swap candidates
@@ -966,6 +1316,7 @@ class MistralRecommendationService {
           input.swapCandidates!.isNotEmpty &&
           p.userOwnsPlayer) {
         playerData['swapCandidates'] = input.swapCandidates!
+            .take(2)
             .map(
               (c) => {
                 'id': c.id,
@@ -979,7 +1330,7 @@ class MistralRecommendationService {
             .toList();
       }
 
-      playersData.add(playerData);
+      playersData[p.id] = playerData;
     }
 
     buffer.writeln(jsonEncode(playersData));
@@ -1004,13 +1355,14 @@ class MistralRecommendationService {
   };
 
   String _statusName(int status) => switch (status) {
-    0 => 'Unbekannt',
-    1 => 'Fit',
-    2 => 'Verletzt',
-    4 => 'Krank',
+    0 => 'Fit',
+    1 => 'Verletzt',
+    2 => 'Angeschlagen',
+    4 => 'Aufbautraining',
     8 => 'Gesperrt',
-    16 => 'Aufbautraining',
-    32 => 'Fraglich',
+    16 => 'Krank',
+    32 => 'Gelbsperre',
+    256 => 'Abwesend',
     _ => 'Status $status',
   };
 
@@ -1029,6 +1381,125 @@ class MistralRecommendationService {
     }
     return '$value €';
   }
+
+  static _PlayerAvailabilityIssue? _resolveAvailabilityIssue({
+    required Player player,
+    LigainsiderPlayer? ligainsiderData,
+  }) {
+    final statusText = [
+      ligainsiderData?.injuryStatus,
+      ligainsiderData?.statusText,
+      ligainsiderData?.injuryDescription,
+    ].whereType<String>().join(' ').toLowerCase();
+
+    if (_absenceStatuses.contains(player.status) ||
+        _containsAny(statusText, _absenceKeywords)) {
+      return const _PlayerAvailabilityIssue(
+        label: 'abwesend',
+        summary: 'Abwesenheit',
+      );
+    }
+
+    if (_suspensionStatuses.contains(player.status) ||
+        _containsAny(statusText, _suspensionKeywords)) {
+      return const _PlayerAvailabilityIssue(
+        label: 'gesperrt',
+        summary: 'Sperre',
+      );
+    }
+
+    if (_injuryStatuses.contains(player.status) ||
+        _containsAny(statusText, _injuryKeywords)) {
+      return const _PlayerAvailabilityIssue(
+        label: 'verletzt',
+        summary: 'Verletzung',
+      );
+    }
+
+    return null;
+  }
+
+  static bool _containsAny(String value, Set<String> keywords) {
+    if (value.isEmpty) {
+      return false;
+    }
+    return keywords.any(value.contains);
+  }
+
+  MistralRecommendationResult? _buildLocalShortcutRecommendation({
+    required Player player,
+    LigainsiderPlayer? ligainsiderData,
+  }) {
+    final issue = _resolveAvailabilityIssue(
+      player: player,
+      ligainsiderData: ligainsiderData,
+    );
+    if (issue == null) {
+      return null;
+    }
+
+    final detail =
+        ligainsiderData?.injuryDescription ??
+        ligainsiderData?.statusText ??
+        ligainsiderData?.injuryStatus;
+    final detailSuffix = detail == null || detail.isEmpty
+        ? ''
+        : ' Hinweis: $detail.';
+    final playerName = '${player.firstName} ${player.lastName}'.trim();
+
+    return MistralRecommendationResult(
+      score: 5,
+      action: 'strong-sell',
+      reason:
+          '$playerName ist aktuell ${issue.label} und wird lokal ohne Mistral direkt '
+          'als Verkaufskandidat eingestuft.'
+          '$detailSuffix ${issue.summary} senkt die kurzfristige '
+          'Einsetzbarkeit deutlich.',
+      confidence: 0.98,
+      estimatedValue: player.marketValue,
+      category: 'strong-sell',
+    );
+  }
+
+  String? _compactContext(
+    String? value, {
+    required int maxLines,
+    required int maxLength,
+  }) {
+    if (value == null) {
+      return null;
+    }
+
+    final normalized = value
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .take(maxLines)
+        .join(' | ');
+    if (normalized.isEmpty) {
+      return null;
+    }
+    if (normalized.length <= maxLength) {
+      return normalized;
+    }
+    return '${normalized.substring(0, maxLength - 1)}…';
+  }
+
+  void _logDebug(String message) {
+    if (kDebugMode) {
+      _debugLogger(message);
+    }
+  }
+
+  void _logPrompt(String prompt, {required String label}) {
+    _logDebug('📝 MISTRAL PROMPT [$label] START');
+    _logDebug(prompt);
+    _logDebug('📝 MISTRAL PROMPT [$label] END');
+  }
+
+  void _pruneExpiredCache() {
+    _cache.removeWhere((_, entry) => entry.isExpired);
+  }
 }
 
 /// Cache-Eintrag für Empfehlungen
@@ -1041,6 +1512,13 @@ class _CacheEntry {
   bool get isExpired => DateTime.now().isAfter(expiry);
 }
 
+class _PlayerAvailabilityIssue {
+  final String label;
+  final String summary;
+
+  const _PlayerAvailabilityIssue({required this.label, required this.summary});
+}
+
 /// Input-Datenstruktur für Batch-Analyse.
 class PlayerAnalysisInput {
   final Player player;
@@ -1050,6 +1528,10 @@ class PlayerAnalysisInput {
   final String? fixtureContext;
   final String? lineupContext;
   final List<Player>? swapCandidates;
+  final String? nextOpponent;
+  final int? nextOpponentTablePosition;
+  final int? ownTeamTablePosition;
+  final String? nextMatchLocation;
 
   const PlayerAnalysisInput({
     required this.player,
@@ -1059,6 +1541,10 @@ class PlayerAnalysisInput {
     this.fixtureContext,
     this.lineupContext,
     this.swapCandidates,
+    this.nextOpponent,
+    this.nextOpponentTablePosition,
+    this.ownTeamTablePosition,
+    this.nextMatchLocation,
   });
 }
 

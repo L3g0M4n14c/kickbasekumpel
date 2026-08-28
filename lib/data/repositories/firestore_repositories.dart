@@ -1265,9 +1265,6 @@ class RecommendationRepository extends BaseRepository<Recommendation>
   }) async {
     final service = _mistralService;
 
-    // Service ist jetzt immer verfügbar (nutzt Cloud Function Proxy)
-    debugPrint('🔐 MISTRAL PROXY: Nutze Cloud Function als Proxy');
-
     final aiResult = await service.generateRecommendation(
       player: player,
       marketValueHistory: marketValueHistory,
@@ -1279,13 +1276,6 @@ class RecommendationRepository extends BaseRepository<Recommendation>
     );
 
     if (aiResult is Failure<MistralRecommendationResult>) {
-      debugPrint('');
-      debugPrint('═══════════════════════════════════════════════════════════');
-      debugPrint('❌ MISTRAL API FEHLER: ${aiResult.message}');
-      debugPrint('   Code: ${aiResult.code}');
-      debugPrint('═══════════════════════════════════════════════════════════');
-      debugPrint('');
-
       return Failure(
         aiResult.message,
         code: aiResult.code,
@@ -1313,18 +1303,8 @@ class RecommendationRepository extends BaseRepository<Recommendation>
       category: ai.category,
       swapCandidateId: ai.swapCandidateId,
       swapCandidateName: ai.swapCandidateName,
+      userOwnsPlayer: player.userOwnsPlayer,
     );
-
-    // Debug: Status am Ende der Logs
-    debugPrint('');
-    debugPrint('═══════════════════════════════════════════════════════════');
-    debugPrint(
-      '✅ MISTRAL EMPFEHLUNG ERFOLGREICH für ${player.firstName} ${player.lastName}',
-    );
-    debugPrint(
-      '   Score: ${ai.score}, Action: ${ai.action}, Reason: ${ai.reason}',
-    );
-    debugPrint('═══════════════════════════════════════════════════════════');
 
     // Direkte Rückgabe ohne Firestore-Speicherung
     return Success(recommendation);
@@ -1332,15 +1312,17 @@ class RecommendationRepository extends BaseRepository<Recommendation>
 
   /// Generiert KI-Empfehlungen für eine ganze Spielerliste (Batch).
   ///
-  /// Alle Spieler werden in einem einzigen Mistral-Aufruf analysiert.
+  /// Alle Spieler werden in einem oder mehreren Mistral-Aufrufen analysiert.
+  /// Pro Request werden maximal 10 uncached Spieler an den Service gesendet.
   /// **ACHTUNG: Ergebnisse werden NICHT in Firestore gespeichert!**
   Future<Result<List<Recommendation>>> generateAIBatchRecommendations({
     required String leagueId,
     required List<PlayerAnalysisInput> players,
   }) async {
     final service = _mistralService;
-
-    debugPrint('🔐 MISTRAL PROXY: Batch-Anfrage für ${players.length} Spieler');
+    if (players.isEmpty) {
+      return const Success([]);
+    }
 
     final batchResult = await service.generateBatchRecommendations(
       players: players,
@@ -1357,6 +1339,7 @@ class RecommendationRepository extends BaseRepository<Recommendation>
     final aiMap =
         (batchResult as Success<Map<String, MistralRecommendationResult>>).data;
     final recommendations = <Recommendation>[];
+    final generatedAt = DateTime.now();
 
     for (final input in players) {
       final ai = aiMap[input.player.id];
@@ -1374,10 +1357,11 @@ class RecommendationRepository extends BaseRepository<Recommendation>
         currentMarketValue: input.player.marketValue,
         estimatedValue: ai.estimatedValue,
         confidence: ai.confidence,
-        timestamp: DateTime.now(),
+        timestamp: generatedAt,
         category: ai.category,
         swapCandidateId: ai.swapCandidateId,
         swapCandidateName: ai.swapCandidateName,
+        userOwnsPlayer: input.player.userOwnsPlayer,
       );
 
       // **WICHTIG: NICHT in Firestore speichern!**

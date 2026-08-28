@@ -55,6 +55,7 @@ _$RecommendationImpl _$$RecommendationImplFromJson(Map<String, dynamic> json) =>
       category: json['category'] as String,
       swapCandidateId: json['swapCandidateId'] as String?,
       swapCandidateName: json['swapCandidateName'] as String?,
+      userOwnsPlayer: json['userOwnsPlayer'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$RecommendationImplToJson(
@@ -75,6 +76,7 @@ Map<String, dynamic> _$$RecommendationImplToJson(
   'category': instance.category,
   'swapCandidateId': instance.swapCandidateId,
   'swapCandidateName': instance.swapCandidateName,
+  'userOwnsPlayer': instance.userOwnsPlayer,
 };
 
 _$BidResponseImpl _$$BidResponseImplFromJson(Map<String, dynamic> json) =>
