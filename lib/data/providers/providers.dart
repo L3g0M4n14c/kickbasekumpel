@@ -26,9 +26,11 @@ export 'recommendation_providers.dart';
 export 'league_detail_providers.dart';
 export 'player_detail_providers.dart' hide playerTransfersProvider;
 export 'manager_providers.dart';
+export 'manager_transfer_history_providers.dart';
 export 'live_providers.dart';
 export 'scouted_players_providers.dart';
 export 'competition_providers.dart';
+export 'budget_calculation_providers.dart';
 
 // Presentation Providers
 export '../../presentation/providers/market_providers.dart';

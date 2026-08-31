@@ -30,6 +30,7 @@ _$LeagueImpl _$$LeagueImplFromJson(Map<String, dynamic> json) => _$LeagueImpl(
   cpim: json['cpim'] as String?,
   gpm: (json['gpm'] as num?)?.toInt(),
   rnkm: (json['rnkm'] as num?)?.toInt(),
+  seasonStartDate: _seasonStartDateFromJson(json['dt']),
 );
 
 Map<String, dynamic> _$$LeagueImplToJson(_$LeagueImpl instance) =>
@@ -57,6 +58,7 @@ Map<String, dynamic> _$$LeagueImplToJson(_$LeagueImpl instance) =>
       'cpim': instance.cpim,
       'gpm': instance.gpm,
       'rnkm': instance.rnkm,
+      'dt': _seasonStartDateToJson(instance.seasonStartDate),
     };
 
 _$LeagueUserImpl _$$LeagueUserImplFromJson(Map<String, dynamic> json) =>

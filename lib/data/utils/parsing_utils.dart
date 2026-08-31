@@ -213,30 +213,49 @@ Map<String, dynamic> normalizePlayerJson(Map<String, dynamic> json) {
 Map<String, dynamic> normalizeLeagueJson(Map<String, dynamic> json) {
   final Map<String, dynamic> copy = Map<String, dynamic>.from(json);
 
-  // Normalize 'cu' (current user) fields if present
+  // League-Id und Name robust machen: Die Overview-Antwort liefert `i` teils
+  // als int, und fehlende Keys wuerden in League.fromJson ('as String') als
+  // "type 'Null' is not a subtype of type 'String'" crashen.
+  copy['i'] = copy['i']?.toString() ?? '';
+  if ((copy['n'] == null || copy['n'] == '') && copy['name'] != null) {
+    copy['n'] = copy['name'];
+  }
+  copy['n'] = (copy['n'] ?? '').toString();
+
+  // Normalize 'cu' (current user) fields if present.
+  // WICHTIG: Die /overview-Antwort nutzt Kurzkeys (i, n, tn, b, tv, p, pl),
+  // LeagueUser.fromJson erwartet aber die langen Keys (id, name, teamName,
+  // budget, ...). Ohne dieses Mapping crasht das Parsen mit
+  // "type 'Null' is not a subtype of type 'String'".
   if (copy['cu'] is Map<String, dynamic>) {
     final cu = Map<String, dynamic>.from(copy['cu']);
 
-    if ((cu['budget'] == null) && cu['b'] != null) {
-      cu['budget'] = _toIntSafe(cu['b']);
-    }
-    if ((cu['teamValue'] == null) && cu['tv'] != null) {
-      cu['teamValue'] = _toIntSafe(cu['tv']);
-    }
-    if ((cu['points'] == null) && cu['p'] != null) {
-      cu['points'] = _toIntSafe(cu['p']);
-    }
-    if ((cu['placement'] == null) && cu['pl'] != null) {
-      cu['placement'] = _toIntSafe(cu['pl']);
+    // Strings: Kurzkey -> Langkey, immer Materialisieren (niemals null)
+    cu['id'] = (cu['id'] ?? cu['i'] ?? '').toString();
+    cu['name'] = (cu['name'] ?? cu['n'] ?? '').toString();
+    cu['teamName'] = (cu['teamName'] ?? cu['tn'] ?? '').toString();
+
+    // Numerics: Kurzkey -> Langkey, mit 0 als Fallback
+    cu['budget'] = _toIntSafe(cu['budget'] ?? cu['b'] ?? 0);
+    cu['teamValue'] = _toIntSafe(cu['teamValue'] ?? cu['tv'] ?? 0);
+    cu['points'] = _toIntSafe(cu['points'] ?? cu['p'] ?? 0);
+    cu['placement'] = _toIntSafe(cu['placement'] ?? cu['pl'] ?? 0);
+    cu['won'] = _toIntSafe(cu['won'] ?? cu['w'] ?? 0);
+    cu['drawn'] = _toIntSafe(cu['drawn'] ?? cu['d'] ?? 0);
+    cu['lost'] = _toIntSafe(cu['lost'] ?? cu['l'] ?? 0);
+    cu['se11'] = _toIntSafe(cu['se11'] ?? 0);
+    cu['ttm'] = _toIntSafe(cu['ttm'] ?? 0);
+    if (cu['mpst'] != null) {
+      cu['mpst'] = _toIntSafe(cu['mpst']);
     }
 
-    // Ensure required fields exist with defaults handled later by model
+    // lp: Kickbase liefert die Lineup-Player-Ids teils als int-Liste,
+    // LeagueUser erwartet List<String>.
+    if (cu['lp'] is List) {
+      cu['lp'] = (cu['lp'] as List).map((e) => e.toString()).toList();
+    }
+
     copy['cu'] = cu;
-  }
-
-  // Map short keys for league itself if needed
-  if ((copy['n'] == null || copy['n'] == '') && copy['name'] != null) {
-    copy['n'] = copy['name'];
   }
 
   return copy;

@@ -62,13 +62,26 @@ void main() async {
     _logger.e('Firebase initialization error: $e', stackTrace: stackTrace);
     if (kDebugMode) {
       // In debug mode, show error dialog
-      runApp(const ProviderScope(child: FirebaseErrorApp()));
+      // Anzeige-App: Kein Auto-Retry auf Riverpod-Ebene. Fehler werden sofort
+      // als AsyncError sichtbar gemacht (statt endlosem Ladekreis). Retries
+      // mit Backoff übernimmt die HTTP-Schicht (_makeRequestWithRetry) sowie
+      // der manuelle "Erneut versuchen"-Button der Fehler-Widgets.
+      runApp(
+        const ProviderScope(retry: _noAutoRetry, child: FirebaseErrorApp()),
+      );
       return;
     }
   }
 
-  runApp(const ProviderScope(child: KickbaseKumpelApp()));
+  runApp(const ProviderScope(retry: _noAutoRetry, child: KickbaseKumpelApp()));
 }
+
+/// Anzeige-App: Deaktiviert Riverpod 3s Automatic Retry (Standard: 10 Versuche
+/// mit exponentiellem Backoff, währenddessen wird `AsyncLoading` gemeldet und
+/// der Ladekreis dreht endlos). Retries mit Backoff übernimmt die HTTP-Schicht
+/// (`_makeRequestWithRetry`) sowie der manuelle "Erneut versuchen"-Button der
+/// Fehler-Widgets.
+Duration? _noAutoRetry(int retryCount, Object error) => null;
 
 /// Fallback app shown when Firebase fails to initialize
 class FirebaseErrorApp extends StatelessWidget {

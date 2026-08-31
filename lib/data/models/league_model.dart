@@ -31,11 +31,46 @@ class League with _$League {
     String? cpim, // competition image
     int? gpm, // ?
     int? rnkm, // ?
+    // Kickbase-Feld `dt`: Datum des Ligastarts
+    @JsonKey(name: 'dt', fromJson: _seasonStartDateFromJson, toJson: _seasonStartDateToJson)
+    String? seasonStartDate,
   }) = _League;
 
   factory League.fromJson(Map<String, dynamic> json) =>
       _$LeagueFromJson(_ensureLeagueHasCu(json));
 }
+
+String? _seasonStartDateFromJson(Object? value) {
+  if (value == null) return null;
+  if (value is String) return value;
+  // Zahl (int/double) -> zu String konvertieren, damit _asDateTime in den Providern
+  // sowohl ISO-Strings als auch numerische Timestamps korrekt parsen kann.
+  // Wir geben die Rohzahl als String zurück; die Provider-Logik (_asDateTime)
+  // behandelt numerische Strings via int.tryParse nicht, daher wandeln wir
+  // hier direkt in ein ISO-8601 um, wenn es eindeutig ein Timestamp ist.
+  if (value is num) {
+    // Heuristik: < 100000 -> Tage seit 1970 (altes MarketValue-Format)
+    // < 100000000000 -> Sekunden -> Millisekunden
+    // sonst Millisekunden
+    int ms;
+    if (value.abs() < 100000) {
+      ms = value.toInt() * Duration.millisecondsPerDay;
+    } else if (value.abs() < 100000000000) {
+      ms = value.toInt() * 1000;
+    } else {
+      ms = value.toInt();
+    }
+    try {
+      return DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true)
+          .toIso8601String();
+    } catch (_) {
+      return value.toString();
+    }
+  }
+  return value.toString();
+}
+
+String? _seasonStartDateToJson(String? value) => value;
 
 Map<String, dynamic> _ensureLeagueHasCu(Map<String, dynamic> json) {
   if (json['cu'] == null) {

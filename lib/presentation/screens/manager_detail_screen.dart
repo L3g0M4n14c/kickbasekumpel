@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../data/models/budget_calculation_model.dart';
 import '../../data/models/transfer_model.dart';
 import '../../data/providers/providers.dart';
 import '../../data/providers/ligainsider_photo_provider.dart';
@@ -36,7 +37,7 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -73,6 +74,7 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
             Tab(text: 'Kader', icon: Icon(Icons.people)),
             Tab(text: 'Performance', icon: Icon(Icons.trending_up)),
             Tab(text: 'Transferhistorie', icon: Icon(Icons.history)),
+            Tab(text: 'Budget', icon: Icon(Icons.account_balance_wallet)),
           ],
         ),
       ),
@@ -90,6 +92,7 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
                 _buildSquadTab(context),
                 _buildPerformanceTab(context),
                 _buildTransferHistoryTab(context),
+                _buildBudgetTab(context),
               ],
             ),
           );
@@ -896,7 +899,7 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
                   ),
                 ),
               );
-            }).toList(),
+            }),
           ],
         );
       },
@@ -911,6 +914,423 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
             )),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildBudgetTab(BuildContext context) {
+    final budgetCalculationAsync = ref.watch(
+      managerBudgetCalculationProvider((
+        leagueId: widget.leagueId,
+        managerId: widget.userId,
+      )),
+    );
+
+    return budgetCalculationAsync.when(
+      data: (calculation) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Übersichtskarten
+              _BudgetOverviewCards(calculation: calculation),
+              const SizedBox(height: 24),
+
+              // Transferübersicht
+              _TransferOverviewSection(calculation: calculation),
+              const SizedBox(height: 24),
+
+              // Berechnungsdetails
+              _CalculationDetailsSection(calculation: calculation),
+            ],
+          ),
+        );
+      },
+      loading: () => const Center(child: LoadingWidget()),
+      error: (error, stack) => Center(
+        child: ErrorWidgetCustom(
+          error: error,
+          onRetry: () => ref.invalidate(
+            managerBudgetCalculationProvider((
+              leagueId: widget.leagueId,
+              managerId: widget.userId,
+            )),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// BUDGET TAB WIDGETS
+// ============================================================================
+
+class _BudgetOverviewCards extends StatelessWidget {
+  final BudgetCalculationResult calculation;
+
+  const _BudgetOverviewCards({required this.calculation});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Budget-Übersicht für ${calculation.managerName}',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _BudgetCard(
+                    icon: Icons.account_balance,
+                    label: 'Startbudget',
+                    value:
+                        '${(calculation.initialBudget / 1000000).toStringAsFixed(2)} M €',
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _BudgetCard(
+                    icon: Icons.arrow_upward,
+                    label: 'Verkäufe',
+                    value:
+                        '+${(calculation.totalSales / 1000000).toStringAsFixed(2)} M €',
+                    color: Colors.green,
+                  ),
+                ),
+                Expanded(
+                  child: _BudgetCard(
+                    icon: Icons.arrow_downward,
+                    label: 'Käufe',
+                    value:
+                        '-${(calculation.totalPurchases / 1000000).toStringAsFixed(2)} M €',
+                    color: Colors.red,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _BudgetCard(
+              icon: Icons.account_balance_wallet,
+              label: 'AKTUELLES BUDGET',
+              value:
+                  '${(calculation.currentBudget / 1000000).toStringAsFixed(2)} M €',
+              color: calculation.currentBudget >= 0 ? Colors.green : Colors.red,
+              isHighlighted: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BudgetCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+  final bool isHighlighted;
+
+  const _BudgetCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+    this.isHighlighted = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isHighlighted
+            ? color.withOpacity(0.2)
+            : theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: isHighlighted ? 2 : 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TransferOverviewSection extends StatelessWidget {
+  final BudgetCalculationResult calculation;
+
+  const _TransferOverviewSection({required this.calculation});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Transferübersicht',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Verkäufe
+            if (calculation.sales.isNotEmpty) ...[
+              Text(
+                'Verkäufe (${calculation.sales.length}): +${(calculation.totalSales / 1000000).toStringAsFixed(2)} M €',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...calculation.sales.map(
+                (sale) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.arrow_upward,
+                        color: Colors.green,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          sale.playerName,
+                          style: theme.textTheme.bodySmall,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        '+${(sale.price / 1000000).toStringAsFixed(2)} M €',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // Käufe
+            if (calculation.purchases.isNotEmpty) ...[
+              Text(
+                'Käufe (${calculation.purchases.length}): -${(calculation.totalPurchases / 1000000).toStringAsFixed(2)} M €',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...calculation.purchases.map(
+                (purchase) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.arrow_downward,
+                        color: Colors.red,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          purchase.playerName,
+                          style: theme.textTheme.bodySmall,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        '-${(purchase.price / 1000000).toStringAsFixed(2)} M €',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CalculationDetailsSection extends StatelessWidget {
+  final BudgetCalculationResult calculation;
+
+  const _CalculationDetailsSection({required this.calculation});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Berechnungsdetails',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Berechnungsschritte
+            _CalculationStep(
+              step: 1,
+              description: 'Startbudget',
+              value:
+                  '${(calculation.initialBudget / 1000000).toStringAsFixed(2)} M €',
+            ),
+            _CalculationStep(
+              step: 2,
+              description: 'Verkaufserlöse',
+              value:
+                  '+${(calculation.totalSales / 1000000).toStringAsFixed(2)} M €',
+            ),
+            _CalculationStep(
+              step: 3,
+              description: 'Kaufausgaben',
+              value:
+                  '-${(calculation.totalPurchases / 1000000).toStringAsFixed(2)} M €',
+            ),
+            const Divider(height: 24),
+            _CalculationStep(
+              step: 4,
+              description: 'AKTUELLES BUDGET',
+              value:
+                  '${(calculation.currentBudget / 1000000).toStringAsFixed(2)} M €',
+              isFinal: true,
+              color: calculation.currentBudget >= 0 ? Colors.green : Colors.red,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Berechnet am: ${calculation.calculatedAt.day}.${calculation.calculatedAt.month}.${calculation.calculatedAt.year}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CalculationStep extends StatelessWidget {
+  final int step;
+  final String description;
+  final String value;
+  final String? result;
+  final bool isFinal;
+  final Color? color;
+
+  const _CalculationStep({
+    required this.step,
+    required this.description,
+    required this.value,
+    this.isFinal = false,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$step.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(child: Text(description, style: theme.textTheme.bodyMedium)),
+          if (result != null) ...[
+            Text(
+              '= $result',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Text(
+            value,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: isFinal ? FontWeight.bold : FontWeight.normal,
+              color: color ?? theme.colorScheme.onSurface,
+            ),
+          ),
+        ],
       ),
     );
   }

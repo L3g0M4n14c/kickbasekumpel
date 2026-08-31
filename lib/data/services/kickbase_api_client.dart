@@ -355,15 +355,31 @@ class KickbaseAPIClient {
   }
 
   /// Parse JSON string to Map
+  ///
+  /// Tolerant gegenüber leeren Bodies und text/plain Responses:
+  /// Einige Kickbase-Endpoints (z.B. marketvalue) liefern laut API-Doku
+  /// `produces: text/plain` und teils leere Bodies – das darf keine
+  /// ParsingException werfen.
   Map<String, dynamic> _parseJson(String body) {
+    final trimmed = body.trim();
+    if (trimmed.isEmpty) {
+      _logger.w('⚠️ Empty response body, returning empty map');
+      return {};
+    }
     try {
-      final decoded = jsonDecode(body);
+      final decoded = jsonDecode(trimmed);
       if (decoded is Map<String, dynamic>) {
         return decoded;
       }
       return {'data': decoded};
     } catch (e) {
-      throw ParsingException('Invalid JSON format', originalError: e);
+      // Kein gültiges JSON (z.B. reiner Text) – als Rohdaten zurückgeben
+      // statt zu crashen, damit die UI weiterarbeiten kann.
+      _logger.w(
+        '⚠️ Non-JSON response body (${trimmed.length} chars), '
+        'wrapping as raw data: $e',
+      );
+      return {'raw': trimmed};
     }
   }
 
@@ -748,6 +764,133 @@ class KickbaseAPIClient {
     return _parseJson(response.body);
   }
 
+  /// Lädt die Transferhistorie eines Managers seitenweise komplett.
+  ///
+  /// Die Kickbase API liefert pro Aufruf nur einen begrenzten Ausschnitt der
+  /// neuesten Transfers (erste Seite: 25). Der `start`-Parameter ist ein
+  /// **numerischer Offset** ("offset" in api-endpoints.json):
+  ///
+  ///   1. Aufruf            → neueste 25 Transfers
+  ///   2. Aufruf start=25   → nächste 25
+  ///   3. Aufruf start=50   → nächste 25 …
+  ///
+  /// Der Offset zählt dabei die ROHE Seitenlänge weiter (nicht die dedupli-
+  /// zierte Anzahl), damit Seitenüberlappungen keinen Offset-Drift verursa-
+  /// chen. Geladen wird, bis:
+  ///  * eine leere Seite kommt,
+  ///  * keine neuen Transfers mehr geliefert werden (Schutz vor Endlosschleife,
+  ///    falls der Offset ignoriert wird),
+  ///  * alle Transfers einer Seite älter als [since] sind – die API liefert
+  ///    newest-first, damit sind alle weiteren Seiten ebenfalls älter –
+  ///  * oder das Sicherheitslimit [maxPages] erreicht ist.
+  ///
+  /// Rückgabe-Shape identisch zu [getManagerTransferHistory]
+  /// (`u`, `unm`, `it`), wobei `it` alle Seiten vereint.
+  Future<Map<String, dynamic>> getManagerTransferHistoryPaged(
+    String leagueId,
+    String userId, {
+    DateTime? since,
+    int maxPages = 200,
+  }) async {
+    final allTransfers = <Map<String, dynamic>>[];
+    final seenIds = <String>{};
+    Map<String, dynamic>? firstPage;
+    var offset = 0;
+
+    for (var page = 0; page < maxPages; page++) {
+      // `start` ist ein Offset (siehe Doku): 0 (erster Aufruf ohne Param),
+      // dann Seitenlänge, 2× Seitenlänge, …
+      final response = await getManagerTransferHistory(
+        leagueId,
+        userId,
+        start: page == 0 ? null : '$offset',
+      );
+      firstPage ??= response;
+
+      final pageTransfers = (response['it'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .toList();
+
+      _logger.i(
+        '📄 Transfer-Historie: Seite ${page + 1} (start=$offset) '
+        'liefert ${pageTransfers.length} Transfers',
+      );
+
+      if (pageTransfers.isEmpty) break;
+
+      // Dedupe über ein echtes Identitäts-Tupel – die API kann Overlaps
+      // zwischen Seiten liefern. ACHTUNG: `tid` ist die TEAM-Id (Bundesliga-
+      // Klub), NICHT die Transfer-Id! Dedup über tid allein wirft 30+ legitime
+      // Transfers weg (nur 18 Bundesligavereine). Identität = Spieler + Typ
+      // + Zeitpunkt + Preis.
+      final newTransfers = pageTransfers
+          .where(
+            (t) => seenIds.add('${t['pi']}|${t['tty']}|${t['dt']}|${t['trp']}'),
+          )
+          .toList();
+      allTransfers.addAll(newTransfers);
+
+      // Schutz vor Endlosschleife: Liefert die API trotz fortlaufendem Offset
+      // keine neuen Transfers mehr (Offset ignoriert/Ende erreicht), abbrechen.
+      if (newTransfers.isEmpty) break;
+
+      // Offset um die ROHE Seitenlänge weiterzählen (nicht um die Anzahl
+      // neuer Transfers), sonst driftet der Offset bei Overlaps.
+      offset += pageTransfers.length;
+
+      // Frühabbruch: ältester Transfer der Seite liegt vor [since].
+      if (since != null) {
+        final oldest = _oldestTransfer(pageTransfers);
+        if (_transferDateTime(oldest['dt']).isBefore(since)) break;
+      }
+    }
+
+    _logger.i(
+      '📄 Transfer-Historie: ${allTransfers.length} Transfers über '
+      '$offset Einträge geladen',
+    );
+
+    final header = <String, dynamic>{...?firstPage}..remove('it');
+    return <String, dynamic>{...header, 'it': allTransfers};
+  }
+
+  /// Liefert den (chronologisch) ältesten Transfer einer Seite.
+  Map<String, dynamic> _oldestTransfer(List<Map<String, dynamic>> transfers) {
+    var oldest = transfers.first;
+    var oldestMs = _transferDateTime(oldest['dt']);
+    for (final t in transfers.skip(1)) {
+      final ms = _transferDateTime(t['dt']);
+      if (ms.isBefore(oldestMs)) {
+        oldest = t;
+        oldestMs = ms;
+      }
+    }
+    return oldest;
+  }
+
+  /// Interpretiert das `dt`-Feld von Transfers tolerant:
+  /// ISO-8601 String, Millisekunden, Sekunden oder Tage seit 1970.
+  DateTime _transferDateTime(Object? dt) {
+    if (dt is num) {
+      final value = dt.toInt();
+      if (value.abs() < 100000) {
+        return DateTime.fromMillisecondsSinceEpoch(
+          value * Duration.millisecondsPerDay,
+          isUtc: true,
+        );
+      }
+      if (value.abs() < 100000000000) {
+        return DateTime.fromMillisecondsSinceEpoch(value * 1000, isUtc: true);
+      }
+      return DateTime.fromMillisecondsSinceEpoch(value, isUtc: true);
+    }
+    if (dt is String) {
+      return DateTime.tryParse(dt)?.toUtc() ??
+          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+    }
+    return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+  }
+
   // MARK: - Schritt 1: Liga & User Endpoints
 
   /// Get user settings
@@ -786,6 +929,12 @@ class KickbaseAPIClient {
       endpoint: '/$_apiVersion/leagues/$leagueId/me/budget',
       method: 'GET',
     );
+
+    // Handle empty response body - API sometimes returns 200 with empty content
+    if (response.body.isEmpty) {
+      _logger.w('⚠️ Budget endpoint returned empty response, using defaults');
+      return {'b': 0, 'bs': 0, 'pbas': 0};
+    }
 
     final json = _parseJson(response.body);
     _logger.i('✅ Budget retrieved');

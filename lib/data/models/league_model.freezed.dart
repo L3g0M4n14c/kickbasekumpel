@@ -44,7 +44,10 @@ mixin _$League {
   String? get lim => throw _privateConstructorUsedError; // league image
   String? get cpim => throw _privateConstructorUsedError; // competition image
   int? get gpm => throw _privateConstructorUsedError; // ?
-  int? get rnkm => throw _privateConstructorUsedError;
+  int? get rnkm => throw _privateConstructorUsedError; // ?
+  // Saison Startdatum (als String im Format "yyyy-MM-dd" oder ISO-8601)
+  @JsonKey(name: 'dt')
+  String? get seasonStartDate => throw _privateConstructorUsedError;
 
   /// Serializes this League to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -84,6 +87,7 @@ abstract class $LeagueCopyWith<$Res> {
     String? cpim,
     int? gpm,
     int? rnkm,
+    @JsonKey(name: 'dt') String? seasonStartDate,
   });
 
   $LeagueUserCopyWith<$Res> get cu;
@@ -127,6 +131,7 @@ class _$LeagueCopyWithImpl<$Res, $Val extends League>
     Object? cpim = freezed,
     Object? gpm = freezed,
     Object? rnkm = freezed,
+    Object? seasonStartDate = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -222,6 +227,10 @@ class _$LeagueCopyWithImpl<$Res, $Val extends League>
                 ? _value.rnkm
                 : rnkm // ignore: cast_nullable_to_non_nullable
                       as int?,
+            seasonStartDate: freezed == seasonStartDate
+                ? _value.seasonStartDate
+                : seasonStartDate // ignore: cast_nullable_to_non_nullable
+                      as String?,
           )
           as $Val,
     );
@@ -270,6 +279,7 @@ abstract class _$$LeagueImplCopyWith<$Res> implements $LeagueCopyWith<$Res> {
     String? cpim,
     int? gpm,
     int? rnkm,
+    @JsonKey(name: 'dt') String? seasonStartDate,
   });
 
   @override
@@ -313,6 +323,7 @@ class __$$LeagueImplCopyWithImpl<$Res>
     Object? cpim = freezed,
     Object? gpm = freezed,
     Object? rnkm = freezed,
+    Object? seasonStartDate = freezed,
   }) {
     return _then(
       _$LeagueImpl(
@@ -408,6 +419,10 @@ class __$$LeagueImplCopyWithImpl<$Res>
             ? _value.rnkm
             : rnkm // ignore: cast_nullable_to_non_nullable
                   as int?,
+        seasonStartDate: freezed == seasonStartDate
+            ? _value.seasonStartDate
+            : seasonStartDate // ignore: cast_nullable_to_non_nullable
+                  as String?,
       ),
     );
   }
@@ -440,6 +455,7 @@ class _$LeagueImpl implements _League {
     this.cpim,
     this.gpm,
     this.rnkm,
+    @JsonKey(name: 'dt') this.seasonStartDate,
   });
 
   factory _$LeagueImpl.fromJson(Map<String, dynamic> json) =>
@@ -506,10 +522,15 @@ class _$LeagueImpl implements _League {
   // ?
   @override
   final int? rnkm;
+  // ?
+  // Saison Startdatum (als String im Format "yyyy-MM-dd" oder ISO-8601)
+  @override
+  @JsonKey(name: 'dt')
+  final String? seasonStartDate;
 
   @override
   String toString() {
-    return 'League(i: $i, cpi: $cpi, n: $n, cn: $cn, an: $an, c: $c, s: $s, md: $md, cu: $cu, b: $b, tv: $tv, pl: $pl, un: $un, f: $f, lpc: $lpc, bs: $bs, vr: $vr, adm: $adm, idf: $idf, lim: $lim, cpim: $cpim, gpm: $gpm, rnkm: $rnkm)';
+    return 'League(i: $i, cpi: $cpi, n: $n, cn: $cn, an: $an, c: $c, s: $s, md: $md, cu: $cu, b: $b, tv: $tv, pl: $pl, un: $un, f: $f, lpc: $lpc, bs: $bs, vr: $vr, adm: $adm, idf: $idf, lim: $lim, cpim: $cpim, gpm: $gpm, rnkm: $rnkm, seasonStartDate: $seasonStartDate)';
   }
 
   @override
@@ -539,7 +560,9 @@ class _$LeagueImpl implements _League {
             (identical(other.lim, lim) || other.lim == lim) &&
             (identical(other.cpim, cpim) || other.cpim == cpim) &&
             (identical(other.gpm, gpm) || other.gpm == gpm) &&
-            (identical(other.rnkm, rnkm) || other.rnkm == rnkm));
+            (identical(other.rnkm, rnkm) || other.rnkm == rnkm) &&
+            (identical(other.seasonStartDate, seasonStartDate) ||
+                other.seasonStartDate == seasonStartDate));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -569,6 +592,7 @@ class _$LeagueImpl implements _League {
     cpim,
     gpm,
     rnkm,
+    seasonStartDate,
   ]);
 
   /// Create a copy of League
@@ -610,6 +634,7 @@ abstract class _League implements League {
     final String? cpim,
     final int? gpm,
     final int? rnkm,
+    @JsonKey(name: 'dt') final String? seasonStartDate,
   }) = _$LeagueImpl;
 
   factory _League.fromJson(Map<String, dynamic> json) = _$LeagueImpl.fromJson;
@@ -659,7 +684,11 @@ abstract class _League implements League {
   @override
   int? get gpm; // ?
   @override
-  int? get rnkm;
+  int? get rnkm; // ?
+  // Saison Startdatum (als String im Format "yyyy-MM-dd" oder ISO-8601)
+  @override
+  @JsonKey(name: 'dt')
+  String? get seasonStartDate;
 
   /// Create a copy of League
   /// with the given fields replaced by the non-null parameter values.

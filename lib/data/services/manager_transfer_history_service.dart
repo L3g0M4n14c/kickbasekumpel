@@ -48,27 +48,37 @@ class ManagerTransferHistoryService {
   }
 
   /// Liefert den letzten bekannten Marktwert am oder vor [transferTimestamp].
+  ///
+  /// Die entry.dt Felder in MarketValueEntry sind laut API teils Tage seit 1970 (altes Format, z.B. 19343)
+  /// und teils Unix-Timestamps in Millisekunden (z.B. 1736812800000, siehe demo_kickbase_api_client).
+  /// Diese Methode normalisiert beide transparent.
   int? marketValueAt(
     List<MarketValueEntry> marketValues,
     DateTime transferTimestamp,
   ) {
-    // entry.dt ist in Tagen seit 1.1.1970 (Unix-Timestamp in Tagen)
-    // transferTimestamp ist ein DateTime-Objekt
-    // Wir müssen entry.dt in DateTime umwandeln, um es zu vergleichen
-    final transferDaysSinceEpoch =
-        transferTimestamp.millisecondsSinceEpoch ~/ Duration.millisecondsPerDay;
+    final transferMillisSinceEpoch = transferTimestamp.millisecondsSinceEpoch;
 
     MarketValueEntry? closestEntry;
+    int? closestMs;
 
     for (final entry in marketValues) {
-      // entry.dt ist bereits in Tagen seit 1.1.1970
-      if (entry.dt > transferDaysSinceEpoch) continue;
-      if (closestEntry == null || entry.dt > closestEntry.dt) {
+      final entryMs = _normalizeMarketValueDt(entry.dt);
+      if (entryMs > transferMillisSinceEpoch) continue;
+      if (closestEntry == null || entryMs > closestMs!) {
         closestEntry = entry;
+        closestMs = entryMs;
       }
     }
 
     return closestEntry?.mv;
+  }
+
+  int _normalizeMarketValueDt(int dt) {
+    // < 100000 -> Tage seit 1970
+    if (dt.abs() < 100000) return dt * Duration.millisecondsPerDay;
+    // < 1e11 -> Sekunden -> Millisekunden
+    if (dt.abs() < 100000000000) return dt * 1000;
+    return dt;
   }
 
   int _asInt(Object? value) => switch (value) {
@@ -78,14 +88,29 @@ class ManagerTransferHistoryService {
     _ => 0,
   };
 
+  /// Konvertiere Wert in DateTime
+  ///
+  /// Das dt-Feld kommt als ISO-8601 String (z.B. "2026-08-21T08:59:41Z")
+  /// oder als Unix-Timestamp (Millisekunden, Sekunden oder Tage) – letzteres für MarketValueEntry.
   DateTime _asDateTime(Object? value) {
     if (value is num) {
-      final milliseconds = value.abs() < 100000000000
-          ? value.toInt() * 1000
-          : value.toInt();
-      return DateTime.fromMillisecondsSinceEpoch(milliseconds, isUtc: true);
+      int ms;
+      if (value.abs() < 100000) {
+        // Tage seit 1.1.1970
+        ms = value.toInt() * Duration.millisecondsPerDay;
+      } else if (value.abs() < 100000000000) {
+        // Sekunden -> Millisekunden
+        ms = value.toInt() * 1000;
+      } else {
+        ms = value.toInt();
+      }
+      return DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true);
     }
-    return DateTime.tryParse(value?.toString() ?? '')?.toUtc() ??
-        DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+    if (value is String) {
+      // ISO-8601 String parsen
+      return DateTime.tryParse(value)?.toUtc() ??
+          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+    }
+    return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
   }
 }

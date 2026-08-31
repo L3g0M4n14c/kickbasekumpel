@@ -29,36 +29,38 @@ class SquadScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Mein Kader')),
-      body: squadAsync.when(
-        data: (squadData) {
-          final players =
-              (squadData['it'] as List?)
-                  ?.map(
-                    (json) => Player.fromJson(
-                      normalizePlayerJson(json as Map<String, dynamic>),
-                    ),
-                  )
-                  .toList() ??
-              [];
+      body: Column(
+        children: [
+          // Budget Header - wird unabhängig vom Kader geladen
+          _BudgetHeader(budgetAsync: budgetAsync),
+          Expanded(
+            child: squadAsync.when(
+              data: (squadData) {
+                final players =
+                    (squadData['it'] as List?)
+                        ?.map(
+                          (json) => Player.fromJson(
+                            normalizePlayerJson(json as Map<String, dynamic>),
+                          ),
+                        )
+                        .toList() ??
+                    [];
 
-          if (players.isEmpty) {
-            return const Center(child: Text('Keine Spieler im Kader'));
-          }
+                if (players.isEmpty) {
+                  return const Center(child: Text('Keine Spieler im Kader'));
+                }
 
-          return Column(
-            children: [
-              _BudgetHeader(budgetAsync: budgetAsync),
-              Expanded(
-                child: _SquadList(players: players, leagueId: selectedLeague.i),
+                return _SquadList(players: players, leagueId: selectedLeague.i);
+              },
+              loading: () => const LoadingWidget(),
+              error: (error, stack) => ErrorWidgetCustom(
+                error: error,
+                onRetry: () =>
+                    ref.invalidate(mySquadProvider(selectedLeague.i)),
               ),
-            ],
-          );
-        },
-        loading: () => const LoadingWidget(),
-        error: (error, stack) => ErrorWidgetCustom(
-          error: error,
-          onRetry: () => ref.invalidate(mySquadProvider(selectedLeague.i)),
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -75,8 +77,22 @@ class _BudgetHeader extends StatelessWidget {
 
     return budgetAsync.when(
       data: (budgetData) {
-        final budget = budgetData['budget'] as int? ?? 0;
-        final teamValue = budgetData['teamValue'] as int? ?? 0;
+        // Budget kommt von der API unter dem Schlüssel 'b' (laut API-Dokumentation)
+        // Der /v4/leagues/{leagueId}/me/budget Endpoint gibt nur 'b' zurück
+        final budgetRaw = budgetData['b'] ?? 0;
+        final budget = budgetRaw is int
+            ? budgetRaw
+            : budgetRaw is double
+            ? budgetRaw.toInt()
+            : int.tryParse(budgetRaw.toString()) ?? 0;
+
+        // Teamwert aus den Daten extrahieren (falls verfügbar)
+        final teamValue = budgetData['tv'] ?? budgetData['teamValue'] ?? 0;
+        final teamValueInt = teamValue is int
+            ? teamValue
+            : teamValue is double
+            ? teamValue.toInt()
+            : int.tryParse(teamValue.toString()) ?? 0;
 
         return Card(
           margin: const EdgeInsets.all(16),
@@ -100,7 +116,7 @@ class _BudgetHeader extends StatelessWidget {
                 _BudgetItem(
                   icon: Icons.groups,
                   label: 'Teamwert',
-                  value: '${(teamValue / 1000000).toStringAsFixed(2)} M €',
+                  value: '${(teamValueInt / 1000000).toStringAsFixed(2)} M €',
                   color: theme.colorScheme.secondary,
                 ),
               ],

@@ -111,9 +111,14 @@ final selectedLeagueIdProvider = Provider<String?>((ref) {
 
 /// Auto-select first league Effect
 /// Automatically selects the first league if available and none is selected
+///
+/// WICHTIG: `selectedLeagueProvider` wird mit `read` statt `watch` gelesen.
+/// Mit `watch` würde der Provider bei jeder Selektion neu bauen und damit
+/// alle abhängigen Provider (teamPlayers, teamBudget, ...) erneut triggern
+/// → Endlosschleife von API-Requests.
 final autoSelectFirstLeagueProvider = FutureProvider<void>((ref) async {
   final leagues = await ref.watch(userLeaguesProvider.future);
-  final selectedLeague = ref.watch(selectedLeagueProvider);
+  final selectedLeague = ref.read(selectedLeagueProvider);
 
   if (leagues.isNotEmpty && selectedLeague == null) {
     ref.read(selectedLeagueProvider.notifier).select(leagues.first);
