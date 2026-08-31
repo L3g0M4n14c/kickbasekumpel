@@ -15,9 +15,13 @@ class PlayerPerformanceResponse with _$PlayerPerformanceResponse {
 }
 
 /// Season Performance
+///
+/// [sid] = Saison-ID (z.B. "28"), aufsteigend über die Jahre. Wird benötigt,
+/// um aus der Liste aller Saisons (`it`) die AKTUELLE zu identifizieren.
 @freezed
 class SeasonPerformance with _$SeasonPerformance {
   const factory SeasonPerformance({
+    String? sid,
     required String ti,
     required String n,
     required List<MatchPerformance> ph,

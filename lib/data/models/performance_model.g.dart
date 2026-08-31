@@ -21,6 +21,7 @@ Map<String, dynamic> _$$PlayerPerformanceResponseImplToJson(
 _$SeasonPerformanceImpl _$$SeasonPerformanceImplFromJson(
   Map<String, dynamic> json,
 ) => _$SeasonPerformanceImpl(
+  sid: json['sid'] as String?,
   ti: json['ti'] as String,
   n: json['n'] as String,
   ph: (json['ph'] as List<dynamic>)
@@ -30,7 +31,12 @@ _$SeasonPerformanceImpl _$$SeasonPerformanceImplFromJson(
 
 Map<String, dynamic> _$$SeasonPerformanceImplToJson(
   _$SeasonPerformanceImpl instance,
-) => <String, dynamic>{'ti': instance.ti, 'n': instance.n, 'ph': instance.ph};
+) => <String, dynamic>{
+  'sid': instance.sid,
+  'ti': instance.ti,
+  'n': instance.n,
+  'ph': instance.ph,
+};
 
 _$MatchPerformanceImpl _$$MatchPerformanceImplFromJson(
   Map<String, dynamic> json,

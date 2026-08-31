@@ -194,6 +194,7 @@ SeasonPerformance _$SeasonPerformanceFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$SeasonPerformance {
+  String? get sid => throw _privateConstructorUsedError;
   String get ti => throw _privateConstructorUsedError;
   String get n => throw _privateConstructorUsedError;
   List<MatchPerformance> get ph => throw _privateConstructorUsedError;
@@ -215,7 +216,7 @@ abstract class $SeasonPerformanceCopyWith<$Res> {
     $Res Function(SeasonPerformance) then,
   ) = _$SeasonPerformanceCopyWithImpl<$Res, SeasonPerformance>;
   @useResult
-  $Res call({String ti, String n, List<MatchPerformance> ph});
+  $Res call({String? sid, String ti, String n, List<MatchPerformance> ph});
 }
 
 /// @nodoc
@@ -232,9 +233,18 @@ class _$SeasonPerformanceCopyWithImpl<$Res, $Val extends SeasonPerformance>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? ti = null, Object? n = null, Object? ph = null}) {
+  $Res call({
+    Object? sid = freezed,
+    Object? ti = null,
+    Object? n = null,
+    Object? ph = null,
+  }) {
     return _then(
       _value.copyWith(
+            sid: freezed == sid
+                ? _value.sid
+                : sid // ignore: cast_nullable_to_non_nullable
+                      as String?,
             ti: null == ti
                 ? _value.ti
                 : ti // ignore: cast_nullable_to_non_nullable
@@ -262,7 +272,7 @@ abstract class _$$SeasonPerformanceImplCopyWith<$Res>
   ) = __$$SeasonPerformanceImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String ti, String n, List<MatchPerformance> ph});
+  $Res call({String? sid, String ti, String n, List<MatchPerformance> ph});
 }
 
 /// @nodoc
@@ -278,9 +288,18 @@ class __$$SeasonPerformanceImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? ti = null, Object? n = null, Object? ph = null}) {
+  $Res call({
+    Object? sid = freezed,
+    Object? ti = null,
+    Object? n = null,
+    Object? ph = null,
+  }) {
     return _then(
       _$SeasonPerformanceImpl(
+        sid: freezed == sid
+            ? _value.sid
+            : sid // ignore: cast_nullable_to_non_nullable
+                  as String?,
         ti: null == ti
             ? _value.ti
             : ti // ignore: cast_nullable_to_non_nullable
@@ -302,6 +321,7 @@ class __$$SeasonPerformanceImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$SeasonPerformanceImpl implements _SeasonPerformance {
   const _$SeasonPerformanceImpl({
+    this.sid,
     required this.ti,
     required this.n,
     required final List<MatchPerformance> ph,
@@ -310,6 +330,8 @@ class _$SeasonPerformanceImpl implements _SeasonPerformance {
   factory _$SeasonPerformanceImpl.fromJson(Map<String, dynamic> json) =>
       _$$SeasonPerformanceImplFromJson(json);
 
+  @override
+  final String? sid;
   @override
   final String ti;
   @override
@@ -324,7 +346,7 @@ class _$SeasonPerformanceImpl implements _SeasonPerformance {
 
   @override
   String toString() {
-    return 'SeasonPerformance(ti: $ti, n: $n, ph: $ph)';
+    return 'SeasonPerformance(sid: $sid, ti: $ti, n: $n, ph: $ph)';
   }
 
   @override
@@ -332,6 +354,7 @@ class _$SeasonPerformanceImpl implements _SeasonPerformance {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$SeasonPerformanceImpl &&
+            (identical(other.sid, sid) || other.sid == sid) &&
             (identical(other.ti, ti) || other.ti == ti) &&
             (identical(other.n, n) || other.n == n) &&
             const DeepCollectionEquality().equals(other._ph, _ph));
@@ -339,8 +362,13 @@ class _$SeasonPerformanceImpl implements _SeasonPerformance {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, ti, n, const DeepCollectionEquality().hash(_ph));
+  int get hashCode => Object.hash(
+    runtimeType,
+    sid,
+    ti,
+    n,
+    const DeepCollectionEquality().hash(_ph),
+  );
 
   /// Create a copy of SeasonPerformance
   /// with the given fields replaced by the non-null parameter values.
@@ -361,6 +389,7 @@ class _$SeasonPerformanceImpl implements _SeasonPerformance {
 
 abstract class _SeasonPerformance implements SeasonPerformance {
   const factory _SeasonPerformance({
+    final String? sid,
     required final String ti,
     required final String n,
     required final List<MatchPerformance> ph,
@@ -369,6 +398,8 @@ abstract class _SeasonPerformance implements SeasonPerformance {
   factory _SeasonPerformance.fromJson(Map<String, dynamic> json) =
       _$SeasonPerformanceImpl.fromJson;
 
+  @override
+  String? get sid;
   @override
   String get ti;
   @override

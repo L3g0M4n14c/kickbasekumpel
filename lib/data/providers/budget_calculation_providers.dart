@@ -1,10 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 
 import '../models/budget_calculation_model.dart';
+import '../models/market_value_model.dart';
+import '../models/performance_model.dart';
 import '../models/transfer_model.dart';
+import '../services/auto_sale_budget_service.dart';
 import '../services/budget_calculation_service.dart';
 import 'kickbase_api_provider.dart';
 import 'manager_providers.dart';
+import 'player_detail_providers.dart';
 
 // ============================================================================
 // BUDGET CALCULATION PROVIDERS
@@ -14,6 +19,135 @@ import 'manager_providers.dart';
 final budgetCalculationServiceProvider = Provider<BudgetCalculationService>(
   (ref) => BudgetCalculationService(),
 );
+
+/// Service Provider für die Auto-Verkauf-Auswertung (250er-Regel)
+final autoSaleBudgetServiceProvider = Provider<AutoSaleBudgetService>(
+  (ref) => AutoSaleBudgetService(),
+);
+
+final _logger = Logger(printer: PrettyPrinter(methodCount: 0));
+
+/// Maximale Anzahl paralleler Spieler-Requests (Performance/Marktwert)
+const _maxConcurrentFetches = 8;
+
+/// Zeitrahmen der Marktwert-Historie in Tagen (wie im Spieler-Dialog)
+const _marketValueTimeframeDays = 365;
+
+/// Konfiguration des automatischen Spielerverkaufs ("Auto-Verkauf").
+class LeagueAutoSaleConfig {
+  /// true, wenn die Punkte-Schwelle aktiv ist (Feld `ptspf` > 0)
+  final bool active;
+
+  /// Punkte-Schwelle (z.B. 250), ab der Spieler automatisch verkauft werden
+  final int threshold;
+
+  const LeagueAutoSaleConfig({required this.active, required this.threshold});
+}
+
+/// Provider für die Auto-Verkauf-Konfiguration einer Liga.
+///
+/// Liest das undokumentierte Feld `ptspf` aus dem League-Overview-Endpoint
+/// (Kickbase-Update 4.8.0): Die Saison-Punktzahl, ab der Spieler automatisch
+/// an den Transfermarkt verkauft werden (z.B. 250). `ptspf` fehlt oder ist 0,
+/// wenn die Regel nicht aktiv ist.
+final leagueAutoSaleConfigProvider =
+    FutureProvider.family<LeagueAutoSaleConfig, String>((ref, leagueId) async {
+      final apiClient = ref.watch(kickbaseApiClientProvider);
+      final overview = await apiClient.getLeagueOverview(leagueId);
+
+      final threshold = _asInt(overview['ptspf']);
+      _logger.i(
+        '⚙️ Auto-Verkauf-Konfiguration (Liga $leagueId): '
+        'ptspf=$threshold → ${threshold > 0 ? "AKTIV" : "inaktiv"}',
+      );
+
+      return LeagueAutoSaleConfig(active: threshold > 0, threshold: threshold);
+    });
+
+/// Lädt die Startelfen (`lp`) aller Manager für jeden abgeschlossenen
+/// Spieltag der aktuellen Saison.
+///
+/// Grundlage ist der Ranking-Endpoint (`?dayNumber=X`), der pro Manager die
+/// `lp`-Spieler-IDs des Spieltags liefert – genau die Datenquelle des
+/// Tabellen-Tabs. Damit lässt sich der Kader-Besitz pro Spieltag auch ohne
+/// Transfer-Historie rekonstruieren (wichtig für Zulostung-Spieler).
+///
+/// Returns: Map<Spieltag, Map<ManagerId, Set<SpielerId>>>
+final leagueLineupsByMatchdayProvider =
+    FutureProvider.family<Map<int, Map<String, Set<String>>>, String>((
+      ref,
+      leagueId,
+    ) async {
+      final apiClient = ref.watch(kickbaseApiClientProvider);
+
+      // Aktuelle Ranking-Response: `lfmd` = letzter abgeschlossener Spieltag.
+      final current = await apiClient.getLeagueRanking(leagueId);
+      final lastFinished = _asInt(current['lfmd']);
+      final result = <int, Map<String, Set<String>>>{};
+      if (lastFinished <= 0) return result;
+
+      const maxConcurrent = 8;
+      final days = List<int>.generate(lastFinished, (i) => i + 1);
+      for (var i = 0; i < days.length; i += maxConcurrent) {
+        final batch = days.skip(i).take(maxConcurrent);
+        final pages = await Future.wait(
+          batch.map((day) async {
+            try {
+              final ranking = await apiClient.getLeagueRanking(
+                leagueId,
+                matchDay: day,
+              );
+              return MapEntry(day, ranking);
+            } catch (_) {
+              // Ein fehlender Spieltag darf die Gesamtauswertung nicht
+              // blockieren.
+              return MapEntry(day, null);
+            }
+          }),
+        );
+
+        for (final entry in pages) {
+          final ranking = entry.value;
+          if (ranking == null) continue;
+          final users = (ranking['us'] as List? ?? [])
+              .whereType<Map<String, dynamic>>()
+              .toList();
+          final byUser = <String, Set<String>>{};
+          for (final user in users) {
+            final userId = user['i']?.toString() ?? '';
+            final lineup = (user['lp'] as List? ?? [])
+                .map((id) => id.toString())
+                .toSet();
+            if (userId.isNotEmpty && lineup.isNotEmpty) {
+              byUser[userId] = lineup;
+            }
+          }
+          if (byUser.isNotEmpty) result[entry.key] = byUser;
+        }
+      }
+
+      return result;
+    });
+
+/// Parst die Marktwert-Historie aus der Rohresponse des
+/// Marketvalue-Endpoints (`it`-Liste mit `dt` = Tage seit 1970, `mv`).
+List<MarketValueEntry> _marketValuesFromResponse(
+  Map<String, dynamic> response,
+) {
+  final rawList = response['it'] as List<dynamic>? ?? const [];
+  return rawList
+      .whereType<Map<String, dynamic>>()
+      .map((item) {
+        final rawDt = item['dt'];
+        final rawMv = item['mv'];
+        if (rawDt == null || rawMv == null) return null;
+        final days = rawDt is int ? rawDt : (rawDt as num).toInt();
+        final mv = rawMv is int ? rawMv : (rawMv as num).toInt();
+        return MarketValueEntry(dt: days, mv: mv);
+      })
+      .whereType<MarketValueEntry>()
+      .toList();
+}
 
 /// Fester Saison-/Ligastart der aktuellen Saison.
 ///
@@ -119,12 +253,145 @@ final managerBudgetCalculationProvider =
           .toList();
 
       // 5. Budget berechnen
-      final result = calculationService.calculateManagerBudget(
+      var result = calculationService.calculateManagerBudget(
         managerId: params.managerId,
         managerName: managerName,
         leagueId: params.leagueId,
         allTransfers: allTransfers,
       );
+
+      // 6. Auto-Verkauf ("250er-Regel") berücksichtigen.
+      //
+      // Spieler, die die Punkte-Schwelle (Overview-Feld `ptspf`, z.B. 250)
+      // erreichen, werden von Kickbase automatisch an den Transfermarkt
+      // verkauft. Diese Verkäufe erscheinen NICHT in der Transfer-Historie
+      // des Managers, daher wird das dabei eingenommene Budget (Marktwert
+      // zum Verkaufszeitpunkt) hier spieltagweise rekonstruiert und addiert.
+      final autoSaleConfig = await ref.watch(
+        leagueAutoSaleConfigProvider(params.leagueId).future,
+      );
+
+      if (autoSaleConfig.active) {
+        final autoSaleService = ref.watch(autoSaleBudgetServiceProvider);
+
+        // Besitz-Zeiträume des Managers aus der Transfer-Historie ableiten.
+        var periods = autoSaleService.ownershipPeriods(
+          transfers: allTransfers,
+          seasonStart: seasonStartDate,
+        );
+
+        // Lücke schließen: Spieler aus der Zulostung zum Saisonstart haben
+        // KEINEN Transfer-Eintrag und wären sonst unsichtbar. Über die
+        // Startelfen (`lp`) der abgeschlossenen Spieltage (gleiche Daten-
+        // quelle wie der Tabellen-Tab) werden sie ergänzt.
+        final lineupsByMatchday = await ref.watch(
+          leagueLineupsByMatchdayProvider(params.leagueId).future,
+        );
+        final managerLineups = <int, Set<String>>{
+          for (final entry in lineupsByMatchday.entries)
+            if (entry.value[params.managerId] != null)
+              entry.key: entry.value[params.managerId]!,
+        };
+        periods = autoSaleService.mergeLineupOwnership(
+          historyPeriods: periods,
+          lineupsByMatchday: managerLineups,
+          seasonStart: seasonStartDate,
+        );
+
+        // Performance- und Marktwert-Daten pro Kandidat parallel laden
+        // (Limit 8 wie in managerTransferHistoryProvider). Fehler pro
+        // Spieler werden abgefangen, statt die Berechnung scheitern zu
+        // lassen. Die Family-Provider cachen über alle Manager hinweg.
+        final candidateIds = periods.map((p) => p.playerId).toSet().toList();
+        final performanceByPlayer = <String, PlayerPerformanceResponse>{};
+        final marketValuesByPlayer = <String, List<MarketValueEntry>>{};
+
+        for (var i = 0; i < candidateIds.length; i += _maxConcurrentFetches) {
+          final batch = candidateIds.skip(i).take(_maxConcurrentFetches);
+          await Future.wait(
+            batch.map((playerId) async {
+              try {
+                final performance = await ref.watch(
+                  playerPerformanceProvider((
+                    leagueId: params.leagueId,
+                    playerId: playerId,
+                  )).future,
+                );
+                if (performance.it.isNotEmpty) {
+                  performanceByPlayer[playerId] = performance;
+                }
+              } catch (_) {
+                // Fehlende Performance-Daten: Spieler ohne Auto-Sale-Ereignis.
+              }
+
+              try {
+                final mvResponse = await apiClient.getPlayerMarketValue(
+                  params.leagueId,
+                  playerId,
+                  timeframe: _marketValueTimeframeDays,
+                );
+                marketValuesByPlayer[playerId] = _marketValuesFromResponse(
+                  mvResponse,
+                );
+              } catch (_) {
+                // Ohne MV-Historie wird der Event als "uncertain" verbucht.
+              }
+            }),
+          );
+        }
+
+        final computation = autoSaleService.computeAutoSales(
+          threshold: autoSaleConfig.threshold,
+          periods: periods,
+          seasonStart: seasonStartDate,
+          performanceByPlayer: performanceByPlayer,
+          marketValuesByPlayer: marketValuesByPlayer,
+          now: DateTime.now().toUtc(),
+        );
+
+        if (computation.events.isNotEmpty) {
+          _logger.i(
+            '💰 Auto-Verkauf (Schwelle ${autoSaleConfig.threshold} Punkte): '
+            '${computation.events.length} Verkauf(e), '
+            '+${computation.totalIncome} € für Manager ${params.managerId}',
+          );
+        }
+
+        // Namen für lp-basierte Events nachladen (die Startelfen enthalten
+        // nur Spieler-IDs, keine Namen).
+        final events = <AutoSaleEvent>[];
+        for (final event in computation.events) {
+          if (event.playerName.isNotEmpty) {
+            events.add(event);
+            continue;
+          }
+          try {
+            final details = await apiClient.getPlayerDetails(
+              params.leagueId,
+              event.playerId,
+            );
+            final name = [details['fn'], details['ln'] ?? details['n']]
+                .whereType<String>()
+                .map((s) => s.trim())
+                .where((s) => s.isNotEmpty)
+                .join(' ')
+                .trim();
+            events.add(
+              event.copyWith(
+                playerName: name.isNotEmpty ? name : event.playerId,
+              ),
+            );
+          } catch (_) {
+            events.add(event.copyWith(playerName: event.playerId));
+          }
+        }
+
+        result = result.copyWith(
+          autoSaleIncome: computation.totalIncome,
+          autoSaleEvents: events,
+          currentBudget: result.currentBudget + computation.totalIncome,
+        );
+      }
 
       return result;
     });
@@ -206,9 +473,7 @@ final managersBudgetCalculationProvider =
 
       // Saisondatum einmal für alle Manager in dieser Liga laden
       // Dann wird es von Riverpod fuer jeden managerBudgetCalculationProvider gecached
-      await ref.watch(
-        leagueSeasonStartDateProvider(params.leagueId).future,
-      );
+      await ref.watch(leagueSeasonStartDateProvider(params.leagueId).future);
 
       // Wichtig: Wir uebergeben das Saisondatum NICHT an die einzelnen Manager,
       // sondern verlassen uns auf das Caching von Riverpod.

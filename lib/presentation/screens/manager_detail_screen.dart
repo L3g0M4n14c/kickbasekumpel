@@ -937,6 +937,13 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
               _BudgetOverviewCards(calculation: calculation),
               const SizedBox(height: 24),
 
+              // Auto-Verkauf (250er-Regel): nur anzeigen, wenn Einnahmen
+              // durch automatisch verkaufte Spieler existieren.
+              if (calculation.autoSaleEvents.isNotEmpty) ...[
+                _AutoSaleSection(calculation: calculation),
+                const SizedBox(height: 24),
+              ],
+
               // Transferübersicht
               _TransferOverviewSection(calculation: calculation),
               const SizedBox(height: 24),
@@ -1037,6 +1044,108 @@ class _BudgetOverviewCards extends StatelessWidget {
               color: calculation.currentBudget >= 0 ? Colors.green : Colors.red,
               isHighlighted: true,
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Sektion für Auto-Verkäufe ("250er-Regel"): Listet die Spieler auf, die
+/// die Punkte-Schwelle erreicht und dadurch automatisch (und unsichtbar für
+/// die Transfer-Historie) verkauft wurden, inkl. der dabei eingenommenen
+/// Marktwerte, die ins Budget eingerechnet wurden.
+class _AutoSaleSection extends StatelessWidget {
+  final BudgetCalculationResult calculation;
+
+  const _AutoSaleSection({required this.calculation});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final threshold = calculation.autoSaleEvents.first.threshold;
+
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.auto_delete, color: Colors.orange),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Auto-Verkauf (${threshold}-Punkte-Regel)',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Text(
+                  '+${(calculation.autoSaleIncome / 1000000).toStringAsFixed(2)} M €',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Automatisch verkaufte Spieler sind nicht in der '
+              'Transfer-Historie sichtbar, ihr Marktwert wurde aber dem '
+              'Budget gutgeschrieben:',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...calculation.autoSaleEvents.map(
+              (event) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  children: [
+                    Text(
+                      'ST ${event.matchday}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '${event.playerName} '
+                        '(${event.points} P.)'
+                        '${event.uncertain ? " *" : ""}',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ),
+                    Text(
+                      '+${(event.marketValue / 1000000).toStringAsFixed(2)} M €',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (calculation.autoSaleEvents.any((e) => e.uncertain))
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '* Marktwert konnte nicht zweifelsfrei ermittelt werden',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontStyle: FontStyle.italic,
+                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -1293,6 +1402,7 @@ class _CalculationStep extends StatelessWidget {
     required this.step,
     required this.description,
     required this.value,
+    this.result,
     this.isFinal = false,
     this.color,
   });

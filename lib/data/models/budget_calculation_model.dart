@@ -84,6 +84,44 @@ class ManagerTransfer with _$ManagerTransfer {
       _$ManagerTransferFromJson(json);
 }
 
+/// Ein automatischer Verkauf ("Auto-Verkauf", 250er-Regel).
+///
+/// Seit Kickbase-Update 4.8.0 kann der Admin eine Liga-Regel aktivieren, die
+/// jeden Spieler automatisch an den Transfermarkt verkauft, sobald er eine
+/// festgelegte Saison-Punktzahl erreicht (Schwelle aus dem
+/// Overview-Endpoint, Feld `ptspf` – z.B. 250). Der Verkauf erfolgt mit der
+/// finalen Spieltagsberechnung und erscheint NICHT in der Transfer-Historie
+/// des Managers – daher muss das dabei eingenommene Budget (Marktwert zum
+/// Verkaufszeitpunkt) separat zur Budget-Berechnung addiert werden.
+@freezed
+class AutoSaleEvent with _$AutoSaleEvent {
+  const factory AutoSaleEvent({
+    /// Spieltag, an dem der Spieler die Schwelle erreicht hat
+    required int matchday,
+
+    /// Spieler-ID
+    required String playerId,
+
+    /// Spielername
+    required String playerName,
+
+    /// Saison-Gesamtpunkte zum Zeitpunkt des Verkaufs
+    required int points,
+
+    /// Punkte-Schwelle der Regel (z.B. 250)
+    required int threshold,
+
+    /// Marktwert zum Verkaufszeitpunkt (Einnahme)
+    required int marketValue,
+
+    /// true, wenn der Marktwert nicht zweifelsfrei ermittelt werden konnte
+    @Default(false) bool uncertain,
+  }) = _AutoSaleEvent;
+
+  factory AutoSaleEvent.fromJson(Map<String, dynamic> json) =>
+      _$AutoSaleEventFromJson(json);
+}
+
 /// Ergebnis der Budget-Berechnung
 @freezed
 class BudgetCalculationResult with _$BudgetCalculationResult {
@@ -101,6 +139,14 @@ class BudgetCalculationResult with _$BudgetCalculationResult {
     required List<ManagerTransfer> sales,
     required List<ManagerTransfer> purchases,
     required DateTime calculatedAt,
+
+    /// Summe der Einnahmen durch automatische Verkäufe (Auto-Verkauf /
+    /// 250er-Regel). Diese Verkäufe erscheinen nicht in der Transfer-Historie
+    /// und werden daher separat ermittelt und addiert.
+    @Default(0) int autoSaleIncome,
+
+    /// Einzelne Auto-Verkauf-Ereignisse des Managers in der aktuellen Saison.
+    @Default([]) List<AutoSaleEvent> autoSaleEvents,
   }) = _BudgetCalculationResult;
 
   factory BudgetCalculationResult.fromJson(Map<String, dynamic> json) =>

@@ -1063,6 +1063,344 @@ abstract class _ManagerTransfer implements ManagerTransfer {
       throw _privateConstructorUsedError;
 }
 
+AutoSaleEvent _$AutoSaleEventFromJson(Map<String, dynamic> json) {
+  return _AutoSaleEvent.fromJson(json);
+}
+
+/// @nodoc
+mixin _$AutoSaleEvent {
+  /// Spieltag, an dem der Spieler die Schwelle erreicht hat
+  int get matchday => throw _privateConstructorUsedError;
+
+  /// Spieler-ID
+  String get playerId => throw _privateConstructorUsedError;
+
+  /// Spielername
+  String get playerName => throw _privateConstructorUsedError;
+
+  /// Saison-Gesamtpunkte zum Zeitpunkt des Verkaufs
+  int get points => throw _privateConstructorUsedError;
+
+  /// Punkte-Schwelle der Regel (z.B. 250)
+  int get threshold => throw _privateConstructorUsedError;
+
+  /// Marktwert zum Verkaufszeitpunkt (Einnahme)
+  int get marketValue => throw _privateConstructorUsedError;
+
+  /// true, wenn der Marktwert nicht zweifelsfrei ermittelt werden konnte
+  bool get uncertain => throw _privateConstructorUsedError;
+
+  /// Serializes this AutoSaleEvent to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of AutoSaleEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $AutoSaleEventCopyWith<AutoSaleEvent> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $AutoSaleEventCopyWith<$Res> {
+  factory $AutoSaleEventCopyWith(
+    AutoSaleEvent value,
+    $Res Function(AutoSaleEvent) then,
+  ) = _$AutoSaleEventCopyWithImpl<$Res, AutoSaleEvent>;
+  @useResult
+  $Res call({
+    int matchday,
+    String playerId,
+    String playerName,
+    int points,
+    int threshold,
+    int marketValue,
+    bool uncertain,
+  });
+}
+
+/// @nodoc
+class _$AutoSaleEventCopyWithImpl<$Res, $Val extends AutoSaleEvent>
+    implements $AutoSaleEventCopyWith<$Res> {
+  _$AutoSaleEventCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of AutoSaleEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? matchday = null,
+    Object? playerId = null,
+    Object? playerName = null,
+    Object? points = null,
+    Object? threshold = null,
+    Object? marketValue = null,
+    Object? uncertain = null,
+  }) {
+    return _then(
+      _value.copyWith(
+            matchday: null == matchday
+                ? _value.matchday
+                : matchday // ignore: cast_nullable_to_non_nullable
+                      as int,
+            playerId: null == playerId
+                ? _value.playerId
+                : playerId // ignore: cast_nullable_to_non_nullable
+                      as String,
+            playerName: null == playerName
+                ? _value.playerName
+                : playerName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            points: null == points
+                ? _value.points
+                : points // ignore: cast_nullable_to_non_nullable
+                      as int,
+            threshold: null == threshold
+                ? _value.threshold
+                : threshold // ignore: cast_nullable_to_non_nullable
+                      as int,
+            marketValue: null == marketValue
+                ? _value.marketValue
+                : marketValue // ignore: cast_nullable_to_non_nullable
+                      as int,
+            uncertain: null == uncertain
+                ? _value.uncertain
+                : uncertain // ignore: cast_nullable_to_non_nullable
+                      as bool,
+          )
+          as $Val,
+    );
+  }
+}
+
+/// @nodoc
+abstract class _$$AutoSaleEventImplCopyWith<$Res>
+    implements $AutoSaleEventCopyWith<$Res> {
+  factory _$$AutoSaleEventImplCopyWith(
+    _$AutoSaleEventImpl value,
+    $Res Function(_$AutoSaleEventImpl) then,
+  ) = __$$AutoSaleEventImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({
+    int matchday,
+    String playerId,
+    String playerName,
+    int points,
+    int threshold,
+    int marketValue,
+    bool uncertain,
+  });
+}
+
+/// @nodoc
+class __$$AutoSaleEventImplCopyWithImpl<$Res>
+    extends _$AutoSaleEventCopyWithImpl<$Res, _$AutoSaleEventImpl>
+    implements _$$AutoSaleEventImplCopyWith<$Res> {
+  __$$AutoSaleEventImplCopyWithImpl(
+    _$AutoSaleEventImpl _value,
+    $Res Function(_$AutoSaleEventImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of AutoSaleEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? matchday = null,
+    Object? playerId = null,
+    Object? playerName = null,
+    Object? points = null,
+    Object? threshold = null,
+    Object? marketValue = null,
+    Object? uncertain = null,
+  }) {
+    return _then(
+      _$AutoSaleEventImpl(
+        matchday: null == matchday
+            ? _value.matchday
+            : matchday // ignore: cast_nullable_to_non_nullable
+                  as int,
+        playerId: null == playerId
+            ? _value.playerId
+            : playerId // ignore: cast_nullable_to_non_nullable
+                  as String,
+        playerName: null == playerName
+            ? _value.playerName
+            : playerName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        points: null == points
+            ? _value.points
+            : points // ignore: cast_nullable_to_non_nullable
+                  as int,
+        threshold: null == threshold
+            ? _value.threshold
+            : threshold // ignore: cast_nullable_to_non_nullable
+                  as int,
+        marketValue: null == marketValue
+            ? _value.marketValue
+            : marketValue // ignore: cast_nullable_to_non_nullable
+                  as int,
+        uncertain: null == uncertain
+            ? _value.uncertain
+            : uncertain // ignore: cast_nullable_to_non_nullable
+                  as bool,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$AutoSaleEventImpl implements _AutoSaleEvent {
+  const _$AutoSaleEventImpl({
+    required this.matchday,
+    required this.playerId,
+    required this.playerName,
+    required this.points,
+    required this.threshold,
+    required this.marketValue,
+    this.uncertain = false,
+  });
+
+  factory _$AutoSaleEventImpl.fromJson(Map<String, dynamic> json) =>
+      _$$AutoSaleEventImplFromJson(json);
+
+  /// Spieltag, an dem der Spieler die Schwelle erreicht hat
+  @override
+  final int matchday;
+
+  /// Spieler-ID
+  @override
+  final String playerId;
+
+  /// Spielername
+  @override
+  final String playerName;
+
+  /// Saison-Gesamtpunkte zum Zeitpunkt des Verkaufs
+  @override
+  final int points;
+
+  /// Punkte-Schwelle der Regel (z.B. 250)
+  @override
+  final int threshold;
+
+  /// Marktwert zum Verkaufszeitpunkt (Einnahme)
+  @override
+  final int marketValue;
+
+  /// true, wenn der Marktwert nicht zweifelsfrei ermittelt werden konnte
+  @override
+  @JsonKey()
+  final bool uncertain;
+
+  @override
+  String toString() {
+    return 'AutoSaleEvent(matchday: $matchday, playerId: $playerId, playerName: $playerName, points: $points, threshold: $threshold, marketValue: $marketValue, uncertain: $uncertain)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$AutoSaleEventImpl &&
+            (identical(other.matchday, matchday) ||
+                other.matchday == matchday) &&
+            (identical(other.playerId, playerId) ||
+                other.playerId == playerId) &&
+            (identical(other.playerName, playerName) ||
+                other.playerName == playerName) &&
+            (identical(other.points, points) || other.points == points) &&
+            (identical(other.threshold, threshold) ||
+                other.threshold == threshold) &&
+            (identical(other.marketValue, marketValue) ||
+                other.marketValue == marketValue) &&
+            (identical(other.uncertain, uncertain) ||
+                other.uncertain == uncertain));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(
+    runtimeType,
+    matchday,
+    playerId,
+    playerName,
+    points,
+    threshold,
+    marketValue,
+    uncertain,
+  );
+
+  /// Create a copy of AutoSaleEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$AutoSaleEventImplCopyWith<_$AutoSaleEventImpl> get copyWith =>
+      __$$AutoSaleEventImplCopyWithImpl<_$AutoSaleEventImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$AutoSaleEventImplToJson(this);
+  }
+}
+
+abstract class _AutoSaleEvent implements AutoSaleEvent {
+  const factory _AutoSaleEvent({
+    required final int matchday,
+    required final String playerId,
+    required final String playerName,
+    required final int points,
+    required final int threshold,
+    required final int marketValue,
+    final bool uncertain,
+  }) = _$AutoSaleEventImpl;
+
+  factory _AutoSaleEvent.fromJson(Map<String, dynamic> json) =
+      _$AutoSaleEventImpl.fromJson;
+
+  /// Spieltag, an dem der Spieler die Schwelle erreicht hat
+  @override
+  int get matchday;
+
+  /// Spieler-ID
+  @override
+  String get playerId;
+
+  /// Spielername
+  @override
+  String get playerName;
+
+  /// Saison-Gesamtpunkte zum Zeitpunkt des Verkaufs
+  @override
+  int get points;
+
+  /// Punkte-Schwelle der Regel (z.B. 250)
+  @override
+  int get threshold;
+
+  /// Marktwert zum Verkaufszeitpunkt (Einnahme)
+  @override
+  int get marketValue;
+
+  /// true, wenn der Marktwert nicht zweifelsfrei ermittelt werden konnte
+  @override
+  bool get uncertain;
+
+  /// Create a copy of AutoSaleEvent
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$AutoSaleEventImplCopyWith<_$AutoSaleEventImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
 BudgetCalculationResult _$BudgetCalculationResultFromJson(
   Map<String, dynamic> json,
 ) {
@@ -1084,6 +1422,14 @@ mixin _$BudgetCalculationResult {
   List<ManagerTransfer> get sales => throw _privateConstructorUsedError;
   List<ManagerTransfer> get purchases => throw _privateConstructorUsedError;
   DateTime get calculatedAt => throw _privateConstructorUsedError;
+
+  /// Summe der Einnahmen durch automatische Verkäufe (Auto-Verkauf /
+  /// 250er-Regel). Diese Verkäufe erscheinen nicht in der Transfer-Historie
+  /// und werden daher separat ermittelt und addiert.
+  int get autoSaleIncome => throw _privateConstructorUsedError;
+
+  /// Einzelne Auto-Verkauf-Ereignisse des Managers in der aktuellen Saison.
+  List<AutoSaleEvent> get autoSaleEvents => throw _privateConstructorUsedError;
 
   /// Serializes this BudgetCalculationResult to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -1116,6 +1462,8 @@ abstract class $BudgetCalculationResultCopyWith<$Res> {
     List<ManagerTransfer> sales,
     List<ManagerTransfer> purchases,
     DateTime calculatedAt,
+    int autoSaleIncome,
+    List<AutoSaleEvent> autoSaleEvents,
   });
 }
 
@@ -1150,6 +1498,8 @@ class _$BudgetCalculationResultCopyWithImpl<
     Object? sales = null,
     Object? purchases = null,
     Object? calculatedAt = null,
+    Object? autoSaleIncome = null,
+    Object? autoSaleEvents = null,
   }) {
     return _then(
       _value.copyWith(
@@ -1205,6 +1555,14 @@ class _$BudgetCalculationResultCopyWithImpl<
                 ? _value.calculatedAt
                 : calculatedAt // ignore: cast_nullable_to_non_nullable
                       as DateTime,
+            autoSaleIncome: null == autoSaleIncome
+                ? _value.autoSaleIncome
+                : autoSaleIncome // ignore: cast_nullable_to_non_nullable
+                      as int,
+            autoSaleEvents: null == autoSaleEvents
+                ? _value.autoSaleEvents
+                : autoSaleEvents // ignore: cast_nullable_to_non_nullable
+                      as List<AutoSaleEvent>,
           )
           as $Val,
     );
@@ -1234,6 +1592,8 @@ abstract class _$$BudgetCalculationResultImplCopyWith<$Res>
     List<ManagerTransfer> sales,
     List<ManagerTransfer> purchases,
     DateTime calculatedAt,
+    int autoSaleIncome,
+    List<AutoSaleEvent> autoSaleEvents,
   });
 }
 
@@ -1268,6 +1628,8 @@ class __$$BudgetCalculationResultImplCopyWithImpl<$Res>
     Object? sales = null,
     Object? purchases = null,
     Object? calculatedAt = null,
+    Object? autoSaleIncome = null,
+    Object? autoSaleEvents = null,
   }) {
     return _then(
       _$BudgetCalculationResultImpl(
@@ -1323,6 +1685,14 @@ class __$$BudgetCalculationResultImplCopyWithImpl<$Res>
             ? _value.calculatedAt
             : calculatedAt // ignore: cast_nullable_to_non_nullable
                   as DateTime,
+        autoSaleIncome: null == autoSaleIncome
+            ? _value.autoSaleIncome
+            : autoSaleIncome // ignore: cast_nullable_to_non_nullable
+                  as int,
+        autoSaleEvents: null == autoSaleEvents
+            ? _value._autoSaleEvents
+            : autoSaleEvents // ignore: cast_nullable_to_non_nullable
+                  as List<AutoSaleEvent>,
       ),
     );
   }
@@ -1345,9 +1715,12 @@ class _$BudgetCalculationResultImpl implements _BudgetCalculationResult {
     required final List<ManagerTransfer> sales,
     required final List<ManagerTransfer> purchases,
     required this.calculatedAt,
+    this.autoSaleIncome = 0,
+    final List<AutoSaleEvent> autoSaleEvents = const [],
   }) : _initialPlayers = initialPlayers,
        _sales = sales,
-       _purchases = purchases;
+       _purchases = purchases,
+       _autoSaleEvents = autoSaleEvents;
 
   factory _$BudgetCalculationResultImpl.fromJson(Map<String, dynamic> json) =>
       _$$BudgetCalculationResultImplFromJson(json);
@@ -1397,9 +1770,28 @@ class _$BudgetCalculationResultImpl implements _BudgetCalculationResult {
   @override
   final DateTime calculatedAt;
 
+  /// Summe der Einnahmen durch automatische Verkäufe (Auto-Verkauf /
+  /// 250er-Regel). Diese Verkäufe erscheinen nicht in der Transfer-Historie
+  /// und werden daher separat ermittelt und addiert.
+  @override
+  @JsonKey()
+  final int autoSaleIncome;
+
+  /// Einzelne Auto-Verkauf-Ereignisse des Managers in der aktuellen Saison.
+  final List<AutoSaleEvent> _autoSaleEvents;
+
+  /// Einzelne Auto-Verkauf-Ereignisse des Managers in der aktuellen Saison.
+  @override
+  @JsonKey()
+  List<AutoSaleEvent> get autoSaleEvents {
+    if (_autoSaleEvents is EqualUnmodifiableListView) return _autoSaleEvents;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_autoSaleEvents);
+  }
+
   @override
   String toString() {
-    return 'BudgetCalculationResult(managerId: $managerId, managerName: $managerName, leagueId: $leagueId, initialBudget: $initialBudget, initialSquadValue: $initialSquadValue, startingBudget: $startingBudget, totalSales: $totalSales, totalPurchases: $totalPurchases, currentBudget: $currentBudget, initialPlayers: $initialPlayers, sales: $sales, purchases: $purchases, calculatedAt: $calculatedAt)';
+    return 'BudgetCalculationResult(managerId: $managerId, managerName: $managerName, leagueId: $leagueId, initialBudget: $initialBudget, initialSquadValue: $initialSquadValue, startingBudget: $startingBudget, totalSales: $totalSales, totalPurchases: $totalPurchases, currentBudget: $currentBudget, initialPlayers: $initialPlayers, sales: $sales, purchases: $purchases, calculatedAt: $calculatedAt, autoSaleIncome: $autoSaleIncome, autoSaleEvents: $autoSaleEvents)';
   }
 
   @override
@@ -1435,7 +1827,13 @@ class _$BudgetCalculationResultImpl implements _BudgetCalculationResult {
               _purchases,
             ) &&
             (identical(other.calculatedAt, calculatedAt) ||
-                other.calculatedAt == calculatedAt));
+                other.calculatedAt == calculatedAt) &&
+            (identical(other.autoSaleIncome, autoSaleIncome) ||
+                other.autoSaleIncome == autoSaleIncome) &&
+            const DeepCollectionEquality().equals(
+              other._autoSaleEvents,
+              _autoSaleEvents,
+            ));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1455,6 +1853,8 @@ class _$BudgetCalculationResultImpl implements _BudgetCalculationResult {
     const DeepCollectionEquality().hash(_sales),
     const DeepCollectionEquality().hash(_purchases),
     calculatedAt,
+    autoSaleIncome,
+    const DeepCollectionEquality().hash(_autoSaleEvents),
   );
 
   /// Create a copy of BudgetCalculationResult
@@ -1489,6 +1889,8 @@ abstract class _BudgetCalculationResult implements BudgetCalculationResult {
     required final List<ManagerTransfer> sales,
     required final List<ManagerTransfer> purchases,
     required final DateTime calculatedAt,
+    final int autoSaleIncome,
+    final List<AutoSaleEvent> autoSaleEvents,
   }) = _$BudgetCalculationResultImpl;
 
   factory _BudgetCalculationResult.fromJson(Map<String, dynamic> json) =
@@ -1520,6 +1922,16 @@ abstract class _BudgetCalculationResult implements BudgetCalculationResult {
   List<ManagerTransfer> get purchases;
   @override
   DateTime get calculatedAt;
+
+  /// Summe der Einnahmen durch automatische Verkäufe (Auto-Verkauf /
+  /// 250er-Regel). Diese Verkäufe erscheinen nicht in der Transfer-Historie
+  /// und werden daher separat ermittelt und addiert.
+  @override
+  int get autoSaleIncome;
+
+  /// Einzelne Auto-Verkauf-Ereignisse des Managers in der aktuellen Saison.
+  @override
+  List<AutoSaleEvent> get autoSaleEvents;
 
   /// Create a copy of BudgetCalculationResult
   /// with the given fields replaced by the non-null parameter values.

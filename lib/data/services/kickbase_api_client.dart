@@ -534,6 +534,21 @@ class KickbaseAPIClient {
     );
   }
 
+  /// Get raw league overview JSON.
+  ///
+  /// Liefert die UNVERARBEITETE Response des Overview-Endpoints. Wird u.a.
+  /// für undokumentierte Felder benötigt, die (noch) nicht in der
+  /// Swagger-Doku stehen – z.B. `ptspf`: die Punkte-Schwelle des
+  /// automatischen Spielerverkaufs ("Auto-Verkauf", Kickbase-Update 4.8.0).
+  Future<Map<String, dynamic>> getLeagueOverview(String leagueId) async {
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/overview',
+      method: 'GET',
+    );
+
+    return _parseJson(response.body);
+  }
+
   /// Get all players relevant for a league (squad + market).
   ///
   /// Kombiniert:

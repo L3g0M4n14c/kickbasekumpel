@@ -45,8 +45,12 @@ mixin _$League {
   String? get cpim => throw _privateConstructorUsedError; // competition image
   int? get gpm => throw _privateConstructorUsedError; // ?
   int? get rnkm => throw _privateConstructorUsedError; // ?
-  // Saison Startdatum (als String im Format "yyyy-MM-dd" oder ISO-8601)
-  @JsonKey(name: 'dt')
+  // Kickbase-Feld `dt`: Datum des Ligastarts
+  @JsonKey(
+    name: 'dt',
+    fromJson: _seasonStartDateFromJson,
+    toJson: _seasonStartDateToJson,
+  )
   String? get seasonStartDate => throw _privateConstructorUsedError;
 
   /// Serializes this League to a JSON map.
@@ -87,7 +91,12 @@ abstract class $LeagueCopyWith<$Res> {
     String? cpim,
     int? gpm,
     int? rnkm,
-    @JsonKey(name: 'dt') String? seasonStartDate,
+    @JsonKey(
+      name: 'dt',
+      fromJson: _seasonStartDateFromJson,
+      toJson: _seasonStartDateToJson,
+    )
+    String? seasonStartDate,
   });
 
   $LeagueUserCopyWith<$Res> get cu;
@@ -279,7 +288,12 @@ abstract class _$$LeagueImplCopyWith<$Res> implements $LeagueCopyWith<$Res> {
     String? cpim,
     int? gpm,
     int? rnkm,
-    @JsonKey(name: 'dt') String? seasonStartDate,
+    @JsonKey(
+      name: 'dt',
+      fromJson: _seasonStartDateFromJson,
+      toJson: _seasonStartDateToJson,
+    )
+    String? seasonStartDate,
   });
 
   @override
@@ -455,7 +469,12 @@ class _$LeagueImpl implements _League {
     this.cpim,
     this.gpm,
     this.rnkm,
-    @JsonKey(name: 'dt') this.seasonStartDate,
+    @JsonKey(
+      name: 'dt',
+      fromJson: _seasonStartDateFromJson,
+      toJson: _seasonStartDateToJson,
+    )
+    this.seasonStartDate,
   });
 
   factory _$LeagueImpl.fromJson(Map<String, dynamic> json) =>
@@ -523,9 +542,13 @@ class _$LeagueImpl implements _League {
   @override
   final int? rnkm;
   // ?
-  // Saison Startdatum (als String im Format "yyyy-MM-dd" oder ISO-8601)
+  // Kickbase-Feld `dt`: Datum des Ligastarts
   @override
-  @JsonKey(name: 'dt')
+  @JsonKey(
+    name: 'dt',
+    fromJson: _seasonStartDateFromJson,
+    toJson: _seasonStartDateToJson,
+  )
   final String? seasonStartDate;
 
   @override
@@ -634,7 +657,12 @@ abstract class _League implements League {
     final String? cpim,
     final int? gpm,
     final int? rnkm,
-    @JsonKey(name: 'dt') final String? seasonStartDate,
+    @JsonKey(
+      name: 'dt',
+      fromJson: _seasonStartDateFromJson,
+      toJson: _seasonStartDateToJson,
+    )
+    final String? seasonStartDate,
   }) = _$LeagueImpl;
 
   factory _League.fromJson(Map<String, dynamic> json) = _$LeagueImpl.fromJson;
@@ -685,9 +713,13 @@ abstract class _League implements League {
   int? get gpm; // ?
   @override
   int? get rnkm; // ?
-  // Saison Startdatum (als String im Format "yyyy-MM-dd" oder ISO-8601)
+  // Kickbase-Feld `dt`: Datum des Ligastarts
   @override
-  @JsonKey(name: 'dt')
+  @JsonKey(
+    name: 'dt',
+    fromJson: _seasonStartDateFromJson,
+    toJson: _seasonStartDateToJson,
+  )
   String? get seasonStartDate;
 
   /// Create a copy of League

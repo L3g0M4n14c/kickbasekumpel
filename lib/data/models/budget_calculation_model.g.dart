@@ -88,6 +88,28 @@ Map<String, dynamic> _$$ManagerTransferImplToJson(
   'marketValueAtTransfer': instance.marketValueAtTransfer,
 };
 
+_$AutoSaleEventImpl _$$AutoSaleEventImplFromJson(Map<String, dynamic> json) =>
+    _$AutoSaleEventImpl(
+      matchday: (json['matchday'] as num).toInt(),
+      playerId: json['playerId'] as String,
+      playerName: json['playerName'] as String,
+      points: (json['points'] as num).toInt(),
+      threshold: (json['threshold'] as num).toInt(),
+      marketValue: (json['marketValue'] as num).toInt(),
+      uncertain: json['uncertain'] as bool? ?? false,
+    );
+
+Map<String, dynamic> _$$AutoSaleEventImplToJson(_$AutoSaleEventImpl instance) =>
+    <String, dynamic>{
+      'matchday': instance.matchday,
+      'playerId': instance.playerId,
+      'playerName': instance.playerName,
+      'points': instance.points,
+      'threshold': instance.threshold,
+      'marketValue': instance.marketValue,
+      'uncertain': instance.uncertain,
+    };
+
 _$BudgetCalculationResultImpl _$$BudgetCalculationResultImplFromJson(
   Map<String, dynamic> json,
 ) => _$BudgetCalculationResultImpl(
@@ -110,6 +132,12 @@ _$BudgetCalculationResultImpl _$$BudgetCalculationResultImplFromJson(
       .map((e) => ManagerTransfer.fromJson(e as Map<String, dynamic>))
       .toList(),
   calculatedAt: DateTime.parse(json['calculatedAt'] as String),
+  autoSaleIncome: (json['autoSaleIncome'] as num?)?.toInt() ?? 0,
+  autoSaleEvents:
+      (json['autoSaleEvents'] as List<dynamic>?)
+          ?.map((e) => AutoSaleEvent.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      const [],
 );
 
 Map<String, dynamic> _$$BudgetCalculationResultImplToJson(
@@ -128,4 +156,6 @@ Map<String, dynamic> _$$BudgetCalculationResultImplToJson(
   'sales': instance.sales,
   'purchases': instance.purchases,
   'calculatedAt': instance.calculatedAt.toIso8601String(),
+  'autoSaleIncome': instance.autoSaleIncome,
+  'autoSaleEvents': instance.autoSaleEvents,
 };
