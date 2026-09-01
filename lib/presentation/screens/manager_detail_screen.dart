@@ -117,11 +117,26 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
     BuildContext context,
     Map<String, dynamic> dashboardData,
   ) {
+    // Dashboard-Endpunkt liefert abgekürzte Felder:
+    // `unm` = Username, `tv` = Teamwert, `tp` = Total Points.
     final name =
-        dashboardData['userName'] ?? dashboardData['name'] ?? 'Unbekannt';
+        dashboardData['unm'] ??
+        dashboardData['userName'] ??
+        dashboardData['name'] ??
+        'Unbekannt';
     final teamValue = dashboardData['teamValue'] ?? dashboardData['tv'] ?? 0;
-    final budget = dashboardData['budget'] ?? dashboardData['b'] ?? 0;
-    final points = dashboardData['points'] ?? dashboardData['p'] ?? 0;
+    final points = dashboardData['points'] ?? dashboardData['tp'] ?? 0;
+
+    // Das Dashboard liefert KEIN Budget-Feld → Budget wie im Budget-Tab
+    // über die transfer-basierte Berechnung ermitteln (geteilter Provider =
+    // gecacht, kein doppelter Request).
+    final budgetAsync = ref.watch(
+      managerBudgetCalculationProvider((
+        leagueId: widget.leagueId,
+        managerId: widget.userId,
+      )),
+    );
+    final budget = budgetAsync.asData?.value.currentBudget;
     final uim = dashboardData['uim'] as String?;
     final photoUrl = uim != null && uim.isNotEmpty
         ? 'https://kickbase.b-cdn.net/$uim'
@@ -194,7 +209,9 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
               _buildStatCard(
                 context,
                 'Budget',
-                '${(budget / 1000000).toStringAsFixed(2)}M€',
+                budget != null
+                    ? '${(budget / 1000000).toStringAsFixed(2)}M€'
+                    : '…',
                 Icons.account_balance_wallet,
               ),
               _buildStatCard(context, 'Punkte', '$points', Icons.emoji_events),
@@ -992,7 +1009,7 @@ class _BudgetOverviewCards extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Budget-Übersicht für ${calculation.managerName}',
+              'Budget-Übersicht',
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -1394,7 +1411,6 @@ class _CalculationStep extends StatelessWidget {
   final int step;
   final String description;
   final String value;
-  final String? result;
   final bool isFinal;
   final Color? color;
 
@@ -1402,7 +1418,6 @@ class _CalculationStep extends StatelessWidget {
     required this.step,
     required this.description,
     required this.value,
-    this.result,
     this.isFinal = false,
     this.color,
   });
@@ -1424,15 +1439,6 @@ class _CalculationStep extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Expanded(child: Text(description, style: theme.textTheme.bodyMedium)),
-          if (result != null) ...[
-            Text(
-              '= $result',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(width: 8),
-          ],
           Text(
             value,
             style: theme.textTheme.bodyMedium?.copyWith(
