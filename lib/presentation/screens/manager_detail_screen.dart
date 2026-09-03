@@ -7,7 +7,6 @@ import '../../data/models/budget_calculation_model.dart';
 import '../../data/models/transfer_model.dart';
 import '../../data/providers/providers.dart';
 import '../../data/providers/ligainsider_photo_provider.dart';
-import '../../data/providers/manager_transfer_history_providers.dart';
 import '../../data/utils/parsing_utils.dart';
 import '../widgets/charts/stats_bar_chart.dart';
 import '../widgets/loading_widget.dart';
@@ -1096,7 +1095,7 @@ class _AutoSaleSection extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Auto-Verkauf (${threshold}-Punkte-Regel)',
+                    'Auto-Verkauf ($threshold-Punkte-Regel)',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),

@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kickbasekumpel/data/models/budget_calculation_model.dart';
 import 'package:kickbasekumpel/data/models/market_value_model.dart';
 import 'package:kickbasekumpel/data/models/performance_model.dart';
 import 'package:kickbasekumpel/data/models/transfer_model.dart';
