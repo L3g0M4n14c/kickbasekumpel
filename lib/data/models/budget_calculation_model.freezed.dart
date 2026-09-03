@@ -1431,6 +1431,15 @@ mixin _$BudgetCalculationResult {
   /// Einzelne Auto-Verkauf-Ereignisse des Managers in der aktuellen Saison.
   List<AutoSaleEvent> get autoSaleEvents => throw _privateConstructorUsedError;
 
+  /// Kumulierter täglicher Anmeldebonus seit dem ersten Tag der Liga
+  /// (Tag 1: 10.000 €, Tag 2: 20.000 €, … Tag 10: 100.000 €, ab da
+  /// konstant 100.000 € pro Tag). Bereits in [currentBudget] enthalten.
+  int get loginBonus => throw _privateConstructorUsedError;
+
+  /// Anzahl der Liga-Tage, für die der Anmeldebonus gewährt wurde
+  /// (Tag 1 = erster Tag der Liga).
+  int get loginBonusDays => throw _privateConstructorUsedError;
+
   /// Serializes this BudgetCalculationResult to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
@@ -1464,6 +1473,8 @@ abstract class $BudgetCalculationResultCopyWith<$Res> {
     DateTime calculatedAt,
     int autoSaleIncome,
     List<AutoSaleEvent> autoSaleEvents,
+    int loginBonus,
+    int loginBonusDays,
   });
 }
 
@@ -1500,6 +1511,8 @@ class _$BudgetCalculationResultCopyWithImpl<
     Object? calculatedAt = null,
     Object? autoSaleIncome = null,
     Object? autoSaleEvents = null,
+    Object? loginBonus = null,
+    Object? loginBonusDays = null,
   }) {
     return _then(
       _value.copyWith(
@@ -1563,6 +1576,14 @@ class _$BudgetCalculationResultCopyWithImpl<
                 ? _value.autoSaleEvents
                 : autoSaleEvents // ignore: cast_nullable_to_non_nullable
                       as List<AutoSaleEvent>,
+            loginBonus: null == loginBonus
+                ? _value.loginBonus
+                : loginBonus // ignore: cast_nullable_to_non_nullable
+                      as int,
+            loginBonusDays: null == loginBonusDays
+                ? _value.loginBonusDays
+                : loginBonusDays // ignore: cast_nullable_to_non_nullable
+                      as int,
           )
           as $Val,
     );
@@ -1594,6 +1615,8 @@ abstract class _$$BudgetCalculationResultImplCopyWith<$Res>
     DateTime calculatedAt,
     int autoSaleIncome,
     List<AutoSaleEvent> autoSaleEvents,
+    int loginBonus,
+    int loginBonusDays,
   });
 }
 
@@ -1630,6 +1653,8 @@ class __$$BudgetCalculationResultImplCopyWithImpl<$Res>
     Object? calculatedAt = null,
     Object? autoSaleIncome = null,
     Object? autoSaleEvents = null,
+    Object? loginBonus = null,
+    Object? loginBonusDays = null,
   }) {
     return _then(
       _$BudgetCalculationResultImpl(
@@ -1693,6 +1718,14 @@ class __$$BudgetCalculationResultImplCopyWithImpl<$Res>
             ? _value._autoSaleEvents
             : autoSaleEvents // ignore: cast_nullable_to_non_nullable
                   as List<AutoSaleEvent>,
+        loginBonus: null == loginBonus
+            ? _value.loginBonus
+            : loginBonus // ignore: cast_nullable_to_non_nullable
+                  as int,
+        loginBonusDays: null == loginBonusDays
+            ? _value.loginBonusDays
+            : loginBonusDays // ignore: cast_nullable_to_non_nullable
+                  as int,
       ),
     );
   }
@@ -1717,6 +1750,8 @@ class _$BudgetCalculationResultImpl implements _BudgetCalculationResult {
     required this.calculatedAt,
     this.autoSaleIncome = 0,
     final List<AutoSaleEvent> autoSaleEvents = const [],
+    this.loginBonus = 0,
+    this.loginBonusDays = 0,
   }) : _initialPlayers = initialPlayers,
        _sales = sales,
        _purchases = purchases,
@@ -1789,9 +1824,22 @@ class _$BudgetCalculationResultImpl implements _BudgetCalculationResult {
     return EqualUnmodifiableListView(_autoSaleEvents);
   }
 
+  /// Kumulierter täglicher Anmeldebonus seit dem ersten Tag der Liga
+  /// (Tag 1: 10.000 €, Tag 2: 20.000 €, … Tag 10: 100.000 €, ab da
+  /// konstant 100.000 € pro Tag). Bereits in [currentBudget] enthalten.
+  @override
+  @JsonKey()
+  final int loginBonus;
+
+  /// Anzahl der Liga-Tage, für die der Anmeldebonus gewährt wurde
+  /// (Tag 1 = erster Tag der Liga).
+  @override
+  @JsonKey()
+  final int loginBonusDays;
+
   @override
   String toString() {
-    return 'BudgetCalculationResult(managerId: $managerId, managerName: $managerName, leagueId: $leagueId, initialBudget: $initialBudget, initialSquadValue: $initialSquadValue, startingBudget: $startingBudget, totalSales: $totalSales, totalPurchases: $totalPurchases, currentBudget: $currentBudget, initialPlayers: $initialPlayers, sales: $sales, purchases: $purchases, calculatedAt: $calculatedAt, autoSaleIncome: $autoSaleIncome, autoSaleEvents: $autoSaleEvents)';
+    return 'BudgetCalculationResult(managerId: $managerId, managerName: $managerName, leagueId: $leagueId, initialBudget: $initialBudget, initialSquadValue: $initialSquadValue, startingBudget: $startingBudget, totalSales: $totalSales, totalPurchases: $totalPurchases, currentBudget: $currentBudget, initialPlayers: $initialPlayers, sales: $sales, purchases: $purchases, calculatedAt: $calculatedAt, autoSaleIncome: $autoSaleIncome, autoSaleEvents: $autoSaleEvents, loginBonus: $loginBonus, loginBonusDays: $loginBonusDays)';
   }
 
   @override
@@ -1833,7 +1881,11 @@ class _$BudgetCalculationResultImpl implements _BudgetCalculationResult {
             const DeepCollectionEquality().equals(
               other._autoSaleEvents,
               _autoSaleEvents,
-            ));
+            ) &&
+            (identical(other.loginBonus, loginBonus) ||
+                other.loginBonus == loginBonus) &&
+            (identical(other.loginBonusDays, loginBonusDays) ||
+                other.loginBonusDays == loginBonusDays));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1855,6 +1907,8 @@ class _$BudgetCalculationResultImpl implements _BudgetCalculationResult {
     calculatedAt,
     autoSaleIncome,
     const DeepCollectionEquality().hash(_autoSaleEvents),
+    loginBonus,
+    loginBonusDays,
   );
 
   /// Create a copy of BudgetCalculationResult
@@ -1891,6 +1945,8 @@ abstract class _BudgetCalculationResult implements BudgetCalculationResult {
     required final DateTime calculatedAt,
     final int autoSaleIncome,
     final List<AutoSaleEvent> autoSaleEvents,
+    final int loginBonus,
+    final int loginBonusDays,
   }) = _$BudgetCalculationResultImpl;
 
   factory _BudgetCalculationResult.fromJson(Map<String, dynamic> json) =
@@ -1932,6 +1988,17 @@ abstract class _BudgetCalculationResult implements BudgetCalculationResult {
   /// Einzelne Auto-Verkauf-Ereignisse des Managers in der aktuellen Saison.
   @override
   List<AutoSaleEvent> get autoSaleEvents;
+
+  /// Kumulierter täglicher Anmeldebonus seit dem ersten Tag der Liga
+  /// (Tag 1: 10.000 €, Tag 2: 20.000 €, … Tag 10: 100.000 €, ab da
+  /// konstant 100.000 € pro Tag). Bereits in [currentBudget] enthalten.
+  @override
+  int get loginBonus;
+
+  /// Anzahl der Liga-Tage, für die der Anmeldebonus gewährt wurde
+  /// (Tag 1 = erster Tag der Liga).
+  @override
+  int get loginBonusDays;
 
   /// Create a copy of BudgetCalculationResult
   /// with the given fields replaced by the non-null parameter values.

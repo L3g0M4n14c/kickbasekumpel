@@ -1,6 +1,6 @@
 {
     "name": "KickbaseKumpel Flutter Dev",
-    "image": "mcr.microsoft.com/devcontainers/flutter:3.9",
+    "image": "ghcr.io/cirruslabs/flutter:3.35.3",
     "features": {
         "ghcr.io/devcontainers/features/git:1": {}
     },
@@ -17,6 +17,5 @@
     },
     "forwardPorts": [
         8080
-    ],
-    "remoteUser": "vscode"
+    ]
 }

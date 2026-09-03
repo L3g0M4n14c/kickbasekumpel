@@ -143,4 +143,100 @@ void main() {
       expect(service.formatMarketValue(1234567), '1.23 M €');
     });
   });
+
+  group('BudgetCalculationService – Anmeldebonus', () {
+    late BudgetCalculationService service;
+
+    setUp(() {
+      service = BudgetCalculationService();
+    });
+
+    test('loginBonusForDay steigt täglich bis Tag 10 und bleibt dann konstant',
+        () {
+      expect(service.loginBonusForDay(1), 10000);
+      expect(service.loginBonusForDay(2), 20000);
+      expect(service.loginBonusForDay(3), 30000);
+      expect(service.loginBonusForDay(9), 90000);
+      expect(service.loginBonusForDay(10), 100000);
+      expect(service.loginBonusForDay(11), 100000);
+      expect(service.loginBonusForDay(25), 100000);
+      expect(service.loginBonusForDay(0), 0);
+      expect(service.loginBonusForDay(-5), 0);
+    });
+
+    test('cumulativeLoginBonus summiert die Tagesboni korrekt', () {
+      expect(service.cumulativeLoginBonus(0), 0);
+      expect(service.cumulativeLoginBonus(-3), 0);
+      // Tag 1: 10.000 €
+      expect(service.cumulativeLoginBonus(1), 10000);
+      // Tag 1+2: 10.000 + 20.000 = 30.000 €
+      expect(service.cumulativeLoginBonus(2), 30000);
+      // Tag 1+2+3: 10.000 + 20.000 + 30.000 = 60.000 €
+      expect(service.cumulativeLoginBonus(3), 60000);
+      // Tag 1..10: 10.000 + 20.000 + … + 100.000 = 550.000 €
+      expect(service.cumulativeLoginBonus(10), 550000);
+      // Ab Tag 10 kommen täglich 100.000 € hinzu
+      expect(service.cumulativeLoginBonus(11), 650000);
+      expect(service.cumulativeLoginBonus(20), 1550000); // 550.000 + 10 × 100.000
+    });
+
+    test('calculateLoginBonus am ersten Tag der Liga', () {
+      final seasonStart = DateTime.utc(2026, 8, 21);
+      final result = service.calculateLoginBonus(
+        seasonStart: seasonStart,
+        now: DateTime.utc(2026, 8, 21, 23, 59),
+      );
+
+      expect(result, 10000);
+      expect(service.loginBonusDaysSince(seasonStart, now: DateTime.utc(2026, 8, 21, 23, 59)), 1);
+    });
+
+    test('calculateLoginBonus am zweiten Tag der Liga', () {
+      final result = service.calculateLoginBonus(
+        seasonStart: DateTime.utc(2026, 8, 21),
+        now: DateTime.utc(2026, 8, 22, 12, 0),
+      );
+
+      expect(result, 30000); // 10.000 + 20.000
+    });
+
+    test('calculateLoginBonus am zehnten Tag der Liga', () {
+      final result = service.calculateLoginBonus(
+        seasonStart: DateTime.utc(2026, 8, 21),
+        now: DateTime.utc(2026, 8, 30, 6, 0),
+      );
+
+      expect(result, 550000); // 10.000 + … + 100.000
+    });
+
+    test('calculateLoginBonus nach dem zehnten Tag: täglich 100.000 €', () {
+      final result = service.calculateLoginBonus(
+        seasonStart: DateTime.utc(2026, 8, 21),
+        now: DateTime.utc(2026, 8, 31, 18, 30),
+      );
+
+      expect(result, 650000); // 550.000 + 100.000
+    });
+
+    test('calculateLoginBonus ist 0, wenn die Liga noch nicht gestartet ist',
+        () {
+      final result = service.calculateLoginBonus(
+        seasonStart: DateTime.utc(2026, 8, 21),
+        now: DateTime.utc(2026, 8, 20, 23, 59),
+      );
+
+      expect(result, 0);
+    });
+
+    test('calculateLoginBonus normalisiert Zeitanteile (UTC, Tagesgrenzen)',
+        () {
+      // Saisonstart mit Uhrzeit – muss trotzdem als Tag 21.08. gelten
+      final result = service.calculateLoginBonus(
+        seasonStart: DateTime.utc(2026, 8, 21, 14, 30),
+        now: DateTime.utc(2026, 8, 23, 1, 0),
+      );
+
+      expect(result, 60000); // 10.000 + 20.000 + 30.000
+    });
+  });
 }

@@ -260,6 +260,29 @@ final managerBudgetCalculationProvider =
         allTransfers: allTransfers,
       );
 
+      // 5b. Täglicher Anmeldebonus berücksichtigen.
+      //
+      // Jeder Manager bekommt am ersten Tag der Liga 10.000 €, am zweiten
+      // Tag 20.000 €, … am zehnten Tag 100.000 € – und ab da an jedem Tag
+      // konstant 100.000 €. Der Bonus ist für alle Manager identisch und
+      // wird kumuliert seit dem Saison-Start aufs Budget aufgerechnet.
+      final loginBonus = calculationService.calculateLoginBonus(
+        seasonStart: seasonStartDate,
+      );
+      if (loginBonus > 0) {
+        final loginBonusDays = calculationService
+            .loginBonusDaysSince(seasonStartDate);
+        _logger.i(
+          '🎁 Anmeldebonus: $loginBonusDays Liga-Tag(e) → '
+          '+$loginBonus € für Manager ${params.managerId}',
+        );
+        result = result.copyWith(
+          loginBonus: loginBonus,
+          loginBonusDays: loginBonusDays,
+          currentBudget: result.currentBudget + loginBonus,
+        );
+      }
+
       // 6. Auto-Verkauf ("250er-Regel") berücksichtigen.
       //
       // Spieler, die die Punkte-Schwelle (Overview-Feld `ptspf`, z.B. 250)

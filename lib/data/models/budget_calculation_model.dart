@@ -147,6 +147,15 @@ class BudgetCalculationResult with _$BudgetCalculationResult {
 
     /// Einzelne Auto-Verkauf-Ereignisse des Managers in der aktuellen Saison.
     @Default([]) List<AutoSaleEvent> autoSaleEvents,
+
+    /// Kumulierter täglicher Anmeldebonus seit dem ersten Tag der Liga
+    /// (Tag 1: 10.000 €, Tag 2: 20.000 €, … Tag 10: 100.000 €, ab da
+    /// konstant 100.000 € pro Tag). Bereits in [currentBudget] enthalten.
+    @Default(0) int loginBonus,
+
+    /// Anzahl der Liga-Tage, für die der Anmeldebonus gewährt wurde
+    /// (Tag 1 = erster Tag der Liga).
+    @Default(0) int loginBonusDays,
   }) = _BudgetCalculationResult;
 
   factory BudgetCalculationResult.fromJson(Map<String, dynamic> json) =>

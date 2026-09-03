@@ -138,6 +138,8 @@ _$BudgetCalculationResultImpl _$$BudgetCalculationResultImplFromJson(
           ?.map((e) => AutoSaleEvent.fromJson(e as Map<String, dynamic>))
           .toList() ??
       const [],
+  loginBonus: (json['loginBonus'] as num?)?.toInt() ?? 0,
+  loginBonusDays: (json['loginBonusDays'] as num?)?.toInt() ?? 0,
 );
 
 Map<String, dynamic> _$$BudgetCalculationResultImplToJson(
@@ -158,4 +160,6 @@ Map<String, dynamic> _$$BudgetCalculationResultImplToJson(
   'calculatedAt': instance.calculatedAt.toIso8601String(),
   'autoSaleIncome': instance.autoSaleIncome,
   'autoSaleEvents': instance.autoSaleEvents,
+  'loginBonus': instance.loginBonus,
+  'loginBonusDays': instance.loginBonusDays,
 };
