@@ -261,12 +261,13 @@ void main() {
 
   group('AutoSaleBudgetService.crossingMatchday', () {
     test(
-      'findet den ERSTEN Spieltag, an dem die kumulierte Saison-Punktzahl die Schwelle erreicht',
+      'findet den ERSTEN Spieltag, an dem die Saison-Punktzahl die Schwelle erreicht',
       () {
+        // `p` ist die kumulierte Saison-Gesamtpunktzahl zum Spieltag.
         final ph = [
           _perf(1, _day1Start, p: 30),
-          _perf(2, _day2Start, p: 25),
-          _perf(3, _day3Start, p: 40),
+          _perf(2, _day2Start, p: 55),
+          _perf(3, _day3Start, p: 95),
         ];
 
         // Tag 2: 55 Punkte (unter Schwelle), Tag 3: 95 Punkte → Crossing
@@ -278,18 +279,32 @@ void main() {
       },
     );
 
+    test('summiert p NICHT (das wäre die mehrfach gezählte Gesamtpunktzahl)', () {
+      // Würde p summiert, wäre die Laufsumme nach ST 2 bereits 85 – bei einer
+      // Schwelle von 60 fälschlich ST 2 statt ST 3.
+      final ph = [
+        _perf(1, _day1Start, p: 30),
+        _perf(2, _day2Start, p: 55),
+        _perf(3, _day3Start, p: 95),
+      ];
+
+      final crossing = service.crossingMatchday(ph, 60);
+
+      expect(crossing!.day, 3);
+    });
+
     test('ignoriert tp (das ist die KARRIERE-Gesamtpunktzahl!)', () {
-      // p-Summe bleibt weit unter der Schwelle, tp (=9999) wäre längst drüber.
-      final ph = [_perf(1, _day1Start, p: 30), _perf(2, _day2Start, p: 25)];
+      // p bleibt kumuliert weit unter der Schwelle, tp (=9999) wäre längst drüber.
+      final ph = [_perf(1, _day1Start, p: 30), _perf(2, _day2Start, p: 55)];
 
       expect(service.crossingMatchday(ph, 250), isNull);
     });
 
-    test('Spieltage ohne p (nicht gespielt) zählen 0 Punkte', () {
+    test('Spieltage ohne p (nicht gespielt) werden übersprungen', () {
       final ph = [
         _perf(1, _day1Start, p: 200),
-        _perf(2, _day2Start), // ohne p → 0 Punkte
-        _perf(3, _day3Start, p: 60),
+        _perf(2, _day2Start), // ohne p → kein Crossing-Kandidat
+        _perf(3, _day3Start, p: 260),
       ];
 
       final crossing = service.crossingMatchday(ph, 250);
@@ -298,16 +313,17 @@ void main() {
     });
 
     test('liefert null, wenn die Schwelle nie erreicht wird', () {
-      final ph = [_perf(1, _day1Start, p: 30), _perf(2, _day2Start, p: 25)];
+      final ph = [_perf(1, _day1Start, p: 30), _perf(2, _day2Start, p: 55)];
 
       expect(service.crossingMatchday(ph, 250), isNull);
     });
 
     test('ist robust gegenüber unsortierten und leeren Listen', () {
-      final ph = [_perf(2, _day2Start, p: 200), _perf(1, _day1Start, p: 100)];
+      final ph = [_perf(2, _day2Start, p: 250), _perf(1, _day1Start, p: 100)];
 
       final crossing = service.crossingMatchday(ph, 250);
       expect(crossing!.day, 2);
+      expect(crossing.points, 250);
 
       expect(service.crossingMatchday([], 250), isNull);
     });
@@ -383,10 +399,11 @@ void main() {
 
   group('AutoSaleBudgetService.computeAutoSales', () {
     /// Aktuelle Saison (sid 28): ST 1–3, Crossing bei ST 3 (280 Punkte).
+    /// `p` ist die kumulierte Saison-Gesamtpunktzahl zum Spieltag.
     final currentSeason = _season('28', [
       _perf(1, _day1Start, p: 120),
-      _perf(2, _day2Start, p: 100),
-      _perf(3, _day3Start, p: 60),
+      _perf(2, _day2Start, p: 220),
+      _perf(3, _day3Start, p: 280),
     ]);
 
     /// Alte Saison mit riesigen Punktzahlen – darf NICHT ausgewertet werden.
@@ -470,8 +487,8 @@ void main() {
         // Crossing bereits bei ST 1 (300 Punkte) → Sale instant = Kickoff ST 2.
         final crossingAtDay1 = _season('28', [
           _perf(1, _day1Start, p: 300),
-          _perf(2, _day2Start, p: 0),
-          _perf(3, _day3Start, p: 0),
+          _perf(2, _day2Start, p: 300),
+          _perf(3, _day3Start, p: 300),
         ]);
 
         final computation = service.computeAutoSales(

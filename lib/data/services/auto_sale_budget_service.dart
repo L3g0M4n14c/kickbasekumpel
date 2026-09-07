@@ -216,14 +216,19 @@ class AutoSaleBudgetService {
     return best ?? candidates.last;
   }
 
-  /// Findet den ersten Spieltag der aktuellen Saison, an dem die kumulierte
-  /// Saison-Punktzahl die Schwelle [threshold] erreicht. Liefert null, wenn
+  /// Findet den ersten Spieltag der aktuellen Saison, an dem die Saison-
+  /// Gesamtpunktzahl die Schwelle [threshold] erreicht. Liefert null, wenn
   /// die Schwelle (noch) nie erreicht wurde.
   ///
-  /// WICHTIG: Die Punktzahl ist die SUMME der Einzelpunkte (`p`) der Spiele
-  /// der aktuellen Saison. Das Feld `tp` ist NICHT die Saison-Punktzahl,
-  /// sondern die Karriere-Gesamtpunktzahl über alle Saisons – es darf für
-  /// die Schwellen-Erkennung nicht verwendet werden.
+  /// WICHTIG: Das Feld `p` eines Performance-Eintrags ist bereits die
+  /// KUMULIERTE Saison-Gesamtpunktzahl zum jeweiligen Spieltag (die
+  /// "Punktzahl des Spielers beim spezifischen Spieltag") – es darf dafür
+  /// also NICHT über die Spieltage summiert werden, sondern `p` wird direkt
+  /// gegen die Schwelle geprüft. Eine Summierung würde die Gesamtpunktzahl
+  /// mehrfach zählen und dadurch zu früh bzw. bei den falschen Spielern ein
+  /// Crossing melden. Das Feld `tp` ist die Karriere-Gesamtpunktzahl über
+  /// alle Saisons und darf für die Schwellen-Erkennung nicht verwendet
+  /// werden.
   ({int day, int points})? crossingMatchday(
     List<MatchPerformance> ph,
     int threshold,
@@ -231,11 +236,10 @@ class AutoSaleBudgetService {
     final entries = ph.where((e) => e.p != null).toList()
       ..sort((a, b) => a.day.compareTo(b.day));
 
-    var seasonPoints = 0;
     for (final entry in entries) {
-      seasonPoints += entry.p ?? 0;
-      if (seasonPoints >= threshold) {
-        return (day: entry.day, points: seasonPoints);
+      final points = entry.p!;
+      if (points >= threshold) {
+        return (day: entry.day, points: points);
       }
     }
     return null;

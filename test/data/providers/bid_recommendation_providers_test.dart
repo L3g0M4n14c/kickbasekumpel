@@ -78,5 +78,79 @@ void main() {
       // Assert
       expect(bid, 13000000);
     });
+
+    test('fetches league data only once for different players', () async {
+      // Arrange
+      when(() => mockApiClient.getLeagueRanking('league-1')).thenAnswer(
+        (_) async => {
+          'us': [
+            {'i': 'manager-me'},
+            {'i': 'manager-1'},
+          ],
+        },
+      );
+      when(
+        () => mockApiClient.getManagerTransferHistory('league-1', 'manager-1'),
+      ).thenAnswer(
+        (_) async => {
+          'u': 'manager-1',
+          'unm': 'Konkurrent',
+          'it': [
+            {
+              'dt': '2025-01-15T12:00:00.000Z',
+              'pi': 'past-player',
+              'pn': 'Vergangener Spieler',
+              'tid': 'transfer-1',
+              'trp': 13000000,
+              'tty': 1,
+            },
+          ],
+        },
+      );
+      when(
+        () => mockApiClient.getPlayerMarketValue(
+          'league-1',
+          'past-player',
+          timeframe: any(named: 'timeframe'),
+        ),
+      ).thenAnswer(
+        (_) async => {
+          'it': [
+            {'dt': 1736812800000, 'mv': 10000000},
+          ],
+        },
+      );
+
+      // Act: zwei Spieler mit unterschiedlichen Marktwerten abfragen
+      final bidPlayerA = await container.read(
+        recommendedBidProvider((
+          leagueId: 'league-1',
+          currentMarketValue: 10000000,
+          minimumBid: 10500000,
+        )).future,
+      );
+      final bidPlayerB = await container.read(
+        recommendedBidProvider((
+          leagueId: 'league-1',
+          currentMarketValue: 25000000,
+          minimumBid: 20000000,
+        )).future,
+      );
+
+      // Assert: Liga-Daten werden nur einmal geladen und gecacht
+      verify(() => mockApiClient.getLeagueRanking('league-1')).called(1);
+      verify(
+        () => mockApiClient.getManagerTransferHistory('league-1', 'manager-1'),
+      ).called(1);
+      verify(
+        () => mockApiClient.getPlayerMarketValue(
+          'league-1',
+          'past-player',
+          timeframe: any(named: 'timeframe'),
+        ),
+      ).called(1);
+      expect(bidPlayerA, 13000000);
+      expect(bidPlayerB, 32500000);
+    });
   });
 }
