@@ -6,7 +6,7 @@ import '../models/market_value_model.dart';
 import '../models/performance_model.dart';
 import '../models/ligainsider_model.dart';
 import '../models/lineup_model.dart';
-import '../services/mistral_recommendation_service.dart';
+import '../services/deterministic_recommendation_service.dart';
 import '../../domain/repositories/repository_interfaces.dart';
 import 'repository_providers.dart';
 import 'league_providers.dart';
@@ -394,11 +394,11 @@ final recommendationsByActionCountProvider = Provider<Map<String, int>>((ref) {
 });
 
 // ============================================================================
-// KI-EMPFEHLUNGEN GENERIEREN (Gemini / Firebase Vertex AI)
+// DETERMINISTISCHE EMPFEHLUNGEN BERECHNEN
 // ============================================================================
 
 /// Zustand des AI-Generierungs-Notifiers
-class GenerateAIRecommendationsState {
+class GenerateRecommendationsState {
   /// Ob gerade ein Generierungsvorgang läuft
   final bool isGenerating;
 
@@ -420,7 +420,7 @@ class GenerateAIRecommendationsState {
   /// Die League-ID für die die aktuellen Empfehlungen gelten
   final String? leagueId;
 
-  const GenerateAIRecommendationsState({
+  const GenerateRecommendationsState({
     this.isGenerating = false,
     this.generatedCount = 0,
     this.totalCount = 0,
@@ -430,7 +430,7 @@ class GenerateAIRecommendationsState {
     this.leagueId,
   });
 
-  GenerateAIRecommendationsState copyWith({
+  GenerateRecommendationsState copyWith({
     bool? isGenerating,
     int? generatedCount,
     int? totalCount,
@@ -438,7 +438,7 @@ class GenerateAIRecommendationsState {
     bool? lastRunSucceeded,
     List<Recommendation>? recommendations,
     String? leagueId,
-  }) => GenerateAIRecommendationsState(
+  }) => GenerateRecommendationsState(
     isGenerating: isGenerating ?? this.isGenerating,
     generatedCount: generatedCount ?? this.generatedCount,
     totalCount: totalCount ?? this.totalCount,
@@ -449,7 +449,7 @@ class GenerateAIRecommendationsState {
   );
 }
 
-/// Notifier, der KI-Empfehlungen via Mistral generiert und in Firestore schreibt.
+/// Notifier, der Empfehlungen deterministisch berechnet und in Firestore schreibt.
 ///
 /// Die bestehenden [recommendationsProvider]-Stream-Provider lesen die Daten
 /// automatisch aus Firestore – kein Umbau der UI nötig.
@@ -457,18 +457,18 @@ class GenerateAIRecommendationsState {
 /// Verwendung:
 /// ```dart
 /// // Einzelner Spieler
-/// await ref.read(generateAIRecommendationsNotifierProvider(leagueId).notifier)
+/// await ref.read(generateRecommendationsNotifierProvider(leagueId).notifier)
 ///     .generateForPlayer(player);
 ///
 /// // Komplette Spielerliste
-/// await ref.read(generateAIRecommendationsNotifierProvider.notifier)
+/// await ref.read(generateRecommendationsNotifierProvider.notifier)
 ///     .generateForPlayers(leagueId, players);
 /// ```
-class GenerateAIRecommendationsNotifier
-    extends Notifier<GenerateAIRecommendationsState> {
+class GenerateRecommendationsNotifier
+    extends Notifier<GenerateRecommendationsState> {
   @override
-  GenerateAIRecommendationsState build() =>
-      const GenerateAIRecommendationsState();
+  GenerateRecommendationsState build() =>
+      const GenerateRecommendationsState();
 
   /// Generiert eine KI-Empfehlung für einen einzelnen Spieler.
   Future<void> generateForPlayer(
@@ -488,12 +488,12 @@ class GenerateAIRecommendationsNotifier
 
     final repo = ref.read(recommendationRepositoryProvider);
     final apiClient = ref.read(kickbaseApiClientProvider);
-    final promptContext = await _loadRecommendationPromptContext(
+    final promptContext = await _loadRecommendationAnalysisContext(
       apiClient,
       leagueId,
     );
     final resolvedPlayer = promptContext.resolvePlayer(player);
-    final result = await repo.generateAIRecommendation(
+    final result = await repo.generatePlayerRecommendation(
       leagueId: leagueId,
       player: resolvedPlayer,
       marketValueHistory: marketValueHistory,
@@ -565,26 +565,21 @@ class GenerateAIRecommendationsNotifier
     await repo.deleteByLeague(leagueId);
     debugPrint('✅ generateForPlayers: Alte Empfehlungen gelöscht.');
     final apiClient = ref.read(kickbaseApiClientProvider);
-    final promptContext = await _loadRecommendationPromptContext(
+    final promptContext = await _loadRecommendationAnalysisContext(
       apiClient,
       leagueId,
     );
     final resolvedPlayers = players.map(promptContext.resolvePlayer).toList();
 
-    final localShortcutPlayerIds = resolvedPlayers
-        .where(
-          (player) => MistralRecommendationService.shouldUseLocalRecommendation(
-            player: player,
-            ligainsiderData: ligainsiderData?[player.id],
-          ),
-        )
+    final unavailablePlayerIds = resolvedPlayers
+        .where((player) => _isPlayerUnavailable(player.status))
         .map((player) => player.id)
         .toSet();
 
     final swapCandidatesByPosition = <int, List<Player>>{};
     for (final candidate in resolvedPlayers) {
       if (candidate.userOwnsPlayer ||
-          localShortcutPlayerIds.contains(candidate.id)) {
+          unavailablePlayerIds.contains(candidate.id)) {
         continue;
       }
       swapCandidatesByPosition
@@ -643,7 +638,7 @@ class GenerateAIRecommendationsNotifier
       return;
     }
 
-    final result = await repo.generateAIBatchRecommendations(
+    final result = await repo.generatePlayerRecommendations(
       leagueId: leagueId,
       players: playerInputs,
     );
@@ -678,6 +673,13 @@ class GenerateAIRecommendationsNotifier
 // Hilfsfunktionen (privat, modul-global)
 // =============================================================================
 
+/// Prüft, ob ein Spieler basierend auf seinem Status nicht verfügbar ist
+/// (verletzt, gesperrt oder abwesend).
+bool _isPlayerUnavailable(int status) =>
+    DeterministicRecommendationService.injuryStatuses.contains(status) ||
+    DeterministicRecommendationService.suspensionStatuses.contains(status) ||
+    DeterministicRecommendationService.absenceStatuses.contains(status);
+
 /// Schwierigkeitsbewertung eines Gegners anhand seiner Tabellenposition.
 String _fixtureDifficulty(int tablePosition) {
   if (tablePosition == 0) return 'Schwierigkeit unbekannt';
@@ -687,7 +689,7 @@ String _fixtureDifficulty(int tablePosition) {
   return 'leicht';
 }
 
-Future<_RecommendationPromptContext> _loadRecommendationPromptContext(
+Future<_RecommendationAnalysisContext> _loadRecommendationAnalysisContext(
   dynamic apiClient,
   String leagueId,
 ) async {
@@ -808,7 +810,7 @@ Future<_RecommendationPromptContext> _loadRecommendationPromptContext(
         'ST: ${positionCounts[4]}';
   }
 
-  return _RecommendationPromptContext(
+  return _RecommendationAnalysisContext(
     teamPositions: teamPositions,
     teamNamesByKey: teamNamesByKey,
     nextFixtures: nextFixtures,
@@ -834,14 +836,14 @@ void _addNextFixture({
   }
 }
 
-class _RecommendationPromptContext {
+class _RecommendationAnalysisContext {
   final Map<String, int> teamPositions;
   final Map<String, String> teamNamesByKey;
   final Map<String, List<String>> nextFixtures;
   final Map<String, _NextFixtureInfo> nextFixtureByKey;
   final String? lineupSummary;
 
-  const _RecommendationPromptContext({
+  const _RecommendationAnalysisContext({
     required this.teamPositions,
     required this.teamNamesByKey,
     required this.nextFixtures,
@@ -956,24 +958,24 @@ Future<LineupResponse?> _loadLineup(dynamic apiClient, String leagueId) async {
   }
 }
 
-/// Provider für [GenerateAIRecommendationsNotifier].
-final generateAIRecommendationsNotifierProvider =
+/// Provider für [GenerateRecommendationsNotifier].
+final generateRecommendationsNotifierProvider =
     NotifierProvider<
-      GenerateAIRecommendationsNotifier,
-      GenerateAIRecommendationsState
-    >(GenerateAIRecommendationsNotifier.new);
+      GenerateRecommendationsNotifier,
+      GenerateRecommendationsState
+    >(GenerateRecommendationsNotifier.new);
 
 /// Provider, der die aktuellen AI-Empfehlungen für die ausgewählte Liga zurückgibt.
-/// Diese werden aus dem Notifier-State gelesen, da Mistral-Ergebnisse nicht in Firestore gespeichert werden.
-final currentAIPredictionsProvider = Provider<List<Recommendation>>((ref) {
-  final genState = ref.watch(generateAIRecommendationsNotifierProvider);
+/// Diese werden aus dem Notifier-State gelesen, da die deterministischen Ergebnisse nicht in Firestore gespeichert werden.
+final currentRecommendationsProvider = Provider<List<Recommendation>>((ref) {
+  final genState = ref.watch(generateRecommendationsNotifierProvider);
   return genState.recommendations;
 });
 
 /// Provider, der die aktuellen AI-Empfehlungen für eine spezifische Liga zurückgibt.
-final aiRecommendationsForLeagueProvider =
+final recommendationsForLeagueProvider =
     Provider.family<List<Recommendation>, String>((ref, leagueId) {
-      final genState = ref.watch(generateAIRecommendationsNotifierProvider);
+      final genState = ref.watch(generateRecommendationsNotifierProvider);
       // Nur zurückgeben, wenn die League-ID übereinstimmt
       if (genState.leagueId == leagueId) {
         return genState.recommendations;

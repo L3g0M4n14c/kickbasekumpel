@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../repositories/firestore_repositories.dart';
 import '../repositories/auth_repository.dart';
-import '../services/mistral_recommendation_service.dart';
+import '../services/deterministic_recommendation_service.dart';
 import 'kickbase_api_provider.dart';
 
 // ============================================================================
@@ -59,27 +59,28 @@ final transferRepositoryProvider = Provider<TransferRepository>((ref) {
   return TransferRepository(firestore: firestore, apiClient: apiClient);
 });
 
-/// Mistral Recommendation Service Provider
-/// Nutzt jetzt eine Cloud Function als Proxy - kein API-Key in der App nötig
-final mistralRecommendationServiceProvider =
-    Provider<MistralRecommendationService>((ref) {
-  debugPrint('ℹ️ MistralRecommendationService: Service erstellt (nutzt Cloud Function Proxy)');
-  return MistralRecommendationService();
+/// Deterministic Recommendation Service Provider
+/// Rein lokale, deterministische Empfehlungsberechnung (kein KI-Service)
+final deterministicRecommendationServiceProvider =
+    Provider<DeterministicRecommendationService>((ref) {
+  return const DeterministicRecommendationService();
 });
 
 /// Recommendation Repository Provider
 /// Manages all recommendation-related operations
-/// Nutzt Mistral API statt Firestore für KI-Empfehlungen
+/// Empfehlungen werden rein deterministisch lokal berechnet
 /// Ergebnisse werden NICHT in Firestore gespeichert, sondern direkt zurückgegeben
 final recommendationRepositoryProvider = Provider<RecommendationRepository>((
   ref,
 ) {
   final firestore = ref.watch(firestoreProvider);
-  final mistralService = ref.watch(mistralRecommendationServiceProvider);
+  final recommendationService = ref.watch(
+    deterministicRecommendationServiceProvider,
+  );
   
   return RecommendationRepository(
     firestore: firestore,
-    mistralService: mistralService,
+    recommendationService: recommendationService,
   );
 });
 

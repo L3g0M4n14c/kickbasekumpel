@@ -12,7 +12,7 @@ lib/data/providers/
 ├── league_providers.dart            # League data & selection
 ├── player_providers.dart            # Player data & filtering
 ├── transfer_providers.dart          # Transfer tracking & validation
-└── recommendation_providers.dart    # AI recommendations
+└── recommendation_providers.dart    # Deterministic recommendations
 ```
 
 ## 🚀 Quick Start
@@ -230,7 +230,7 @@ Transfer-Tracking und -Validierung:
 
 ### Recommendation Providers (`recommendation_providers.dart`)
 
-KI-Empfehlungen:
+Deterministische Empfehlungen (rein lokal berechnet):
 
 **Streams:**
 - `recommendationsProvider(leagueId)` - Stream<List<Recommendation>> - League recommendations

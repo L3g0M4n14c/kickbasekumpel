@@ -11,7 +11,7 @@ import 'package:kickbasekumpel/data/providers/recommendation_providers.dart';
 import 'package:kickbasekumpel/data/providers/repository_providers.dart';
 import 'package:kickbasekumpel/data/repositories/firestore_repositories.dart'
     hide firestoreProvider;
-import 'package:kickbasekumpel/data/services/mistral_recommendation_service.dart';
+import 'package:kickbasekumpel/data/services/deterministic_recommendation_service.dart';
 import 'package:kickbasekumpel/domain/repositories/repository_interfaces.dart';
 
 import '../../helpers/mock_firebase.dart';
@@ -21,12 +21,12 @@ void main() {
     late FakeFirebaseFirestore firestore;
     late MockKickbaseAPIClient mockApiClient;
     late ProviderContainer container;
-    late _FakeMistralRecommendationService fakeMistralService;
+    late _FakeDeterministicRecommendationService fakeRecommendationService;
 
     setUp(() {
       firestore = FakeFirebaseFirestore();
       mockApiClient = MockKickbaseAPIClient();
-      fakeMistralService = _FakeMistralRecommendationService();
+      fakeRecommendationService = _FakeDeterministicRecommendationService();
 
       when(
         () => mockApiClient.getCompetitionTable(any()),
@@ -40,7 +40,7 @@ void main() {
 
       final repository = RecommendationRepository(
         firestore: firestore,
-        mistralService: fakeMistralService,
+        recommendationService: fakeRecommendationService,
       );
 
       container = ProviderContainer(
@@ -60,7 +60,7 @@ void main() {
       'generateForPlayers keeps ownership flags and scopes results by league',
       () async {
         final notifier = container.read(
-          generateAIRecommendationsNotifierProvider.notifier,
+          generateRecommendationsNotifierProvider.notifier,
         );
 
         final ownedPlayer = _buildPlayer(
@@ -87,10 +87,10 @@ void main() {
         );
 
         final stateAfterFirstRun = container.read(
-          generateAIRecommendationsNotifierProvider,
+          generateRecommendationsNotifierProvider,
         );
         final leagueARecommendations = container.read(
-          aiRecommendationsForLeagueProvider('league-a'),
+          recommendationsForLeagueProvider('league-a'),
         );
 
         expect(stateAfterFirstRun.isGenerating, false);
@@ -127,7 +127,7 @@ void main() {
           'buy',
         );
         expect(
-          container.read(aiRecommendationsForLeagueProvider('league-b')),
+          container.read(recommendationsForLeagueProvider('league-b')),
           isEmpty,
         );
 
@@ -139,11 +139,11 @@ void main() {
         );
 
         expect(
-          container.read(aiRecommendationsForLeagueProvider('league-a')),
+          container.read(recommendationsForLeagueProvider('league-a')),
           isEmpty,
         );
         expect(
-          container.read(aiRecommendationsForLeagueProvider('league-b')),
+          container.read(recommendationsForLeagueProvider('league-b')),
           hasLength(1),
         );
       },
@@ -153,7 +153,7 @@ void main() {
       'generateForPlayers does not request market values or performances when no optional maps are provided',
       () async {
         final notifier = container.read(
-          generateAIRecommendationsNotifierProvider.notifier,
+          generateRecommendationsNotifierProvider.notifier,
         );
         final players = [
           _buildPlayer(id: 'player-a', userOwnsPlayer: false),
@@ -171,17 +171,17 @@ void main() {
         );
         verifyNever(() => mockApiClient.getPlayerStats(any(), any()));
         expect(
-          container.read(aiRecommendationsForLeagueProvider('league-a')),
+          container.read(recommendationsForLeagueProvider('league-a')),
           hasLength(2),
         );
       },
     );
 
     test(
-      'generateForPlayers reloads team names and adds next fixture metadata to prompt inputs',
+      'generateForPlayers reloads team names and adds next fixture metadata to analysis inputs',
       () async {
         final notifier = container.read(
-          generateAIRecommendationsNotifierProvider.notifier,
+          generateRecommendationsNotifierProvider.notifier,
         );
         final player = _buildPlayer(
           id: 'player-a',
@@ -217,7 +217,7 @@ void main() {
 
         await notifier.generateForPlayers('league-a', [player]);
 
-        final promptInput = fakeMistralService.lastPlayers.single;
+        final promptInput = fakeRecommendationService.lastPlayers.single;
         expect(promptInput.player.teamName, 'FC Nachgeladen');
         expect(promptInput.nextOpponent, 'FC Gegner');
         expect(promptInput.nextOpponentTablePosition, 4);
@@ -232,18 +232,18 @@ void main() {
   });
 }
 
-class _FakeMistralRecommendationService extends MistralRecommendationService {
+class _FakeDeterministicRecommendationService
+    extends DeterministicRecommendationService {
   List<PlayerAnalysisInput> lastPlayers = const [];
 
   @override
-  Future<Result<Map<String, MistralRecommendationResult>>>
-  generateBatchRecommendations({
-    required List<PlayerAnalysisInput> players,
-  }) async {
+  Map<String, PlayerRecommendationResult> analyzeBatch(
+    List<PlayerAnalysisInput> players,
+  ) {
     lastPlayers = players;
-    return Success({
+    return {
       for (final input in players)
-        input.player.id: MistralRecommendationResult(
+        input.player.id: PlayerRecommendationResult(
           score: input.player.userOwnsPlayer ? 28 : 74,
           action: input.player.userOwnsPlayer ? 'sell' : 'buy',
           reason: 'Testempfehlung für ${input.player.id}',
@@ -251,7 +251,7 @@ class _FakeMistralRecommendationService extends MistralRecommendationService {
           estimatedValue: input.player.marketValue + 250000,
           category: input.player.userOwnsPlayer ? 'sell' : 'buy',
         ),
-    });
+    };
   }
 }
 

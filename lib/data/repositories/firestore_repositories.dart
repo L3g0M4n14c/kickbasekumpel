@@ -15,7 +15,7 @@ import '../models/performance_model.dart';
 import '../models/ligainsider_model.dart';
 import '../models/ligainsider_match_model.dart';
 import '../services/kickbase_api_client.dart';
-import '../services/mistral_recommendation_service.dart';
+import '../services/deterministic_recommendation_service.dart';
 import '../providers/kickbase_api_provider.dart';
 import 'base_repository.dart';
 
@@ -54,7 +54,7 @@ final transferRepositoryProvider = Provider<TransferRepository>((ref) {
 });
 
 // Provider wurde nach repository_providers.dart verschoben
-// und nutzt jetzt MistralRecommendationService statt Gemini
+// und nutzt jetzt den DeterministicRecommendationService (rein lokal)
 
 // ============================================================================
 // USER REPOSITORY
@@ -1155,12 +1155,12 @@ class TransferRepository extends BaseRepository<Transfer>
 
 class RecommendationRepository extends BaseRepository<Recommendation>
     implements RecommendationRepositoryInterface {
-  final MistralRecommendationService _mistralService;
+  final DeterministicRecommendationService _recommendationService;
 
   RecommendationRepository({
     required super.firestore,
-    required MistralRecommendationService mistralService,
-  }) : _mistralService = mistralService,
+    required DeterministicRecommendationService recommendationService,
+  }) : _recommendationService = recommendationService,
        super(collectionPath: 'recommendations');
 
   @override
@@ -1244,16 +1244,13 @@ class RecommendationRepository extends BaseRepository<Recommendation>
     );
   }
 
-  /// Generiert eine KI-gestützte Empfehlung für einen Spieler via Mistral.
+  /// Generiert eine deterministische Empfehlung für einen einzelnen Spieler.
   ///
   /// Benötigt [player] als Stammdaten. Die optionalen Parameter verbessern
   /// die Qualität der Analyse erheblich wenn vorhanden.
   /// **ACHTUNG: Ergebnisse werden NICHT in Firestore gespeichert!**
   /// Sie werden direkt an den Client zurückgegeben und können dort angezeigt werden.
-  ///
-  /// Falls [MistralRecommendationService] nicht initialisiert, fällt auf den
-  /// regelbasierten Algorithmus zurück.
-  Future<Result<Recommendation>> generateAIRecommendation({
+  Future<Result<Recommendation>> generatePlayerRecommendation({
     required String leagueId,
     required Player player,
     List<MarketValueEntry>? marketValueHistory,
@@ -1263,27 +1260,17 @@ class RecommendationRepository extends BaseRepository<Recommendation>
     String? lineupContext,
     List<Player>? swapCandidates,
   }) async {
-    final service = _mistralService;
-
-    final aiResult = await service.generateRecommendation(
-      player: player,
-      marketValueHistory: marketValueHistory,
-      recentPerformances: recentPerformances,
-      ligainsiderData: ligainsiderData,
-      fixtureContext: fixtureContext,
-      lineupContext: lineupContext,
-      swapCandidates: swapCandidates,
+    final result = _recommendationService.analyze(
+      PlayerAnalysisInput(
+        player: player,
+        marketValueHistory: marketValueHistory,
+        recentPerformances: recentPerformances,
+        ligainsiderData: ligainsiderData,
+        fixtureContext: fixtureContext,
+        lineupContext: lineupContext,
+        swapCandidates: swapCandidates,
+      ),
     );
-
-    if (aiResult is Failure<MistralRecommendationResult>) {
-      return Failure(
-        aiResult.message,
-        code: aiResult.code,
-        exception: aiResult.exception,
-      );
-    }
-
-    final ai = (aiResult as Success<MistralRecommendationResult>).data;
 
     // **WICHTIG: NICHT in Firestore speichern!**
     // Die Empfehlung wird direkt zurückgegeben und kann im Client angezeigt werden
@@ -1292,17 +1279,17 @@ class RecommendationRepository extends BaseRepository<Recommendation>
       leagueId: leagueId,
       playerId: player.id,
       playerName: '${player.firstName} ${player.lastName}'.trim(),
-      score: ai.score,
-      reason: ai.reason,
-      action: ai.action,
+      score: result.score,
+      reason: result.reason,
+      action: result.action,
       suggestedPrice: null,
       currentMarketValue: player.marketValue,
-      estimatedValue: ai.estimatedValue,
-      confidence: ai.confidence,
+      estimatedValue: result.estimatedValue,
+      confidence: result.confidence,
       timestamp: DateTime.now(),
-      category: ai.category,
-      swapCandidateId: ai.swapCandidateId,
-      swapCandidateName: ai.swapCandidateName,
+      category: result.category,
+      swapCandidateId: result.swapCandidateId,
+      swapCandidateName: result.swapCandidateName,
       userOwnsPlayer: player.userOwnsPlayer,
     );
 
@@ -1310,57 +1297,41 @@ class RecommendationRepository extends BaseRepository<Recommendation>
     return Success(recommendation);
   }
 
-  /// Generiert KI-Empfehlungen für eine ganze Spielerliste (Batch).
-  ///
-  /// Alle Spieler werden in einem oder mehreren Mistral-Aufrufen analysiert.
-  /// Pro Request werden maximal 10 uncached Spieler an den Service gesendet.
+  /// Generiert deterministische Empfehlungen für eine ganze Spielerliste
+  /// (Batch). Läuft vollständig lokal, ohne Netzwerk- oder KI-Aufrufe.
   /// **ACHTUNG: Ergebnisse werden NICHT in Firestore gespeichert!**
-  Future<Result<List<Recommendation>>> generateAIBatchRecommendations({
+  Future<Result<List<Recommendation>>> generatePlayerRecommendations({
     required String leagueId,
     required List<PlayerAnalysisInput> players,
   }) async {
-    final service = _mistralService;
     if (players.isEmpty) {
       return const Success([]);
     }
 
-    final batchResult = await service.generateBatchRecommendations(
-      players: players,
-    );
-
-    if (batchResult is Failure<Map<String, MistralRecommendationResult>>) {
-      return Failure(
-        batchResult.message,
-        code: batchResult.code,
-        exception: batchResult.exception,
-      );
-    }
-
-    final aiMap =
-        (batchResult as Success<Map<String, MistralRecommendationResult>>).data;
+    final resultMap = _recommendationService.analyzeBatch(players);
     final recommendations = <Recommendation>[];
     final generatedAt = DateTime.now();
 
     for (final input in players) {
-      final ai = aiMap[input.player.id];
-      if (ai == null) continue;
+      final result = resultMap[input.player.id];
+      if (result == null) continue;
 
       final rec = Recommendation(
         id: '', // Keine Firestore-ID, da nicht gespeichert
         leagueId: leagueId,
         playerId: input.player.id,
         playerName: '${input.player.firstName} ${input.player.lastName}'.trim(),
-        score: ai.score,
-        reason: ai.reason,
-        action: ai.action,
+        score: result.score,
+        reason: result.reason,
+        action: result.action,
         suggestedPrice: null,
         currentMarketValue: input.player.marketValue,
-        estimatedValue: ai.estimatedValue,
-        confidence: ai.confidence,
+        estimatedValue: result.estimatedValue,
+        confidence: result.confidence,
         timestamp: generatedAt,
-        category: ai.category,
-        swapCandidateId: ai.swapCandidateId,
-        swapCandidateName: ai.swapCandidateName,
+        category: result.category,
+        swapCandidateId: result.swapCandidateId,
+        swapCandidateName: result.swapCandidateName,
         userOwnsPlayer: input.player.userOwnsPlayer,
       );
 
