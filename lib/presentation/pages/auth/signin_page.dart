@@ -107,48 +107,64 @@ class _SignInPageState extends ConsumerState<SignInPage> {
                 ),
                 const SizedBox(height: 48),
 
-                // Email Field
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Kickbase E-Mail',
-                    hintText: 'deine@email.de',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  textInputAction: TextInputAction.next,
-                  enabled: !authState.isLoading,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Bitte E-Mail eingeben';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Bitte gültige E-Mail eingeben';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
+                // E-Mail + Passwort in einer gemeinsamen AutofillGroup,
+                // damit Passwort-Manager beide Felder als Login-Formular
+                // erkennen und automatisch ausfüllen können.
+                AutofillGroup(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Email Field
+                      TextFormField(
+                        controller: _emailController,
+                        autofillHints: const [
+                          AutofillHints.username,
+                          AutofillHints.email,
+                        ],
+                        decoration: const InputDecoration(
+                          labelText: 'Kickbase E-Mail',
+                          hintText: 'deine@email.de',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.email),
+                        ),
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        enabled: !authState.isLoading,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Bitte E-Mail eingeben';
+                          }
+                          if (!value.contains('@')) {
+                            return 'Bitte gültige E-Mail eingeben';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
 
-                // Password Field
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Kickbase Passwort',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock),
+                      // Password Field
+                      TextFormField(
+                        controller: _passwordController,
+                        autofillHints: const [AutofillHints.password],
+                        decoration: const InputDecoration(
+                          labelText: 'Kickbase Passwort',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.lock),
+                        ),
+                        obscureText: true,
+                        keyboardType: TextInputType.visiblePassword,
+                        textInputAction: TextInputAction.done,
+                        enabled: !authState.isLoading,
+                        onFieldSubmitted: (_) => _handleLogin(),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Bitte Passwort eingeben';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
                   ),
-                  obscureText: true,
-                  textInputAction: TextInputAction.done,
-                  enabled: !authState.isLoading,
-                  onFieldSubmitted: (_) => _handleLogin(),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Bitte Passwort eingeben';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 32),
 
