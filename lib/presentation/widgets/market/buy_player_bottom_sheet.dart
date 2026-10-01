@@ -7,6 +7,7 @@ import '../../../data/providers/league_providers.dart';
 import '../../../data/providers/user_providers.dart';
 import '../../../data/providers/kickbase_api_provider.dart';
 import '../../../data/providers/bid_recommendation_providers.dart';
+import '../../../data/services/bid_recommendation_service.dart';
 import '../../providers/market_providers.dart';
 
 /// Buy Player Bottom Sheet
@@ -180,12 +181,13 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
                 if (recommendedBid != null) ...[
                   const SizedBox(height: 16),
                   recommendedBid.when(
-                    data: (price) => _RecommendedBid(
-                      price: price,
+                    data: (recommendation) => _RecommendedBid(
+                      recommendation: recommendation,
                       onApply: () {
                         setState(() {
-                          _selectedPrice = price;
-                          _priceController.text = (price / 1000000)
+                          _selectedPrice = recommendation.amount;
+                          _priceController.text = (recommendation.amount /
+                                  1000000)
                               .toStringAsFixed(2);
                         });
                       },
@@ -600,14 +602,18 @@ class _BudgetDisplay extends StatelessWidget {
 // ============================================================================
 
 class _RecommendedBid extends StatelessWidget {
-  final int price;
+  final BidRecommendation recommendation;
   final VoidCallback onApply;
 
-  const _RecommendedBid({required this.price, required this.onApply});
+  const _RecommendedBid({required this.recommendation, required this.onApply});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final detailParts = <String>[
+      '${recommendation.sampleSize} Käufe',
+      recommendation.scope,
+    ];
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -622,13 +628,27 @@ class _RecommendedBid extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              'Empfohlen: ${(price / 1000000).toStringAsFixed(2)}M €',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSecondaryContainer,
-              ),
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Empfohlen: '
+                  '${(recommendation.amount / 1000000).toStringAsFixed(2)}M €',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSecondaryContainer,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  detailParts.join(' · '),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSecondaryContainer
+                        .withValues(alpha: 0.8),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ),
           IconButton(

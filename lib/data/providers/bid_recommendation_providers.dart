@@ -55,10 +55,11 @@ final leagueCompetitorPurchasesProvider =
       return histories.expand((history) => history).toList();
     });
 
-/// Leitet fuer einen Marktspieler ein Gebot aus den Konkurrenzdaten ab.
+/// Leitet fuer einen Marktspieler eine Gebotsempfehlung aus den
+/// Konkurrenzdaten ab.
 final recommendedBidProvider =
     FutureProvider.family<
-      int,
+      BidRecommendation,
       ({String leagueId, int currentMarketValue, int minimumBid})
     >((ref, params) async {
       final transfers = await ref.watch(
@@ -66,7 +67,7 @@ final recommendedBidProvider =
       );
       return ref
           .watch(bidRecommendationServiceProvider)
-          .recommendBid(
+          .recommend(
             currentMarketValue: params.currentMarketValue,
             minimumBid: params.minimumBid,
             transfers: transfers,

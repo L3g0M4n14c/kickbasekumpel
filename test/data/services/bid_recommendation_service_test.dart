@@ -8,173 +8,310 @@ void main() {
     const currentMarketValue = 10000000;
     const minimumBid = 10500000;
 
-    test('recommends the upper-quartile purchase premium rounded up', () {
-      // Arrange
+    // Fixe Referenzzeit, damit der 90-Tage-Fenster-Test deterministisch ist.
+    final now = DateTime.utc(2026, 9, 28);
+    final recent = DateTime.utc(2026, 9, 1);
+    final old = DateTime.utc(2026, 1, 1);
+
+    test('empfiehlt das obere Quartil (P75) der Konkurrenz-Aufschlaege', () {
       final transfers = [
-        _transfer(price: 11000000, marketValue: 10000000),
-        _transfer(price: 12000000, marketValue: 10000000),
-        _transfer(price: 13000000, marketValue: 10000000),
-        _transfer(price: 14000000, marketValue: 10000000),
+        for (final premium in [1.1, 1.2, 1.3, 1.4])
+          _transfer(
+            price: (premium * 10000000).toInt(),
+            marketValue: 10000000,
+            timestamp: recent,
+          ),
       ];
 
-      // Act
-      final recommendation = service.recommendBid(
+      final recommendation = service.recommend(
         currentMarketValue: currentMarketValue,
         minimumBid: minimumBid,
         transfers: transfers,
+        now: now,
       );
 
-      // Assert: P75 von [1.1, 1.2, 1.3, 1.4] ist 1.3
-      expect(recommendation, 13000000);
+      expect(recommendation.amount, 13000000);
+      expect(recommendation.method, 'quartile');
+      expect(recommendation.sampleSize, 4);
+      expect(recommendation.scope, contains('Preisklasse'));
     });
 
-    test('filters out purchases with a zero price or missing market value', () {
-      // Arrange: defekte Datensaetze wuerden das Quartil verfaelschen
+    test('zu kleine Stichprobe faellt auf den Median zurueck', () {
       final transfers = [
-        _transfer(price: 0, marketValue: 10000000),
-        _transfer(price: 12000000, marketValue: 10000000, marketValueAtTransfer: null),
-        _transfer(price: 11000000, marketValue: 10000000),
-        _transfer(price: 12000000, marketValue: 10000000),
-        _transfer(price: 13000000, marketValue: 10000000),
-        _transfer(price: 14000000, marketValue: 10000000),
+        for (final premium in [1.1, 1.2, 1.3])
+          _transfer(
+            price: (premium * 10000000).toInt(),
+            marketValue: 10000000,
+            timestamp: recent,
+          ),
       ];
 
-      // Act
-      final recommendation = service.recommendBid(
+      final recommendation = service.recommend(
         currentMarketValue: currentMarketValue,
         minimumBid: minimumBid,
         transfers: transfers,
+        now: now,
       );
 
-      // Assert: identisch zum Fall mit nur den vier gueltigen Kaeufen
-      expect(recommendation, 13000000);
+      expect(recommendation.amount, 12000000);
+      expect(recommendation.method, 'median');
     });
 
-    test('caps outliers via the IQR rule before computing the premium', () {
-      // Arrange: ein Ausreisserkauf mit 5x Marktwert
+    test('aeltere Kaeufe werden genutzt, wenn das aktuelle Fenster leer ist',
+        () {
       final transfers = [
-        _transfer(price: 11000000, marketValue: 10000000),
-        _transfer(price: 12000000, marketValue: 10000000),
-        _transfer(price: 13000000, marketValue: 10000000),
-        _transfer(price: 14000000, marketValue: 10000000),
-        _transfer(price: 50000000, marketValue: 10000000),
+        for (final premium in [1.1, 1.2, 1.3, 1.4])
+          _transfer(
+            price: (premium * 10000000).toInt(),
+            marketValue: 10000000,
+            timestamp: old,
+          ),
       ];
 
-      // Act
-      final recommendation = service.recommendBid(
+      final recommendation = service.recommend(
         currentMarketValue: currentMarketValue,
         minimumBid: minimumBid,
         transfers: transfers,
+        now: now,
       );
 
-      // Assert: Ausreisser entfernt, P75 der Restdaten bleibt 1.3
-      expect(recommendation, 13000000);
+      expect(recommendation.amount, 13000000);
+      expect(recommendation.scope, 'alle Käufe + Preisklasse');
     });
 
-    test('falls back to the median when the sample is too small', () {
-      // Arrange: bei 3 Kaeufen waere P75 faktisch das Maximum
+    test('Preisklassen trennen: Billigkauf-Aufschlaege beeinflussen teure '
+        'Spieler nicht', () {
       final transfers = [
-        _transfer(price: 11000000, marketValue: 10000000),
-        _transfer(price: 13000000, marketValue: 10000000),
-        _transfer(price: 15000000, marketValue: 10000000),
+        // Billigsegment: über 200% Aufschlag.
+        for (final premium in [2.0, 2.1, 2.2, 2.3])
+          _transfer(
+            price: (premium * 500000).toInt(),
+            marketValue: 500000,
+            timestamp: recent,
+          ),
+        // Gleiches Segment wie der Zielspieler (20 Mio.).
+        for (final premium in [1.1, 1.2, 1.3, 1.4])
+          _transfer(
+            price: (premium * 15000000).toInt(),
+            marketValue: 15000000,
+            timestamp: recent,
+          ),
       ];
 
-      // Act
-      final recommendation = service.recommendBid(
+      final recommendation = service.recommend(
+        currentMarketValue: 20000000,
+        minimumBid: 21000000,
+        transfers: transfers,
+        now: now,
+      );
+
+      expect(recommendation.amount, 26000000);
+      expect(recommendation.scope, contains('Preisklasse'));
+    });
+
+    test('faellt in der Leiter zurueck, wenn die Preisklasse zu duenn ist',
+        () {
+      final transfers = [
+        // Nur 1 Kauf in der Preisklasse des Zielspielers.
+        _transfer(
+          price: 26000000,
+          marketValue: 20000000,
+          timestamp: recent,
+        ),
+        // 4 kaufkräftige Kaeufe in anderen Preisklassen.
+        for (final premium in [2.0, 2.1, 2.2, 2.3])
+          _transfer(
+            price: (premium * 500000).toInt(),
+            marketValue: 500000,
+            timestamp: recent,
+          ),
+      ];
+
+      final recommendation = service.recommend(
+        currentMarketValue: 20000000,
+        minimumBid: 21000000,
+        transfers: transfers,
+        now: now,
+      );
+
+      expect(recommendation.scope, 'letzte 90 Tage');
+      expect(recommendation.amount, 44000000);
+    });
+
+    test('kappt Ausreisser per IQR-Regel vor der Perzentilberechnung', () {
+      final transfers = [
+        for (final premium in [1.1, 1.2, 1.3, 1.4])
+          _transfer(
+            price: (premium * 10000000).toInt(),
+            marketValue: 10000000,
+            timestamp: recent,
+          ),
+        // Ausreisserkauf mit 5x Marktwert.
+        _transfer(price: 50000000, marketValue: 10000000, timestamp: recent),
+      ];
+
+      final recommendation = service.recommend(
         currentMarketValue: currentMarketValue,
         minimumBid: minimumBid,
         transfers: transfers,
+        now: now,
       );
 
-      // Assert: Median 1.3 statt Maximum 1.5
-      expect(recommendation, 13000000);
+      expect(recommendation.amount, 13000000);
+      expect(recommendation.sampleSize, 4);
     });
 
-    test('uses the median after outlier removal shrinks a small sample', () {
-      // Arrange: Ausreisser wird entfernt, Rest ist zu klein fuer P75
+    test('empfiehlt nie mehr als noetig: Mindestgebot bleibt exakt erhalten',
+        () {
       final transfers = [
-        _transfer(price: 11000000, marketValue: 10000000),
-        _transfer(price: 12000000, marketValue: 10000000),
-        _transfer(price: 13000000, marketValue: 10000000),
-        _transfer(price: 50000000, marketValue: 10000000),
+        for (var i = 0; i < 3; i++)
+          _transfer(price: 10000000, marketValue: 10000000, timestamp: recent),
       ];
 
-      // Act
-      final recommendation = service.recommendBid(
+      final recommendation = service.recommend(
+        currentMarketValue: currentMarketValue,
+        minimumBid: 10550000, // bewusst kein 100k-Vielfaches
+        transfers: transfers,
+        now: now,
+      );
+
+      expect(recommendation.amount, 10550000);
+      expect(recommendation.minimumBid, 10550000);
+    });
+
+    test('filtert defekte Datensaetze heraus', () {
+      final transfers = [
+        _transfer(price: 0, marketValue: 10000000, timestamp: recent),
+        _transfer(
+          price: 12000000,
+          marketValue: 10000000,
+          marketValueAtTransfer: null,
+          timestamp: recent,
+        ),
+        for (final premium in [1.1, 1.2, 1.3, 1.4])
+          _transfer(
+            price: (premium * 10000000).toInt(),
+            marketValue: 10000000,
+            timestamp: recent,
+          ),
+      ];
+
+      final recommendation = service.recommend(
         currentMarketValue: currentMarketValue,
         minimumBid: minimumBid,
         transfers: transfers,
+        now: now,
       );
 
-      // Assert: Median von [1.1, 1.2, 1.3] ist 1.2
-      expect(recommendation, 12000000);
-    });
-    test('rounds the recommendation up to the next 100.000 euros', () {
-      // Arrange: 1.055 * 10.000.000 = 10.550.000
-      final transfers = [
-        _transfer(price: 1055000, marketValue: 1000000),
-        _transfer(price: 1055000, marketValue: 1000000),
-        _transfer(price: 1055000, marketValue: 1000000),
-      ];
-
-      // Act
-      final recommendation = service.recommendBid(
-        currentMarketValue: currentMarketValue,
-        minimumBid: 10000000,
-        transfers: transfers,
-      );
-
-      // Assert
-      expect(recommendation, 10600000);
+      expect(recommendation.amount, 13000000);
+      expect(recommendation.sampleSize, 4);
     });
 
-    test('returns the minimum bid without usable purchase history', () {
-      // Arrange: Kaufpreis-Defekt und ein Verkauf (transferType 2)
+    test('verkaeufe (transferType 2) werden ignoriert', () {
       final transfers = [
-        _transfer(price: 0, marketValue: 10000000),
-        _transfer(transferType: 2, price: 13000000, marketValue: 10000000),
+        _transfer(
+          transferType: 2,
+          price: 50000000,
+          marketValue: 10000000,
+          timestamp: recent,
+        ),
       ];
 
-      // Act
-      final recommendation = service.recommendBid(
+      final recommendation = service.recommend(
         currentMarketValue: currentMarketValue,
         minimumBid: minimumBid,
         transfers: transfers,
+        now: now,
       );
 
-      // Assert
-      expect(recommendation, minimumBid);
+      expect(recommendation.method, 'minimum');
+      expect(recommendation.amount, minimumBid);
+      expect(recommendation.sampleSize, 0);
+      expect(recommendation.confidence, 0.1);
     });
 
-    test('returns the minimum bid for a non-positive market value', () {
-      // Act
-      final recommendation = service.recommendBid(
+    test('kein positiver Marktwert fuehrt zum Minimum', () {
+      final recommendation = service.recommend(
         currentMarketValue: 0,
         minimumBid: minimumBid,
         transfers: const [],
+        now: now,
       );
 
-      // Assert
-      expect(recommendation, minimumBid);
+      expect(recommendation.amount, minimumBid);
+      expect(recommendation.method, 'minimum');
     });
 
-    test('never recommends below the minimum bid', () {
-      // Arrange: historische Aufschlaege unterhalb des Mindestgebots
+    test('empfiehlt nie unter dem Mindestgebot', () {
       final transfers = [
-        _transfer(price: 9000000, marketValue: 10000000),
-        _transfer(price: 9500000, marketValue: 10000000),
-        _transfer(price: 9800000, marketValue: 10000000),
+        for (final premium in [0.9, 0.95, 0.98])
+          _transfer(
+            price: (premium * 10000000).toInt(),
+            marketValue: 10000000,
+            timestamp: recent,
+          ),
       ];
 
-      // Act
-      final recommendation = service.recommendBid(
+      final recommendation = service.recommend(
         currentMarketValue: currentMarketValue,
         minimumBid: minimumBid,
         transfers: transfers,
+        now: now,
       );
 
-      // Assert
-      expect(recommendation, minimumBid);
+      expect(recommendation.amount, minimumBid);
+    });
+
+    test('Konfidenz steigt mit der Sample-Groesse', () {
+      List<ManagerTransferHistoryEntry> buildTransfers(int count) => [
+        for (var i = 0; i < count; i++)
+          _transfer(
+            price: 11000000 + i * 10000,
+            marketValue: 10000000,
+            timestamp: recent,
+          ),
+      ];
+
+      final low = service.recommend(
+        currentMarketValue: currentMarketValue,
+        minimumBid: minimumBid,
+        transfers: buildTransfers(4),
+        now: now,
+      );
+      final high = service.recommend(
+        currentMarketValue: currentMarketValue,
+        minimumBid: minimumBid,
+        transfers: buildTransfers(20),
+        now: now,
+      );
+
+      expect(
+        low.confidence,
+        lessThan(high.confidence),
+        reason: 'mehr Daten = mehr Konfidenz',
+      );
+      expect(high.confidence, inInclusiveRange(0.0, 1.0));
+    });
+
+    test('recommendBid-Wrapper liefert nur den Betrag', () {
+      final transfers = [
+        for (final premium in [1.1, 1.2, 1.3, 1.4])
+          _transfer(
+            price: (premium * 10000000).toInt(),
+            marketValue: 10000000,
+            timestamp: recent,
+          ),
+      ];
+
+      // Wrapper liefert nur den Betrag (P75-Pfad).
+      expect(
+        service.recommendBid(
+          currentMarketValue: currentMarketValue,
+          minimumBid: minimumBid,
+          transfers: transfers,
+        ),
+        13000000,
+      );
     });
   });
 }
@@ -187,6 +324,7 @@ ManagerTransferHistoryEntry _transfer({
   required int price,
   required int marketValue,
   int transferType = 1,
+  DateTime? timestamp,
   Object? marketValueAtTransfer = _unset,
 }) {
   return ManagerTransferHistoryEntry(
@@ -198,9 +336,10 @@ ManagerTransferHistoryEntry _transfer({
     playerName: 'Max Mustermann',
     price: price,
     transferType: transferType,
-    timestamp: DateTime.utc(2025, 1, 15),
+    timestamp: timestamp ?? DateTime.utc(2026, 9, 1),
     marketValueAtTransfer: marketValueAtTransfer == _unset
         ? marketValue
         : marketValueAtTransfer as int?,
   );
 }
+

@@ -75,8 +75,8 @@ void main() {
         )).future,
       );
 
-      // Assert
-      expect(bid, 13000000);
+      // Assert: Ein einzelner Kauf -> Median-Pfad, Aufschlag 1.3
+      expect(bid.amount, 13000000);
     });
 
     test('fetches league data only once for different players', () async {
@@ -149,8 +149,8 @@ void main() {
           timeframe: any(named: 'timeframe'),
         ),
       ).called(1);
-      expect(bidPlayerA, 13000000);
-      expect(bidPlayerB, 32500000);
+      expect(bidPlayerA.amount, 13000000);
+      expect(bidPlayerB.amount, 32500000);
     });
   });
 }
