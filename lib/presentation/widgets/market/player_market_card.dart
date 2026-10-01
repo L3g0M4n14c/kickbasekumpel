@@ -4,6 +4,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../data/models/market_model.dart';
 import '../../../data/providers/ligainsider_photo_provider.dart';
 import '../../../data/utils/parsing_utils.dart';
+import '../common/ligainsider_status_badge.dart' show LigainsiderStatusBadge;
+
 
 /// Player Market Card Widget
 ///
@@ -97,6 +99,12 @@ class PlayerMarketCard extends ConsumerWidget {
                             ),
                             const SizedBox(width: 8),
                             _PositionBadge(position: player.position),
+                            const SizedBox(width: 6),
+                            // Ligainsider-Status (Startelf/Bank/verletzt)
+                            LigainsiderStatusBadge(
+                              firstName: player.firstName,
+                              lastName: player.lastName,
+                            ),
                           ],
                         ),
                         const SizedBox(height: 8),

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../data/models/achievement_model.dart';
 import '../../data/models/budget_calculation_model.dart';
 import '../../data/models/transfer_model.dart';
 import '../../data/providers/providers.dart';
@@ -935,28 +936,44 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
   }
 
   Widget _buildBudgetTab(BuildContext context) {
+    final budgetParams = (
+      leagueId: widget.leagueId,
+      managerId: widget.userId,
+    );
     final budgetCalculationAsync = ref.watch(
-      managerBudgetCalculationProvider((
-        leagueId: widget.leagueId,
-        managerId: widget.userId,
-      )),
+      managerBudgetCalculationProvider(budgetParams),
+    );
+    final achievementIncomeAsync = ref.watch(
+      managerAchievementIncomeProvider(budgetParams),
     );
 
     return budgetCalculationAsync.when(
       data: (calculation) {
+        final achievements = achievementIncomeAsync.asData?.value;
+
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Übersichtskarten
-              _BudgetOverviewCards(calculation: calculation),
+              _BudgetOverviewCards(
+                calculation: calculation,
+                achievements: achievements,
+              ),
               const SizedBox(height: 24),
 
               // Auto-Verkauf (250er-Regel): nur anzeigen, wenn Einnahmen
               // durch automatisch verkaufte Spieler existieren.
               if (calculation.autoSaleEvents.isNotEmpty) ...[
                 _AutoSaleSection(calculation: calculation),
+                const SizedBox(height: 24),
+              ],
+
+              // Erfolgs-Boni (Achievements): nur anzeigen, wenn Einnahmen
+              // durch Erfolge existieren.
+              if (achievements != null) ...[
+                _AchievementsSection(summary: achievements),
                 const SizedBox(height: 24),
               ],
 
@@ -992,12 +1009,18 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
 
 class _BudgetOverviewCards extends StatelessWidget {
   final BudgetCalculationResult calculation;
+  final AchievementIncomeSummary? achievements;
 
-  const _BudgetOverviewCards({required this.calculation});
+  const _BudgetOverviewCards({
+    required this.calculation,
+    this.achievements,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final achievementIncome = achievements?.totalIncome ?? 0;
+    final totalBudget = calculation.currentBudget + achievementIncome;
 
     return Card(
       elevation: 0,
@@ -1052,12 +1075,35 @@ class _BudgetOverviewCards extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _BudgetCard(
+                    icon: Icons.emoji_events,
+                    label: 'Erfolge',
+                    value:
+                        '+${(achievementIncome / 1000000).toStringAsFixed(2)} M €',
+                    color: Colors.amber.shade700,
+                  ),
+                ),
+                Expanded(
+                  child: _BudgetCard(
+                    icon: Icons.card_giftcard,
+                    label: 'Anmeldebonus',
+                    value:
+                        '+${(calculation.loginBonus / 1000000).toStringAsFixed(2)} M €',
+                    color: Colors.teal,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
             _BudgetCard(
               icon: Icons.account_balance_wallet,
-              label: 'AKTUELLES BUDGET',
+              label: 'AKTUELLES BUDGET (inkl. Boni)',
               value:
-                  '${(calculation.currentBudget / 1000000).toStringAsFixed(2)} M €',
-              color: calculation.currentBudget >= 0 ? Colors.green : Colors.red,
+                  '${(totalBudget / 1000000).toStringAsFixed(2)} M €',
+              color: totalBudget >= 0 ? Colors.green : Colors.red,
               isHighlighted: true,
             ),
           ],
@@ -1159,6 +1205,103 @@ class _AutoSaleSection extends StatelessWidget {
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontStyle: FontStyle.italic,
                     color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Sektion für Erfolgs-Boni (Achievements): Listet die Erfolge auf, die dem
+/// Manager Budget eingebracht haben (z.B. Spieltagssieger, Topscorer,
+/// goldenes Händchen). Diese Einnahmen erscheinen nicht in der Transfer-
+/// Historie und werden separat ermittelt und addiert.
+class _AchievementsSection extends StatelessWidget {
+  final AchievementIncomeSummary summary;
+
+  const _AchievementsSection({required this.summary});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.emoji_events, color: Colors.amber),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Erfolgs-Boni (Achievements)${summary.isExact ? '' : ' · geschätzt'}',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Text(
+                  '+${(summary.totalIncome / 1000000).toStringAsFixed(2)} M €',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Kickbase vergütet Erfolge mit Budget – diese Gutschriften sind '
+              'nicht in der Transfer-Historie sichtbar:',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...summary.events.map(
+              (event) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  children: [
+                    const Icon(Icons.emoji_events_outlined, size: 14),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        event.name.isNotEmpty
+                            ? event.name
+                            : event.achievementTypeId,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ),
+                    Text(
+                      '+${(event.reward / 1000000).toStringAsFixed(2)} M €',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (!summary.isExact)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Bei anderen Managern werden die Erfolge über den '
+                  'Liga-Aktivitätenfeed ermittelt – die Zuordnung kann '
+                  'unvollständig sein.',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontStyle: FontStyle.italic,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),

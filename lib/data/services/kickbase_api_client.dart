@@ -990,6 +990,84 @@ class KickbaseAPIClient {
     return json;
   }
 
+  /// Get league activities feed (Liga-Ereignisse: Transfers, Logins,
+  /// Achievements, …).
+  ///
+  /// GET /v4/leagues/{leagueId}/activitiesFeed?max={max}
+  ///
+  /// Die Response enthält unter dem Key `af` eine Liste von Ereignissen.
+  /// Relevante Eintrags-Typen (Feld `t`):
+  /// - `15` = Transfer (Kauf/Verkauf, `data.byr`/`data.slr`/`data.trp`)
+  /// - `22` = Anmeldebonus (`data.bn` = Bonusbetrag)
+  /// - `26` = Achievement/Erfolg (`data.t` = Erfolgs-Typ-ID)
+  ///
+  /// Wird u.a. für die Achievements-Budget-Berechnung genutzt (siehe
+  /// [AchievementBudgetService]).
+  Future<Map<String, dynamic>> getLeagueActivitiesFeed(
+    String leagueId, {
+    int max = 5000,
+  }) async {
+    _logger.i('📜 Getting activities feed for league $leagueId (max=$max)...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/activitiesFeed?max=$max',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    _logger.i('✅ Activities feed retrieved');
+    return json;
+  }
+
+  /// Get own user achievements (Erfolge) in a league.
+  ///
+  /// GET /v4/leagues/{leagueId}/user/achievements
+  ///
+  /// Liefert unter `it` die Liste aller verfügbaren Erfolge des
+  /// authentifizierten Users mit Feldern:
+  /// - `n`  = Name des Erfolgs
+  /// - `t`  = Typ-ID des Erfolgs
+  /// - `ac` = Anzahl, wie oft der User den Erfolg erreicht hat
+  /// - `ise`= true, wenn der Erfolg saison-/ligaweit ist (einmalig)
+  ///
+  /// Der Geld-Betrag pro Erfolg (`er`) steht nur im Detail-Endpoint
+  /// (siehe [getUserAchievementByType]).
+  Future<List<Map<String, dynamic>>> getUserAchievements(String leagueId) async {
+    _logger.i('🏅 Getting achievements for league $leagueId...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/user/achievements',
+      method: 'GET',
+    );
+
+    final json = _parseJson(response.body);
+    final items = (json['it'] as List<dynamic>? ?? [])
+        .whereType<Map<String, dynamic>>()
+        .toList();
+    _logger.i('✅ Achievements retrieved (${items.length} Einträge)');
+    return items;
+  }
+
+  /// Get achievement details by type (Erfolgs-Details inkl. Belohnung).
+  ///
+  /// GET /v4/leagues/{leagueId}/user/achievements/{type}
+  ///
+  /// Response-Felder:
+  /// - `n`   = Name, `d` = Beschreibung, `dt` = Zeitpunkt (String)
+  /// - `ac`  = Anzahl, wie oft erreicht (bezogen auf den authentifizierten User)
+  /// - `er`  = Geld-Belohnung pro Erreichen in € (z.B. 1000000 für 1 Mio.)
+  /// - `ise` = saison-/ligaweit einmalig, `isrp` = wiederholbar
+  Future<Map<String, dynamic>> getUserAchievementByType(
+    String leagueId,
+    String type,
+  ) async {
+    _logger.d('🏅 Getting achievement $type for league $leagueId...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/leagues/$leagueId/user/achievements/$type',
+      method: 'GET',
+    );
+
+    return _parseJson(response.body);
+  }
+
   /// Collect daily bonus
   /// GET /v4/bonus/collect
   Future<Map<String, dynamic>> collectBonus() async {

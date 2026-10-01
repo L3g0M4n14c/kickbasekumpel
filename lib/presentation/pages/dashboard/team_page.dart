@@ -5,6 +5,7 @@ import 'package:kickbasekumpel/data/models/team_player_counts_model.dart';
 import 'package:kickbasekumpel/presentation/widgets/team/team_budget_header.dart';
 import 'package:kickbasekumpel/presentation/widgets/team/player_count_overview.dart';
 import 'package:kickbasekumpel/presentation/widgets/team/player_row_with_sale.dart';
+import 'package:kickbasekumpel/presentation/widgets/team/squad_benchmark_card.dart';
 import 'package:kickbasekumpel/presentation/providers/dashboard_providers.dart';
 import 'package:kickbasekumpel/data/providers/league_providers.dart';
 import 'package:kickbasekumpel/presentation/screens/player/player_detail_screen.dart';
@@ -87,6 +88,10 @@ class _TeamPageState extends ConsumerState<TeamPage> {
                 loading: () => const SizedBox.shrink(),
                 error: (err, stack) => const SizedBox.shrink(),
               ),
+              const SizedBox(height: 16),
+
+              // Kader-Benchmark: eigene Kader-Positionen vs. Ligen-Durchschnitt
+              const SquadBenchmarkCard(),
               const SizedBox(height: 16),
 
               // Sort Controls

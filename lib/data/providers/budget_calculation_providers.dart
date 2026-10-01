@@ -1,12 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 
+import '../models/achievement_model.dart';
 import '../models/budget_calculation_model.dart';
 import '../models/market_value_model.dart';
 import '../models/performance_model.dart';
 import '../models/transfer_model.dart';
 import '../services/auto_sale_budget_service.dart';
 import '../services/budget_calculation_service.dart';
+import 'achievement_providers.dart';
 import 'kickbase_api_provider.dart';
 import 'manager_providers.dart';
 import 'player_detail_providers.dart';
@@ -418,6 +420,38 @@ final managerBudgetCalculationProvider =
 
       return result;
     });
+
+/// Provider für die Budget-Einnahmen eines Managers durch Erfolge
+/// (Achievements).
+///
+/// Kickbase vergütet Erfolge (Spieltagssieger, Topscorer, goldene Händchen
+/// etc.) mit Budget, das NICHT in der Transfer-Historie erscheint und daher
+/// in [managerBudgetCalculationProvider] fehlt. Dieses Ergebnis muss vom
+/// Aufrufer separat auf das Budget aufgerechnet werden:
+///
+/// - eigener Manager: exakt (achievements: ac × er)
+/// - Fremd-Manager: Feed-Attribution (activitiesFeed, t == 26)
+///
+/// Liefert null, wenn keine Einnahmen ermittelbar sind.
+final managerAchievementIncomeProvider = FutureProvider.family<
+    AchievementIncomeSummary?, ({String leagueId, String managerId})>((
+  ref,
+  params,
+) async {
+  try {
+    final incomeByManager = await ref.watch(
+      leagueAchievementIncomeByManagerProvider(params.leagueId).future,
+    );
+    final summary = incomeByManager[params.managerId];
+    if (summary == null || summary.totalIncome <= 0) return null;
+    return summary.copyWith(managerId: params.managerId);
+  } catch (e) {
+    _logger.w(
+      '⚠️ Achievements-Budget für ${params.managerId} nicht ermittelbar: $e',
+    );
+    return null;
+  }
+});
 
 /// Hilfsfunktion: Konvertiere Wert in int
 int _asInt(Object? value) => switch (value) {

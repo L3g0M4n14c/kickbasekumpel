@@ -7,6 +7,7 @@ import '../../../data/utils/parsing_utils.dart';
 import '../../../data/models/lineup_model.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/common/app_logo.dart';
+import '../../widgets/common/ligainsider_status_badge.dart';
 import '../../widgets/error_widget.dart';
 
 /// Lineup Screen
@@ -397,6 +398,13 @@ class _PlayerLineupCard extends ConsumerWidget {
         ),
         subtitle: Row(
           children: [
+            // Ligainsider-Status (Startelf/Bank/verletzt)
+            LigainsiderStatusBadge(
+              firstName: '',
+              lastName: player.name,
+              showLabel: false,
+            ),
+            const SizedBox(width: 8),
             Icon(Icons.stars, size: 14, color: theme.colorScheme.primary),
             const SizedBox(width: 4),
             Text('${player.averagePoints} Ø'),

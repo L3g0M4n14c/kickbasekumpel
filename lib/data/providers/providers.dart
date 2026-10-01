@@ -31,6 +31,8 @@ export 'live_providers.dart';
 export 'scouted_players_providers.dart';
 export 'competition_providers.dart';
 export 'budget_calculation_providers.dart';
+export 'achievement_providers.dart';
+export 'squad_benchmark_providers.dart';
 
 // Presentation Providers
 export '../../presentation/providers/market_providers.dart';
