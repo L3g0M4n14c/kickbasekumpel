@@ -6,10 +6,12 @@
 # Required Xcode Cloud environment variable (set in App Store Connect → Xcode Cloud → Workflow → Environment):
 #   FLUTTER_VERSION  – Flutter release, exact (e.g. "3.32.2") or wildcard (e.g. "3.38.x")
 #                      Wildcard is resolved to the latest stable patch from the Flutter releases API.
+#                      Default 3.47.x: pubspec.yaml requires Dart ^3.9.2 (Flutter 3.35+),
+#                      und 3.47.x = die lokal verifizierte Version (CocoaPods-Setup).
 
 set -e
 
-FLUTTER_VERSION="${FLUTTER_VERSION:-3.32.2}"
+FLUTTER_VERSION="${FLUTTER_VERSION:-3.47.x}"
 FLUTTER_HOME="$HOME/flutter"
 MACHINE_ARCH="$(uname -m)"   # arm64 or x86_64
 
@@ -87,6 +89,13 @@ export PATH="$FLUTTER_HOME/bin:$PATH"
 echo "Flutter ready:"
 flutter --version --no-version-check
 
+# Wichtig: CocoaPods-basiertes Build-Setup erzwingen. Das Flutter-Tool migriert
+# neue Projekte sonst automatisch zu Swift Package Manager (SPM) – in Kombi
+# mit Firebase-Pods entstehen dann Duplicate-Symbol-Links und Xcode 27+
+# macht niedrige Package-Deployment-Targets in Xcode Cloud zu harten Fehlern.
+# Der Podfile-post_install-Bump (iOS 15.0) regelt die Targets stattdessen.
+flutter config --no-enable-swift-package-manager
+
 # ci_post_clone.sh runs from ios/ci_scripts/ – all project commands need repo root.
 REPO_ROOT="${CI_PRIMARY_REPOSITORY_PATH:-$(cd "$(dirname "$0")/../.." && pwd)}"
 echo "Repo root: $REPO_ROOT"
@@ -97,8 +106,11 @@ echo "=== Installing Dart dependencies ==="
 # Run Script build phase can locate the Flutter SDK during xcodebuild.
 flutter pub get
 
-echo "=== Generating code (Freezed / build_runner) ==="
-flutter pub run build_runner build --delete-conflicting-outputs
+# HINWEIS: build_runner wird hier NICHT ausgeführt. Die generierten Dateien
+# (*/\*.freezed.dart, */\*.g.dart) sind committed. Ein build_runner-Lauf mit
+# neueren Flutter-SDKs (Dart ≥ 3.10) crasht, weil der von freezed 2.x gepinnte
+# Analyzer die Dot-Shorthand-Syntax im Flutter-Framework nicht parsen kann.
+# → Bei Modell-Änderungen build_runner LOKAL ausführen und Results committen.
 
 echo "=== Installing CocoaPods dependencies ==="
 cd ios
