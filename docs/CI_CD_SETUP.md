@@ -312,6 +312,19 @@ Vergib einmalig `roles/cloudscheduler.admin` für den Service Account aus `FIREB
 fehlen. Trage alle Variablen aus der Tabelle im Abschnitt "Xcode Cloud: iOS-Deploy konfigurieren"
 in App Store Connect → Xcode Cloud → Workflow → Environment ein.
 
+**iOS Xcode Cloud Build: "Preparing build for App Store Connect failed" (alle anderen Schritte grün)**
+→ Xcode Cloud registriert jeden Archiv-Build in App Store Connect. Häufigste Ursachen:
+  1. **Doppelte Build-Nummer**: Stand früher in `pubspec.yaml` eine feste Build-Nummer
+     (z.B. `version: 1.0.0+1`), hatte jeder Build dieselbe CFBundleVersion (`1`) und kollidierte
+     mit dem bereits registrierten Build in App Store Connect. `ci_post_clone.sh` setzt die
+     Build-Nummer inzwischen automatisch auf die Xcode-Cloud-Build-Nummer (`CI_BUILD_NUMBER`).
+     Prüfe mit `grep '^version:' pubspec.yaml`, ob der Wert nach dem Build eindeutig ist.
+  2. **Nicht akzeptierte Vereinbarungen**: In App Store Connect → Business → Vereinbarungen
+     prüfen, ob eine neue Vereinbarung (z.B. Apple Developer Program License Agreement)
+     akzeptiert werden muss.
+  3. Die Logs (`IDEDistribution.critical.log` mit "Unable to authenticate with App Store Connect")
+     sind meist ein Ablenkungsmanöver – der IPA-Export selbst läuft durch (`** EXPORT SUCCEEDED **`).
+
 **iOS Build schlägt fehl mit "No matching provisioning profile"**
 → Fastlane Match erneut ausführen: `fastlane match adhoc --force_for_new_devices`
 

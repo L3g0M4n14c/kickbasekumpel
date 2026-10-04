@@ -31,9 +31,33 @@ echo "Archive: ${CI_ARCHIVE_PATH}"
 # ── 3. Find or export the IPA ─────────────────────────────────────────────────
 IPA_PATH=""
 
+# CI_WORKSPACE is set by Xcode Cloud to the root of the cloned repository.
+REPO_ROOT="${CI_WORKSPACE:-/Volumes/workspace/repository}"
+
 # Xcode Cloud sets CI_EXPORT_PATH when the workflow has a distribution step.
 if [ -n "${CI_EXPORT_PATH}" ]; then
   IPA_PATH="$(find "${CI_EXPORT_PATH}" -name "*.ipa" | head -1)"
+fi
+
+# Xcode Cloud exported die IPA selbst (im Schritt "Preparing build for App
+# Store Connect") auch ohne konfigurierten Distribution-Step – jeweils nach
+# /Volumes/workspace/{adhocexport,developmentexport,appstoreexport}. Diese IPA
+# können wir direkt für Firebase App Distribution verwenden. Wichtig: Nur
+# Ad-Hoc-/Development-IPAs sind auf Testgeräten installierbar; eine
+# App-Store-IPA würde die Installation über Firebase scheitern lassen,
+# deshalb wird in dieser Reihenfolge gesucht.
+if [ -z "${IPA_PATH}" ]; then
+  for EXPORT_DIR_CANDIDATE in \
+    "${CI_WORKSPACE}/adhocexport" \
+    "${CI_WORKSPACE}/developmentexport" \
+    "${CI_WORKSPACE}/appstoreexport"; do
+    [ -n "${EXPORT_DIR_CANDIDATE}" ] || continue
+    IPA_PATH="$(find "${EXPORT_DIR_CANDIDATE}" -name '*.ipa' 2>/dev/null | head -1)"
+    if [ -n "${IPA_PATH}" ]; then
+      echo "Using IPA exported by Xcode Cloud from: ${EXPORT_DIR_CANDIDATE}"
+      break
+    fi
+  done
 fi
 
 # If Xcode Cloud didn't export (no distribution step configured), do it here.
@@ -42,9 +66,6 @@ if [ -z "${IPA_PATH}" ]; then
 
   EXPORT_DIR="/tmp/ipa-adhoc-export"
   mkdir -p "${EXPORT_DIR}"
-
-  # CI_WORKSPACE is set by Xcode Cloud to the root of the cloned repository.
-  REPO_ROOT="${CI_WORKSPACE:-/Volumes/workspace/repository}"
 
   # ── Signing: prefer Fastlane Match when API-key env vars are present ────────
   # Required Xcode Cloud environment variables (App Store Connect → Xcode Cloud →
@@ -92,7 +113,8 @@ if [ -z "${IPA_PATH}" ]; then
     echo "  → Add these in App Store Connect → Xcode Cloud → Workflow → Environment."
     echo "    See docs/CI_CD_SETUP.md, section 'Xcode Cloud: iOS-Deploy konfigurieren'."
     echo ""
-    echo "Skipping IPA export and Firebase distribution (no signing credentials available)."
+    echo "Skipping IPA export and Firebase distribution"
+    echo "(no signing credentials available AND no IPA exported by Xcode Cloud)."
     exit 0
   fi
 

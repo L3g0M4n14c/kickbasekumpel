@@ -106,6 +106,23 @@ echo "=== Installing Dart dependencies ==="
 # Run Script build phase can locate the Flutter SDK during xcodebuild.
 flutter pub get
 
+# ── Eindeutige Build-Nummer für App Store Connect ─────────────────────────────
+# Xcode Cloud registriert jeden Archiv-Build in App Store Connect (Schritt
+# "Preparing build for App Store Connect"). Steht in pubspec.yaml eine feste
+# Build-Nummer (z.B. 1.0.0+1), hat jeder Build dieselbe CFBundleVersion ("1")
+# und kollidiert mit dem bereits registrierten Build 1.0.0(1). Der Schritt
+# schlägt dann ohne klare Log-Meldung fehl ("Preparing build for App Store
+# Connect failed"). → Build-Nummer pro Xcode-Cloud-Build auf CI_BUILD_NUMBER
+# setzen und Generated.xcconfig (FLUTTER_BUILD_NUMBER) neu generieren.
+if [ -n "${CI_BUILD_NUMBER:-}" ]; then
+  echo "=== Setze Flutter Build-Nummer auf CI_BUILD_NUMBER=${CI_BUILD_NUMBER} ==="
+  sed -i '' -E \
+    "s/^(version:[[:space:]]*[0-9]+\.[0-9]+\.[0-9]+\+)[0-9]+/\1${CI_BUILD_NUMBER}/" \
+    "$REPO_ROOT/pubspec.yaml"
+  grep '^version:' "$REPO_ROOT/pubspec.yaml"
+  flutter pub get
+fi
+
 # HINWEIS: build_runner wird hier NICHT ausgeführt. Die generierten Dateien
 # (*/\*.freezed.dart, */\*.g.dart) sind committed. Ein build_runner-Lauf mit
 # neueren Flutter-SDKs (Dart ≥ 3.10) crasht, weil der von freezed 2.x gepinnte
