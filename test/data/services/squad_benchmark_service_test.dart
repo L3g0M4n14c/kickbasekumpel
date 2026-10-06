@@ -47,13 +47,13 @@ void main() {
 
       // Fremd-Manager A: TW 7 Mio, ABW 1 Mio
       final squadA = [
-        {'pos': 1, 'mv': 7000000, 'st': 60},
-        {'pos': 2, 'mv': 1000000, 'st': 40},
+        {'pos': 1, 'mv': 7000000, 'p': 60},
+        {'pos': 2, 'mv': 1000000, 'p': 40},
       ];
       // Fremd-Manager B: TW 3 Mio, ABW 3 Mio
       final squadB = [
-        {'pos': 1, 'mv': 3000000, 'st': 120},
-        {'pos': 2, 'mv': 3000000, 'st': 80},
+        {'pos': 1, 'mv': 3000000, 'p': 120},
+        {'pos': 2, 'mv': 3000000, 'p': 80},
       ];
 
       final benchmark = service.aggregate(
@@ -98,7 +98,7 @@ void main() {
 
     test('Spieler ohne gültige Positions-Code werden ignoriert', () {
       final squad = [
-        {'pos': 9, 'mv': 9999999, 'st': 999},
+        {'pos': 9, 'mv': 9999999, 'p': 999},
       ];
 
       final benchmark = service.aggregate(
@@ -112,6 +112,28 @@ void main() {
         benchmark.positions.every((p) => p.leagueAvgMarketValue == 0),
         isTrue,
       );
+    });
+
+    test('Liga-Ø-Punkte sind Ø pro Spieler, nicht Summe pro Manager', () {
+      // Zwei Manager mit je 2 MF-Spielern: (100+50+60+90)/4 = 75.
+      // Die Summe-pro-Manager-Rechnung fälschlich: 300/2 = 150.
+      final squadA = [
+        {'pos': 3, 'mv': 1000000, 'p': 100},
+        {'pos': 3, 'mv': 1000000, 'p': 50},
+      ];
+      final squadB = [
+        {'pos': 3, 'mv': 1000000, 'p': 60},
+        {'pos': 3, 'mv': 1000000, 'p': 90},
+      ];
+
+      final benchmark = service.aggregate(
+        ownPlayers: const [],
+        managerSquads: {'a': squadA, 'b': squadB},
+      );
+
+      final mf = benchmark.positions.firstWhere((p) => p.position == 3);
+      expect(mf.leagueAvgPoints, 75);
+      expect(mf.leagueAvgCount, 2);
     });
   });
 }
