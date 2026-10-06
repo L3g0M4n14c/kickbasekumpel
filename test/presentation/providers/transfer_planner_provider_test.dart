@@ -130,6 +130,54 @@ void main() {
       expect(state.errorMessage, contains('Liga'));
     });
 
+    test(
+      'calculate excludes market players that are already in the squad',
+      () async {
+        final expectedResult = TransferPlannerResult(
+          scenarios: const [],
+          noPlanReason: 'Aktuell wurde kein echter Verstaerkungsplan gefunden.',
+        );
+        final plannerService = _RecordingTransferPlannerService(expectedResult);
+        final squadPlayers = [
+          _buildPlayer(id: 'starter-1'),
+          _buildPlayer(id: 'own-listing'),
+        ];
+        final marketPlayers = [
+          _buildMarketPlayer(id: 'market-1'),
+          // Eigene Verkaufslistings: identische ID wie ein Kaderspieler.
+          _buildMarketPlayer(id: 'own-listing'),
+          _buildMarketPlayer(id: 'starter-1'),
+        ];
+
+        final container = ProviderContainer(
+          overrides: [
+            selectedLeagueIdProvider.overrideWithValue('league-1'),
+            teamPlayersProvider.overrideWith(
+              (ref) => Future.value(squadPlayers),
+            ),
+            teamBudgetProvider.overrideWith((ref) => Future.value(15000000)),
+            marketPlayersProvider.overrideWith(
+              (ref) => Stream.value(marketPlayers),
+            ),
+            transferPlannerServiceProvider.overrideWithValue(plannerService),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await container.read(transferPlannerProvider.notifier).calculate();
+
+        final capturedInput = plannerService.lastInput!;
+        expect(
+          capturedInput.marketPlayers.map((player) => player.id).toList(),
+          ['market-1'],
+          reason:
+              'Eigene Kaderspieler (eigene Listings) müssen vom '
+              'Planner-Input ausgeschlossen werden.',
+        );
+        expect(capturedInput.squadPlayers, squadPlayers);
+      },
+    );
+
     test('calculate stores no-plan fallback result without error', () async {
       const noPlanReason =
           'Aktuell wurde kein echter Verstaerkungsplan gefunden.';

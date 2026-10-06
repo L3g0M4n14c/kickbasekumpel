@@ -63,11 +63,28 @@ class _PlannerStateView extends StatelessWidget {
     }
 
     if (result.scenarios.isEmpty) {
+      final details = result.noPlanDetails;
       return Center(
-        child: Text(
-          result.noPlanReason ??
-              'Aktuell wurde kein echter Verstaerkungsplan gefunden.',
-          textAlign: TextAlign.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              result.noPlanReason ??
+                  'Aktuell wurde kein echter Verstaerkungsplan gefunden.',
+              textAlign: TextAlign.center,
+            ),
+            if (details != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                details,
+                textAlign: TextAlign.center,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: Colors.grey.shade600),
+              ),
+            ],
+          ],
         ),
       );
     }

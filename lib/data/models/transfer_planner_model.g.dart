@@ -119,6 +119,7 @@ _$TransferPlannerResultImpl _$$TransferPlannerResultImplFromJson(
       .map((e) => TransferPlanScenario.fromJson(e as Map<String, dynamic>))
       .toList(),
   noPlanReason: json['noPlanReason'] as String?,
+  noPlanDetails: json['noPlanDetails'] as String?,
 );
 
 Map<String, dynamic> _$$TransferPlannerResultImplToJson(
@@ -126,4 +127,5 @@ Map<String, dynamic> _$$TransferPlannerResultImplToJson(
 ) => <String, dynamic>{
   'scenarios': instance.scenarios,
   'noPlanReason': instance.noPlanReason,
+  'noPlanDetails': instance.noPlanDetails,
 };

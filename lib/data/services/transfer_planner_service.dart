@@ -2,29 +2,80 @@ import 'dart:math';
 
 import 'package:kickbasekumpel/data/models/player_model.dart';
 import 'package:kickbasekumpel/data/models/transfer_planner_model.dart';
+import 'package:logger/logger.dart';
+
+/// Ablehnungsgrund eines einzelnen Szenario-Versuchs in [_buildScenario].
+enum _ScenarioRejection {
+  /// Budget + Verkäufe decken den Kaufpreis nicht.
+  unaffordable,
+
+  /// Die resultierende Startelf wäre nicht mehr legal (nur bei aktuell
+  /// legaler Startelf).
+  illegalLineup,
+
+  /// Der Marktspieler schafft nach dem Transfer nicht die Startelf.
+  notInXI,
+
+  /// Kein positiver Punktegewinn für die Startelf.
+  noGain,
+}
 
 /// Erstellt deterministische Transfer-Szenarien mit legaler Formation.
 class TransferPlannerService {
+  final Logger _logger = Logger();
+
   /// Baut ausführbare Transfer-Pläne basierend auf Kader, Markt und Budget.
   TransferPlannerResult buildPlans(TransferPlannerInput input) {
+    _logger.i(
+      '📊 buildPlans: Kader=${input.squadPlayers.length} '
+      '(${_positionHistogram(input.squadPlayers)}), '
+      'Markt=${input.marketPlayers.length} '
+      '(${_positionHistogram(input.marketPlayers)}), '
+      'Budget=${input.currentBudget} €, '
+      'Startelf-legal=${_selectBestLegalLineup(input.squadPlayers) != null}',
+    );
+
     final currentSelection =
         _selectBestLegalLineup(input.squadPlayers) ??
         _selectSimpleLineup(input.squadPlayers);
     if (currentSelection.starters.isEmpty) {
-      return const TransferPlannerResult(
-        scenarios: [],
+      _logger.w('🚫 buildPlans: Kader leer – kein Startelf-Spieler verfügbar');
+      return TransferPlannerResult(
+        scenarios: const [],
         noPlanReason: 'Aktuell wurde kein echter Verstaerkungsplan gefunden.',
+        noPlanDetails:
+            'Dein Kader ist leer (0 auswertbare Spieler) – '
+            'die Kaderdaten konnten nicht geladen werden.',
       );
     }
 
     final currentStarters = currentSelection.starters;
     final scenarios = <TransferPlanScenario>[];
+    var skippedNoPosition = 0;
+    var rejectedUnaffordable = 0;
+    var rejectedIllegalLineup = 0;
+    var rejectedNotInXI = 0;
+    var rejectedNoGain = 0;
+
+    void handleRejection(_ScenarioRejection reason) {
+      switch (reason) {
+        case _ScenarioRejection.unaffordable:
+          rejectedUnaffordable++;
+        case _ScenarioRejection.illegalLineup:
+          rejectedIllegalLineup++;
+        case _ScenarioRejection.notInXI:
+          rejectedNotInXI++;
+        case _ScenarioRejection.noGain:
+          rejectedNoGain++;
+      }
+    }
 
     for (final marketPlayer in input.marketPlayers) {
       final samePositionStarters = currentStarters
           .where((starter) => starter.position == marketPlayer.position)
           .toList();
       if (samePositionStarters.isEmpty && currentSelection.isLegal) {
+        skippedNoPosition++;
         continue;
       }
       final weakestCurrentStarters = [...currentStarters]
@@ -52,6 +103,7 @@ class TransferPlannerService {
           marketPlayer: marketPlayer,
           weakestStarter: weakestStarter,
           baseSells: baseSells,
+          onReject: handleRejection,
         );
         if (scenario == null) {
           continue;
@@ -70,6 +122,7 @@ class TransferPlannerService {
             marketPlayer: marketPlayer,
             weakestStarter: weakestStarter,
             baseSells: [fallbackSell],
+            onReject: handleRejection,
           );
           if (scenario == null) {
             continue;
@@ -104,13 +157,97 @@ class TransferPlannerService {
 
     final topScenarios = scenarios.take(3).toList();
     if (topScenarios.isEmpty) {
-      return const TransferPlannerResult(
-        scenarios: [],
+      final details = _buildNoPlanDetails(
+        marketCount: input.marketPlayers.length,
+        skippedNoPosition: skippedNoPosition,
+        unaffordable: rejectedUnaffordable,
+        illegalLineup: rejectedIllegalLineup,
+        notInXI: rejectedNotInXI,
+        noGain: rejectedNoGain,
+      );
+      _logger.w('🚫 buildPlans: kein Szenario – $details');
+      return TransferPlannerResult(
+        scenarios: const [],
         noPlanReason: 'Aktuell wurde kein echter Verstaerkungsplan gefunden.',
+        noPlanDetails: details,
       );
     }
 
+    _logger.i('✅ buildPlans: ${topScenarios.length} Szenarien erstellt');
     return TransferPlannerResult(scenarios: topScenarios);
+  }
+
+  /// Baut die Diagnose-Unterzeile, wenn kein Szenario übrig geblieben ist.
+  ///
+  /// Die Zählungen machen die konkrete Ursache sichtbar: leerer Markt,
+  /// Positions-Mismatch, fehlendes Budget oder fehlender Punktegewinn.
+  String _buildNoPlanDetails({
+    required int marketCount,
+    required int skippedNoPosition,
+    required int unaffordable,
+    required int illegalLineup,
+    required int notInXI,
+    required int noGain,
+  }) {
+    if (marketCount == 0) {
+      return 'Der Markt liefert aktuell 0 Spieler – es gibt nichts zu kaufen. '
+          'Prüfe den Markt-Spieler-Tab in der App.';
+    }
+
+    final parts = <String>[];
+    if (skippedNoPosition > 0) {
+      parts.add(
+        '$skippedNoPosition von $marketCount ohne passende Position '
+        'in der Startelf',
+      );
+    }
+    if (unaffordable > 0) {
+      parts.add(
+        '$unaffordable× nicht finanzierbar '
+        '(Budget + Verkäufe reichen nicht aus)',
+      );
+    }
+    if (illegalLineup > 0) {
+      parts.add('$illegalLineup× würde die Startelf-Formation zerstören');
+    }
+    if (notInXI > 0) {
+      parts.add('$notInXI× schafft nicht die Startelf');
+    }
+    if (noGain > 0) {
+      parts.add('$noGain× ohne Punktegewinn für die Startelf');
+    }
+
+    if (parts.isEmpty) {
+      return 'Untersucht: $marketCount Marktspieler – '
+          'keiner erfüllt die Planungsbedingungen.';
+    }
+    return 'Untersucht: $marketCount Marktspieler. '
+        'Ablehnungsgründe: ${parts.join('; ')}.';
+  }
+
+  /// Kurz-Histogramm der Positions-Codes (1=TW, 2=ABW, 3=MF, 4=ST)
+  /// für die Diagnose-Logging-Ausgabe.
+  String _positionHistogram(List<Player> players) {
+    var tw = 0;
+    var abw = 0;
+    var mf = 0;
+    var st = 0;
+    var other = 0;
+    for (final player in players) {
+      switch (player.position) {
+        case 1:
+          tw++;
+        case 2:
+          abw++;
+        case 3:
+          mf++;
+        case 4:
+          st++;
+        default:
+          other++;
+      }
+    }
+    return 'TW=$tw ABW=$abw MF=$mf ST=$st sonst=$other';
   }
 
   _LineupSelection? _selectBestLegalLineup(List<Player> squadPlayers) {
@@ -196,6 +333,7 @@ class TransferPlannerService {
     required Player marketPlayer,
     required Player? weakestStarter,
     required List<Player> baseSells,
+    void Function(_ScenarioRejection reason)? onReject,
   }) {
     final sells = List<Player>.from(baseSells);
     var budgetAfter =
@@ -210,6 +348,7 @@ class TransferPlannerService {
         requiredAmount: -budgetAfter,
       );
       if (additionalSales == null) {
+        onReject?.call(_ScenarioRejection.unaffordable);
         return null;
       }
       sells.addAll(additionalSales);
@@ -226,16 +365,19 @@ class TransferPlannerService {
     );
     final resultingLegalSelection = _selectBestLegalLineup(resultingSquad);
     if (currentSelection.isLegal && resultingLegalSelection == null) {
+      onReject?.call(_ScenarioRejection.illegalLineup);
       return null;
     }
     final resultingSelection =
         resultingLegalSelection ?? _selectSimpleLineup(resultingSquad);
     final resultingStarters = resultingSelection.starters;
     if (!resultingStarters.any((player) => player.id == marketPlayer.id)) {
+      onReject?.call(_ScenarioRejection.notInXI);
       return null;
     }
     final finalGain = resultingSelection.score - currentSelection.score;
     if (finalGain <= 0) {
+      onReject?.call(_ScenarioRejection.noGain);
       return null;
     }
 

@@ -72,9 +72,19 @@ class TransferPlannerNotifier extends Notifier<TransferPlannerState> {
       final currentBudget = results[1] as int;
       final marketPlayers = results[2] as List<MarketPlayer>;
 
+      // Der Markt-Endpunkt enthält auch die eigenen Verkaufslistings
+      // (uoid = eigene User-ID). Ein "Kauf" derselben Spieler wäre
+      // unmöglich und würde den Kader duplizieren – deshalb ausschließen.
+      final squadIds = squadPlayers.map((player) => player.id).toSet();
+      final buyableMarketPlayers = marketPlayers
+          .where((player) => !squadIds.contains(player.id))
+          .toList();
+
       final plannerInput = TransferPlannerInput(
         squadPlayers: squadPlayers,
-        marketPlayers: marketPlayers.map(_mapMarketPlayerToPlayer).toList(),
+        marketPlayers: buyableMarketPlayers
+            .map(_mapMarketPlayerToPlayer)
+            .toList(),
         currentBudget: currentBudget,
       );
 

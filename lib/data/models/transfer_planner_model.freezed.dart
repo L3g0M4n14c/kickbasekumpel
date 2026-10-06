@@ -1369,6 +1369,7 @@ mixin _$TransferPlannerResult {
   List<TransferPlanScenario> get scenarios =>
       throw _privateConstructorUsedError;
   String? get noPlanReason => throw _privateConstructorUsedError;
+  String? get noPlanDetails => throw _privateConstructorUsedError;
 
   /// Serializes this TransferPlannerResult to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -1387,7 +1388,11 @@ abstract class $TransferPlannerResultCopyWith<$Res> {
     $Res Function(TransferPlannerResult) then,
   ) = _$TransferPlannerResultCopyWithImpl<$Res, TransferPlannerResult>;
   @useResult
-  $Res call({List<TransferPlanScenario> scenarios, String? noPlanReason});
+  $Res call({
+    List<TransferPlanScenario> scenarios,
+    String? noPlanReason,
+    String? noPlanDetails,
+  });
 }
 
 /// @nodoc
@@ -1407,7 +1412,11 @@ class _$TransferPlannerResultCopyWithImpl<
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? scenarios = null, Object? noPlanReason = freezed}) {
+  $Res call({
+    Object? scenarios = null,
+    Object? noPlanReason = freezed,
+    Object? noPlanDetails = freezed,
+  }) {
     return _then(
       _value.copyWith(
             scenarios: null == scenarios
@@ -1417,6 +1426,10 @@ class _$TransferPlannerResultCopyWithImpl<
             noPlanReason: freezed == noPlanReason
                 ? _value.noPlanReason
                 : noPlanReason // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            noPlanDetails: freezed == noPlanDetails
+                ? _value.noPlanDetails
+                : noPlanDetails // ignore: cast_nullable_to_non_nullable
                       as String?,
           )
           as $Val,
@@ -1433,7 +1446,11 @@ abstract class _$$TransferPlannerResultImplCopyWith<$Res>
   ) = __$$TransferPlannerResultImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({List<TransferPlanScenario> scenarios, String? noPlanReason});
+  $Res call({
+    List<TransferPlanScenario> scenarios,
+    String? noPlanReason,
+    String? noPlanDetails,
+  });
 }
 
 /// @nodoc
@@ -1450,7 +1467,11 @@ class __$$TransferPlannerResultImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? scenarios = null, Object? noPlanReason = freezed}) {
+  $Res call({
+    Object? scenarios = null,
+    Object? noPlanReason = freezed,
+    Object? noPlanDetails = freezed,
+  }) {
     return _then(
       _$TransferPlannerResultImpl(
         scenarios: null == scenarios
@@ -1460,6 +1481,10 @@ class __$$TransferPlannerResultImplCopyWithImpl<$Res>
         noPlanReason: freezed == noPlanReason
             ? _value.noPlanReason
             : noPlanReason // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        noPlanDetails: freezed == noPlanDetails
+            ? _value.noPlanDetails
+            : noPlanDetails // ignore: cast_nullable_to_non_nullable
                   as String?,
       ),
     );
@@ -1472,6 +1497,7 @@ class _$TransferPlannerResultImpl implements _TransferPlannerResult {
   const _$TransferPlannerResultImpl({
     required final List<TransferPlanScenario> scenarios,
     this.noPlanReason,
+    this.noPlanDetails,
   }) : _scenarios = scenarios;
 
   factory _$TransferPlannerResultImpl.fromJson(Map<String, dynamic> json) =>
@@ -1489,8 +1515,11 @@ class _$TransferPlannerResultImpl implements _TransferPlannerResult {
   final String? noPlanReason;
 
   @override
+  final String? noPlanDetails;
+
+  @override
   String toString() {
-    return 'TransferPlannerResult(scenarios: $scenarios, noPlanReason: $noPlanReason)';
+    return 'TransferPlannerResult(scenarios: $scenarios, noPlanReason: $noPlanReason, noPlanDetails: $noPlanDetails)';
   }
 
   @override
@@ -1503,7 +1532,9 @@ class _$TransferPlannerResultImpl implements _TransferPlannerResult {
               _scenarios,
             ) &&
             (identical(other.noPlanReason, noPlanReason) ||
-                other.noPlanReason == noPlanReason));
+                other.noPlanReason == noPlanReason) &&
+            (identical(other.noPlanDetails, noPlanDetails) ||
+                other.noPlanDetails == noPlanDetails));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1512,6 +1543,7 @@ class _$TransferPlannerResultImpl implements _TransferPlannerResult {
     runtimeType,
     const DeepCollectionEquality().hash(_scenarios),
     noPlanReason,
+    noPlanDetails,
   );
 
   /// Create a copy of TransferPlannerResult
@@ -1536,6 +1568,7 @@ abstract class _TransferPlannerResult implements TransferPlannerResult {
   const factory _TransferPlannerResult({
     required final List<TransferPlanScenario> scenarios,
     final String? noPlanReason,
+    final String? noPlanDetails,
   }) = _$TransferPlannerResultImpl;
 
   factory _TransferPlannerResult.fromJson(Map<String, dynamic> json) =
@@ -1545,6 +1578,8 @@ abstract class _TransferPlannerResult implements TransferPlannerResult {
   List<TransferPlanScenario> get scenarios;
   @override
   String? get noPlanReason;
+  @override
+  String? get noPlanDetails;
 
   /// Create a copy of TransferPlannerResult
   /// with the given fields replaced by the non-null parameter values.

@@ -73,6 +73,11 @@ class TransferPlannerResult with _$TransferPlannerResult {
   const factory TransferPlannerResult({
     required List<TransferPlanScenario> scenarios,
     String? noPlanReason,
+
+    /// Diagnose-Unterzeile: nennt die konkrete Ursache, warum kein Plan
+    /// gefunden wurde (z. B. leerer Kader, leerer Markt, Ablehnungsgründe
+    /// je Marktspieler). Wird unter [noPlanReason] in der UI angezeigt.
+    String? noPlanDetails,
   }) = _TransferPlannerResult;
 
   factory TransferPlannerResult.fromJson(Map<String, dynamic> json) =>
