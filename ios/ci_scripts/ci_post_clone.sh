@@ -123,6 +123,25 @@ if [ -n "${CI_BUILD_NUMBER:-}" ]; then
   flutter pub get
 fi
 
+# ── MinimumOSVersion in ios/Flutter/AppFrameworkInfo.plist erzwingen ─────────
+# Diese Datei wird 1:1 als Info.plist von Runner.app/Frameworks/App.framework
+# eingebaut. Ohne den Key scheitert die App-Store-Validierung mit:
+#   ITMS-90530 (Invalid MinimumOSVersion), ITMS-90360 (Missing Info.plist value),
+#   ITMS-90208 (Invalid Bundle)
+# Das Flutter-Tool ergänzt den Key normalerweise beim Assemble via
+# `plutil -replace` – schlägt das fehl, bleibt der Key leer. Außerdem stript die
+# Flutter-Migration (IOSDeploymentTargetMigration) den Key bei jedem lokalen
+# `flutter build ios` wieder aus der Datei (deshalb steht er nicht im Repo).
+# → Auf CI hier erzwingen, unabhängig vom Git-Zustand. Muss NACH den
+# flutter-Aufrufen stehen (die Migration läuft nur bei `flutter build ios`).
+APP_FRAMEWORK_PLIST="$REPO_ROOT/ios/Flutter/AppFrameworkInfo.plist"
+if ! plutil -extract MinimumOSVersion raw -o - "$APP_FRAMEWORK_PLIST" >/dev/null 2>&1; then
+  echo "=== Füge MinimumOSVersion 15.0 zu AppFrameworkInfo.plist hinzu ==="
+  # 15.0 = IPHONEOS_DEPLOYMENT_TARGET des Runner-Targets und Minimum von Flutter.
+  plutil -insert MinimumOSVersion -string 15.0 "$APP_FRAMEWORK_PLIST"
+fi
+echo "AppFrameworkInfo.plist: $(plutil -p "$APP_FRAMEWORK_PLIST" | grep -i minimumosversion)"
+
 # HINWEIS: build_runner wird hier NICHT ausgeführt. Die generierten Dateien
 # (*/\*.freezed.dart, */\*.g.dart) sind committed. Ein build_runner-Lauf mit
 # neueren Flutter-SDKs (Dart ≥ 3.10) crasht, weil der von freezed 2.x gepinnte
