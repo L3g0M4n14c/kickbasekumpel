@@ -36,6 +36,25 @@ void main() {
       );
     });
 
+    test('explains in the summary why each player is sold', () {
+      final result = service.buildPlans(_buildInputWithUpgrades());
+
+      final scenariosWithSells = result.scenarios
+          .where((scenario) => scenario.sells.isNotEmpty)
+          .toList();
+      expect(scenariosWithSells, isNotEmpty);
+
+      for (final scenario in scenariosWithSells) {
+        expect(
+          scenario.summary,
+          anyOf(
+            contains('schwächster Startelf-Spieler'),
+            contains('Budget-Freimachung'),
+          ),
+        );
+      }
+    });
+
     test(
       'falls back to partial-squad evaluation when no legal XI exists yet',
       () {

@@ -56,7 +56,10 @@ class TransferPlanDetailSheet extends StatelessWidget {
                   contentPadding: EdgeInsets.zero,
                   dense: true,
                   title: Text(formatPlayerName(move.player)),
-                  subtitle: Text(formatTransferCurrency(move.amount)),
+                  subtitle: Text(
+                    '${formatTransferCurrency(move.amount)}'
+                    ' · Ø ${move.player.averagePoints.toStringAsFixed(1)} Punkte',
+                  ),
                 ),
               ),
             const SizedBox(height: 8),

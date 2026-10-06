@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
-import 'package:kickbasekumpel/data/models/sales_recommendation_model.dart';
 import 'package:kickbasekumpel/data/models/optimal_lineup_model.dart';
 import 'package:kickbasekumpel/data/models/player_model.dart';
 import 'package:kickbasekumpel/data/models/user_model.dart';
@@ -52,22 +51,6 @@ class SelectedTeamPlayersNotifier extends Notifier<Set<String>> {
 final selectedTeamPlayersForSaleProvider =
     NotifierProvider<SelectedTeamPlayersNotifier, Set<String>>(
       SelectedTeamPlayersNotifier.new,
-    );
-
-// ============================================================================
-// SALES OPTIMIZATION NOTIFIER & PROVIDER
-// ============================================================================
-
-class SalesOptimizationGoalNotifier extends Notifier<OptimizationGoal> {
-  @override
-  OptimizationGoal build() => OptimizationGoal.balancePositive;
-
-  void setGoal(OptimizationGoal goal) => state = goal;
-}
-
-final salesOptimizationGoalProvider =
-    NotifierProvider<SalesOptimizationGoalNotifier, OptimizationGoal>(
-      SalesOptimizationGoalNotifier.new,
     );
 
 // ============================================================================

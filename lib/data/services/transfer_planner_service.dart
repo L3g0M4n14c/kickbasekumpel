@@ -381,6 +381,18 @@ class TransferPlannerService {
       return null;
     }
 
+    // Begründung pro Verkauf: Der schwächste Startelf-Spieler wird ersetzt,
+    // alle weiteren Verkäufe dienen der Budget-Freimachung.
+    final sellSummaries = sells
+        .map((sellPlayer) {
+          final reason = sellPlayer.id == weakestStarter?.id
+              ? 'schwächster Startelf-Spieler, '
+                    'Ø ${sellPlayer.averagePoints.toStringAsFixed(1)} Punkte'
+              : 'Budget-Freimachung';
+          return '${sellPlayer.firstName} ${sellPlayer.lastName} ($reason)';
+        })
+        .join(', ');
+
     return TransferPlanScenario(
       id:
           weakestStarter != null &&
@@ -410,7 +422,9 @@ class TransferPlannerService {
       budgetBefore: input.currentBudget,
       budgetAfter: budgetAfter,
       summary:
-          'Finales Startelf-Upgrade um ${finalGain.toStringAsFixed(1)} Punkte durch Transfer-Kette mit ${sells.length} Verkauf(en).',
+          'Finales Startelf-Upgrade um ${finalGain.toStringAsFixed(1)} Punkte '
+          'durch Transfer-Kette mit ${sells.length} Verkauf(en)'
+          '${sellSummaries.isEmpty ? '.' : ': $sellSummaries.'}',
       warnings: const [],
       score: TransferPlanScore(
         startingElevenGain: finalGain,

@@ -467,8 +467,7 @@ class GenerateRecommendationsState {
 class GenerateRecommendationsNotifier
     extends Notifier<GenerateRecommendationsState> {
   @override
-  GenerateRecommendationsState build() =>
-      const GenerateRecommendationsState();
+  GenerateRecommendationsState build() => const GenerateRecommendationsState();
 
   /// Generiert eine KI-Empfehlung für einen einzelnen Spieler.
   Future<void> generateForPlayer(
@@ -558,12 +557,18 @@ class GenerateRecommendationsNotifier
     );
 
     final repo = ref.read(recommendationRepositoryProvider);
-    // Alte Empfehlungen dieser Liga vor dem neuen Lauf löschen
+    // Alte Empfehlungen dieser Liga vor dem neuen Lauf löschen.
+    // Ein Löschfehler (z.B. Offline) darf die lokale Analyse nicht abbrechen –
+    // die Ergebnisse werden nicht in Firestore gespeichert.
     debugPrint(
       '🗑️ generateForPlayers: Lösche alte Empfehlungen für Liga $leagueId...',
     );
-    await repo.deleteByLeague(leagueId);
-    debugPrint('✅ generateForPlayers: Alte Empfehlungen gelöscht.');
+    try {
+      await repo.deleteByLeague(leagueId);
+      debugPrint('✅ generateForPlayers: Alte Empfehlungen gelöscht.');
+    } catch (e) {
+      debugPrint('⚠️ generateForPlayers: Löschen fehlgeschlagen ($e)');
+    }
     final apiClient = ref.read(kickbaseApiClientProvider);
     final promptContext = await _loadRecommendationAnalysisContext(
       apiClient,

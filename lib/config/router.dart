@@ -8,6 +8,7 @@ import '../presentation/pages/loading_screen.dart';
 import '../presentation/pages/dashboard/dashboard_shell.dart';
 import '../presentation/pages/dashboard/team_page.dart';
 import '../presentation/pages/dashboard/market_page.dart';
+import '../presentation/pages/dashboard/sales_recommendation_page.dart';
 import '../presentation/pages/dashboard/lineup_page.dart';
 import '../presentation/screens/dashboard/transfers_screen.dart';
 import '../presentation/pages/dashboard/settings_page.dart';
@@ -160,14 +161,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Sales Recommendation Tab (2) - wird erst nach erstellt
+          // Sales Recommendation Tab (2)
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/dashboard/sales',
                 name: 'sales',
                 pageBuilder: (context, state) =>
-                    const NoTransitionPage(child: Placeholder()),
+                    const NoTransitionPage(child: SalesRecommendationPage()),
               ),
             ],
           ),
