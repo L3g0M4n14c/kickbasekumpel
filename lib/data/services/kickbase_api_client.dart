@@ -152,6 +152,9 @@ class KickbaseAPIClient {
       );
     } on http.ClientException catch (e) {
       throw NetworkException('Network error: ${e.message}', originalError: e);
+    } catch (e) {
+      // SocketException, HandshakeException, etc.
+      throw NetworkException('Network error: $e', originalError: e);
     }
 
     _logger.d('📊 Response Status Code: ${response.statusCode}');
@@ -268,15 +271,9 @@ class KickbaseAPIClient {
           '⏳ Retrying request in ${delay.inMilliseconds}ms (attempt ${retryCount + 1}/$_maxRetries)',
         );
         await Future.delayed(delay);
-        return _makeRequestWithRetry(
-          endpoint: endpoint,
-          method: method,
-          body: body,
-          retryCount: retryCount + 1,
-        );
+      } else {
+        return response;
       }
-
-      return response;
     } catch (e) {
       // Don't retry authentication/authorization errors
       if (e is AuthenticationException || e is AuthorizationException) {
@@ -290,15 +287,19 @@ class KickbaseAPIClient {
           '⏳ Retrying after network error in ${delay.inMilliseconds}ms (attempt ${retryCount + 1}/$_maxRetries)',
         );
         await Future.delayed(delay);
-        return _makeRequestWithRetry(
-          endpoint: endpoint,
-          method: method,
-          body: body,
-          retryCount: retryCount + 1,
-        );
+      } else {
+        rethrow;
       }
-      rethrow;
     }
+
+    // Retry call outside the try block so its errors propagate to the caller
+    // instead of being caught (and double-retried) by the catch above.
+    return _makeRequestWithRetry(
+      endpoint: endpoint,
+      method: method,
+      body: body,
+      retryCount: retryCount + 1,
+    );
   }
 
   // MARK: - Response Processing

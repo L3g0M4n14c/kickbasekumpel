@@ -6,83 +6,79 @@ part of 'performance_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$PlayerPerformanceResponseImpl _$$PlayerPerformanceResponseImplFromJson(
+_PlayerPerformanceResponse _$PlayerPerformanceResponseFromJson(
   Map<String, dynamic> json,
-) => _$PlayerPerformanceResponseImpl(
+) => _PlayerPerformanceResponse(
   it: (json['it'] as List<dynamic>)
       .map((e) => SeasonPerformance.fromJson(e as Map<String, dynamic>))
       .toList(),
 );
 
-Map<String, dynamic> _$$PlayerPerformanceResponseImplToJson(
-  _$PlayerPerformanceResponseImpl instance,
+Map<String, dynamic> _$PlayerPerformanceResponseToJson(
+  _PlayerPerformanceResponse instance,
 ) => <String, dynamic>{'it': instance.it};
 
-_$SeasonPerformanceImpl _$$SeasonPerformanceImplFromJson(
+_SeasonPerformance _$SeasonPerformanceFromJson(Map<String, dynamic> json) =>
+    _SeasonPerformance(
+      sid: json['sid'] as String?,
+      ti: json['ti'] as String,
+      n: json['n'] as String,
+      ph: (json['ph'] as List<dynamic>)
+          .map((e) => MatchPerformance.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
+Map<String, dynamic> _$SeasonPerformanceToJson(_SeasonPerformance instance) =>
+    <String, dynamic>{
+      'sid': instance.sid,
+      'ti': instance.ti,
+      'n': instance.n,
+      'ph': instance.ph,
+    };
+
+_MatchPerformance _$MatchPerformanceFromJson(Map<String, dynamic> json) =>
+    _MatchPerformance(
+      day: (json['day'] as num).toInt(),
+      p: (json['p'] as num?)?.toInt(),
+      mp: json['mp'] as String?,
+      md: json['md'] as String,
+      t1: json['t1'] as String,
+      t2: json['t2'] as String,
+      t1g: (json['t1g'] as num?)?.toInt(),
+      t2g: (json['t2g'] as num?)?.toInt(),
+      pt: json['pt'] as String?,
+      k: (json['k'] as List<dynamic>?)?.map((e) => (e as num).toInt()).toList(),
+      st: (json['st'] as num).toInt(),
+      cur: json['cur'] as bool,
+      mdst: (json['mdst'] as num).toInt(),
+      ap: (json['ap'] as num?)?.toInt(),
+      tp: (json['tp'] as num?)?.toInt(),
+      asp: (json['asp'] as num?)?.toInt(),
+    );
+
+Map<String, dynamic> _$MatchPerformanceToJson(_MatchPerformance instance) =>
+    <String, dynamic>{
+      'day': instance.day,
+      'p': instance.p,
+      'mp': instance.mp,
+      'md': instance.md,
+      't1': instance.t1,
+      't2': instance.t2,
+      't1g': instance.t1g,
+      't2g': instance.t2g,
+      'pt': instance.pt,
+      'k': instance.k,
+      'st': instance.st,
+      'cur': instance.cur,
+      'mdst': instance.mdst,
+      'ap': instance.ap,
+      'tp': instance.tp,
+      'asp': instance.asp,
+    };
+
+_EnhancedMatchPerformance _$EnhancedMatchPerformanceFromJson(
   Map<String, dynamic> json,
-) => _$SeasonPerformanceImpl(
-  sid: json['sid'] as String?,
-  ti: json['ti'] as String,
-  n: json['n'] as String,
-  ph: (json['ph'] as List<dynamic>)
-      .map((e) => MatchPerformance.fromJson(e as Map<String, dynamic>))
-      .toList(),
-);
-
-Map<String, dynamic> _$$SeasonPerformanceImplToJson(
-  _$SeasonPerformanceImpl instance,
-) => <String, dynamic>{
-  'sid': instance.sid,
-  'ti': instance.ti,
-  'n': instance.n,
-  'ph': instance.ph,
-};
-
-_$MatchPerformanceImpl _$$MatchPerformanceImplFromJson(
-  Map<String, dynamic> json,
-) => _$MatchPerformanceImpl(
-  day: (json['day'] as num).toInt(),
-  p: (json['p'] as num?)?.toInt(),
-  mp: json['mp'] as String?,
-  md: json['md'] as String,
-  t1: json['t1'] as String,
-  t2: json['t2'] as String,
-  t1g: (json['t1g'] as num?)?.toInt(),
-  t2g: (json['t2g'] as num?)?.toInt(),
-  pt: json['pt'] as String?,
-  k: (json['k'] as List<dynamic>?)?.map((e) => (e as num).toInt()).toList(),
-  st: (json['st'] as num).toInt(),
-  cur: json['cur'] as bool,
-  mdst: (json['mdst'] as num).toInt(),
-  ap: (json['ap'] as num?)?.toInt(),
-  tp: (json['tp'] as num?)?.toInt(),
-  asp: (json['asp'] as num?)?.toInt(),
-);
-
-Map<String, dynamic> _$$MatchPerformanceImplToJson(
-  _$MatchPerformanceImpl instance,
-) => <String, dynamic>{
-  'day': instance.day,
-  'p': instance.p,
-  'mp': instance.mp,
-  'md': instance.md,
-  't1': instance.t1,
-  't2': instance.t2,
-  't1g': instance.t1g,
-  't2g': instance.t2g,
-  'pt': instance.pt,
-  'k': instance.k,
-  'st': instance.st,
-  'cur': instance.cur,
-  'mdst': instance.mdst,
-  'ap': instance.ap,
-  'tp': instance.tp,
-  'asp': instance.asp,
-};
-
-_$EnhancedMatchPerformanceImpl _$$EnhancedMatchPerformanceImplFromJson(
-  Map<String, dynamic> json,
-) => _$EnhancedMatchPerformanceImpl(
+) => _EnhancedMatchPerformance(
   basePerformance: MatchPerformance.fromJson(
     json['basePerformance'] as Map<String, dynamic>,
   ),
@@ -96,8 +92,8 @@ _$EnhancedMatchPerformanceImpl _$$EnhancedMatchPerformanceImplFromJson(
   opponentTeamPlacement: (json['opponentTeamPlacement'] as num?)?.toInt(),
 );
 
-Map<String, dynamic> _$$EnhancedMatchPerformanceImplToJson(
-  _$EnhancedMatchPerformanceImpl instance,
+Map<String, dynamic> _$EnhancedMatchPerformanceToJson(
+  _EnhancedMatchPerformance instance,
 ) => <String, dynamic>{
   'basePerformance': instance.basePerformance,
   'team1Name': instance.team1Name,

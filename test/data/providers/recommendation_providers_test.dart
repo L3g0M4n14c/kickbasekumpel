@@ -12,7 +12,6 @@ import 'package:kickbasekumpel/data/providers/repository_providers.dart';
 import 'package:kickbasekumpel/data/repositories/firestore_repositories.dart'
     hide firestoreProvider;
 import 'package:kickbasekumpel/data/services/deterministic_recommendation_service.dart';
-import 'package:kickbasekumpel/domain/repositories/repository_interfaces.dart';
 
 import '../../helpers/mock_firebase.dart';
 

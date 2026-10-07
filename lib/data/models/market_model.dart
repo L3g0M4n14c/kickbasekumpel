@@ -6,7 +6,7 @@ part 'market_model.g.dart';
 
 /// Market Player - Spieler auf dem Transfermarkt
 @freezed
-class MarketPlayer with _$MarketPlayer {
+abstract class MarketPlayer with _$MarketPlayer {
   const factory MarketPlayer({
     required String id,
     required String firstName,
@@ -37,7 +37,7 @@ class MarketPlayer with _$MarketPlayer {
 
 /// Market Response
 @freezed
-class MarketResponse with _$MarketResponse {
+abstract class MarketResponse with _$MarketResponse {
   const factory MarketResponse({required List<MarketPlayer> players}) =
       _MarketResponse;
 

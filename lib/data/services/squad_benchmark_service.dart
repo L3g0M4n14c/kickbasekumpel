@@ -111,7 +111,6 @@ class SquadBenchmarkService {
   };
 
   double _asDouble(Object? value) => switch (value) {
-    int value => value.toDouble(),
     double value => value,
     num value => value.toDouble(),
     String value => double.tryParse(value) ?? 0,

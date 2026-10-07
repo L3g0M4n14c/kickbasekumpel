@@ -1,6 +1,6 @@
-// coverage:ignore-file
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// ignore_for_file: type=lint
+// coverage:ignore-file
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'budget_calculation_model.dart';
@@ -9,2001 +9,1578 @@ part of 'budget_calculation_model.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
 T _$identity<T>(T value) => value;
-
-final _privateConstructorUsedError = UnsupportedError(
-  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
-);
-
-ManagerBudgetCalculation _$ManagerBudgetCalculationFromJson(
-  Map<String, dynamic> json,
-) {
-  return _ManagerBudgetCalculation.fromJson(json);
-}
 
 /// @nodoc
 mixin _$ManagerBudgetCalculation {
-  /// Manager ID
-  String get managerId => throw _privateConstructorUsedError;
 
-  /// Manager Name
-  String get managerName => throw _privateConstructorUsedError;
-
-  /// Liga ID
-  String get leagueId => throw _privateConstructorUsedError;
-
-  /// Startbudget (150 Mio. €)
-  int get initialBudget => throw _privateConstructorUsedError;
-
-  /// Summe der Marktwerte der Anfangsspieler
-  int get initialSquadValue => throw _privateConstructorUsedError;
-
-  /// Startbudget nach Abzug der Anfangsspieler
-  int get startingBudget => throw _privateConstructorUsedError;
-
-  /// Summe aller Verkäufe (Einnahmen)
-  int get totalSales => throw _privateConstructorUsedError;
-
-  /// Summe aller Käufe (Ausgaben)
-  int get totalPurchases => throw _privateConstructorUsedError;
-
-  /// Aktuelles Budget
-  int get currentBudget => throw _privateConstructorUsedError;
-
-  /// Liste der Anfangsspieler mit Marktwert
-  List<InitialPlayer> get initialPlayers => throw _privateConstructorUsedError;
-
-  /// Liste der Transfers (Käufe und Verkäufe)
-  List<ManagerTransfer> get transfers => throw _privateConstructorUsedError;
-
-  /// Zeitstempel der Berechnung
-  DateTime get calculatedAt => throw _privateConstructorUsedError;
+/// Manager ID
+ String get managerId;/// Manager Name
+ String get managerName;/// Liga ID
+ String get leagueId;/// Startbudget (150 Mio. €)
+ int get initialBudget;/// Summe der Marktwerte der Anfangsspieler
+ int get initialSquadValue;/// Startbudget nach Abzug der Anfangsspieler
+ int get startingBudget;/// Summe aller Verkäufe (Einnahmen)
+ int get totalSales;/// Summe aller Käufe (Ausgaben)
+ int get totalPurchases;/// Aktuelles Budget
+ int get currentBudget;/// Liste der Anfangsspieler mit Marktwert
+ List<InitialPlayer> get initialPlayers;/// Liste der Transfers (Käufe und Verkäufe)
+ List<ManagerTransfer> get transfers;/// Zeitstempel der Berechnung
+ DateTime get calculatedAt;
+/// Create a copy of ManagerBudgetCalculation
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ManagerBudgetCalculationCopyWith<ManagerBudgetCalculation> get copyWith => _$ManagerBudgetCalculationCopyWithImpl<ManagerBudgetCalculation>(this as ManagerBudgetCalculation, _$identity);
 
   /// Serializes this ManagerBudgetCalculation to a JSON map.
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  Map<String, dynamic> toJson();
 
-  /// Create a copy of ManagerBudgetCalculation
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  $ManagerBudgetCalculationCopyWith<ManagerBudgetCalculation> get copyWith =>
-      throw _privateConstructorUsedError;
+
+@override
+bool operator ==(Object other) {
+  final _this = this as ManagerBudgetCalculation;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ManagerBudgetCalculation&&(identical(other.managerId, _this.managerId) || other.managerId == _this.managerId)&&(identical(other.managerName, _this.managerName) || other.managerName == _this.managerName)&&(identical(other.leagueId, _this.leagueId) || other.leagueId == _this.leagueId)&&(identical(other.initialBudget, _this.initialBudget) || other.initialBudget == _this.initialBudget)&&(identical(other.initialSquadValue, _this.initialSquadValue) || other.initialSquadValue == _this.initialSquadValue)&&(identical(other.startingBudget, _this.startingBudget) || other.startingBudget == _this.startingBudget)&&(identical(other.totalSales, _this.totalSales) || other.totalSales == _this.totalSales)&&(identical(other.totalPurchases, _this.totalPurchases) || other.totalPurchases == _this.totalPurchases)&&(identical(other.currentBudget, _this.currentBudget) || other.currentBudget == _this.currentBudget)&&const DeepCollectionEquality().equals(other.initialPlayers, _this.initialPlayers)&&const DeepCollectionEquality().equals(other.transfers, _this.transfers)&&(identical(other.calculatedAt, _this.calculatedAt) || other.calculatedAt == _this.calculatedAt));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+  final _this = this as ManagerBudgetCalculation;
+  return Object.hash(runtimeType,_this.managerId,_this.managerName,_this.leagueId,_this.initialBudget,_this.initialSquadValue,_this.startingBudget,_this.totalSales,_this.totalPurchases,_this.currentBudget,const DeepCollectionEquality().hash(_this.initialPlayers),const DeepCollectionEquality().hash(_this.transfers),_this.calculatedAt);
+}
+
+@override
+String toString() {
+  final _this = this as ManagerBudgetCalculation;
+  return 'ManagerBudgetCalculation(managerId: ${_this.managerId}, managerName: ${_this.managerName}, leagueId: ${_this.leagueId}, initialBudget: ${_this.initialBudget}, initialSquadValue: ${_this.initialSquadValue}, startingBudget: ${_this.startingBudget}, totalSales: ${_this.totalSales}, totalPurchases: ${_this.totalPurchases}, currentBudget: ${_this.currentBudget}, initialPlayers: ${_this.initialPlayers}, transfers: ${_this.transfers}, calculatedAt: ${_this.calculatedAt})';
+}
+
+
 }
 
 /// @nodoc
-abstract class $ManagerBudgetCalculationCopyWith<$Res> {
-  factory $ManagerBudgetCalculationCopyWith(
-    ManagerBudgetCalculation value,
-    $Res Function(ManagerBudgetCalculation) then,
-  ) = _$ManagerBudgetCalculationCopyWithImpl<$Res, ManagerBudgetCalculation>;
-  @useResult
-  $Res call({
-    String managerId,
-    String managerName,
-    String leagueId,
-    int initialBudget,
-    int initialSquadValue,
-    int startingBudget,
-    int totalSales,
-    int totalPurchases,
-    int currentBudget,
-    List<InitialPlayer> initialPlayers,
-    List<ManagerTransfer> transfers,
-    DateTime calculatedAt,
-  });
-}
+abstract mixin class $ManagerBudgetCalculationCopyWith<$Res>  {
+  factory $ManagerBudgetCalculationCopyWith(ManagerBudgetCalculation value, $Res Function(ManagerBudgetCalculation) _then) = _$ManagerBudgetCalculationCopyWithImpl;
+@useResult
+$Res call({
+ String managerId, String managerName, String leagueId, int initialBudget, int initialSquadValue, int startingBudget, int totalSales, int totalPurchases, int currentBudget, List<InitialPlayer> initialPlayers, List<ManagerTransfer> transfers, DateTime calculatedAt
+});
 
+
+
+
+}
 /// @nodoc
-class _$ManagerBudgetCalculationCopyWithImpl<
-  $Res,
-  $Val extends ManagerBudgetCalculation
->
+class _$ManagerBudgetCalculationCopyWithImpl<$Res>
     implements $ManagerBudgetCalculationCopyWith<$Res> {
-  _$ManagerBudgetCalculationCopyWithImpl(this._value, this._then);
+  _$ManagerBudgetCalculationCopyWithImpl(this._self, this._then);
 
-  // ignore: unused_field
-  final $Val _value;
-  // ignore: unused_field
-  final $Res Function($Val) _then;
+  final ManagerBudgetCalculation _self;
+  final $Res Function(ManagerBudgetCalculation) _then;
 
-  /// Create a copy of ManagerBudgetCalculation
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? managerId = null,
-    Object? managerName = null,
-    Object? leagueId = null,
-    Object? initialBudget = null,
-    Object? initialSquadValue = null,
-    Object? startingBudget = null,
-    Object? totalSales = null,
-    Object? totalPurchases = null,
-    Object? currentBudget = null,
-    Object? initialPlayers = null,
-    Object? transfers = null,
-    Object? calculatedAt = null,
-  }) {
-    return _then(
-      _value.copyWith(
-            managerId: null == managerId
-                ? _value.managerId
-                : managerId // ignore: cast_nullable_to_non_nullable
-                      as String,
-            managerName: null == managerName
-                ? _value.managerName
-                : managerName // ignore: cast_nullable_to_non_nullable
-                      as String,
-            leagueId: null == leagueId
-                ? _value.leagueId
-                : leagueId // ignore: cast_nullable_to_non_nullable
-                      as String,
-            initialBudget: null == initialBudget
-                ? _value.initialBudget
-                : initialBudget // ignore: cast_nullable_to_non_nullable
-                      as int,
-            initialSquadValue: null == initialSquadValue
-                ? _value.initialSquadValue
-                : initialSquadValue // ignore: cast_nullable_to_non_nullable
-                      as int,
-            startingBudget: null == startingBudget
-                ? _value.startingBudget
-                : startingBudget // ignore: cast_nullable_to_non_nullable
-                      as int,
-            totalSales: null == totalSales
-                ? _value.totalSales
-                : totalSales // ignore: cast_nullable_to_non_nullable
-                      as int,
-            totalPurchases: null == totalPurchases
-                ? _value.totalPurchases
-                : totalPurchases // ignore: cast_nullable_to_non_nullable
-                      as int,
-            currentBudget: null == currentBudget
-                ? _value.currentBudget
-                : currentBudget // ignore: cast_nullable_to_non_nullable
-                      as int,
-            initialPlayers: null == initialPlayers
-                ? _value.initialPlayers
-                : initialPlayers // ignore: cast_nullable_to_non_nullable
-                      as List<InitialPlayer>,
-            transfers: null == transfers
-                ? _value.transfers
-                : transfers // ignore: cast_nullable_to_non_nullable
-                      as List<ManagerTransfer>,
-            calculatedAt: null == calculatedAt
-                ? _value.calculatedAt
-                : calculatedAt // ignore: cast_nullable_to_non_nullable
-                      as DateTime,
-          )
-          as $Val,
-    );
-  }
+/// Create a copy of ManagerBudgetCalculation
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? managerId = null,Object? managerName = null,Object? leagueId = null,Object? initialBudget = null,Object? initialSquadValue = null,Object? startingBudget = null,Object? totalSales = null,Object? totalPurchases = null,Object? currentBudget = null,Object? initialPlayers = null,Object? transfers = null,Object? calculatedAt = null,}) {
+  return _then(ManagerBudgetCalculation(
+managerId: null == managerId ? _self.managerId : managerId // ignore: cast_nullable_to_non_nullable
+as String,managerName: null == managerName ? _self.managerName : managerName // ignore: cast_nullable_to_non_nullable
+as String,leagueId: null == leagueId ? _self.leagueId : leagueId // ignore: cast_nullable_to_non_nullable
+as String,initialBudget: null == initialBudget ? _self.initialBudget : initialBudget // ignore: cast_nullable_to_non_nullable
+as int,initialSquadValue: null == initialSquadValue ? _self.initialSquadValue : initialSquadValue // ignore: cast_nullable_to_non_nullable
+as int,startingBudget: null == startingBudget ? _self.startingBudget : startingBudget // ignore: cast_nullable_to_non_nullable
+as int,totalSales: null == totalSales ? _self.totalSales : totalSales // ignore: cast_nullable_to_non_nullable
+as int,totalPurchases: null == totalPurchases ? _self.totalPurchases : totalPurchases // ignore: cast_nullable_to_non_nullable
+as int,currentBudget: null == currentBudget ? _self.currentBudget : currentBudget // ignore: cast_nullable_to_non_nullable
+as int,initialPlayers: null == initialPlayers ? _self.initialPlayers : initialPlayers // ignore: cast_nullable_to_non_nullable
+as List<InitialPlayer>,transfers: null == transfers ? _self.transfers : transfers // ignore: cast_nullable_to_non_nullable
+as List<ManagerTransfer>,calculatedAt: null == calculatedAt ? _self.calculatedAt : calculatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime,
+  ));
 }
 
-/// @nodoc
-abstract class _$$ManagerBudgetCalculationImplCopyWith<$Res>
-    implements $ManagerBudgetCalculationCopyWith<$Res> {
-  factory _$$ManagerBudgetCalculationImplCopyWith(
-    _$ManagerBudgetCalculationImpl value,
-    $Res Function(_$ManagerBudgetCalculationImpl) then,
-  ) = __$$ManagerBudgetCalculationImplCopyWithImpl<$Res>;
-  @override
-  @useResult
-  $Res call({
-    String managerId,
-    String managerName,
-    String leagueId,
-    int initialBudget,
-    int initialSquadValue,
-    int startingBudget,
-    int totalSales,
-    int totalPurchases,
-    int currentBudget,
-    List<InitialPlayer> initialPlayers,
-    List<ManagerTransfer> transfers,
-    DateTime calculatedAt,
-  });
 }
 
-/// @nodoc
-class __$$ManagerBudgetCalculationImplCopyWithImpl<$Res>
-    extends
-        _$ManagerBudgetCalculationCopyWithImpl<
-          $Res,
-          _$ManagerBudgetCalculationImpl
-        >
-    implements _$$ManagerBudgetCalculationImplCopyWith<$Res> {
-  __$$ManagerBudgetCalculationImplCopyWithImpl(
-    _$ManagerBudgetCalculationImpl _value,
-    $Res Function(_$ManagerBudgetCalculationImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of ManagerBudgetCalculation
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? managerId = null,
-    Object? managerName = null,
-    Object? leagueId = null,
-    Object? initialBudget = null,
-    Object? initialSquadValue = null,
-    Object? startingBudget = null,
-    Object? totalSales = null,
-    Object? totalPurchases = null,
-    Object? currentBudget = null,
-    Object? initialPlayers = null,
-    Object? transfers = null,
-    Object? calculatedAt = null,
-  }) {
-    return _then(
-      _$ManagerBudgetCalculationImpl(
-        managerId: null == managerId
-            ? _value.managerId
-            : managerId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        managerName: null == managerName
-            ? _value.managerName
-            : managerName // ignore: cast_nullable_to_non_nullable
-                  as String,
-        leagueId: null == leagueId
-            ? _value.leagueId
-            : leagueId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        initialBudget: null == initialBudget
-            ? _value.initialBudget
-            : initialBudget // ignore: cast_nullable_to_non_nullable
-                  as int,
-        initialSquadValue: null == initialSquadValue
-            ? _value.initialSquadValue
-            : initialSquadValue // ignore: cast_nullable_to_non_nullable
-                  as int,
-        startingBudget: null == startingBudget
-            ? _value.startingBudget
-            : startingBudget // ignore: cast_nullable_to_non_nullable
-                  as int,
-        totalSales: null == totalSales
-            ? _value.totalSales
-            : totalSales // ignore: cast_nullable_to_non_nullable
-                  as int,
-        totalPurchases: null == totalPurchases
-            ? _value.totalPurchases
-            : totalPurchases // ignore: cast_nullable_to_non_nullable
-                  as int,
-        currentBudget: null == currentBudget
-            ? _value.currentBudget
-            : currentBudget // ignore: cast_nullable_to_non_nullable
-                  as int,
-        initialPlayers: null == initialPlayers
-            ? _value._initialPlayers
-            : initialPlayers // ignore: cast_nullable_to_non_nullable
-                  as List<InitialPlayer>,
-        transfers: null == transfers
-            ? _value._transfers
-            : transfers // ignore: cast_nullable_to_non_nullable
-                  as List<ManagerTransfer>,
-        calculatedAt: null == calculatedAt
-            ? _value.calculatedAt
-            : calculatedAt // ignore: cast_nullable_to_non_nullable
-                  as DateTime,
-      ),
-    );
-  }
+/// Adds pattern-matching-related methods to [ManagerBudgetCalculation].
+extension ManagerBudgetCalculationPatterns on ManagerBudgetCalculation {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _ManagerBudgetCalculation value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _ManagerBudgetCalculation() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _ManagerBudgetCalculation value)  $default,){
+final _that = this;
+switch (_that) {
+case _ManagerBudgetCalculation():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _ManagerBudgetCalculation value)?  $default,){
+final _that = this;
+switch (_that) {
+case _ManagerBudgetCalculation() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String managerId,  String managerName,  String leagueId,  int initialBudget,  int initialSquadValue,  int startingBudget,  int totalSales,  int totalPurchases,  int currentBudget,  List<InitialPlayer> initialPlayers,  List<ManagerTransfer> transfers,  DateTime calculatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _ManagerBudgetCalculation() when $default != null:
+return $default(_that.managerId,_that.managerName,_that.leagueId,_that.initialBudget,_that.initialSquadValue,_that.startingBudget,_that.totalSales,_that.totalPurchases,_that.currentBudget,_that.initialPlayers,_that.transfers,_that.calculatedAt);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String managerId,  String managerName,  String leagueId,  int initialBudget,  int initialSquadValue,  int startingBudget,  int totalSales,  int totalPurchases,  int currentBudget,  List<InitialPlayer> initialPlayers,  List<ManagerTransfer> transfers,  DateTime calculatedAt)  $default,) {final _that = this;
+switch (_that) {
+case _ManagerBudgetCalculation():
+return $default(_that.managerId,_that.managerName,_that.leagueId,_that.initialBudget,_that.initialSquadValue,_that.startingBudget,_that.totalSales,_that.totalPurchases,_that.currentBudget,_that.initialPlayers,_that.transfers,_that.calculatedAt);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String managerId,  String managerName,  String leagueId,  int initialBudget,  int initialSquadValue,  int startingBudget,  int totalSales,  int totalPurchases,  int currentBudget,  List<InitialPlayer> initialPlayers,  List<ManagerTransfer> transfers,  DateTime calculatedAt)?  $default,) {final _that = this;
+switch (_that) {
+case _ManagerBudgetCalculation() when $default != null:
+return $default(_that.managerId,_that.managerName,_that.leagueId,_that.initialBudget,_that.initialSquadValue,_that.startingBudget,_that.totalSales,_that.totalPurchases,_that.currentBudget,_that.initialPlayers,_that.transfers,_that.calculatedAt);case _:
+  return null;
+
+}
+}
+
 }
 
 /// @nodoc
 @JsonSerializable()
-class _$ManagerBudgetCalculationImpl implements _ManagerBudgetCalculation {
-  const _$ManagerBudgetCalculationImpl({
-    required this.managerId,
-    required this.managerName,
-    required this.leagueId,
-    this.initialBudget = 150000000,
-    this.initialSquadValue = 0,
-    this.startingBudget = 0,
-    this.totalSales = 0,
-    this.totalPurchases = 0,
-    this.currentBudget = 0,
-    final List<InitialPlayer> initialPlayers = const [],
-    final List<ManagerTransfer> transfers = const [],
-    required this.calculatedAt,
-  }) : _initialPlayers = initialPlayers,
-       _transfers = transfers;
 
-  factory _$ManagerBudgetCalculationImpl.fromJson(Map<String, dynamic> json) =>
-      _$$ManagerBudgetCalculationImplFromJson(json);
+class _ManagerBudgetCalculation implements ManagerBudgetCalculation {
+  const _ManagerBudgetCalculation({required this.managerId, required this.managerName, required this.leagueId, this.initialBudget = 150000000, this.initialSquadValue = 0, this.startingBudget = 0, this.totalSales = 0, this.totalPurchases = 0, this.currentBudget = 0,  List<InitialPlayer> initialPlayers = const [],  List<ManagerTransfer> transfers = const [], required this.calculatedAt}): _initialPlayers = initialPlayers,_transfers = transfers;
+  factory _ManagerBudgetCalculation.fromJson(Map<String, dynamic> json) => _$ManagerBudgetCalculationFromJson(json);
 
-  /// Manager ID
-  @override
-  final String managerId;
+/// Manager ID
+@override final  String managerId;
+/// Manager Name
+@override final  String managerName;
+/// Liga ID
+@override final  String leagueId;
+/// Startbudget (150 Mio. €)
+@override@JsonKey() final  int initialBudget;
+/// Summe der Marktwerte der Anfangsspieler
+@override@JsonKey() final  int initialSquadValue;
+/// Startbudget nach Abzug der Anfangsspieler
+@override@JsonKey() final  int startingBudget;
+/// Summe aller Verkäufe (Einnahmen)
+@override@JsonKey() final  int totalSales;
+/// Summe aller Käufe (Ausgaben)
+@override@JsonKey() final  int totalPurchases;
+/// Aktuelles Budget
+@override@JsonKey() final  int currentBudget;
+/// Liste der Anfangsspieler mit Marktwert
+ final  List<InitialPlayer> _initialPlayers;
+/// Liste der Anfangsspieler mit Marktwert
+@override@JsonKey() List<InitialPlayer> get initialPlayers {
+  if (_initialPlayers is EqualUnmodifiableListView) return _initialPlayers;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_initialPlayers);
+}
 
-  /// Manager Name
-  @override
-  final String managerName;
+/// Liste der Transfers (Käufe und Verkäufe)
+ final  List<ManagerTransfer> _transfers;
+/// Liste der Transfers (Käufe und Verkäufe)
+@override@JsonKey() List<ManagerTransfer> get transfers {
+  if (_transfers is EqualUnmodifiableListView) return _transfers;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_transfers);
+}
 
-  /// Liga ID
-  @override
-  final String leagueId;
+/// Zeitstempel der Berechnung
+@override final  DateTime calculatedAt;
 
-  /// Startbudget (150 Mio. €)
-  @override
-  @JsonKey()
-  final int initialBudget;
+/// Create a copy of ManagerBudgetCalculation
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$ManagerBudgetCalculationCopyWith<_ManagerBudgetCalculation> get copyWith => __$ManagerBudgetCalculationCopyWithImpl<_ManagerBudgetCalculation>(this, _$identity);
 
-  /// Summe der Marktwerte der Anfangsspieler
-  @override
-  @JsonKey()
-  final int initialSquadValue;
+@override
+Map<String, dynamic> toJson() {
+  return _$ManagerBudgetCalculationToJson(this, );
+}
 
-  /// Startbudget nach Abzug der Anfangsspieler
-  @override
-  @JsonKey()
-  final int startingBudget;
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ManagerBudgetCalculation&&(identical(other.managerId, managerId) || other.managerId == managerId)&&(identical(other.managerName, managerName) || other.managerName == managerName)&&(identical(other.leagueId, leagueId) || other.leagueId == leagueId)&&(identical(other.initialBudget, initialBudget) || other.initialBudget == initialBudget)&&(identical(other.initialSquadValue, initialSquadValue) || other.initialSquadValue == initialSquadValue)&&(identical(other.startingBudget, startingBudget) || other.startingBudget == startingBudget)&&(identical(other.totalSales, totalSales) || other.totalSales == totalSales)&&(identical(other.totalPurchases, totalPurchases) || other.totalPurchases == totalPurchases)&&(identical(other.currentBudget, currentBudget) || other.currentBudget == currentBudget)&&const DeepCollectionEquality().equals(other.initialPlayers, _initialPlayers)&&const DeepCollectionEquality().equals(other.transfers, _transfers)&&(identical(other.calculatedAt, calculatedAt) || other.calculatedAt == calculatedAt));
+}
 
-  /// Summe aller Verkäufe (Einnahmen)
-  @override
-  @JsonKey()
-  final int totalSales;
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+    return Object.hash(runtimeType,managerId,managerName,leagueId,initialBudget,initialSquadValue,startingBudget,totalSales,totalPurchases,currentBudget,const DeepCollectionEquality().hash(_initialPlayers),const DeepCollectionEquality().hash(_transfers),calculatedAt);
+}
 
-  /// Summe aller Käufe (Ausgaben)
-  @override
-  @JsonKey()
-  final int totalPurchases;
-
-  /// Aktuelles Budget
-  @override
-  @JsonKey()
-  final int currentBudget;
-
-  /// Liste der Anfangsspieler mit Marktwert
-  final List<InitialPlayer> _initialPlayers;
-
-  /// Liste der Anfangsspieler mit Marktwert
-  @override
-  @JsonKey()
-  List<InitialPlayer> get initialPlayers {
-    if (_initialPlayers is EqualUnmodifiableListView) return _initialPlayers;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_initialPlayers);
-  }
-
-  /// Liste der Transfers (Käufe und Verkäufe)
-  final List<ManagerTransfer> _transfers;
-
-  /// Liste der Transfers (Käufe und Verkäufe)
-  @override
-  @JsonKey()
-  List<ManagerTransfer> get transfers {
-    if (_transfers is EqualUnmodifiableListView) return _transfers;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_transfers);
-  }
-
-  /// Zeitstempel der Berechnung
-  @override
-  final DateTime calculatedAt;
-
-  @override
-  String toString() {
+@override
+String toString() {
     return 'ManagerBudgetCalculation(managerId: $managerId, managerName: $managerName, leagueId: $leagueId, initialBudget: $initialBudget, initialSquadValue: $initialSquadValue, startingBudget: $startingBudget, totalSales: $totalSales, totalPurchases: $totalPurchases, currentBudget: $currentBudget, initialPlayers: $initialPlayers, transfers: $transfers, calculatedAt: $calculatedAt)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ManagerBudgetCalculationImpl &&
-            (identical(other.managerId, managerId) ||
-                other.managerId == managerId) &&
-            (identical(other.managerName, managerName) ||
-                other.managerName == managerName) &&
-            (identical(other.leagueId, leagueId) ||
-                other.leagueId == leagueId) &&
-            (identical(other.initialBudget, initialBudget) ||
-                other.initialBudget == initialBudget) &&
-            (identical(other.initialSquadValue, initialSquadValue) ||
-                other.initialSquadValue == initialSquadValue) &&
-            (identical(other.startingBudget, startingBudget) ||
-                other.startingBudget == startingBudget) &&
-            (identical(other.totalSales, totalSales) ||
-                other.totalSales == totalSales) &&
-            (identical(other.totalPurchases, totalPurchases) ||
-                other.totalPurchases == totalPurchases) &&
-            (identical(other.currentBudget, currentBudget) ||
-                other.currentBudget == currentBudget) &&
-            const DeepCollectionEquality().equals(
-              other._initialPlayers,
-              _initialPlayers,
-            ) &&
-            const DeepCollectionEquality().equals(
-              other._transfers,
-              _transfers,
-            ) &&
-            (identical(other.calculatedAt, calculatedAt) ||
-                other.calculatedAt == calculatedAt));
-  }
-
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  int get hashCode => Object.hash(
-    runtimeType,
-    managerId,
-    managerName,
-    leagueId,
-    initialBudget,
-    initialSquadValue,
-    startingBudget,
-    totalSales,
-    totalPurchases,
-    currentBudget,
-    const DeepCollectionEquality().hash(_initialPlayers),
-    const DeepCollectionEquality().hash(_transfers),
-    calculatedAt,
-  );
-
-  /// Create a copy of ManagerBudgetCalculation
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$ManagerBudgetCalculationImplCopyWith<_$ManagerBudgetCalculationImpl>
-  get copyWith =>
-      __$$ManagerBudgetCalculationImplCopyWithImpl<
-        _$ManagerBudgetCalculationImpl
-      >(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$ManagerBudgetCalculationImplToJson(this);
-  }
 }
 
-abstract class _ManagerBudgetCalculation implements ManagerBudgetCalculation {
-  const factory _ManagerBudgetCalculation({
-    required final String managerId,
-    required final String managerName,
-    required final String leagueId,
-    final int initialBudget,
-    final int initialSquadValue,
-    final int startingBudget,
-    final int totalSales,
-    final int totalPurchases,
-    final int currentBudget,
-    final List<InitialPlayer> initialPlayers,
-    final List<ManagerTransfer> transfers,
-    required final DateTime calculatedAt,
-  }) = _$ManagerBudgetCalculationImpl;
 
-  factory _ManagerBudgetCalculation.fromJson(Map<String, dynamic> json) =
-      _$ManagerBudgetCalculationImpl.fromJson;
-
-  /// Manager ID
-  @override
-  String get managerId;
-
-  /// Manager Name
-  @override
-  String get managerName;
-
-  /// Liga ID
-  @override
-  String get leagueId;
-
-  /// Startbudget (150 Mio. €)
-  @override
-  int get initialBudget;
-
-  /// Summe der Marktwerte der Anfangsspieler
-  @override
-  int get initialSquadValue;
-
-  /// Startbudget nach Abzug der Anfangsspieler
-  @override
-  int get startingBudget;
-
-  /// Summe aller Verkäufe (Einnahmen)
-  @override
-  int get totalSales;
-
-  /// Summe aller Käufe (Ausgaben)
-  @override
-  int get totalPurchases;
-
-  /// Aktuelles Budget
-  @override
-  int get currentBudget;
-
-  /// Liste der Anfangsspieler mit Marktwert
-  @override
-  List<InitialPlayer> get initialPlayers;
-
-  /// Liste der Transfers (Käufe und Verkäufe)
-  @override
-  List<ManagerTransfer> get transfers;
-
-  /// Zeitstempel der Berechnung
-  @override
-  DateTime get calculatedAt;
-
-  /// Create a copy of ManagerBudgetCalculation
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ManagerBudgetCalculationImplCopyWith<_$ManagerBudgetCalculationImpl>
-  get copyWith => throw _privateConstructorUsedError;
 }
 
-InitialPlayer _$InitialPlayerFromJson(Map<String, dynamic> json) {
-  return _InitialPlayer.fromJson(json);
+/// @nodoc
+abstract mixin class _$ManagerBudgetCalculationCopyWith<$Res> implements $ManagerBudgetCalculationCopyWith<$Res> {
+  factory _$ManagerBudgetCalculationCopyWith(_ManagerBudgetCalculation value, $Res Function(_ManagerBudgetCalculation) _then) = __$ManagerBudgetCalculationCopyWithImpl;
+@override @useResult
+$Res call({
+ String managerId, String managerName, String leagueId, int initialBudget, int initialSquadValue, int startingBudget, int totalSales, int totalPurchases, int currentBudget, List<InitialPlayer> initialPlayers, List<ManagerTransfer> transfers, DateTime calculatedAt
+});
+
+
+
+
 }
+/// @nodoc
+class __$ManagerBudgetCalculationCopyWithImpl<$Res>
+    implements _$ManagerBudgetCalculationCopyWith<$Res> {
+  __$ManagerBudgetCalculationCopyWithImpl(this._self, this._then);
+
+  final _ManagerBudgetCalculation _self;
+  final $Res Function(_ManagerBudgetCalculation) _then;
+
+/// Create a copy of ManagerBudgetCalculation
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? managerId = null,Object? managerName = null,Object? leagueId = null,Object? initialBudget = null,Object? initialSquadValue = null,Object? startingBudget = null,Object? totalSales = null,Object? totalPurchases = null,Object? currentBudget = null,Object? initialPlayers = null,Object? transfers = null,Object? calculatedAt = null,}) {
+  return _then(_ManagerBudgetCalculation(
+managerId: null == managerId ? _self.managerId : managerId // ignore: cast_nullable_to_non_nullable
+as String,managerName: null == managerName ? _self.managerName : managerName // ignore: cast_nullable_to_non_nullable
+as String,leagueId: null == leagueId ? _self.leagueId : leagueId // ignore: cast_nullable_to_non_nullable
+as String,initialBudget: null == initialBudget ? _self.initialBudget : initialBudget // ignore: cast_nullable_to_non_nullable
+as int,initialSquadValue: null == initialSquadValue ? _self.initialSquadValue : initialSquadValue // ignore: cast_nullable_to_non_nullable
+as int,startingBudget: null == startingBudget ? _self.startingBudget : startingBudget // ignore: cast_nullable_to_non_nullable
+as int,totalSales: null == totalSales ? _self.totalSales : totalSales // ignore: cast_nullable_to_non_nullable
+as int,totalPurchases: null == totalPurchases ? _self.totalPurchases : totalPurchases // ignore: cast_nullable_to_non_nullable
+as int,currentBudget: null == currentBudget ? _self.currentBudget : currentBudget // ignore: cast_nullable_to_non_nullable
+as int,initialPlayers: null == initialPlayers ? _self._initialPlayers : initialPlayers // ignore: cast_nullable_to_non_nullable
+as List<InitialPlayer>,transfers: null == transfers ? _self._transfers : transfers // ignore: cast_nullable_to_non_nullable
+as List<ManagerTransfer>,calculatedAt: null == calculatedAt ? _self.calculatedAt : calculatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime,
+  ));
+}
+
+
+}
+
 
 /// @nodoc
 mixin _$InitialPlayer {
-  String get playerId => throw _privateConstructorUsedError;
-  String get playerName => throw _privateConstructorUsedError;
-  int get marketValue => throw _privateConstructorUsedError;
-  DateTime get transferDate => throw _privateConstructorUsedError;
+
+ String get playerId; String get playerName; int get marketValue; DateTime get transferDate;
+/// Create a copy of InitialPlayer
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$InitialPlayerCopyWith<InitialPlayer> get copyWith => _$InitialPlayerCopyWithImpl<InitialPlayer>(this as InitialPlayer, _$identity);
 
   /// Serializes this InitialPlayer to a JSON map.
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  Map<String, dynamic> toJson();
 
-  /// Create a copy of InitialPlayer
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  $InitialPlayerCopyWith<InitialPlayer> get copyWith =>
-      throw _privateConstructorUsedError;
+
+@override
+bool operator ==(Object other) {
+  final _this = this as InitialPlayer;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is InitialPlayer&&(identical(other.playerId, _this.playerId) || other.playerId == _this.playerId)&&(identical(other.playerName, _this.playerName) || other.playerName == _this.playerName)&&(identical(other.marketValue, _this.marketValue) || other.marketValue == _this.marketValue)&&(identical(other.transferDate, _this.transferDate) || other.transferDate == _this.transferDate));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+  final _this = this as InitialPlayer;
+  return Object.hash(runtimeType,_this.playerId,_this.playerName,_this.marketValue,_this.transferDate);
+}
+
+@override
+String toString() {
+  final _this = this as InitialPlayer;
+  return 'InitialPlayer(playerId: ${_this.playerId}, playerName: ${_this.playerName}, marketValue: ${_this.marketValue}, transferDate: ${_this.transferDate})';
+}
+
+
 }
 
 /// @nodoc
-abstract class $InitialPlayerCopyWith<$Res> {
-  factory $InitialPlayerCopyWith(
-    InitialPlayer value,
-    $Res Function(InitialPlayer) then,
-  ) = _$InitialPlayerCopyWithImpl<$Res, InitialPlayer>;
-  @useResult
-  $Res call({
-    String playerId,
-    String playerName,
-    int marketValue,
-    DateTime transferDate,
-  });
-}
+abstract mixin class $InitialPlayerCopyWith<$Res>  {
+  factory $InitialPlayerCopyWith(InitialPlayer value, $Res Function(InitialPlayer) _then) = _$InitialPlayerCopyWithImpl;
+@useResult
+$Res call({
+ String playerId, String playerName, int marketValue, DateTime transferDate
+});
 
+
+
+
+}
 /// @nodoc
-class _$InitialPlayerCopyWithImpl<$Res, $Val extends InitialPlayer>
+class _$InitialPlayerCopyWithImpl<$Res>
     implements $InitialPlayerCopyWith<$Res> {
-  _$InitialPlayerCopyWithImpl(this._value, this._then);
+  _$InitialPlayerCopyWithImpl(this._self, this._then);
 
-  // ignore: unused_field
-  final $Val _value;
-  // ignore: unused_field
-  final $Res Function($Val) _then;
+  final InitialPlayer _self;
+  final $Res Function(InitialPlayer) _then;
 
-  /// Create a copy of InitialPlayer
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? playerId = null,
-    Object? playerName = null,
-    Object? marketValue = null,
-    Object? transferDate = null,
-  }) {
-    return _then(
-      _value.copyWith(
-            playerId: null == playerId
-                ? _value.playerId
-                : playerId // ignore: cast_nullable_to_non_nullable
-                      as String,
-            playerName: null == playerName
-                ? _value.playerName
-                : playerName // ignore: cast_nullable_to_non_nullable
-                      as String,
-            marketValue: null == marketValue
-                ? _value.marketValue
-                : marketValue // ignore: cast_nullable_to_non_nullable
-                      as int,
-            transferDate: null == transferDate
-                ? _value.transferDate
-                : transferDate // ignore: cast_nullable_to_non_nullable
-                      as DateTime,
-          )
-          as $Val,
-    );
-  }
+/// Create a copy of InitialPlayer
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? playerId = null,Object? playerName = null,Object? marketValue = null,Object? transferDate = null,}) {
+  return _then(InitialPlayer(
+playerId: null == playerId ? _self.playerId : playerId // ignore: cast_nullable_to_non_nullable
+as String,playerName: null == playerName ? _self.playerName : playerName // ignore: cast_nullable_to_non_nullable
+as String,marketValue: null == marketValue ? _self.marketValue : marketValue // ignore: cast_nullable_to_non_nullable
+as int,transferDate: null == transferDate ? _self.transferDate : transferDate // ignore: cast_nullable_to_non_nullable
+as DateTime,
+  ));
 }
 
-/// @nodoc
-abstract class _$$InitialPlayerImplCopyWith<$Res>
-    implements $InitialPlayerCopyWith<$Res> {
-  factory _$$InitialPlayerImplCopyWith(
-    _$InitialPlayerImpl value,
-    $Res Function(_$InitialPlayerImpl) then,
-  ) = __$$InitialPlayerImplCopyWithImpl<$Res>;
-  @override
-  @useResult
-  $Res call({
-    String playerId,
-    String playerName,
-    int marketValue,
-    DateTime transferDate,
-  });
 }
 
-/// @nodoc
-class __$$InitialPlayerImplCopyWithImpl<$Res>
-    extends _$InitialPlayerCopyWithImpl<$Res, _$InitialPlayerImpl>
-    implements _$$InitialPlayerImplCopyWith<$Res> {
-  __$$InitialPlayerImplCopyWithImpl(
-    _$InitialPlayerImpl _value,
-    $Res Function(_$InitialPlayerImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of InitialPlayer
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? playerId = null,
-    Object? playerName = null,
-    Object? marketValue = null,
-    Object? transferDate = null,
-  }) {
-    return _then(
-      _$InitialPlayerImpl(
-        playerId: null == playerId
-            ? _value.playerId
-            : playerId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        playerName: null == playerName
-            ? _value.playerName
-            : playerName // ignore: cast_nullable_to_non_nullable
-                  as String,
-        marketValue: null == marketValue
-            ? _value.marketValue
-            : marketValue // ignore: cast_nullable_to_non_nullable
-                  as int,
-        transferDate: null == transferDate
-            ? _value.transferDate
-            : transferDate // ignore: cast_nullable_to_non_nullable
-                  as DateTime,
-      ),
-    );
-  }
+/// Adds pattern-matching-related methods to [InitialPlayer].
+extension InitialPlayerPatterns on InitialPlayer {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _InitialPlayer value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _InitialPlayer() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _InitialPlayer value)  $default,){
+final _that = this;
+switch (_that) {
+case _InitialPlayer():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _InitialPlayer value)?  $default,){
+final _that = this;
+switch (_that) {
+case _InitialPlayer() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String playerId,  String playerName,  int marketValue,  DateTime transferDate)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _InitialPlayer() when $default != null:
+return $default(_that.playerId,_that.playerName,_that.marketValue,_that.transferDate);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String playerId,  String playerName,  int marketValue,  DateTime transferDate)  $default,) {final _that = this;
+switch (_that) {
+case _InitialPlayer():
+return $default(_that.playerId,_that.playerName,_that.marketValue,_that.transferDate);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String playerId,  String playerName,  int marketValue,  DateTime transferDate)?  $default,) {final _that = this;
+switch (_that) {
+case _InitialPlayer() when $default != null:
+return $default(_that.playerId,_that.playerName,_that.marketValue,_that.transferDate);case _:
+  return null;
+
+}
+}
+
 }
 
 /// @nodoc
 @JsonSerializable()
-class _$InitialPlayerImpl implements _InitialPlayer {
-  const _$InitialPlayerImpl({
-    required this.playerId,
-    required this.playerName,
-    required this.marketValue,
-    required this.transferDate,
-  });
 
-  factory _$InitialPlayerImpl.fromJson(Map<String, dynamic> json) =>
-      _$$InitialPlayerImplFromJson(json);
+class _InitialPlayer implements InitialPlayer {
+  const _InitialPlayer({required this.playerId, required this.playerName, required this.marketValue, required this.transferDate});
+  factory _InitialPlayer.fromJson(Map<String, dynamic> json) => _$InitialPlayerFromJson(json);
 
-  @override
-  final String playerId;
-  @override
-  final String playerName;
-  @override
-  final int marketValue;
-  @override
-  final DateTime transferDate;
+@override final  String playerId;
+@override final  String playerName;
+@override final  int marketValue;
+@override final  DateTime transferDate;
 
-  @override
-  String toString() {
+/// Create a copy of InitialPlayer
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$InitialPlayerCopyWith<_InitialPlayer> get copyWith => __$InitialPlayerCopyWithImpl<_InitialPlayer>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$InitialPlayerToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _InitialPlayer&&(identical(other.playerId, playerId) || other.playerId == playerId)&&(identical(other.playerName, playerName) || other.playerName == playerName)&&(identical(other.marketValue, marketValue) || other.marketValue == marketValue)&&(identical(other.transferDate, transferDate) || other.transferDate == transferDate));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+    return Object.hash(runtimeType,playerId,playerName,marketValue,transferDate);
+}
+
+@override
+String toString() {
     return 'InitialPlayer(playerId: $playerId, playerName: $playerName, marketValue: $marketValue, transferDate: $transferDate)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$InitialPlayerImpl &&
-            (identical(other.playerId, playerId) ||
-                other.playerId == playerId) &&
-            (identical(other.playerName, playerName) ||
-                other.playerName == playerName) &&
-            (identical(other.marketValue, marketValue) ||
-                other.marketValue == marketValue) &&
-            (identical(other.transferDate, transferDate) ||
-                other.transferDate == transferDate));
-  }
-
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  int get hashCode =>
-      Object.hash(runtimeType, playerId, playerName, marketValue, transferDate);
-
-  /// Create a copy of InitialPlayer
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$InitialPlayerImplCopyWith<_$InitialPlayerImpl> get copyWith =>
-      __$$InitialPlayerImplCopyWithImpl<_$InitialPlayerImpl>(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$InitialPlayerImplToJson(this);
-  }
 }
 
-abstract class _InitialPlayer implements InitialPlayer {
-  const factory _InitialPlayer({
-    required final String playerId,
-    required final String playerName,
-    required final int marketValue,
-    required final DateTime transferDate,
-  }) = _$InitialPlayerImpl;
 
-  factory _InitialPlayer.fromJson(Map<String, dynamic> json) =
-      _$InitialPlayerImpl.fromJson;
-
-  @override
-  String get playerId;
-  @override
-  String get playerName;
-  @override
-  int get marketValue;
-  @override
-  DateTime get transferDate;
-
-  /// Create a copy of InitialPlayer
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$InitialPlayerImplCopyWith<_$InitialPlayerImpl> get copyWith =>
-      throw _privateConstructorUsedError;
 }
 
-ManagerTransfer _$ManagerTransferFromJson(Map<String, dynamic> json) {
-  return _ManagerTransfer.fromJson(json);
+/// @nodoc
+abstract mixin class _$InitialPlayerCopyWith<$Res> implements $InitialPlayerCopyWith<$Res> {
+  factory _$InitialPlayerCopyWith(_InitialPlayer value, $Res Function(_InitialPlayer) _then) = __$InitialPlayerCopyWithImpl;
+@override @useResult
+$Res call({
+ String playerId, String playerName, int marketValue, DateTime transferDate
+});
+
+
+
+
 }
+/// @nodoc
+class __$InitialPlayerCopyWithImpl<$Res>
+    implements _$InitialPlayerCopyWith<$Res> {
+  __$InitialPlayerCopyWithImpl(this._self, this._then);
+
+  final _InitialPlayer _self;
+  final $Res Function(_InitialPlayer) _then;
+
+/// Create a copy of InitialPlayer
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? playerId = null,Object? playerName = null,Object? marketValue = null,Object? transferDate = null,}) {
+  return _then(_InitialPlayer(
+playerId: null == playerId ? _self.playerId : playerId // ignore: cast_nullable_to_non_nullable
+as String,playerName: null == playerName ? _self.playerName : playerName // ignore: cast_nullable_to_non_nullable
+as String,marketValue: null == marketValue ? _self.marketValue : marketValue // ignore: cast_nullable_to_non_nullable
+as int,transferDate: null == transferDate ? _self.transferDate : transferDate // ignore: cast_nullable_to_non_nullable
+as DateTime,
+  ));
+}
+
+
+}
+
 
 /// @nodoc
 mixin _$ManagerTransfer {
-  String get transferId => throw _privateConstructorUsedError;
-  String get playerId => throw _privateConstructorUsedError;
-  String get playerName => throw _privateConstructorUsedError;
-  int get price => throw _privateConstructorUsedError;
-  int get transferType =>
-      throw _privateConstructorUsedError; // 1 = Kauf, 2 = Verkauf
-  DateTime get timestamp => throw _privateConstructorUsedError;
-  int? get marketValueAtTransfer => throw _privateConstructorUsedError;
+
+ String get transferId; String get playerId; String get playerName; int get price; int get transferType; DateTime get timestamp; int? get marketValueAtTransfer;
+/// Create a copy of ManagerTransfer
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$ManagerTransferCopyWith<ManagerTransfer> get copyWith => _$ManagerTransferCopyWithImpl<ManagerTransfer>(this as ManagerTransfer, _$identity);
 
   /// Serializes this ManagerTransfer to a JSON map.
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  Map<String, dynamic> toJson();
 
-  /// Create a copy of ManagerTransfer
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  $ManagerTransferCopyWith<ManagerTransfer> get copyWith =>
-      throw _privateConstructorUsedError;
+
+@override
+bool operator ==(Object other) {
+  final _this = this as ManagerTransfer;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ManagerTransfer&&(identical(other.transferId, _this.transferId) || other.transferId == _this.transferId)&&(identical(other.playerId, _this.playerId) || other.playerId == _this.playerId)&&(identical(other.playerName, _this.playerName) || other.playerName == _this.playerName)&&(identical(other.price, _this.price) || other.price == _this.price)&&(identical(other.transferType, _this.transferType) || other.transferType == _this.transferType)&&(identical(other.timestamp, _this.timestamp) || other.timestamp == _this.timestamp)&&(identical(other.marketValueAtTransfer, _this.marketValueAtTransfer) || other.marketValueAtTransfer == _this.marketValueAtTransfer));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+  final _this = this as ManagerTransfer;
+  return Object.hash(runtimeType,_this.transferId,_this.playerId,_this.playerName,_this.price,_this.transferType,_this.timestamp,_this.marketValueAtTransfer);
+}
+
+@override
+String toString() {
+  final _this = this as ManagerTransfer;
+  return 'ManagerTransfer(transferId: ${_this.transferId}, playerId: ${_this.playerId}, playerName: ${_this.playerName}, price: ${_this.price}, transferType: ${_this.transferType}, timestamp: ${_this.timestamp}, marketValueAtTransfer: ${_this.marketValueAtTransfer})';
+}
+
+
 }
 
 /// @nodoc
-abstract class $ManagerTransferCopyWith<$Res> {
-  factory $ManagerTransferCopyWith(
-    ManagerTransfer value,
-    $Res Function(ManagerTransfer) then,
-  ) = _$ManagerTransferCopyWithImpl<$Res, ManagerTransfer>;
-  @useResult
-  $Res call({
-    String transferId,
-    String playerId,
-    String playerName,
-    int price,
-    int transferType,
-    DateTime timestamp,
-    int? marketValueAtTransfer,
-  });
-}
+abstract mixin class $ManagerTransferCopyWith<$Res>  {
+  factory $ManagerTransferCopyWith(ManagerTransfer value, $Res Function(ManagerTransfer) _then) = _$ManagerTransferCopyWithImpl;
+@useResult
+$Res call({
+ String transferId, String playerId, String playerName, int price, int transferType, DateTime timestamp, int? marketValueAtTransfer
+});
 
+
+
+
+}
 /// @nodoc
-class _$ManagerTransferCopyWithImpl<$Res, $Val extends ManagerTransfer>
+class _$ManagerTransferCopyWithImpl<$Res>
     implements $ManagerTransferCopyWith<$Res> {
-  _$ManagerTransferCopyWithImpl(this._value, this._then);
+  _$ManagerTransferCopyWithImpl(this._self, this._then);
 
-  // ignore: unused_field
-  final $Val _value;
-  // ignore: unused_field
-  final $Res Function($Val) _then;
+  final ManagerTransfer _self;
+  final $Res Function(ManagerTransfer) _then;
 
-  /// Create a copy of ManagerTransfer
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? transferId = null,
-    Object? playerId = null,
-    Object? playerName = null,
-    Object? price = null,
-    Object? transferType = null,
-    Object? timestamp = null,
-    Object? marketValueAtTransfer = freezed,
-  }) {
-    return _then(
-      _value.copyWith(
-            transferId: null == transferId
-                ? _value.transferId
-                : transferId // ignore: cast_nullable_to_non_nullable
-                      as String,
-            playerId: null == playerId
-                ? _value.playerId
-                : playerId // ignore: cast_nullable_to_non_nullable
-                      as String,
-            playerName: null == playerName
-                ? _value.playerName
-                : playerName // ignore: cast_nullable_to_non_nullable
-                      as String,
-            price: null == price
-                ? _value.price
-                : price // ignore: cast_nullable_to_non_nullable
-                      as int,
-            transferType: null == transferType
-                ? _value.transferType
-                : transferType // ignore: cast_nullable_to_non_nullable
-                      as int,
-            timestamp: null == timestamp
-                ? _value.timestamp
-                : timestamp // ignore: cast_nullable_to_non_nullable
-                      as DateTime,
-            marketValueAtTransfer: freezed == marketValueAtTransfer
-                ? _value.marketValueAtTransfer
-                : marketValueAtTransfer // ignore: cast_nullable_to_non_nullable
-                      as int?,
-          )
-          as $Val,
-    );
-  }
+/// Create a copy of ManagerTransfer
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? transferId = null,Object? playerId = null,Object? playerName = null,Object? price = null,Object? transferType = null,Object? timestamp = null,Object? marketValueAtTransfer = freezed,}) {
+  return _then(ManagerTransfer(
+transferId: null == transferId ? _self.transferId : transferId // ignore: cast_nullable_to_non_nullable
+as String,playerId: null == playerId ? _self.playerId : playerId // ignore: cast_nullable_to_non_nullable
+as String,playerName: null == playerName ? _self.playerName : playerName // ignore: cast_nullable_to_non_nullable
+as String,price: null == price ? _self.price : price // ignore: cast_nullable_to_non_nullable
+as int,transferType: null == transferType ? _self.transferType : transferType // ignore: cast_nullable_to_non_nullable
+as int,timestamp: null == timestamp ? _self.timestamp : timestamp // ignore: cast_nullable_to_non_nullable
+as DateTime,marketValueAtTransfer: freezed == marketValueAtTransfer ? _self.marketValueAtTransfer : marketValueAtTransfer // ignore: cast_nullable_to_non_nullable
+as int?,
+  ));
 }
 
-/// @nodoc
-abstract class _$$ManagerTransferImplCopyWith<$Res>
-    implements $ManagerTransferCopyWith<$Res> {
-  factory _$$ManagerTransferImplCopyWith(
-    _$ManagerTransferImpl value,
-    $Res Function(_$ManagerTransferImpl) then,
-  ) = __$$ManagerTransferImplCopyWithImpl<$Res>;
-  @override
-  @useResult
-  $Res call({
-    String transferId,
-    String playerId,
-    String playerName,
-    int price,
-    int transferType,
-    DateTime timestamp,
-    int? marketValueAtTransfer,
-  });
 }
 
-/// @nodoc
-class __$$ManagerTransferImplCopyWithImpl<$Res>
-    extends _$ManagerTransferCopyWithImpl<$Res, _$ManagerTransferImpl>
-    implements _$$ManagerTransferImplCopyWith<$Res> {
-  __$$ManagerTransferImplCopyWithImpl(
-    _$ManagerTransferImpl _value,
-    $Res Function(_$ManagerTransferImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of ManagerTransfer
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? transferId = null,
-    Object? playerId = null,
-    Object? playerName = null,
-    Object? price = null,
-    Object? transferType = null,
-    Object? timestamp = null,
-    Object? marketValueAtTransfer = freezed,
-  }) {
-    return _then(
-      _$ManagerTransferImpl(
-        transferId: null == transferId
-            ? _value.transferId
-            : transferId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        playerId: null == playerId
-            ? _value.playerId
-            : playerId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        playerName: null == playerName
-            ? _value.playerName
-            : playerName // ignore: cast_nullable_to_non_nullable
-                  as String,
-        price: null == price
-            ? _value.price
-            : price // ignore: cast_nullable_to_non_nullable
-                  as int,
-        transferType: null == transferType
-            ? _value.transferType
-            : transferType // ignore: cast_nullable_to_non_nullable
-                  as int,
-        timestamp: null == timestamp
-            ? _value.timestamp
-            : timestamp // ignore: cast_nullable_to_non_nullable
-                  as DateTime,
-        marketValueAtTransfer: freezed == marketValueAtTransfer
-            ? _value.marketValueAtTransfer
-            : marketValueAtTransfer // ignore: cast_nullable_to_non_nullable
-                  as int?,
-      ),
-    );
-  }
+/// Adds pattern-matching-related methods to [ManagerTransfer].
+extension ManagerTransferPatterns on ManagerTransfer {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _ManagerTransfer value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _ManagerTransfer() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _ManagerTransfer value)  $default,){
+final _that = this;
+switch (_that) {
+case _ManagerTransfer():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _ManagerTransfer value)?  $default,){
+final _that = this;
+switch (_that) {
+case _ManagerTransfer() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String transferId,  String playerId,  String playerName,  int price,  int transferType,  DateTime timestamp,  int? marketValueAtTransfer)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _ManagerTransfer() when $default != null:
+return $default(_that.transferId,_that.playerId,_that.playerName,_that.price,_that.transferType,_that.timestamp,_that.marketValueAtTransfer);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String transferId,  String playerId,  String playerName,  int price,  int transferType,  DateTime timestamp,  int? marketValueAtTransfer)  $default,) {final _that = this;
+switch (_that) {
+case _ManagerTransfer():
+return $default(_that.transferId,_that.playerId,_that.playerName,_that.price,_that.transferType,_that.timestamp,_that.marketValueAtTransfer);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String transferId,  String playerId,  String playerName,  int price,  int transferType,  DateTime timestamp,  int? marketValueAtTransfer)?  $default,) {final _that = this;
+switch (_that) {
+case _ManagerTransfer() when $default != null:
+return $default(_that.transferId,_that.playerId,_that.playerName,_that.price,_that.transferType,_that.timestamp,_that.marketValueAtTransfer);case _:
+  return null;
+
+}
+}
+
 }
 
 /// @nodoc
 @JsonSerializable()
-class _$ManagerTransferImpl implements _ManagerTransfer {
-  const _$ManagerTransferImpl({
-    required this.transferId,
-    required this.playerId,
-    required this.playerName,
-    required this.price,
-    required this.transferType,
-    required this.timestamp,
-    this.marketValueAtTransfer,
-  });
 
-  factory _$ManagerTransferImpl.fromJson(Map<String, dynamic> json) =>
-      _$$ManagerTransferImplFromJson(json);
+class _ManagerTransfer implements ManagerTransfer {
+  const _ManagerTransfer({required this.transferId, required this.playerId, required this.playerName, required this.price, required this.transferType, required this.timestamp, this.marketValueAtTransfer});
+  factory _ManagerTransfer.fromJson(Map<String, dynamic> json) => _$ManagerTransferFromJson(json);
 
-  @override
-  final String transferId;
-  @override
-  final String playerId;
-  @override
-  final String playerName;
-  @override
-  final int price;
-  @override
-  final int transferType;
-  // 1 = Kauf, 2 = Verkauf
-  @override
-  final DateTime timestamp;
-  @override
-  final int? marketValueAtTransfer;
+@override final  String transferId;
+@override final  String playerId;
+@override final  String playerName;
+@override final  int price;
+@override final  int transferType;
+@override final  DateTime timestamp;
+@override final  int? marketValueAtTransfer;
 
-  @override
-  String toString() {
+/// Create a copy of ManagerTransfer
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$ManagerTransferCopyWith<_ManagerTransfer> get copyWith => __$ManagerTransferCopyWithImpl<_ManagerTransfer>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$ManagerTransferToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ManagerTransfer&&(identical(other.transferId, transferId) || other.transferId == transferId)&&(identical(other.playerId, playerId) || other.playerId == playerId)&&(identical(other.playerName, playerName) || other.playerName == playerName)&&(identical(other.price, price) || other.price == price)&&(identical(other.transferType, transferType) || other.transferType == transferType)&&(identical(other.timestamp, timestamp) || other.timestamp == timestamp)&&(identical(other.marketValueAtTransfer, marketValueAtTransfer) || other.marketValueAtTransfer == marketValueAtTransfer));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+    return Object.hash(runtimeType,transferId,playerId,playerName,price,transferType,timestamp,marketValueAtTransfer);
+}
+
+@override
+String toString() {
     return 'ManagerTransfer(transferId: $transferId, playerId: $playerId, playerName: $playerName, price: $price, transferType: $transferType, timestamp: $timestamp, marketValueAtTransfer: $marketValueAtTransfer)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$ManagerTransferImpl &&
-            (identical(other.transferId, transferId) ||
-                other.transferId == transferId) &&
-            (identical(other.playerId, playerId) ||
-                other.playerId == playerId) &&
-            (identical(other.playerName, playerName) ||
-                other.playerName == playerName) &&
-            (identical(other.price, price) || other.price == price) &&
-            (identical(other.transferType, transferType) ||
-                other.transferType == transferType) &&
-            (identical(other.timestamp, timestamp) ||
-                other.timestamp == timestamp) &&
-            (identical(other.marketValueAtTransfer, marketValueAtTransfer) ||
-                other.marketValueAtTransfer == marketValueAtTransfer));
-  }
-
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  int get hashCode => Object.hash(
-    runtimeType,
-    transferId,
-    playerId,
-    playerName,
-    price,
-    transferType,
-    timestamp,
-    marketValueAtTransfer,
-  );
-
-  /// Create a copy of ManagerTransfer
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$ManagerTransferImplCopyWith<_$ManagerTransferImpl> get copyWith =>
-      __$$ManagerTransferImplCopyWithImpl<_$ManagerTransferImpl>(
-        this,
-        _$identity,
-      );
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$ManagerTransferImplToJson(this);
-  }
 }
 
-abstract class _ManagerTransfer implements ManagerTransfer {
-  const factory _ManagerTransfer({
-    required final String transferId,
-    required final String playerId,
-    required final String playerName,
-    required final int price,
-    required final int transferType,
-    required final DateTime timestamp,
-    final int? marketValueAtTransfer,
-  }) = _$ManagerTransferImpl;
 
-  factory _ManagerTransfer.fromJson(Map<String, dynamic> json) =
-      _$ManagerTransferImpl.fromJson;
-
-  @override
-  String get transferId;
-  @override
-  String get playerId;
-  @override
-  String get playerName;
-  @override
-  int get price;
-  @override
-  int get transferType; // 1 = Kauf, 2 = Verkauf
-  @override
-  DateTime get timestamp;
-  @override
-  int? get marketValueAtTransfer;
-
-  /// Create a copy of ManagerTransfer
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$ManagerTransferImplCopyWith<_$ManagerTransferImpl> get copyWith =>
-      throw _privateConstructorUsedError;
 }
 
-AutoSaleEvent _$AutoSaleEventFromJson(Map<String, dynamic> json) {
-  return _AutoSaleEvent.fromJson(json);
+/// @nodoc
+abstract mixin class _$ManagerTransferCopyWith<$Res> implements $ManagerTransferCopyWith<$Res> {
+  factory _$ManagerTransferCopyWith(_ManagerTransfer value, $Res Function(_ManagerTransfer) _then) = __$ManagerTransferCopyWithImpl;
+@override @useResult
+$Res call({
+ String transferId, String playerId, String playerName, int price, int transferType, DateTime timestamp, int? marketValueAtTransfer
+});
+
+
+
+
 }
+/// @nodoc
+class __$ManagerTransferCopyWithImpl<$Res>
+    implements _$ManagerTransferCopyWith<$Res> {
+  __$ManagerTransferCopyWithImpl(this._self, this._then);
+
+  final _ManagerTransfer _self;
+  final $Res Function(_ManagerTransfer) _then;
+
+/// Create a copy of ManagerTransfer
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? transferId = null,Object? playerId = null,Object? playerName = null,Object? price = null,Object? transferType = null,Object? timestamp = null,Object? marketValueAtTransfer = freezed,}) {
+  return _then(_ManagerTransfer(
+transferId: null == transferId ? _self.transferId : transferId // ignore: cast_nullable_to_non_nullable
+as String,playerId: null == playerId ? _self.playerId : playerId // ignore: cast_nullable_to_non_nullable
+as String,playerName: null == playerName ? _self.playerName : playerName // ignore: cast_nullable_to_non_nullable
+as String,price: null == price ? _self.price : price // ignore: cast_nullable_to_non_nullable
+as int,transferType: null == transferType ? _self.transferType : transferType // ignore: cast_nullable_to_non_nullable
+as int,timestamp: null == timestamp ? _self.timestamp : timestamp // ignore: cast_nullable_to_non_nullable
+as DateTime,marketValueAtTransfer: freezed == marketValueAtTransfer ? _self.marketValueAtTransfer : marketValueAtTransfer // ignore: cast_nullable_to_non_nullable
+as int?,
+  ));
+}
+
+
+}
+
 
 /// @nodoc
 mixin _$AutoSaleEvent {
-  /// Spieltag, an dem der Spieler die Schwelle erreicht hat
-  int get matchday => throw _privateConstructorUsedError;
 
-  /// Spieler-ID
-  String get playerId => throw _privateConstructorUsedError;
-
-  /// Spielername
-  String get playerName => throw _privateConstructorUsedError;
-
-  /// Saison-Gesamtpunkte zum Zeitpunkt des Verkaufs
-  int get points => throw _privateConstructorUsedError;
-
-  /// Punkte-Schwelle der Regel (z.B. 250)
-  int get threshold => throw _privateConstructorUsedError;
-
-  /// Marktwert zum Verkaufszeitpunkt (Einnahme)
-  int get marketValue => throw _privateConstructorUsedError;
-
-  /// true, wenn der Marktwert nicht zweifelsfrei ermittelt werden konnte
-  bool get uncertain => throw _privateConstructorUsedError;
+/// Spieltag, an dem der Spieler die Schwelle erreicht hat
+ int get matchday;/// Spieler-ID
+ String get playerId;/// Spielername
+ String get playerName;/// Saison-Gesamtpunkte zum Zeitpunkt des Verkaufs
+ int get points;/// Punkte-Schwelle der Regel (z.B. 250)
+ int get threshold;/// Marktwert zum Verkaufszeitpunkt (Einnahme)
+ int get marketValue;/// true, wenn der Marktwert nicht zweifelsfrei ermittelt werden konnte
+ bool get uncertain;
+/// Create a copy of AutoSaleEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AutoSaleEventCopyWith<AutoSaleEvent> get copyWith => _$AutoSaleEventCopyWithImpl<AutoSaleEvent>(this as AutoSaleEvent, _$identity);
 
   /// Serializes this AutoSaleEvent to a JSON map.
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  Map<String, dynamic> toJson();
 
-  /// Create a copy of AutoSaleEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  $AutoSaleEventCopyWith<AutoSaleEvent> get copyWith =>
-      throw _privateConstructorUsedError;
+
+@override
+bool operator ==(Object other) {
+  final _this = this as AutoSaleEvent;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AutoSaleEvent&&(identical(other.matchday, _this.matchday) || other.matchday == _this.matchday)&&(identical(other.playerId, _this.playerId) || other.playerId == _this.playerId)&&(identical(other.playerName, _this.playerName) || other.playerName == _this.playerName)&&(identical(other.points, _this.points) || other.points == _this.points)&&(identical(other.threshold, _this.threshold) || other.threshold == _this.threshold)&&(identical(other.marketValue, _this.marketValue) || other.marketValue == _this.marketValue)&&(identical(other.uncertain, _this.uncertain) || other.uncertain == _this.uncertain));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+  final _this = this as AutoSaleEvent;
+  return Object.hash(runtimeType,_this.matchday,_this.playerId,_this.playerName,_this.points,_this.threshold,_this.marketValue,_this.uncertain);
+}
+
+@override
+String toString() {
+  final _this = this as AutoSaleEvent;
+  return 'AutoSaleEvent(matchday: ${_this.matchday}, playerId: ${_this.playerId}, playerName: ${_this.playerName}, points: ${_this.points}, threshold: ${_this.threshold}, marketValue: ${_this.marketValue}, uncertain: ${_this.uncertain})';
+}
+
+
 }
 
 /// @nodoc
-abstract class $AutoSaleEventCopyWith<$Res> {
-  factory $AutoSaleEventCopyWith(
-    AutoSaleEvent value,
-    $Res Function(AutoSaleEvent) then,
-  ) = _$AutoSaleEventCopyWithImpl<$Res, AutoSaleEvent>;
-  @useResult
-  $Res call({
-    int matchday,
-    String playerId,
-    String playerName,
-    int points,
-    int threshold,
-    int marketValue,
-    bool uncertain,
-  });
-}
+abstract mixin class $AutoSaleEventCopyWith<$Res>  {
+  factory $AutoSaleEventCopyWith(AutoSaleEvent value, $Res Function(AutoSaleEvent) _then) = _$AutoSaleEventCopyWithImpl;
+@useResult
+$Res call({
+ int matchday, String playerId, String playerName, int points, int threshold, int marketValue, bool uncertain
+});
 
+
+
+
+}
 /// @nodoc
-class _$AutoSaleEventCopyWithImpl<$Res, $Val extends AutoSaleEvent>
+class _$AutoSaleEventCopyWithImpl<$Res>
     implements $AutoSaleEventCopyWith<$Res> {
-  _$AutoSaleEventCopyWithImpl(this._value, this._then);
+  _$AutoSaleEventCopyWithImpl(this._self, this._then);
 
-  // ignore: unused_field
-  final $Val _value;
-  // ignore: unused_field
-  final $Res Function($Val) _then;
+  final AutoSaleEvent _self;
+  final $Res Function(AutoSaleEvent) _then;
 
-  /// Create a copy of AutoSaleEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? matchday = null,
-    Object? playerId = null,
-    Object? playerName = null,
-    Object? points = null,
-    Object? threshold = null,
-    Object? marketValue = null,
-    Object? uncertain = null,
-  }) {
-    return _then(
-      _value.copyWith(
-            matchday: null == matchday
-                ? _value.matchday
-                : matchday // ignore: cast_nullable_to_non_nullable
-                      as int,
-            playerId: null == playerId
-                ? _value.playerId
-                : playerId // ignore: cast_nullable_to_non_nullable
-                      as String,
-            playerName: null == playerName
-                ? _value.playerName
-                : playerName // ignore: cast_nullable_to_non_nullable
-                      as String,
-            points: null == points
-                ? _value.points
-                : points // ignore: cast_nullable_to_non_nullable
-                      as int,
-            threshold: null == threshold
-                ? _value.threshold
-                : threshold // ignore: cast_nullable_to_non_nullable
-                      as int,
-            marketValue: null == marketValue
-                ? _value.marketValue
-                : marketValue // ignore: cast_nullable_to_non_nullable
-                      as int,
-            uncertain: null == uncertain
-                ? _value.uncertain
-                : uncertain // ignore: cast_nullable_to_non_nullable
-                      as bool,
-          )
-          as $Val,
-    );
-  }
+/// Create a copy of AutoSaleEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? matchday = null,Object? playerId = null,Object? playerName = null,Object? points = null,Object? threshold = null,Object? marketValue = null,Object? uncertain = null,}) {
+  return _then(AutoSaleEvent(
+matchday: null == matchday ? _self.matchday : matchday // ignore: cast_nullable_to_non_nullable
+as int,playerId: null == playerId ? _self.playerId : playerId // ignore: cast_nullable_to_non_nullable
+as String,playerName: null == playerName ? _self.playerName : playerName // ignore: cast_nullable_to_non_nullable
+as String,points: null == points ? _self.points : points // ignore: cast_nullable_to_non_nullable
+as int,threshold: null == threshold ? _self.threshold : threshold // ignore: cast_nullable_to_non_nullable
+as int,marketValue: null == marketValue ? _self.marketValue : marketValue // ignore: cast_nullable_to_non_nullable
+as int,uncertain: null == uncertain ? _self.uncertain : uncertain // ignore: cast_nullable_to_non_nullable
+as bool,
+  ));
 }
 
-/// @nodoc
-abstract class _$$AutoSaleEventImplCopyWith<$Res>
-    implements $AutoSaleEventCopyWith<$Res> {
-  factory _$$AutoSaleEventImplCopyWith(
-    _$AutoSaleEventImpl value,
-    $Res Function(_$AutoSaleEventImpl) then,
-  ) = __$$AutoSaleEventImplCopyWithImpl<$Res>;
-  @override
-  @useResult
-  $Res call({
-    int matchday,
-    String playerId,
-    String playerName,
-    int points,
-    int threshold,
-    int marketValue,
-    bool uncertain,
-  });
 }
 
-/// @nodoc
-class __$$AutoSaleEventImplCopyWithImpl<$Res>
-    extends _$AutoSaleEventCopyWithImpl<$Res, _$AutoSaleEventImpl>
-    implements _$$AutoSaleEventImplCopyWith<$Res> {
-  __$$AutoSaleEventImplCopyWithImpl(
-    _$AutoSaleEventImpl _value,
-    $Res Function(_$AutoSaleEventImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of AutoSaleEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? matchday = null,
-    Object? playerId = null,
-    Object? playerName = null,
-    Object? points = null,
-    Object? threshold = null,
-    Object? marketValue = null,
-    Object? uncertain = null,
-  }) {
-    return _then(
-      _$AutoSaleEventImpl(
-        matchday: null == matchday
-            ? _value.matchday
-            : matchday // ignore: cast_nullable_to_non_nullable
-                  as int,
-        playerId: null == playerId
-            ? _value.playerId
-            : playerId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        playerName: null == playerName
-            ? _value.playerName
-            : playerName // ignore: cast_nullable_to_non_nullable
-                  as String,
-        points: null == points
-            ? _value.points
-            : points // ignore: cast_nullable_to_non_nullable
-                  as int,
-        threshold: null == threshold
-            ? _value.threshold
-            : threshold // ignore: cast_nullable_to_non_nullable
-                  as int,
-        marketValue: null == marketValue
-            ? _value.marketValue
-            : marketValue // ignore: cast_nullable_to_non_nullable
-                  as int,
-        uncertain: null == uncertain
-            ? _value.uncertain
-            : uncertain // ignore: cast_nullable_to_non_nullable
-                  as bool,
-      ),
-    );
-  }
+/// Adds pattern-matching-related methods to [AutoSaleEvent].
+extension AutoSaleEventPatterns on AutoSaleEvent {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _AutoSaleEvent value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _AutoSaleEvent() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _AutoSaleEvent value)  $default,){
+final _that = this;
+switch (_that) {
+case _AutoSaleEvent():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _AutoSaleEvent value)?  $default,){
+final _that = this;
+switch (_that) {
+case _AutoSaleEvent() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int matchday,  String playerId,  String playerName,  int points,  int threshold,  int marketValue,  bool uncertain)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _AutoSaleEvent() when $default != null:
+return $default(_that.matchday,_that.playerId,_that.playerName,_that.points,_that.threshold,_that.marketValue,_that.uncertain);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int matchday,  String playerId,  String playerName,  int points,  int threshold,  int marketValue,  bool uncertain)  $default,) {final _that = this;
+switch (_that) {
+case _AutoSaleEvent():
+return $default(_that.matchday,_that.playerId,_that.playerName,_that.points,_that.threshold,_that.marketValue,_that.uncertain);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int matchday,  String playerId,  String playerName,  int points,  int threshold,  int marketValue,  bool uncertain)?  $default,) {final _that = this;
+switch (_that) {
+case _AutoSaleEvent() when $default != null:
+return $default(_that.matchday,_that.playerId,_that.playerName,_that.points,_that.threshold,_that.marketValue,_that.uncertain);case _:
+  return null;
+
+}
+}
+
 }
 
 /// @nodoc
 @JsonSerializable()
-class _$AutoSaleEventImpl implements _AutoSaleEvent {
-  const _$AutoSaleEventImpl({
-    required this.matchday,
-    required this.playerId,
-    required this.playerName,
-    required this.points,
-    required this.threshold,
-    required this.marketValue,
-    this.uncertain = false,
-  });
 
-  factory _$AutoSaleEventImpl.fromJson(Map<String, dynamic> json) =>
-      _$$AutoSaleEventImplFromJson(json);
+class _AutoSaleEvent implements AutoSaleEvent {
+  const _AutoSaleEvent({required this.matchday, required this.playerId, required this.playerName, required this.points, required this.threshold, required this.marketValue, this.uncertain = false});
+  factory _AutoSaleEvent.fromJson(Map<String, dynamic> json) => _$AutoSaleEventFromJson(json);
 
-  /// Spieltag, an dem der Spieler die Schwelle erreicht hat
-  @override
-  final int matchday;
+/// Spieltag, an dem der Spieler die Schwelle erreicht hat
+@override final  int matchday;
+/// Spieler-ID
+@override final  String playerId;
+/// Spielername
+@override final  String playerName;
+/// Saison-Gesamtpunkte zum Zeitpunkt des Verkaufs
+@override final  int points;
+/// Punkte-Schwelle der Regel (z.B. 250)
+@override final  int threshold;
+/// Marktwert zum Verkaufszeitpunkt (Einnahme)
+@override final  int marketValue;
+/// true, wenn der Marktwert nicht zweifelsfrei ermittelt werden konnte
+@override@JsonKey() final  bool uncertain;
 
-  /// Spieler-ID
-  @override
-  final String playerId;
+/// Create a copy of AutoSaleEvent
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$AutoSaleEventCopyWith<_AutoSaleEvent> get copyWith => __$AutoSaleEventCopyWithImpl<_AutoSaleEvent>(this, _$identity);
 
-  /// Spielername
-  @override
-  final String playerName;
+@override
+Map<String, dynamic> toJson() {
+  return _$AutoSaleEventToJson(this, );
+}
 
-  /// Saison-Gesamtpunkte zum Zeitpunkt des Verkaufs
-  @override
-  final int points;
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AutoSaleEvent&&(identical(other.matchday, matchday) || other.matchday == matchday)&&(identical(other.playerId, playerId) || other.playerId == playerId)&&(identical(other.playerName, playerName) || other.playerName == playerName)&&(identical(other.points, points) || other.points == points)&&(identical(other.threshold, threshold) || other.threshold == threshold)&&(identical(other.marketValue, marketValue) || other.marketValue == marketValue)&&(identical(other.uncertain, uncertain) || other.uncertain == uncertain));
+}
 
-  /// Punkte-Schwelle der Regel (z.B. 250)
-  @override
-  final int threshold;
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+    return Object.hash(runtimeType,matchday,playerId,playerName,points,threshold,marketValue,uncertain);
+}
 
-  /// Marktwert zum Verkaufszeitpunkt (Einnahme)
-  @override
-  final int marketValue;
-
-  /// true, wenn der Marktwert nicht zweifelsfrei ermittelt werden konnte
-  @override
-  @JsonKey()
-  final bool uncertain;
-
-  @override
-  String toString() {
+@override
+String toString() {
     return 'AutoSaleEvent(matchday: $matchday, playerId: $playerId, playerName: $playerName, points: $points, threshold: $threshold, marketValue: $marketValue, uncertain: $uncertain)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$AutoSaleEventImpl &&
-            (identical(other.matchday, matchday) ||
-                other.matchday == matchday) &&
-            (identical(other.playerId, playerId) ||
-                other.playerId == playerId) &&
-            (identical(other.playerName, playerName) ||
-                other.playerName == playerName) &&
-            (identical(other.points, points) || other.points == points) &&
-            (identical(other.threshold, threshold) ||
-                other.threshold == threshold) &&
-            (identical(other.marketValue, marketValue) ||
-                other.marketValue == marketValue) &&
-            (identical(other.uncertain, uncertain) ||
-                other.uncertain == uncertain));
-  }
-
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  int get hashCode => Object.hash(
-    runtimeType,
-    matchday,
-    playerId,
-    playerName,
-    points,
-    threshold,
-    marketValue,
-    uncertain,
-  );
-
-  /// Create a copy of AutoSaleEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$AutoSaleEventImplCopyWith<_$AutoSaleEventImpl> get copyWith =>
-      __$$AutoSaleEventImplCopyWithImpl<_$AutoSaleEventImpl>(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$AutoSaleEventImplToJson(this);
-  }
 }
 
-abstract class _AutoSaleEvent implements AutoSaleEvent {
-  const factory _AutoSaleEvent({
-    required final int matchday,
-    required final String playerId,
-    required final String playerName,
-    required final int points,
-    required final int threshold,
-    required final int marketValue,
-    final bool uncertain,
-  }) = _$AutoSaleEventImpl;
 
-  factory _AutoSaleEvent.fromJson(Map<String, dynamic> json) =
-      _$AutoSaleEventImpl.fromJson;
-
-  /// Spieltag, an dem der Spieler die Schwelle erreicht hat
-  @override
-  int get matchday;
-
-  /// Spieler-ID
-  @override
-  String get playerId;
-
-  /// Spielername
-  @override
-  String get playerName;
-
-  /// Saison-Gesamtpunkte zum Zeitpunkt des Verkaufs
-  @override
-  int get points;
-
-  /// Punkte-Schwelle der Regel (z.B. 250)
-  @override
-  int get threshold;
-
-  /// Marktwert zum Verkaufszeitpunkt (Einnahme)
-  @override
-  int get marketValue;
-
-  /// true, wenn der Marktwert nicht zweifelsfrei ermittelt werden konnte
-  @override
-  bool get uncertain;
-
-  /// Create a copy of AutoSaleEvent
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$AutoSaleEventImplCopyWith<_$AutoSaleEventImpl> get copyWith =>
-      throw _privateConstructorUsedError;
 }
 
-BudgetCalculationResult _$BudgetCalculationResultFromJson(
-  Map<String, dynamic> json,
-) {
-  return _BudgetCalculationResult.fromJson(json);
+/// @nodoc
+abstract mixin class _$AutoSaleEventCopyWith<$Res> implements $AutoSaleEventCopyWith<$Res> {
+  factory _$AutoSaleEventCopyWith(_AutoSaleEvent value, $Res Function(_AutoSaleEvent) _then) = __$AutoSaleEventCopyWithImpl;
+@override @useResult
+$Res call({
+ int matchday, String playerId, String playerName, int points, int threshold, int marketValue, bool uncertain
+});
+
+
+
+
 }
+/// @nodoc
+class __$AutoSaleEventCopyWithImpl<$Res>
+    implements _$AutoSaleEventCopyWith<$Res> {
+  __$AutoSaleEventCopyWithImpl(this._self, this._then);
+
+  final _AutoSaleEvent _self;
+  final $Res Function(_AutoSaleEvent) _then;
+
+/// Create a copy of AutoSaleEvent
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? matchday = null,Object? playerId = null,Object? playerName = null,Object? points = null,Object? threshold = null,Object? marketValue = null,Object? uncertain = null,}) {
+  return _then(_AutoSaleEvent(
+matchday: null == matchday ? _self.matchday : matchday // ignore: cast_nullable_to_non_nullable
+as int,playerId: null == playerId ? _self.playerId : playerId // ignore: cast_nullable_to_non_nullable
+as String,playerName: null == playerName ? _self.playerName : playerName // ignore: cast_nullable_to_non_nullable
+as String,points: null == points ? _self.points : points // ignore: cast_nullable_to_non_nullable
+as int,threshold: null == threshold ? _self.threshold : threshold // ignore: cast_nullable_to_non_nullable
+as int,marketValue: null == marketValue ? _self.marketValue : marketValue // ignore: cast_nullable_to_non_nullable
+as int,uncertain: null == uncertain ? _self.uncertain : uncertain // ignore: cast_nullable_to_non_nullable
+as bool,
+  ));
+}
+
+
+}
+
 
 /// @nodoc
 mixin _$BudgetCalculationResult {
-  String get managerId => throw _privateConstructorUsedError;
-  String get managerName => throw _privateConstructorUsedError;
-  String get leagueId => throw _privateConstructorUsedError;
-  int get initialBudget => throw _privateConstructorUsedError;
-  int get initialSquadValue => throw _privateConstructorUsedError;
-  int get startingBudget => throw _privateConstructorUsedError;
-  int get totalSales => throw _privateConstructorUsedError;
-  int get totalPurchases => throw _privateConstructorUsedError;
-  int get currentBudget => throw _privateConstructorUsedError;
-  List<InitialPlayer> get initialPlayers => throw _privateConstructorUsedError;
-  List<ManagerTransfer> get sales => throw _privateConstructorUsedError;
-  List<ManagerTransfer> get purchases => throw _privateConstructorUsedError;
-  DateTime get calculatedAt => throw _privateConstructorUsedError;
 
-  /// Summe der Einnahmen durch automatische Verkäufe (Auto-Verkauf /
-  /// 250er-Regel). Diese Verkäufe erscheinen nicht in der Transfer-Historie
-  /// und werden daher separat ermittelt und addiert.
-  int get autoSaleIncome => throw _privateConstructorUsedError;
-
-  /// Einzelne Auto-Verkauf-Ereignisse des Managers in der aktuellen Saison.
-  List<AutoSaleEvent> get autoSaleEvents => throw _privateConstructorUsedError;
-
-  /// Kumulierter täglicher Anmeldebonus seit dem ersten Tag der Liga
-  /// (Tag 1: 10.000 €, Tag 2: 20.000 €, … Tag 10: 100.000 €, ab da
-  /// konstant 100.000 € pro Tag). Bereits in [currentBudget] enthalten.
-  int get loginBonus => throw _privateConstructorUsedError;
-
-  /// Anzahl der Liga-Tage, für die der Anmeldebonus gewährt wurde
-  /// (Tag 1 = erster Tag der Liga).
-  int get loginBonusDays => throw _privateConstructorUsedError;
+ String get managerId; String get managerName; String get leagueId; int get initialBudget; int get initialSquadValue; int get startingBudget; int get totalSales; int get totalPurchases; int get currentBudget; List<InitialPlayer> get initialPlayers; List<ManagerTransfer> get sales; List<ManagerTransfer> get purchases; DateTime get calculatedAt;/// Summe der Einnahmen durch automatische Verkäufe (Auto-Verkauf /
+/// 250er-Regel). Diese Verkäufe erscheinen nicht in der Transfer-Historie
+/// und werden daher separat ermittelt und addiert.
+ int get autoSaleIncome;/// Einzelne Auto-Verkauf-Ereignisse des Managers in der aktuellen Saison.
+ List<AutoSaleEvent> get autoSaleEvents;/// Kumulierter täglicher Anmeldebonus seit dem ersten Tag der Liga
+/// (Tag 1: 10.000 €, Tag 2: 20.000 €, … Tag 10: 100.000 €, ab da
+/// konstant 100.000 € pro Tag). Bereits in [currentBudget] enthalten.
+ int get loginBonus;/// Anzahl der Liga-Tage, für die der Anmeldebonus gewährt wurde
+/// (Tag 1 = erster Tag der Liga).
+ int get loginBonusDays;
+/// Create a copy of BudgetCalculationResult
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$BudgetCalculationResultCopyWith<BudgetCalculationResult> get copyWith => _$BudgetCalculationResultCopyWithImpl<BudgetCalculationResult>(this as BudgetCalculationResult, _$identity);
 
   /// Serializes this BudgetCalculationResult to a JSON map.
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  Map<String, dynamic> toJson();
 
-  /// Create a copy of BudgetCalculationResult
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  $BudgetCalculationResultCopyWith<BudgetCalculationResult> get copyWith =>
-      throw _privateConstructorUsedError;
+
+@override
+bool operator ==(Object other) {
+  final _this = this as BudgetCalculationResult;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is BudgetCalculationResult&&(identical(other.managerId, _this.managerId) || other.managerId == _this.managerId)&&(identical(other.managerName, _this.managerName) || other.managerName == _this.managerName)&&(identical(other.leagueId, _this.leagueId) || other.leagueId == _this.leagueId)&&(identical(other.initialBudget, _this.initialBudget) || other.initialBudget == _this.initialBudget)&&(identical(other.initialSquadValue, _this.initialSquadValue) || other.initialSquadValue == _this.initialSquadValue)&&(identical(other.startingBudget, _this.startingBudget) || other.startingBudget == _this.startingBudget)&&(identical(other.totalSales, _this.totalSales) || other.totalSales == _this.totalSales)&&(identical(other.totalPurchases, _this.totalPurchases) || other.totalPurchases == _this.totalPurchases)&&(identical(other.currentBudget, _this.currentBudget) || other.currentBudget == _this.currentBudget)&&const DeepCollectionEquality().equals(other.initialPlayers, _this.initialPlayers)&&const DeepCollectionEquality().equals(other.sales, _this.sales)&&const DeepCollectionEquality().equals(other.purchases, _this.purchases)&&(identical(other.calculatedAt, _this.calculatedAt) || other.calculatedAt == _this.calculatedAt)&&(identical(other.autoSaleIncome, _this.autoSaleIncome) || other.autoSaleIncome == _this.autoSaleIncome)&&const DeepCollectionEquality().equals(other.autoSaleEvents, _this.autoSaleEvents)&&(identical(other.loginBonus, _this.loginBonus) || other.loginBonus == _this.loginBonus)&&(identical(other.loginBonusDays, _this.loginBonusDays) || other.loginBonusDays == _this.loginBonusDays));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+  final _this = this as BudgetCalculationResult;
+  return Object.hash(runtimeType,_this.managerId,_this.managerName,_this.leagueId,_this.initialBudget,_this.initialSquadValue,_this.startingBudget,_this.totalSales,_this.totalPurchases,_this.currentBudget,const DeepCollectionEquality().hash(_this.initialPlayers),const DeepCollectionEquality().hash(_this.sales),const DeepCollectionEquality().hash(_this.purchases),_this.calculatedAt,_this.autoSaleIncome,const DeepCollectionEquality().hash(_this.autoSaleEvents),_this.loginBonus,_this.loginBonusDays);
+}
+
+@override
+String toString() {
+  final _this = this as BudgetCalculationResult;
+  return 'BudgetCalculationResult(managerId: ${_this.managerId}, managerName: ${_this.managerName}, leagueId: ${_this.leagueId}, initialBudget: ${_this.initialBudget}, initialSquadValue: ${_this.initialSquadValue}, startingBudget: ${_this.startingBudget}, totalSales: ${_this.totalSales}, totalPurchases: ${_this.totalPurchases}, currentBudget: ${_this.currentBudget}, initialPlayers: ${_this.initialPlayers}, sales: ${_this.sales}, purchases: ${_this.purchases}, calculatedAt: ${_this.calculatedAt}, autoSaleIncome: ${_this.autoSaleIncome}, autoSaleEvents: ${_this.autoSaleEvents}, loginBonus: ${_this.loginBonus}, loginBonusDays: ${_this.loginBonusDays})';
+}
+
+
 }
 
 /// @nodoc
-abstract class $BudgetCalculationResultCopyWith<$Res> {
-  factory $BudgetCalculationResultCopyWith(
-    BudgetCalculationResult value,
-    $Res Function(BudgetCalculationResult) then,
-  ) = _$BudgetCalculationResultCopyWithImpl<$Res, BudgetCalculationResult>;
-  @useResult
-  $Res call({
-    String managerId,
-    String managerName,
-    String leagueId,
-    int initialBudget,
-    int initialSquadValue,
-    int startingBudget,
-    int totalSales,
-    int totalPurchases,
-    int currentBudget,
-    List<InitialPlayer> initialPlayers,
-    List<ManagerTransfer> sales,
-    List<ManagerTransfer> purchases,
-    DateTime calculatedAt,
-    int autoSaleIncome,
-    List<AutoSaleEvent> autoSaleEvents,
-    int loginBonus,
-    int loginBonusDays,
-  });
-}
+abstract mixin class $BudgetCalculationResultCopyWith<$Res>  {
+  factory $BudgetCalculationResultCopyWith(BudgetCalculationResult value, $Res Function(BudgetCalculationResult) _then) = _$BudgetCalculationResultCopyWithImpl;
+@useResult
+$Res call({
+ String managerId, String managerName, String leagueId, int initialBudget, int initialSquadValue, int startingBudget, int totalSales, int totalPurchases, int currentBudget, List<InitialPlayer> initialPlayers, List<ManagerTransfer> sales, List<ManagerTransfer> purchases, DateTime calculatedAt, int autoSaleIncome, List<AutoSaleEvent> autoSaleEvents, int loginBonus, int loginBonusDays
+});
 
+
+
+
+}
 /// @nodoc
-class _$BudgetCalculationResultCopyWithImpl<
-  $Res,
-  $Val extends BudgetCalculationResult
->
+class _$BudgetCalculationResultCopyWithImpl<$Res>
     implements $BudgetCalculationResultCopyWith<$Res> {
-  _$BudgetCalculationResultCopyWithImpl(this._value, this._then);
+  _$BudgetCalculationResultCopyWithImpl(this._self, this._then);
 
-  // ignore: unused_field
-  final $Val _value;
-  // ignore: unused_field
-  final $Res Function($Val) _then;
+  final BudgetCalculationResult _self;
+  final $Res Function(BudgetCalculationResult) _then;
 
-  /// Create a copy of BudgetCalculationResult
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? managerId = null,
-    Object? managerName = null,
-    Object? leagueId = null,
-    Object? initialBudget = null,
-    Object? initialSquadValue = null,
-    Object? startingBudget = null,
-    Object? totalSales = null,
-    Object? totalPurchases = null,
-    Object? currentBudget = null,
-    Object? initialPlayers = null,
-    Object? sales = null,
-    Object? purchases = null,
-    Object? calculatedAt = null,
-    Object? autoSaleIncome = null,
-    Object? autoSaleEvents = null,
-    Object? loginBonus = null,
-    Object? loginBonusDays = null,
-  }) {
-    return _then(
-      _value.copyWith(
-            managerId: null == managerId
-                ? _value.managerId
-                : managerId // ignore: cast_nullable_to_non_nullable
-                      as String,
-            managerName: null == managerName
-                ? _value.managerName
-                : managerName // ignore: cast_nullable_to_non_nullable
-                      as String,
-            leagueId: null == leagueId
-                ? _value.leagueId
-                : leagueId // ignore: cast_nullable_to_non_nullable
-                      as String,
-            initialBudget: null == initialBudget
-                ? _value.initialBudget
-                : initialBudget // ignore: cast_nullable_to_non_nullable
-                      as int,
-            initialSquadValue: null == initialSquadValue
-                ? _value.initialSquadValue
-                : initialSquadValue // ignore: cast_nullable_to_non_nullable
-                      as int,
-            startingBudget: null == startingBudget
-                ? _value.startingBudget
-                : startingBudget // ignore: cast_nullable_to_non_nullable
-                      as int,
-            totalSales: null == totalSales
-                ? _value.totalSales
-                : totalSales // ignore: cast_nullable_to_non_nullable
-                      as int,
-            totalPurchases: null == totalPurchases
-                ? _value.totalPurchases
-                : totalPurchases // ignore: cast_nullable_to_non_nullable
-                      as int,
-            currentBudget: null == currentBudget
-                ? _value.currentBudget
-                : currentBudget // ignore: cast_nullable_to_non_nullable
-                      as int,
-            initialPlayers: null == initialPlayers
-                ? _value.initialPlayers
-                : initialPlayers // ignore: cast_nullable_to_non_nullable
-                      as List<InitialPlayer>,
-            sales: null == sales
-                ? _value.sales
-                : sales // ignore: cast_nullable_to_non_nullable
-                      as List<ManagerTransfer>,
-            purchases: null == purchases
-                ? _value.purchases
-                : purchases // ignore: cast_nullable_to_non_nullable
-                      as List<ManagerTransfer>,
-            calculatedAt: null == calculatedAt
-                ? _value.calculatedAt
-                : calculatedAt // ignore: cast_nullable_to_non_nullable
-                      as DateTime,
-            autoSaleIncome: null == autoSaleIncome
-                ? _value.autoSaleIncome
-                : autoSaleIncome // ignore: cast_nullable_to_non_nullable
-                      as int,
-            autoSaleEvents: null == autoSaleEvents
-                ? _value.autoSaleEvents
-                : autoSaleEvents // ignore: cast_nullable_to_non_nullable
-                      as List<AutoSaleEvent>,
-            loginBonus: null == loginBonus
-                ? _value.loginBonus
-                : loginBonus // ignore: cast_nullable_to_non_nullable
-                      as int,
-            loginBonusDays: null == loginBonusDays
-                ? _value.loginBonusDays
-                : loginBonusDays // ignore: cast_nullable_to_non_nullable
-                      as int,
-          )
-          as $Val,
-    );
-  }
+/// Create a copy of BudgetCalculationResult
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? managerId = null,Object? managerName = null,Object? leagueId = null,Object? initialBudget = null,Object? initialSquadValue = null,Object? startingBudget = null,Object? totalSales = null,Object? totalPurchases = null,Object? currentBudget = null,Object? initialPlayers = null,Object? sales = null,Object? purchases = null,Object? calculatedAt = null,Object? autoSaleIncome = null,Object? autoSaleEvents = null,Object? loginBonus = null,Object? loginBonusDays = null,}) {
+  return _then(BudgetCalculationResult(
+managerId: null == managerId ? _self.managerId : managerId // ignore: cast_nullable_to_non_nullable
+as String,managerName: null == managerName ? _self.managerName : managerName // ignore: cast_nullable_to_non_nullable
+as String,leagueId: null == leagueId ? _self.leagueId : leagueId // ignore: cast_nullable_to_non_nullable
+as String,initialBudget: null == initialBudget ? _self.initialBudget : initialBudget // ignore: cast_nullable_to_non_nullable
+as int,initialSquadValue: null == initialSquadValue ? _self.initialSquadValue : initialSquadValue // ignore: cast_nullable_to_non_nullable
+as int,startingBudget: null == startingBudget ? _self.startingBudget : startingBudget // ignore: cast_nullable_to_non_nullable
+as int,totalSales: null == totalSales ? _self.totalSales : totalSales // ignore: cast_nullable_to_non_nullable
+as int,totalPurchases: null == totalPurchases ? _self.totalPurchases : totalPurchases // ignore: cast_nullable_to_non_nullable
+as int,currentBudget: null == currentBudget ? _self.currentBudget : currentBudget // ignore: cast_nullable_to_non_nullable
+as int,initialPlayers: null == initialPlayers ? _self.initialPlayers : initialPlayers // ignore: cast_nullable_to_non_nullable
+as List<InitialPlayer>,sales: null == sales ? _self.sales : sales // ignore: cast_nullable_to_non_nullable
+as List<ManagerTransfer>,purchases: null == purchases ? _self.purchases : purchases // ignore: cast_nullable_to_non_nullable
+as List<ManagerTransfer>,calculatedAt: null == calculatedAt ? _self.calculatedAt : calculatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime,autoSaleIncome: null == autoSaleIncome ? _self.autoSaleIncome : autoSaleIncome // ignore: cast_nullable_to_non_nullable
+as int,autoSaleEvents: null == autoSaleEvents ? _self.autoSaleEvents : autoSaleEvents // ignore: cast_nullable_to_non_nullable
+as List<AutoSaleEvent>,loginBonus: null == loginBonus ? _self.loginBonus : loginBonus // ignore: cast_nullable_to_non_nullable
+as int,loginBonusDays: null == loginBonusDays ? _self.loginBonusDays : loginBonusDays // ignore: cast_nullable_to_non_nullable
+as int,
+  ));
 }
 
-/// @nodoc
-abstract class _$$BudgetCalculationResultImplCopyWith<$Res>
-    implements $BudgetCalculationResultCopyWith<$Res> {
-  factory _$$BudgetCalculationResultImplCopyWith(
-    _$BudgetCalculationResultImpl value,
-    $Res Function(_$BudgetCalculationResultImpl) then,
-  ) = __$$BudgetCalculationResultImplCopyWithImpl<$Res>;
-  @override
-  @useResult
-  $Res call({
-    String managerId,
-    String managerName,
-    String leagueId,
-    int initialBudget,
-    int initialSquadValue,
-    int startingBudget,
-    int totalSales,
-    int totalPurchases,
-    int currentBudget,
-    List<InitialPlayer> initialPlayers,
-    List<ManagerTransfer> sales,
-    List<ManagerTransfer> purchases,
-    DateTime calculatedAt,
-    int autoSaleIncome,
-    List<AutoSaleEvent> autoSaleEvents,
-    int loginBonus,
-    int loginBonusDays,
-  });
 }
 
-/// @nodoc
-class __$$BudgetCalculationResultImplCopyWithImpl<$Res>
-    extends
-        _$BudgetCalculationResultCopyWithImpl<
-          $Res,
-          _$BudgetCalculationResultImpl
-        >
-    implements _$$BudgetCalculationResultImplCopyWith<$Res> {
-  __$$BudgetCalculationResultImplCopyWithImpl(
-    _$BudgetCalculationResultImpl _value,
-    $Res Function(_$BudgetCalculationResultImpl) _then,
-  ) : super(_value, _then);
 
-  /// Create a copy of BudgetCalculationResult
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? managerId = null,
-    Object? managerName = null,
-    Object? leagueId = null,
-    Object? initialBudget = null,
-    Object? initialSquadValue = null,
-    Object? startingBudget = null,
-    Object? totalSales = null,
-    Object? totalPurchases = null,
-    Object? currentBudget = null,
-    Object? initialPlayers = null,
-    Object? sales = null,
-    Object? purchases = null,
-    Object? calculatedAt = null,
-    Object? autoSaleIncome = null,
-    Object? autoSaleEvents = null,
-    Object? loginBonus = null,
-    Object? loginBonusDays = null,
-  }) {
-    return _then(
-      _$BudgetCalculationResultImpl(
-        managerId: null == managerId
-            ? _value.managerId
-            : managerId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        managerName: null == managerName
-            ? _value.managerName
-            : managerName // ignore: cast_nullable_to_non_nullable
-                  as String,
-        leagueId: null == leagueId
-            ? _value.leagueId
-            : leagueId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        initialBudget: null == initialBudget
-            ? _value.initialBudget
-            : initialBudget // ignore: cast_nullable_to_non_nullable
-                  as int,
-        initialSquadValue: null == initialSquadValue
-            ? _value.initialSquadValue
-            : initialSquadValue // ignore: cast_nullable_to_non_nullable
-                  as int,
-        startingBudget: null == startingBudget
-            ? _value.startingBudget
-            : startingBudget // ignore: cast_nullable_to_non_nullable
-                  as int,
-        totalSales: null == totalSales
-            ? _value.totalSales
-            : totalSales // ignore: cast_nullable_to_non_nullable
-                  as int,
-        totalPurchases: null == totalPurchases
-            ? _value.totalPurchases
-            : totalPurchases // ignore: cast_nullable_to_non_nullable
-                  as int,
-        currentBudget: null == currentBudget
-            ? _value.currentBudget
-            : currentBudget // ignore: cast_nullable_to_non_nullable
-                  as int,
-        initialPlayers: null == initialPlayers
-            ? _value._initialPlayers
-            : initialPlayers // ignore: cast_nullable_to_non_nullable
-                  as List<InitialPlayer>,
-        sales: null == sales
-            ? _value._sales
-            : sales // ignore: cast_nullable_to_non_nullable
-                  as List<ManagerTransfer>,
-        purchases: null == purchases
-            ? _value._purchases
-            : purchases // ignore: cast_nullable_to_non_nullable
-                  as List<ManagerTransfer>,
-        calculatedAt: null == calculatedAt
-            ? _value.calculatedAt
-            : calculatedAt // ignore: cast_nullable_to_non_nullable
-                  as DateTime,
-        autoSaleIncome: null == autoSaleIncome
-            ? _value.autoSaleIncome
-            : autoSaleIncome // ignore: cast_nullable_to_non_nullable
-                  as int,
-        autoSaleEvents: null == autoSaleEvents
-            ? _value._autoSaleEvents
-            : autoSaleEvents // ignore: cast_nullable_to_non_nullable
-                  as List<AutoSaleEvent>,
-        loginBonus: null == loginBonus
-            ? _value.loginBonus
-            : loginBonus // ignore: cast_nullable_to_non_nullable
-                  as int,
-        loginBonusDays: null == loginBonusDays
-            ? _value.loginBonusDays
-            : loginBonusDays // ignore: cast_nullable_to_non_nullable
-                  as int,
-      ),
-    );
-  }
+/// Adds pattern-matching-related methods to [BudgetCalculationResult].
+extension BudgetCalculationResultPatterns on BudgetCalculationResult {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _BudgetCalculationResult value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _BudgetCalculationResult() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _BudgetCalculationResult value)  $default,){
+final _that = this;
+switch (_that) {
+case _BudgetCalculationResult():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _BudgetCalculationResult value)?  $default,){
+final _that = this;
+switch (_that) {
+case _BudgetCalculationResult() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String managerId,  String managerName,  String leagueId,  int initialBudget,  int initialSquadValue,  int startingBudget,  int totalSales,  int totalPurchases,  int currentBudget,  List<InitialPlayer> initialPlayers,  List<ManagerTransfer> sales,  List<ManagerTransfer> purchases,  DateTime calculatedAt,  int autoSaleIncome,  List<AutoSaleEvent> autoSaleEvents,  int loginBonus,  int loginBonusDays)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _BudgetCalculationResult() when $default != null:
+return $default(_that.managerId,_that.managerName,_that.leagueId,_that.initialBudget,_that.initialSquadValue,_that.startingBudget,_that.totalSales,_that.totalPurchases,_that.currentBudget,_that.initialPlayers,_that.sales,_that.purchases,_that.calculatedAt,_that.autoSaleIncome,_that.autoSaleEvents,_that.loginBonus,_that.loginBonusDays);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String managerId,  String managerName,  String leagueId,  int initialBudget,  int initialSquadValue,  int startingBudget,  int totalSales,  int totalPurchases,  int currentBudget,  List<InitialPlayer> initialPlayers,  List<ManagerTransfer> sales,  List<ManagerTransfer> purchases,  DateTime calculatedAt,  int autoSaleIncome,  List<AutoSaleEvent> autoSaleEvents,  int loginBonus,  int loginBonusDays)  $default,) {final _that = this;
+switch (_that) {
+case _BudgetCalculationResult():
+return $default(_that.managerId,_that.managerName,_that.leagueId,_that.initialBudget,_that.initialSquadValue,_that.startingBudget,_that.totalSales,_that.totalPurchases,_that.currentBudget,_that.initialPlayers,_that.sales,_that.purchases,_that.calculatedAt,_that.autoSaleIncome,_that.autoSaleEvents,_that.loginBonus,_that.loginBonusDays);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String managerId,  String managerName,  String leagueId,  int initialBudget,  int initialSquadValue,  int startingBudget,  int totalSales,  int totalPurchases,  int currentBudget,  List<InitialPlayer> initialPlayers,  List<ManagerTransfer> sales,  List<ManagerTransfer> purchases,  DateTime calculatedAt,  int autoSaleIncome,  List<AutoSaleEvent> autoSaleEvents,  int loginBonus,  int loginBonusDays)?  $default,) {final _that = this;
+switch (_that) {
+case _BudgetCalculationResult() when $default != null:
+return $default(_that.managerId,_that.managerName,_that.leagueId,_that.initialBudget,_that.initialSquadValue,_that.startingBudget,_that.totalSales,_that.totalPurchases,_that.currentBudget,_that.initialPlayers,_that.sales,_that.purchases,_that.calculatedAt,_that.autoSaleIncome,_that.autoSaleEvents,_that.loginBonus,_that.loginBonusDays);case _:
+  return null;
+
+}
+}
+
 }
 
 /// @nodoc
 @JsonSerializable()
-class _$BudgetCalculationResultImpl implements _BudgetCalculationResult {
-  const _$BudgetCalculationResultImpl({
-    required this.managerId,
-    required this.managerName,
-    required this.leagueId,
-    required this.initialBudget,
-    required this.initialSquadValue,
-    required this.startingBudget,
-    required this.totalSales,
-    required this.totalPurchases,
-    required this.currentBudget,
-    required final List<InitialPlayer> initialPlayers,
-    required final List<ManagerTransfer> sales,
-    required final List<ManagerTransfer> purchases,
-    required this.calculatedAt,
-    this.autoSaleIncome = 0,
-    final List<AutoSaleEvent> autoSaleEvents = const [],
-    this.loginBonus = 0,
-    this.loginBonusDays = 0,
-  }) : _initialPlayers = initialPlayers,
-       _sales = sales,
-       _purchases = purchases,
-       _autoSaleEvents = autoSaleEvents;
 
-  factory _$BudgetCalculationResultImpl.fromJson(Map<String, dynamic> json) =>
-      _$$BudgetCalculationResultImplFromJson(json);
+class _BudgetCalculationResult implements BudgetCalculationResult {
+  const _BudgetCalculationResult({required this.managerId, required this.managerName, required this.leagueId, required this.initialBudget, required this.initialSquadValue, required this.startingBudget, required this.totalSales, required this.totalPurchases, required this.currentBudget, required  List<InitialPlayer> initialPlayers, required  List<ManagerTransfer> sales, required  List<ManagerTransfer> purchases, required this.calculatedAt, this.autoSaleIncome = 0,  List<AutoSaleEvent> autoSaleEvents = const [], this.loginBonus = 0, this.loginBonusDays = 0}): _initialPlayers = initialPlayers,_sales = sales,_purchases = purchases,_autoSaleEvents = autoSaleEvents;
+  factory _BudgetCalculationResult.fromJson(Map<String, dynamic> json) => _$BudgetCalculationResultFromJson(json);
 
-  @override
-  final String managerId;
-  @override
-  final String managerName;
-  @override
-  final String leagueId;
-  @override
-  final int initialBudget;
-  @override
-  final int initialSquadValue;
-  @override
-  final int startingBudget;
-  @override
-  final int totalSales;
-  @override
-  final int totalPurchases;
-  @override
-  final int currentBudget;
-  final List<InitialPlayer> _initialPlayers;
-  @override
-  List<InitialPlayer> get initialPlayers {
-    if (_initialPlayers is EqualUnmodifiableListView) return _initialPlayers;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_initialPlayers);
-  }
+@override final  String managerId;
+@override final  String managerName;
+@override final  String leagueId;
+@override final  int initialBudget;
+@override final  int initialSquadValue;
+@override final  int startingBudget;
+@override final  int totalSales;
+@override final  int totalPurchases;
+@override final  int currentBudget;
+ final  List<InitialPlayer> _initialPlayers;
+@override List<InitialPlayer> get initialPlayers {
+  if (_initialPlayers is EqualUnmodifiableListView) return _initialPlayers;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_initialPlayers);
+}
 
-  final List<ManagerTransfer> _sales;
-  @override
-  List<ManagerTransfer> get sales {
-    if (_sales is EqualUnmodifiableListView) return _sales;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_sales);
-  }
+ final  List<ManagerTransfer> _sales;
+@override List<ManagerTransfer> get sales {
+  if (_sales is EqualUnmodifiableListView) return _sales;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_sales);
+}
 
-  final List<ManagerTransfer> _purchases;
-  @override
-  List<ManagerTransfer> get purchases {
-    if (_purchases is EqualUnmodifiableListView) return _purchases;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_purchases);
-  }
+ final  List<ManagerTransfer> _purchases;
+@override List<ManagerTransfer> get purchases {
+  if (_purchases is EqualUnmodifiableListView) return _purchases;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_purchases);
+}
 
-  @override
-  final DateTime calculatedAt;
+@override final  DateTime calculatedAt;
+/// Summe der Einnahmen durch automatische Verkäufe (Auto-Verkauf /
+/// 250er-Regel). Diese Verkäufe erscheinen nicht in der Transfer-Historie
+/// und werden daher separat ermittelt und addiert.
+@override@JsonKey() final  int autoSaleIncome;
+/// Einzelne Auto-Verkauf-Ereignisse des Managers in der aktuellen Saison.
+ final  List<AutoSaleEvent> _autoSaleEvents;
+/// Einzelne Auto-Verkauf-Ereignisse des Managers in der aktuellen Saison.
+@override@JsonKey() List<AutoSaleEvent> get autoSaleEvents {
+  if (_autoSaleEvents is EqualUnmodifiableListView) return _autoSaleEvents;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_autoSaleEvents);
+}
 
-  /// Summe der Einnahmen durch automatische Verkäufe (Auto-Verkauf /
-  /// 250er-Regel). Diese Verkäufe erscheinen nicht in der Transfer-Historie
-  /// und werden daher separat ermittelt und addiert.
-  @override
-  @JsonKey()
-  final int autoSaleIncome;
+/// Kumulierter täglicher Anmeldebonus seit dem ersten Tag der Liga
+/// (Tag 1: 10.000 €, Tag 2: 20.000 €, … Tag 10: 100.000 €, ab da
+/// konstant 100.000 € pro Tag). Bereits in [currentBudget] enthalten.
+@override@JsonKey() final  int loginBonus;
+/// Anzahl der Liga-Tage, für die der Anmeldebonus gewährt wurde
+/// (Tag 1 = erster Tag der Liga).
+@override@JsonKey() final  int loginBonusDays;
 
-  /// Einzelne Auto-Verkauf-Ereignisse des Managers in der aktuellen Saison.
-  final List<AutoSaleEvent> _autoSaleEvents;
+/// Create a copy of BudgetCalculationResult
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$BudgetCalculationResultCopyWith<_BudgetCalculationResult> get copyWith => __$BudgetCalculationResultCopyWithImpl<_BudgetCalculationResult>(this, _$identity);
 
-  /// Einzelne Auto-Verkauf-Ereignisse des Managers in der aktuellen Saison.
-  @override
-  @JsonKey()
-  List<AutoSaleEvent> get autoSaleEvents {
-    if (_autoSaleEvents is EqualUnmodifiableListView) return _autoSaleEvents;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_autoSaleEvents);
-  }
+@override
+Map<String, dynamic> toJson() {
+  return _$BudgetCalculationResultToJson(this, );
+}
 
-  /// Kumulierter täglicher Anmeldebonus seit dem ersten Tag der Liga
-  /// (Tag 1: 10.000 €, Tag 2: 20.000 €, … Tag 10: 100.000 €, ab da
-  /// konstant 100.000 € pro Tag). Bereits in [currentBudget] enthalten.
-  @override
-  @JsonKey()
-  final int loginBonus;
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _BudgetCalculationResult&&(identical(other.managerId, managerId) || other.managerId == managerId)&&(identical(other.managerName, managerName) || other.managerName == managerName)&&(identical(other.leagueId, leagueId) || other.leagueId == leagueId)&&(identical(other.initialBudget, initialBudget) || other.initialBudget == initialBudget)&&(identical(other.initialSquadValue, initialSquadValue) || other.initialSquadValue == initialSquadValue)&&(identical(other.startingBudget, startingBudget) || other.startingBudget == startingBudget)&&(identical(other.totalSales, totalSales) || other.totalSales == totalSales)&&(identical(other.totalPurchases, totalPurchases) || other.totalPurchases == totalPurchases)&&(identical(other.currentBudget, currentBudget) || other.currentBudget == currentBudget)&&const DeepCollectionEquality().equals(other.initialPlayers, _initialPlayers)&&const DeepCollectionEquality().equals(other.sales, _sales)&&const DeepCollectionEquality().equals(other.purchases, _purchases)&&(identical(other.calculatedAt, calculatedAt) || other.calculatedAt == calculatedAt)&&(identical(other.autoSaleIncome, autoSaleIncome) || other.autoSaleIncome == autoSaleIncome)&&const DeepCollectionEquality().equals(other.autoSaleEvents, _autoSaleEvents)&&(identical(other.loginBonus, loginBonus) || other.loginBonus == loginBonus)&&(identical(other.loginBonusDays, loginBonusDays) || other.loginBonusDays == loginBonusDays));
+}
 
-  /// Anzahl der Liga-Tage, für die der Anmeldebonus gewährt wurde
-  /// (Tag 1 = erster Tag der Liga).
-  @override
-  @JsonKey()
-  final int loginBonusDays;
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+    return Object.hash(runtimeType,managerId,managerName,leagueId,initialBudget,initialSquadValue,startingBudget,totalSales,totalPurchases,currentBudget,const DeepCollectionEquality().hash(_initialPlayers),const DeepCollectionEquality().hash(_sales),const DeepCollectionEquality().hash(_purchases),calculatedAt,autoSaleIncome,const DeepCollectionEquality().hash(_autoSaleEvents),loginBonus,loginBonusDays);
+}
 
-  @override
-  String toString() {
+@override
+String toString() {
     return 'BudgetCalculationResult(managerId: $managerId, managerName: $managerName, leagueId: $leagueId, initialBudget: $initialBudget, initialSquadValue: $initialSquadValue, startingBudget: $startingBudget, totalSales: $totalSales, totalPurchases: $totalPurchases, currentBudget: $currentBudget, initialPlayers: $initialPlayers, sales: $sales, purchases: $purchases, calculatedAt: $calculatedAt, autoSaleIncome: $autoSaleIncome, autoSaleEvents: $autoSaleEvents, loginBonus: $loginBonus, loginBonusDays: $loginBonusDays)';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _$BudgetCalculationResultImpl &&
-            (identical(other.managerId, managerId) ||
-                other.managerId == managerId) &&
-            (identical(other.managerName, managerName) ||
-                other.managerName == managerName) &&
-            (identical(other.leagueId, leagueId) ||
-                other.leagueId == leagueId) &&
-            (identical(other.initialBudget, initialBudget) ||
-                other.initialBudget == initialBudget) &&
-            (identical(other.initialSquadValue, initialSquadValue) ||
-                other.initialSquadValue == initialSquadValue) &&
-            (identical(other.startingBudget, startingBudget) ||
-                other.startingBudget == startingBudget) &&
-            (identical(other.totalSales, totalSales) ||
-                other.totalSales == totalSales) &&
-            (identical(other.totalPurchases, totalPurchases) ||
-                other.totalPurchases == totalPurchases) &&
-            (identical(other.currentBudget, currentBudget) ||
-                other.currentBudget == currentBudget) &&
-            const DeepCollectionEquality().equals(
-              other._initialPlayers,
-              _initialPlayers,
-            ) &&
-            const DeepCollectionEquality().equals(other._sales, _sales) &&
-            const DeepCollectionEquality().equals(
-              other._purchases,
-              _purchases,
-            ) &&
-            (identical(other.calculatedAt, calculatedAt) ||
-                other.calculatedAt == calculatedAt) &&
-            (identical(other.autoSaleIncome, autoSaleIncome) ||
-                other.autoSaleIncome == autoSaleIncome) &&
-            const DeepCollectionEquality().equals(
-              other._autoSaleEvents,
-              _autoSaleEvents,
-            ) &&
-            (identical(other.loginBonus, loginBonus) ||
-                other.loginBonus == loginBonus) &&
-            (identical(other.loginBonusDays, loginBonusDays) ||
-                other.loginBonusDays == loginBonusDays));
-  }
-
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  int get hashCode => Object.hash(
-    runtimeType,
-    managerId,
-    managerName,
-    leagueId,
-    initialBudget,
-    initialSquadValue,
-    startingBudget,
-    totalSales,
-    totalPurchases,
-    currentBudget,
-    const DeepCollectionEquality().hash(_initialPlayers),
-    const DeepCollectionEquality().hash(_sales),
-    const DeepCollectionEquality().hash(_purchases),
-    calculatedAt,
-    autoSaleIncome,
-    const DeepCollectionEquality().hash(_autoSaleEvents),
-    loginBonus,
-    loginBonusDays,
-  );
-
-  /// Create a copy of BudgetCalculationResult
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  @pragma('vm:prefer-inline')
-  _$$BudgetCalculationResultImplCopyWith<_$BudgetCalculationResultImpl>
-  get copyWith =>
-      __$$BudgetCalculationResultImplCopyWithImpl<
-        _$BudgetCalculationResultImpl
-      >(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$BudgetCalculationResultImplToJson(this);
-  }
 }
 
-abstract class _BudgetCalculationResult implements BudgetCalculationResult {
-  const factory _BudgetCalculationResult({
-    required final String managerId,
-    required final String managerName,
-    required final String leagueId,
-    required final int initialBudget,
-    required final int initialSquadValue,
-    required final int startingBudget,
-    required final int totalSales,
-    required final int totalPurchases,
-    required final int currentBudget,
-    required final List<InitialPlayer> initialPlayers,
-    required final List<ManagerTransfer> sales,
-    required final List<ManagerTransfer> purchases,
-    required final DateTime calculatedAt,
-    final int autoSaleIncome,
-    final List<AutoSaleEvent> autoSaleEvents,
-    final int loginBonus,
-    final int loginBonusDays,
-  }) = _$BudgetCalculationResultImpl;
 
-  factory _BudgetCalculationResult.fromJson(Map<String, dynamic> json) =
-      _$BudgetCalculationResultImpl.fromJson;
-
-  @override
-  String get managerId;
-  @override
-  String get managerName;
-  @override
-  String get leagueId;
-  @override
-  int get initialBudget;
-  @override
-  int get initialSquadValue;
-  @override
-  int get startingBudget;
-  @override
-  int get totalSales;
-  @override
-  int get totalPurchases;
-  @override
-  int get currentBudget;
-  @override
-  List<InitialPlayer> get initialPlayers;
-  @override
-  List<ManagerTransfer> get sales;
-  @override
-  List<ManagerTransfer> get purchases;
-  @override
-  DateTime get calculatedAt;
-
-  /// Summe der Einnahmen durch automatische Verkäufe (Auto-Verkauf /
-  /// 250er-Regel). Diese Verkäufe erscheinen nicht in der Transfer-Historie
-  /// und werden daher separat ermittelt und addiert.
-  @override
-  int get autoSaleIncome;
-
-  /// Einzelne Auto-Verkauf-Ereignisse des Managers in der aktuellen Saison.
-  @override
-  List<AutoSaleEvent> get autoSaleEvents;
-
-  /// Kumulierter täglicher Anmeldebonus seit dem ersten Tag der Liga
-  /// (Tag 1: 10.000 €, Tag 2: 20.000 €, … Tag 10: 100.000 €, ab da
-  /// konstant 100.000 € pro Tag). Bereits in [currentBudget] enthalten.
-  @override
-  int get loginBonus;
-
-  /// Anzahl der Liga-Tage, für die der Anmeldebonus gewährt wurde
-  /// (Tag 1 = erster Tag der Liga).
-  @override
-  int get loginBonusDays;
-
-  /// Create a copy of BudgetCalculationResult
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$BudgetCalculationResultImplCopyWith<_$BudgetCalculationResultImpl>
-  get copyWith => throw _privateConstructorUsedError;
 }
+
+/// @nodoc
+abstract mixin class _$BudgetCalculationResultCopyWith<$Res> implements $BudgetCalculationResultCopyWith<$Res> {
+  factory _$BudgetCalculationResultCopyWith(_BudgetCalculationResult value, $Res Function(_BudgetCalculationResult) _then) = __$BudgetCalculationResultCopyWithImpl;
+@override @useResult
+$Res call({
+ String managerId, String managerName, String leagueId, int initialBudget, int initialSquadValue, int startingBudget, int totalSales, int totalPurchases, int currentBudget, List<InitialPlayer> initialPlayers, List<ManagerTransfer> sales, List<ManagerTransfer> purchases, DateTime calculatedAt, int autoSaleIncome, List<AutoSaleEvent> autoSaleEvents, int loginBonus, int loginBonusDays
+});
+
+
+
+
+}
+/// @nodoc
+class __$BudgetCalculationResultCopyWithImpl<$Res>
+    implements _$BudgetCalculationResultCopyWith<$Res> {
+  __$BudgetCalculationResultCopyWithImpl(this._self, this._then);
+
+  final _BudgetCalculationResult _self;
+  final $Res Function(_BudgetCalculationResult) _then;
+
+/// Create a copy of BudgetCalculationResult
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? managerId = null,Object? managerName = null,Object? leagueId = null,Object? initialBudget = null,Object? initialSquadValue = null,Object? startingBudget = null,Object? totalSales = null,Object? totalPurchases = null,Object? currentBudget = null,Object? initialPlayers = null,Object? sales = null,Object? purchases = null,Object? calculatedAt = null,Object? autoSaleIncome = null,Object? autoSaleEvents = null,Object? loginBonus = null,Object? loginBonusDays = null,}) {
+  return _then(_BudgetCalculationResult(
+managerId: null == managerId ? _self.managerId : managerId // ignore: cast_nullable_to_non_nullable
+as String,managerName: null == managerName ? _self.managerName : managerName // ignore: cast_nullable_to_non_nullable
+as String,leagueId: null == leagueId ? _self.leagueId : leagueId // ignore: cast_nullable_to_non_nullable
+as String,initialBudget: null == initialBudget ? _self.initialBudget : initialBudget // ignore: cast_nullable_to_non_nullable
+as int,initialSquadValue: null == initialSquadValue ? _self.initialSquadValue : initialSquadValue // ignore: cast_nullable_to_non_nullable
+as int,startingBudget: null == startingBudget ? _self.startingBudget : startingBudget // ignore: cast_nullable_to_non_nullable
+as int,totalSales: null == totalSales ? _self.totalSales : totalSales // ignore: cast_nullable_to_non_nullable
+as int,totalPurchases: null == totalPurchases ? _self.totalPurchases : totalPurchases // ignore: cast_nullable_to_non_nullable
+as int,currentBudget: null == currentBudget ? _self.currentBudget : currentBudget // ignore: cast_nullable_to_non_nullable
+as int,initialPlayers: null == initialPlayers ? _self._initialPlayers : initialPlayers // ignore: cast_nullable_to_non_nullable
+as List<InitialPlayer>,sales: null == sales ? _self._sales : sales // ignore: cast_nullable_to_non_nullable
+as List<ManagerTransfer>,purchases: null == purchases ? _self._purchases : purchases // ignore: cast_nullable_to_non_nullable
+as List<ManagerTransfer>,calculatedAt: null == calculatedAt ? _self.calculatedAt : calculatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime,autoSaleIncome: null == autoSaleIncome ? _self.autoSaleIncome : autoSaleIncome // ignore: cast_nullable_to_non_nullable
+as int,autoSaleEvents: null == autoSaleEvents ? _self._autoSaleEvents : autoSaleEvents // ignore: cast_nullable_to_non_nullable
+as List<AutoSaleEvent>,loginBonus: null == loginBonus ? _self.loginBonus : loginBonus // ignore: cast_nullable_to_non_nullable
+as int,loginBonusDays: null == loginBonusDays ? _self.loginBonusDays : loginBonusDays // ignore: cast_nullable_to_non_nullable
+as int,
+  ));
+}
+
+
+}
+
+// dart format on

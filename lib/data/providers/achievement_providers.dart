@@ -77,7 +77,7 @@ final leagueActivitiesFeedProvider =
 /// - Fremd-Manager werden über die ligaweiten Feed-Ereignisse
 ///   (`activitiesFeed`, Einträge `t == 26`) attribuiert.
 ///
-/// Returns: Map<managerId, AchievementIncomeSummary>. Unattribuierte
+/// Returns: `Map<managerId, AchievementIncomeSummary>`. Unattribuierte
 /// Feed-Einträge sind NICHT in den Summen enthalten.
 final leagueAchievementIncomeByManagerProvider =
     FutureProvider.family<Map<String, AchievementIncomeSummary>, String>((

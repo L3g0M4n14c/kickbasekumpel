@@ -272,7 +272,7 @@ void main() {
 
     test('getLeaguePlayers supports compact player keys', () async {
       final playersJson = {
-        'players': [
+        'it': [
           {
             'id': 'player-1',
             'fn': 'Max',
@@ -291,10 +291,17 @@ void main() {
       };
 
       final mockResponse = http.Response(jsonEncode(playersJson), 200);
-      when(mockHttpClient.send(any)).thenAnswer(
-        (_) async =>
-            http.StreamedResponse(Stream.value(mockResponse.bodyBytes), 200),
-      );
+      final emptyMarket = http.Response(jsonEncode({'it': <dynamic>[]}), 200);
+      when(mockHttpClient.send(any)).thenAnswer((invocation) async {
+        final request = invocation.positionalArguments[0] as http.BaseRequest;
+        final response = request.url.path.contains('/market')
+            ? emptyMarket
+            : mockResponse;
+        return http.StreamedResponse(
+          Stream.value(response.bodyBytes),
+          response.statusCode,
+        );
+      });
 
       final players = await apiClient.getLeaguePlayers('league-1');
 
@@ -306,7 +313,7 @@ void main() {
 
     test('getLeaguePlayers supports expanded player keys', () async {
       final playersJson = {
-        'players': [
+        'it': [
           {
             'id': 'player-2',
             'firstName': 'John',
@@ -325,10 +332,17 @@ void main() {
       };
 
       final mockResponse = http.Response(jsonEncode(playersJson), 200);
-      when(mockHttpClient.send(any)).thenAnswer(
-        (_) async =>
-            http.StreamedResponse(Stream.value(mockResponse.bodyBytes), 200),
-      );
+      final emptyMarket = http.Response(jsonEncode({'it': <dynamic>[]}), 200);
+      when(mockHttpClient.send(any)).thenAnswer((invocation) async {
+        final request = invocation.positionalArguments[0] as http.BaseRequest;
+        final response = request.url.path.contains('/market')
+            ? emptyMarket
+            : mockResponse;
+        return http.StreamedResponse(
+          Stream.value(response.bodyBytes),
+          response.statusCode,
+        );
+      });
 
       final players = await apiClient.getLeaguePlayers('league-1');
 

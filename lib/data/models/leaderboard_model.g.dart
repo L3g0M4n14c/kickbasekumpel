@@ -6,73 +6,68 @@ part of 'leaderboard_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$LeaderboardEntryImpl _$$LeaderboardEntryImplFromJson(
-  Map<String, dynamic> json,
-) => _$LeaderboardEntryImpl(
-  leagueId: json['league_id'] as String,
-  userId: json['user_id'] as String,
-  username: json['username'] as String,
-  rank: (json['rank'] as num).toInt(),
-  totalPoints: (json['total_points'] as num).toInt(),
-  gamesPlayed: (json['games_played'] as num).toInt(),
-  averagePoints: (json['average_points'] as num).toDouble(),
-  wins: (json['wins'] as num).toInt(),
-  draws: (json['draws'] as num).toInt(),
-  losses: (json['losses'] as num).toInt(),
-  lastUpdated: DateTime.parse(json['last_updated'] as String),
-);
-
-Map<String, dynamic> _$$LeaderboardEntryImplToJson(
-  _$LeaderboardEntryImpl instance,
-) => <String, dynamic>{
-  'league_id': instance.leagueId,
-  'user_id': instance.userId,
-  'username': instance.username,
-  'rank': instance.rank,
-  'total_points': instance.totalPoints,
-  'games_played': instance.gamesPlayed,
-  'average_points': instance.averagePoints,
-  'wins': instance.wins,
-  'draws': instance.draws,
-  'losses': instance.losses,
-  'last_updated': instance.lastUpdated.toIso8601String(),
-};
-
-_$RankingImpl _$$RankingImplFromJson(Map<String, dynamic> json) =>
-    _$RankingImpl(
+_LeaderboardEntry _$LeaderboardEntryFromJson(Map<String, dynamic> json) =>
+    _LeaderboardEntry(
       leagueId: json['league_id'] as String,
-      leagueName: json['league_name'] as String,
-      entries: (json['entries'] as List<dynamic>)
-          .map((e) => LeaderboardEntry.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      totalParticipants: (json['total_participants'] as num).toInt(),
-      updateFrequency: json['update_frequency'] as String?,
+      userId: json['user_id'] as String,
+      username: json['username'] as String,
+      rank: (json['rank'] as num).toInt(),
+      totalPoints: (json['total_points'] as num).toInt(),
+      gamesPlayed: (json['games_played'] as num).toInt(),
+      averagePoints: (json['average_points'] as num).toDouble(),
+      wins: (json['wins'] as num).toInt(),
+      draws: (json['draws'] as num).toInt(),
+      losses: (json['losses'] as num).toInt(),
       lastUpdated: DateTime.parse(json['last_updated'] as String),
     );
 
-Map<String, dynamic> _$$RankingImplToJson(_$RankingImpl instance) =>
+Map<String, dynamic> _$LeaderboardEntryToJson(_LeaderboardEntry instance) =>
     <String, dynamic>{
       'league_id': instance.leagueId,
-      'league_name': instance.leagueName,
-      'entries': instance.entries,
-      'total_participants': instance.totalParticipants,
-      'update_frequency': instance.updateFrequency,
+      'user_id': instance.userId,
+      'username': instance.username,
+      'rank': instance.rank,
+      'total_points': instance.totalPoints,
+      'games_played': instance.gamesPlayed,
+      'average_points': instance.averagePoints,
+      'wins': instance.wins,
+      'draws': instance.draws,
+      'losses': instance.losses,
       'last_updated': instance.lastUpdated.toIso8601String(),
     };
 
-_$UserRankingImpl _$$UserRankingImplFromJson(Map<String, dynamic> json) =>
-    _$UserRankingImpl(
-      userId: json['user_id'] as String,
-      username: json['username'] as String,
-      totalPoints: (json['total_points'] as num).toInt(),
-      rank: (json['rank'] as num).toInt(),
-      pointsBehindLeader: (json['points_behind_leader'] as num?)?.toInt(),
-      pointsAheadNext: (json['points_ahead_next'] as num?)?.toInt(),
-      gamesPlayed: (json['games_played'] as num).toInt(),
-      trend: json['trend'] as String,
-    );
+_Ranking _$RankingFromJson(Map<String, dynamic> json) => _Ranking(
+  leagueId: json['league_id'] as String,
+  leagueName: json['league_name'] as String,
+  entries: (json['entries'] as List<dynamic>)
+      .map((e) => LeaderboardEntry.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  totalParticipants: (json['total_participants'] as num).toInt(),
+  updateFrequency: json['update_frequency'] as String?,
+  lastUpdated: DateTime.parse(json['last_updated'] as String),
+);
 
-Map<String, dynamic> _$$UserRankingImplToJson(_$UserRankingImpl instance) =>
+Map<String, dynamic> _$RankingToJson(_Ranking instance) => <String, dynamic>{
+  'league_id': instance.leagueId,
+  'league_name': instance.leagueName,
+  'entries': instance.entries,
+  'total_participants': instance.totalParticipants,
+  'update_frequency': instance.updateFrequency,
+  'last_updated': instance.lastUpdated.toIso8601String(),
+};
+
+_UserRanking _$UserRankingFromJson(Map<String, dynamic> json) => _UserRanking(
+  userId: json['user_id'] as String,
+  username: json['username'] as String,
+  totalPoints: (json['total_points'] as num).toInt(),
+  rank: (json['rank'] as num).toInt(),
+  pointsBehindLeader: (json['points_behind_leader'] as num?)?.toInt(),
+  pointsAheadNext: (json['points_ahead_next'] as num?)?.toInt(),
+  gamesPlayed: (json['games_played'] as num).toInt(),
+  trend: json['trend'] as String,
+);
+
+Map<String, dynamic> _$UserRankingToJson(_UserRanking instance) =>
     <String, dynamic>{
       'user_id': instance.userId,
       'username': instance.username,
@@ -84,50 +79,46 @@ Map<String, dynamic> _$$UserRankingImplToJson(_$UserRankingImpl instance) =>
       'trend': instance.trend,
     };
 
-_$LeagueStandingsImpl _$$LeagueStandingsImplFromJson(
-  Map<String, dynamic> json,
-) => _$LeagueStandingsImpl(
-  leagueId: json['leagueId'] as String,
-  leagueName: json['leagueName'] as String,
-  standings: (json['standings'] as List<dynamic>)
-      .map((e) => LeaderboardEntry.fromJson(e as Map<String, dynamic>))
-      .toList(),
-  matchdayNumber: (json['matchdayNumber'] as num).toInt(),
-  createdAt: DateTime.parse(json['createdAt'] as String),
-);
+_LeagueStandings _$LeagueStandingsFromJson(Map<String, dynamic> json) =>
+    _LeagueStandings(
+      leagueId: json['leagueId'] as String,
+      leagueName: json['leagueName'] as String,
+      standings: (json['standings'] as List<dynamic>)
+          .map((e) => LeaderboardEntry.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      matchdayNumber: (json['matchdayNumber'] as num).toInt(),
+      createdAt: DateTime.parse(json['createdAt'] as String),
+    );
 
-Map<String, dynamic> _$$LeagueStandingsImplToJson(
-  _$LeagueStandingsImpl instance,
-) => <String, dynamic>{
-  'leagueId': instance.leagueId,
-  'leagueName': instance.leagueName,
-  'standings': instance.standings,
-  'matchdayNumber': instance.matchdayNumber,
-  'createdAt': instance.createdAt.toIso8601String(),
-};
+Map<String, dynamic> _$LeagueStandingsToJson(_LeagueStandings instance) =>
+    <String, dynamic>{
+      'leagueId': instance.leagueId,
+      'leagueName': instance.leagueName,
+      'standings': instance.standings,
+      'matchdayNumber': instance.matchdayNumber,
+      'createdAt': instance.createdAt.toIso8601String(),
+    };
 
-_$HistoricalRankingImpl _$$HistoricalRankingImplFromJson(
-  Map<String, dynamic> json,
-) => _$HistoricalRankingImpl(
-  leagueId: json['leagueId'] as String,
-  matchday: (json['matchday'] as num).toInt(),
-  standings: (json['standings'] as List<dynamic>)
-      .map((e) => LeaderboardEntry.fromJson(e as Map<String, dynamic>))
-      .toList(),
-  recordedAt: DateTime.parse(json['recordedAt'] as String),
-);
+_HistoricalRanking _$HistoricalRankingFromJson(Map<String, dynamic> json) =>
+    _HistoricalRanking(
+      leagueId: json['leagueId'] as String,
+      matchday: (json['matchday'] as num).toInt(),
+      standings: (json['standings'] as List<dynamic>)
+          .map((e) => LeaderboardEntry.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      recordedAt: DateTime.parse(json['recordedAt'] as String),
+    );
 
-Map<String, dynamic> _$$HistoricalRankingImplToJson(
-  _$HistoricalRankingImpl instance,
-) => <String, dynamic>{
-  'leagueId': instance.leagueId,
-  'matchday': instance.matchday,
-  'standings': instance.standings,
-  'recordedAt': instance.recordedAt.toIso8601String(),
-};
+Map<String, dynamic> _$HistoricalRankingToJson(_HistoricalRanking instance) =>
+    <String, dynamic>{
+      'leagueId': instance.leagueId,
+      'matchday': instance.matchday,
+      'standings': instance.standings,
+      'recordedAt': instance.recordedAt.toIso8601String(),
+    };
 
-_$RankingChangeImpl _$$RankingChangeImplFromJson(Map<String, dynamic> json) =>
-    _$RankingChangeImpl(
+_RankingChange _$RankingChangeFromJson(Map<String, dynamic> json) =>
+    _RankingChange(
       userId: json['userId'] as String,
       username: json['username'] as String,
       previousRank: (json['previousRank'] as num).toInt(),
@@ -136,7 +127,7 @@ _$RankingChangeImpl _$$RankingChangeImplFromJson(Map<String, dynamic> json) =>
       timestamp: DateTime.parse(json['timestamp'] as String),
     );
 
-Map<String, dynamic> _$$RankingChangeImplToJson(_$RankingChangeImpl instance) =>
+Map<String, dynamic> _$RankingChangeToJson(_RankingChange instance) =>
     <String, dynamic>{
       'userId': instance.userId,
       'username': instance.username,

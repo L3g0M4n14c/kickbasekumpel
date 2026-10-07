@@ -301,7 +301,7 @@ class LeagueRepository extends BaseRepository<League>
 
   @override
   Future<Result<List<League>>> getByUserId(String userId) async {
-    return await queryWhere(field: 'members', value: userId);
+    return await queryWhere(field: 'members', value: userId, arrayContains: true);
   }
 
   @override
@@ -1112,10 +1112,10 @@ class TransferRepository extends BaseRepository<Transfer>
 
       final stats = {
         'totalTransfers': transfers.length,
-        'totalVolume': transfers.fold<int>(0, (sum, t) => sum + t.price),
+        'totalVolume': transfers.fold<int>(0, (total, t) => total + t.price),
         'averagePrice': transfers.isEmpty
             ? 0
-            : transfers.fold<int>(0, (sum, t) => sum + t.price) /
+            : transfers.fold<int>(0, (total, t) => total + t.price) /
                   transfers.length,
         'highestPrice': transfers.isEmpty
             ? 0
@@ -1436,7 +1436,7 @@ class RecommendationRepository extends BaseRepository<Recommendation>
       final recentPoints = playerData['recentPoints'] ?? [];
       if (recentPoints.isNotEmpty) {
         final avgRecent =
-            recentPoints.fold<double>(0.0, (sum, p) => sum + p) /
+            recentPoints.fold<double>(0.0, (total, p) => total + p) /
             recentPoints.length;
         score += (avgRecent / 10) * 10;
       }
@@ -1504,13 +1504,13 @@ class RecommendationRepository extends BaseRepository<Recommendation>
         'total': recommendations.length,
         'averageScore': recommendations.isEmpty
             ? 0.0
-            : recommendations.fold<double>(0.0, (sum, r) => sum + r.score) /
+            : recommendations.fold<double>(0.0, (total, r) => total + r.score) /
                   recommendations.length,
         'averageConfidence': recommendations.isEmpty
             ? 0.0
             : recommendations.fold<double>(
                     0.0,
-                    (sum, r) => sum + r.confidence,
+                    (total, r) => total + r.confidence,
                   ) /
                   recommendations.length,
         'byCategory': _groupByCategory(recommendations),

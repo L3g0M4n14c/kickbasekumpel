@@ -5,7 +5,7 @@ part 'user_model.g.dart';
 
 /// User Model - Kickbase User/Manager
 @freezed
-class User with _$User {
+abstract class User with _$User {
   const factory User({
     required String i,
     required String n,
@@ -24,7 +24,7 @@ class User with _$User {
 /// Login User - User data from login response (different format)
 /// Maps from Kickbase API login response "u" field
 @freezed
-class LoginUser with _$LoginUser {
+abstract class LoginUser with _$LoginUser {
   const LoginUser._();
 
   const factory LoginUser({
@@ -65,7 +65,7 @@ class LoginUser with _$LoginUser {
 
 /// Login Request
 @freezed
-class LoginRequest with _$LoginRequest {
+abstract class LoginRequest with _$LoginRequest {
   const factory LoginRequest({
     required String em,
     required String pass,
@@ -79,7 +79,7 @@ class LoginRequest with _$LoginRequest {
 
 /// Login Response
 @freezed
-class LoginResponse with _$LoginResponse {
+abstract class LoginResponse with _$LoginResponse {
   const LoginResponse._();
 
   const factory LoginResponse({

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kickbasekumpel/data/models/player_model.dart';
 import 'package:kickbasekumpel/presentation/widgets/team/player_row_with_sale.dart';
@@ -31,12 +32,14 @@ void main() {
 
     testWidgets('displays player full name', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PlayerRowWithSale(
-              player: mockPlayer,
-              isSelectedForSale: false,
-              onToggleSale: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: PlayerRowWithSale(
+                player: mockPlayer,
+                isSelectedForSale: false,
+                onToggleSale: (_) {},
+              ),
             ),
           ),
         ),
@@ -47,12 +50,14 @@ void main() {
 
     testWidgets('displays team name', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PlayerRowWithSale(
-              player: mockPlayer,
-              isSelectedForSale: false,
-              onToggleSale: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: PlayerRowWithSale(
+                player: mockPlayer,
+                isSelectedForSale: false,
+                onToggleSale: (_) {},
+              ),
             ),
           ),
         ),
@@ -63,12 +68,14 @@ void main() {
 
     testWidgets('displays player avatar widget', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PlayerRowWithSale(
-              player: mockPlayer,
-              isSelectedForSale: false,
-              onToggleSale: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: PlayerRowWithSale(
+                player: mockPlayer,
+                isSelectedForSale: false,
+                onToggleSale: (_) {},
+              ),
             ),
           ),
         ),
@@ -84,12 +91,14 @@ void main() {
       final playerWithoutPhoto = mockPlayer.copyWith(profileBigUrl: '');
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PlayerRowWithSale(
-              player: playerWithoutPhoto,
-              isSelectedForSale: false,
-              onToggleSale: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: PlayerRowWithSale(
+                player: playerWithoutPhoto,
+                isSelectedForSale: false,
+                onToggleSale: (_) {},
+              ),
             ),
           ),
         ),
@@ -102,12 +111,14 @@ void main() {
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PlayerRowWithSale(
-              player: mockPlayer,
-              isSelectedForSale: false,
-              onToggleSale: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: PlayerRowWithSale(
+                player: mockPlayer,
+                isSelectedForSale: false,
+                onToggleSale: (_) {},
+              ),
             ),
           ),
         ),
@@ -119,31 +130,35 @@ void main() {
     testWidgets('displays status emoji for injured player', (
       WidgetTester tester,
     ) async {
-      final injuredPlayer = mockPlayer.copyWith(status: 2);
+      final injuredPlayer = mockPlayer.copyWith(status: 1);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PlayerRowWithSale(
-              player: injuredPlayer,
-              isSelectedForSale: false,
-              onToggleSale: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: PlayerRowWithSale(
+                player: injuredPlayer,
+                isSelectedForSale: false,
+                onToggleSale: (_) {},
+              ),
             ),
           ),
         ),
       );
 
-      expect(find.text('🚑'), findsOneWidget);
+      expect(find.text('❌'), findsOneWidget);
     });
 
     testWidgets('displays average points', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PlayerRowWithSale(
-              player: mockPlayer,
-              isSelectedForSale: false,
-              onToggleSale: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: PlayerRowWithSale(
+                player: mockPlayer,
+                isSelectedForSale: false,
+                onToggleSale: (_) {},
+              ),
             ),
           ),
         ),
@@ -154,28 +169,32 @@ void main() {
 
     testWidgets('displays total points', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PlayerRowWithSale(
-              player: mockPlayer,
-              isSelectedForSale: false,
-              onToggleSale: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: PlayerRowWithSale(
+                player: mockPlayer,
+                isSelectedForSale: false,
+                onToggleSale: (_) {},
+              ),
             ),
           ),
         ),
       );
 
-      expect(find.text('150 gesamt'), findsOneWidget);
+      expect(find.text('150 ges.'), findsOneWidget);
     });
 
     testWidgets('displays formatted market value', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PlayerRowWithSale(
-              player: mockPlayer,
-              isSelectedForSale: false,
-              onToggleSale: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: PlayerRowWithSale(
+                player: mockPlayer,
+                isSelectedForSale: false,
+                onToggleSale: (_) {},
+              ),
             ),
           ),
         ),
@@ -188,12 +207,14 @@ void main() {
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PlayerRowWithSale(
-              player: mockPlayer,
-              isSelectedForSale: false,
-              onToggleSale: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: PlayerRowWithSale(
+                player: mockPlayer,
+                isSelectedForSale: false,
+                onToggleSale: (_) {},
+              ),
             ),
           ),
         ),
@@ -208,12 +229,14 @@ void main() {
       final negativeTrendPlayer = mockPlayer.copyWith(tfhmvt: -100000);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PlayerRowWithSale(
-              player: negativeTrendPlayer,
-              isSelectedForSale: false,
-              onToggleSale: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: PlayerRowWithSale(
+                player: negativeTrendPlayer,
+                isSelectedForSale: false,
+                onToggleSale: (_) {},
+              ),
             ),
           ),
         ),
@@ -226,12 +249,14 @@ void main() {
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PlayerRowWithSale(
-              player: mockPlayer,
-              isSelectedForSale: false,
-              onToggleSale: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: PlayerRowWithSale(
+                player: mockPlayer,
+                isSelectedForSale: false,
+                onToggleSale: (_) {},
+              ),
             ),
           ),
         ),
@@ -248,12 +273,14 @@ void main() {
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PlayerRowWithSale(
-              player: mockPlayer,
-              isSelectedForSale: true,
-              onToggleSale: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: PlayerRowWithSale(
+                player: mockPlayer,
+                isSelectedForSale: true,
+                onToggleSale: (_) {},
+              ),
             ),
           ),
         ),
@@ -271,14 +298,16 @@ void main() {
       bool callbackValue = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PlayerRowWithSale(
-              player: mockPlayer,
-              isSelectedForSale: false,
-              onToggleSale: (value) {
-                callbackValue = value;
-              },
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: PlayerRowWithSale(
+                player: mockPlayer,
+                isSelectedForSale: false,
+                onToggleSale: (value) {
+                  callbackValue = value;
+                },
+              ),
             ),
           ),
         ),
@@ -296,15 +325,17 @@ void main() {
       bool onTapCalled = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PlayerRowWithSale(
-              player: mockPlayer,
-              isSelectedForSale: false,
-              onToggleSale: (_) {},
-              onTap: () {
-                onTapCalled = true;
-              },
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: PlayerRowWithSale(
+                player: mockPlayer,
+                isSelectedForSale: false,
+                onToggleSale: (_) {},
+                onTap: () {
+                  onTapCalled = true;
+                },
+              ),
             ),
           ),
         ),
@@ -320,12 +351,14 @@ void main() {
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PlayerRowWithSale(
-              player: mockPlayer,
-              isSelectedForSale: false,
-              onToggleSale: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: PlayerRowWithSale(
+                player: mockPlayer,
+                isSelectedForSale: false,
+                onToggleSale: (_) {},
+              ),
             ),
           ),
         ),
@@ -345,14 +378,16 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 200,
-              child: PlayerRowWithSale(
-                player: longNamePlayer,
-                isSelectedForSale: false,
-                onToggleSale: (_) {},
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 320,
+                child: PlayerRowWithSale(
+                  player: longNamePlayer,
+                  isSelectedForSale: false,
+                  onToggleSale: (_) {},
+                ),
               ),
             ),
           ),

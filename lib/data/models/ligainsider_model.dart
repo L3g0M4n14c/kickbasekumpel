@@ -5,7 +5,7 @@ part 'ligainsider_model.g.dart';
 
 /// Ligainsider Player Model - Verletzungen & Form von ligainsider.de
 @freezed
-class LigainsiderPlayer with _$LigainsiderPlayer {
+abstract class LigainsiderPlayer with _$LigainsiderPlayer {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory LigainsiderPlayer({
     required String id,
@@ -51,7 +51,7 @@ class FormRating {
 
 /// Ligainsider Player Status - Status Übersicht
 @freezed
-class LigainsiderStatus with _$LigainsiderStatus {
+abstract class LigainsiderStatus with _$LigainsiderStatus {
   const factory LigainsiderStatus({
     required String playerId,
     required String playerName,
@@ -66,7 +66,7 @@ class LigainsiderStatus with _$LigainsiderStatus {
 
 /// Ligainsider Response - Liste von Spielern mit Status
 @freezed
-class LigainsiderResponse with _$LigainsiderResponse {
+abstract class LigainsiderResponse with _$LigainsiderResponse {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory LigainsiderResponse({
     required List<LigainsiderPlayer> players,
@@ -81,7 +81,7 @@ class LigainsiderResponse with _$LigainsiderResponse {
 
 /// Injury Report - Detaillierter Verletzungsbericht
 @freezed
-class InjuryReport with _$InjuryReport {
+abstract class InjuryReport with _$InjuryReport {
   const factory InjuryReport({
     required String playerId,
     required String playerName,

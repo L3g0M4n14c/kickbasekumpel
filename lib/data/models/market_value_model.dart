@@ -5,7 +5,7 @@ part 'market_value_model.g.dart';
 
 /// Market Value History Response
 @freezed
-class MarketValueHistoryResponse with _$MarketValueHistoryResponse {
+abstract class MarketValueHistoryResponse with _$MarketValueHistoryResponse {
   const factory MarketValueHistoryResponse({
     required List<MarketValueEntry> it,
     int? prlo,
@@ -17,7 +17,7 @@ class MarketValueHistoryResponse with _$MarketValueHistoryResponse {
 
 /// Market Value Entry
 @freezed
-class MarketValueEntry with _$MarketValueEntry {
+abstract class MarketValueEntry with _$MarketValueEntry {
   const factory MarketValueEntry({required int dt, required int mv}) =
       _MarketValueEntry;
 
@@ -27,7 +27,7 @@ class MarketValueEntry with _$MarketValueEntry {
 
 /// Daily Market Value Change (berechnet)
 @freezed
-class DailyMarketValueChange with _$DailyMarketValueChange {
+abstract class DailyMarketValueChange with _$DailyMarketValueChange {
   const factory DailyMarketValueChange({
     required String date,
     required int value,
@@ -42,7 +42,7 @@ class DailyMarketValueChange with _$DailyMarketValueChange {
 
 /// Market Value Change (Aggregiert)
 @freezed
-class MarketValueChange with _$MarketValueChange {
+abstract class MarketValueChange with _$MarketValueChange {
   const factory MarketValueChange({
     required int daysSinceLastUpdate,
     required int absoluteChange,

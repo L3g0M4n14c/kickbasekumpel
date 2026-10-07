@@ -421,23 +421,23 @@ extension GoRouterExtensions on BuildContext {
   void goToForgotPassword() => go('/auth/forgot-password');
   void goToVerifyEmail() => go('/auth/verify');
 
-  // League Routes
-  void goToLeague(String leagueId) => go('/league/$leagueId/overview');
+  // League Routes – Detail-Screens werden gepusht (Zurück-Button funktioniert)
+  void goToLeague(String leagueId) => push('/league/$leagueId/overview');
   void goToLeagueStandings(String leagueId) =>
-      go('/league/$leagueId/standings');
-  void goToLeaguePlayers(String leagueId) => go('/league/$leagueId/players');
+      push('/league/$leagueId/standings');
+  void goToLeaguePlayers(String leagueId) => push('/league/$leagueId/players');
 
   // Player Routes
-  void goToPlayer(String playerId) => go('/player/$playerId/stats');
-  void goToPlayerHistory(String playerId) => go('/player/$playerId/history');
+  void goToPlayer(String playerId) => push('/player/$playerId/stats');
+  void goToPlayerHistory(String playerId) => push('/player/$playerId/history');
 
   // Manager Routes
   void goToManager(String leagueId, String userId) =>
-      go('/manager/$leagueId/$userId');
+      push('/manager/$leagueId/$userId');
 
   // Competition Routes
-  void goToTable(String competitionId) => go('/table/$competitionId');
-  void goToBundesligaTable() => go('/table/1');
+  void goToTable(String competitionId) => push('/table/$competitionId');
+  void goToBundesligaTable() => push('/table/1');
 }
 
 // ============================================================================

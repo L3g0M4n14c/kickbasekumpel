@@ -6,7 +6,7 @@ part of 'player_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$PlayerImpl _$$PlayerImplFromJson(Map<String, dynamic> json) => _$PlayerImpl(
+_Player _$PlayerFromJson(Map<String, dynamic> json) => _Player(
   id: json['id'] as String,
   firstName: json['firstName'] as String,
   lastName: json['lastName'] as String,
@@ -27,31 +27,30 @@ _$PlayerImpl _$$PlayerImplFromJson(Map<String, dynamic> json) => _$PlayerImpl(
   ligainsiderPhotoUrl: json['ligainsiderPhotoUrl'] as String? ?? '',
 );
 
-Map<String, dynamic> _$$PlayerImplToJson(_$PlayerImpl instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'firstName': instance.firstName,
-      'lastName': instance.lastName,
-      'profileBigUrl': instance.profileBigUrl,
-      'teamName': instance.teamName,
-      'teamId': instance.teamId,
-      'position': instance.position,
-      'number': instance.number,
-      'averagePoints': instance.averagePoints,
-      'totalPoints': instance.totalPoints,
-      'marketValue': instance.marketValue,
-      'marketValueTrend': instance.marketValueTrend,
-      'tfhmvt': instance.tfhmvt,
-      'prlo': instance.prlo,
-      'stl': instance.stl,
-      'status': instance.status,
-      'userOwnsPlayer': instance.userOwnsPlayer,
-      'ligainsiderPhotoUrl': instance.ligainsiderPhotoUrl,
-    };
+Map<String, dynamic> _$PlayerToJson(_Player instance) => <String, dynamic>{
+  'id': instance.id,
+  'firstName': instance.firstName,
+  'lastName': instance.lastName,
+  'profileBigUrl': instance.profileBigUrl,
+  'teamName': instance.teamName,
+  'teamId': instance.teamId,
+  'position': instance.position,
+  'number': instance.number,
+  'averagePoints': instance.averagePoints,
+  'totalPoints': instance.totalPoints,
+  'marketValue': instance.marketValue,
+  'marketValueTrend': instance.marketValueTrend,
+  'tfhmvt': instance.tfhmvt,
+  'prlo': instance.prlo,
+  'stl': instance.stl,
+  'status': instance.status,
+  'userOwnsPlayer': instance.userOwnsPlayer,
+  'ligainsiderPhotoUrl': instance.ligainsiderPhotoUrl,
+};
 
-_$PlayerDetailResponseImpl _$$PlayerDetailResponseImplFromJson(
+_PlayerDetailResponse _$PlayerDetailResponseFromJson(
   Map<String, dynamic> json,
-) => _$PlayerDetailResponseImpl(
+) => _PlayerDetailResponse(
   fn: json['fn'] as String?,
   ln: json['ln'] as String?,
   tn: json['tn'] as String?,
@@ -72,8 +71,8 @@ _$PlayerDetailResponseImpl _$$PlayerDetailResponseImplFromJson(
   userOwnsPlayer: json['userOwnsPlayer'] as bool?,
 );
 
-Map<String, dynamic> _$$PlayerDetailResponseImplToJson(
-  _$PlayerDetailResponseImpl instance,
+Map<String, dynamic> _$PlayerDetailResponseToJson(
+  _PlayerDetailResponse instance,
 ) => <String, dynamic>{
   'fn': instance.fn,
   'ln': instance.ln,
@@ -95,14 +94,12 @@ Map<String, dynamic> _$$PlayerDetailResponseImplToJson(
   'userOwnsPlayer': instance.userOwnsPlayer,
 };
 
-_$PlayersResponseImpl _$$PlayersResponseImplFromJson(
-  Map<String, dynamic> json,
-) => _$PlayersResponseImpl(
-  players: (json['players'] as List<dynamic>)
-      .map((e) => Player.fromJson(e as Map<String, dynamic>))
-      .toList(),
-);
+_PlayersResponse _$PlayersResponseFromJson(Map<String, dynamic> json) =>
+    _PlayersResponse(
+      players: (json['players'] as List<dynamic>)
+          .map((e) => Player.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
 
-Map<String, dynamic> _$$PlayersResponseImplToJson(
-  _$PlayersResponseImpl instance,
-) => <String, dynamic>{'players': instance.players};
+Map<String, dynamic> _$PlayersResponseToJson(_PlayersResponse instance) =>
+    <String, dynamic>{'players': instance.players};

@@ -6,19 +6,18 @@ part of 'lineup_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$LineupResponseImpl _$$LineupResponseImplFromJson(Map<String, dynamic> json) =>
-    _$LineupResponseImpl(
+_LineupResponse _$LineupResponseFromJson(Map<String, dynamic> json) =>
+    _LineupResponse(
       players: (json['it'] as List<dynamic>)
           .map((e) => LineupPlayer.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
 
-Map<String, dynamic> _$$LineupResponseImplToJson(
-  _$LineupResponseImpl instance,
-) => <String, dynamic>{'it': instance.players};
+Map<String, dynamic> _$LineupResponseToJson(_LineupResponse instance) =>
+    <String, dynamic>{'it': instance.players};
 
-_$LineupPlayerImpl _$$LineupPlayerImplFromJson(Map<String, dynamic> json) =>
-    _$LineupPlayerImpl(
+_LineupPlayer _$LineupPlayerFromJson(Map<String, dynamic> json) =>
+    _LineupPlayer(
       id: json['i'] as String,
       name: json['n'] as String,
       position: (json['pos'] as num?)?.toInt() ?? 0,
@@ -35,7 +34,7 @@ _$LineupPlayerImpl _$$LineupPlayerImplFromJson(Map<String, dynamic> json) =>
           .toList(),
     );
 
-Map<String, dynamic> _$$LineupPlayerImplToJson(_$LineupPlayerImpl instance) =>
+Map<String, dynamic> _$LineupPlayerToJson(_LineupPlayer instance) =>
     <String, dynamic>{
       'i': instance.id,
       'n': instance.name,
@@ -51,25 +50,22 @@ Map<String, dynamic> _$$LineupPlayerImplToJson(_$LineupPlayerImpl instance) =>
       'ph': instance.performanceHistory,
     };
 
-_$PerformanceHistoryImpl _$$PerformanceHistoryImplFromJson(
-  Map<String, dynamic> json,
-) => _$PerformanceHistoryImpl(
-  points: (json['p'] as num?)?.toInt() ?? 0,
-  hasPlayed: json['hp'] as bool? ?? false,
-);
+_PerformanceHistory _$PerformanceHistoryFromJson(Map<String, dynamic> json) =>
+    _PerformanceHistory(
+      points: (json['p'] as num?)?.toInt() ?? 0,
+      hasPlayed: json['hp'] as bool? ?? false,
+    );
 
-Map<String, dynamic> _$$PerformanceHistoryImplToJson(
-  _$PerformanceHistoryImpl instance,
-) => <String, dynamic>{'p': instance.points, 'hp': instance.hasPlayed};
+Map<String, dynamic> _$PerformanceHistoryToJson(_PerformanceHistory instance) =>
+    <String, dynamic>{'p': instance.points, 'hp': instance.hasPlayed};
 
-_$LineupUpdateRequestImpl _$$LineupUpdateRequestImplFromJson(
-  Map<String, dynamic> json,
-) => _$LineupUpdateRequestImpl(
-  playerIds: (json['playerIds'] as List<dynamic>)
-      .map((e) => e as String)
-      .toList(),
-);
+_LineupUpdateRequest _$LineupUpdateRequestFromJson(Map<String, dynamic> json) =>
+    _LineupUpdateRequest(
+      playerIds: (json['playerIds'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+    );
 
-Map<String, dynamic> _$$LineupUpdateRequestImplToJson(
-  _$LineupUpdateRequestImpl instance,
+Map<String, dynamic> _$LineupUpdateRequestToJson(
+  _LineupUpdateRequest instance,
 ) => <String, dynamic>{'playerIds': instance.playerIds};

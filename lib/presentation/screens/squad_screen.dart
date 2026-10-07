@@ -125,7 +125,7 @@ class _BudgetHeader extends StatelessWidget {
         );
       },
       loading: () => const SizedBox(height: 80),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }

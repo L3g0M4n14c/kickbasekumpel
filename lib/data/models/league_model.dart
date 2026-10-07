@@ -5,7 +5,7 @@ part 'league_model.g.dart';
 
 /// League Model - Kickbase Liga
 @freezed
-class League with _$League {
+abstract class League with _$League {
   const factory League({
     required String i,
     @Default('1') String cpi,
@@ -99,7 +99,7 @@ Map<String, dynamic> _ensureLeagueHasCu(Map<String, dynamic> json) {
 
 /// League User - Extended User in League Context
 @freezed
-class LeagueUser with _$LeagueUser {
+abstract class LeagueUser with _$LeagueUser {
   const factory LeagueUser({
     required String id,
     required String name,
@@ -123,7 +123,7 @@ class LeagueUser with _$LeagueUser {
 
 /// Leagues Response
 @freezed
-class LeaguesResponse with _$LeaguesResponse {
+abstract class LeaguesResponse with _$LeaguesResponse {
   const factory LeaguesResponse({required List<League> leagues}) =
       _LeaguesResponse;
 

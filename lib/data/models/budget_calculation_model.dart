@@ -10,7 +10,7 @@ part 'budget_calculation_model.g.dart';
 /// - Anfangskader: Summe der Marktwerte der zugelosten Spieler
 /// - Transfers: Verkäufe (addieren) und Käufe (subtrahieren)
 @freezed
-class ManagerBudgetCalculation with _$ManagerBudgetCalculation {
+abstract class ManagerBudgetCalculation with _$ManagerBudgetCalculation {
   const factory ManagerBudgetCalculation({
     /// Manager ID
     required String managerId,
@@ -55,7 +55,7 @@ class ManagerBudgetCalculation with _$ManagerBudgetCalculation {
 
 /// Spieler im Anfangskader mit Marktwert
 @freezed
-class InitialPlayer with _$InitialPlayer {
+abstract class InitialPlayer with _$InitialPlayer {
   const factory InitialPlayer({
     required String playerId,
     required String playerName,
@@ -69,7 +69,7 @@ class InitialPlayer with _$InitialPlayer {
 
 /// Manager Transfer für Budget-Berechnung
 @freezed
-class ManagerTransfer with _$ManagerTransfer {
+abstract class ManagerTransfer with _$ManagerTransfer {
   const factory ManagerTransfer({
     required String transferId,
     required String playerId,
@@ -94,7 +94,7 @@ class ManagerTransfer with _$ManagerTransfer {
 /// des Managers – daher muss das dabei eingenommene Budget (Marktwert zum
 /// Verkaufszeitpunkt) separat zur Budget-Berechnung addiert werden.
 @freezed
-class AutoSaleEvent with _$AutoSaleEvent {
+abstract class AutoSaleEvent with _$AutoSaleEvent {
   const factory AutoSaleEvent({
     /// Spieltag, an dem der Spieler die Schwelle erreicht hat
     required int matchday,
@@ -124,7 +124,7 @@ class AutoSaleEvent with _$AutoSaleEvent {
 
 /// Ergebnis der Budget-Berechnung
 @freezed
-class BudgetCalculationResult with _$BudgetCalculationResult {
+abstract class BudgetCalculationResult with _$BudgetCalculationResult {
   const factory BudgetCalculationResult({
     required String managerId,
     required String managerName,

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../config/screen_size.dart';
 import '../../../data/models/lineup_model.dart';
 import '../../../data/providers/player_providers.dart';
 import '../../../data/providers/league_providers.dart';
@@ -23,23 +22,21 @@ class LineupPage extends ConsumerWidget {
         : const AsyncValue<List<LineupPlayer>>.loading();
 
     return Scaffold(
-      appBar: ScreenSize.isMobile(context)
-          ? AppBar(
-              title: const Text('Aufstellung'),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.sports_soccer),
-                  onPressed: () => context.go('/ligainsider/lineups'),
-                  tooltip: 'Ligainsider Aufstellungen',
-                ),
-                if (leagueId != null)
-                  IconButton(
-                    icon: const Icon(Icons.refresh),
-                    onPressed: () => ref.invalidate(myLineupProvider(leagueId)),
-                  ),
-              ],
-            )
-          : null,
+      appBar: AppBar(
+        title: const Text('Aufstellung'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.sports_soccer),
+            onPressed: () => context.push('/ligainsider/lineups'),
+            tooltip: 'Ligainsider Aufstellungen',
+          ),
+          if (leagueId != null)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () => ref.invalidate(myLineupProvider(leagueId)),
+            ),
+        ],
+      ),
       body: selectedLeague == null
           ? const Center(child: Text('Keine Liga ausgewählt'))
           : lineupAsync.when(

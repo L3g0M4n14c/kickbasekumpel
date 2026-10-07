@@ -238,7 +238,7 @@ final pendingTransfersCountProvider = Provider<int>((ref) {
   return transfersAsync.when(
     data: (transfers) => transfers.length,
     loading: () => 0,
-    error: (_, __) => 0,
+    error: (_, _) => 0,
   );
 });
 
@@ -289,7 +289,7 @@ final userSentTransfersProvider = Provider<List<Transfer>>((ref) {
     data: (transfers) =>
         transfers.where((t) => t.fromUserId == userId).toList(),
     loading: () => [],
-    error: (_, __) => [],
+    error: (_, _) => [],
   );
 });
 
@@ -303,7 +303,7 @@ final userReceivedTransfersProvider = Provider<List<Transfer>>((ref) {
   return transfersAsync.when(
     data: (transfers) => transfers.where((t) => t.toUserId == userId).toList(),
     loading: () => [],
-    error: (_, __) => [],
+    error: (_, _) => [],
   );
 });
 
@@ -315,7 +315,7 @@ final userTotalTransferVolumeProvider = Provider<int>((ref) {
     data: (transfers) =>
         transfers.fold<int>(0, (sum, transfer) => sum + transfer.price),
     loading: () => 0,
-    error: (_, __) => 0,
+    error: (_, _) => 0,
   );
 });
 
@@ -326,7 +326,7 @@ final userTotalTransfersCountProvider = Provider<int>((ref) {
   return transfersAsync.when(
     data: (transfers) => transfers.length,
     loading: () => 0,
-    error: (_, __) => 0,
+    error: (_, _) => 0,
   );
 });
 

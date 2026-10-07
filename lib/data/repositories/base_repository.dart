@@ -190,12 +190,12 @@ abstract class BaseRepository<T> {
     required String field,
     required dynamic value,
     int? limit,
+    bool arrayContains = false,
   }) async {
     try {
-      Query<Map<String, dynamic>> query = collection.where(
-        field,
-        isEqualTo: value,
-      );
+      Query<Map<String, dynamic>> query = arrayContains
+          ? collection.where(field, arrayContains: value)
+          : collection.where(field, isEqualTo: value);
       if (limit != null) {
         query = query.limit(limit);
       }

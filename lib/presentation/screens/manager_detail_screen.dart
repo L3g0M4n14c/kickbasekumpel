@@ -452,7 +452,7 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
                   child: Image.network(
                     photoUrl,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => CircleAvatar(
+                    errorBuilder: (_, _, _) => CircleAvatar(
                       backgroundColor: posColor.withValues(alpha: 0.2),
                       child: Text(
                         posLabel,
@@ -1162,7 +1162,7 @@ class _AutoSaleSection extends StatelessWidget {
               'Transfer-Historie sichtbar, ihr Marktwert wurde aber dem '
               'Budget gutgeschrieben:',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 8),
@@ -1204,7 +1204,7 @@ class _AutoSaleSection extends StatelessWidget {
                   '* Marktwert konnte nicht zweifelsfrei ermittelt werden',
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontStyle: FontStyle.italic,
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ),
@@ -1262,7 +1262,7 @@ class _AchievementsSection extends StatelessWidget {
               'Kickbase vergütet Erfolge mit Budget – diese Gutschriften sind '
               'nicht in der Transfer-Historie sichtbar:',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 8),
@@ -1335,11 +1335,11 @@ class _BudgetCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isHighlighted
-            ? color.withOpacity(0.2)
+            ? color.withValues(alpha: 0.2)
             : theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
           width: isHighlighted ? 2 : 1,
         ),
       ),
@@ -1350,7 +1350,7 @@ class _BudgetCard extends StatelessWidget {
           Text(
             label,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 4),
@@ -1538,7 +1538,7 @@ class _CalculationDetailsSection extends StatelessWidget {
             Text(
               'Berechnet am: ${calculation.calculatedAt.day}.${calculation.calculatedAt.month}.${calculation.calculatedAt.year}',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               textAlign: TextAlign.center,
             ),

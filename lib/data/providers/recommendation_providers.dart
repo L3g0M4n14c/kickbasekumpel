@@ -329,7 +329,7 @@ final recommendationsCountProvider = Provider<int>((ref) {
   return recommendationsAsync.when(
     data: (recommendations) => recommendations.length,
     loading: () => 0,
-    error: (_, __) => 0,
+    error: (_, _) => 0,
   );
 });
 
@@ -350,7 +350,7 @@ final averageRecommendationScoreProvider = Provider<double>((ref) {
       return total / recommendations.length;
     },
     loading: () => 0.0,
-    error: (_, __) => 0.0,
+    error: (_, _) => 0.0,
   );
 });
 
@@ -369,7 +369,7 @@ final bestRecommendationProvider = Provider<Recommendation?>((ref) {
       );
     },
     loading: () => null,
-    error: (_, __) => null,
+    error: (_, _) => null,
   );
 });
 
@@ -389,7 +389,7 @@ final recommendationsByActionCountProvider = Provider<Map<String, int>>((ref) {
       return counts;
     },
     loading: () => {},
-    error: (_, __) => {},
+    error: (_, _) => {},
   );
 });
 

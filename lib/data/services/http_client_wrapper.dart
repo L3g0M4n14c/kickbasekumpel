@@ -97,13 +97,14 @@ class HttpClientWrapper {
   }) async {
     int attempts = 0;
     final startTime = DateTime.now();
+    late http.Response response;
 
     while (attempts < _maxRetries) {
       try {
         _logRequest(method, url, attempts + 1);
 
         // Execute request with timeout
-        final response = await requestBuilder().timeout(
+        response = await requestBuilder().timeout(
           _timeout,
           onTimeout: () {
             throw TimeoutException(
@@ -117,9 +118,6 @@ class HttpClientWrapper {
 
         // Map HTTP status codes to exceptions
         _validateResponse(response);
-
-        // Parse and return response
-        return parser(response);
       } on TimeoutException catch (e) {
         _logError(method, url, 'TimeoutException', e.message);
 
@@ -132,6 +130,7 @@ class HttpClientWrapper {
         _logRetry(method, url, attempts + 1, delay);
         await Future.delayed(delay);
         attempts++;
+        continue;
       } on ServerException catch (e) {
         _logError(method, url, 'ServerException', e.message);
 
@@ -144,6 +143,7 @@ class HttpClientWrapper {
         _logRetry(method, url, attempts + 1, delay);
         await Future.delayed(delay);
         attempts++;
+        continue;
       } on RateLimitException catch (e) {
         _logError(method, url, 'RateLimitException', e.message);
 
@@ -156,13 +156,29 @@ class HttpClientWrapper {
         _logRetry(method, url, attempts + 1, delay);
         await Future.delayed(delay);
         attempts++;
+        continue;
       } on KickbaseException {
         // Don't retry on 4xx client errors (except 429 which is handled above)
         rethrow;
       } catch (e) {
-        _logError(method, url, 'UnknownException', e.toString());
-        rethrow;
+        // Network-level errors (SocketException, HandshakeException, ...)
+        _logError(method, url, 'NetworkException', e.toString());
+
+        if (attempts >= _maxRetries - 1) {
+          throw NetworkException('Network error: $e', originalError: e);
+        }
+
+        // Retry on network errors
+        final delay = _calculateExponentialDelay(attempts);
+        _logRetry(method, url, attempts + 1, delay);
+        await Future.delayed(delay);
+        attempts++;
+        continue;
       }
+
+      // Parse outside the try block so parser errors are not retried
+      // or misreported as network errors.
+      return parser(response);
     }
 
     throw ServerException('Max retries exceeded', statusCode: 503);

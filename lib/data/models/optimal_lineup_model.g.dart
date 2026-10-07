@@ -6,8 +6,8 @@ part of 'optimal_lineup_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$OptimalLineupImpl _$$OptimalLineupImplFromJson(Map<String, dynamic> json) =>
-    _$OptimalLineupImpl(
+_OptimalLineup _$OptimalLineupFromJson(Map<String, dynamic> json) =>
+    _OptimalLineup(
       goalkeeper: json['goalkeeper'] == null
           ? null
           : Player.fromJson(json['goalkeeper'] as Map<String, dynamic>),
@@ -22,7 +22,7 @@ _$OptimalLineupImpl _$$OptimalLineupImplFromJson(Map<String, dynamic> json) =>
           .toList(),
     );
 
-Map<String, dynamic> _$$OptimalLineupImplToJson(_$OptimalLineupImpl instance) =>
+Map<String, dynamic> _$OptimalLineupToJson(_OptimalLineup instance) =>
     <String, dynamic>{
       'goalkeeper': instance.goalkeeper,
       'defenders': instance.defenders,
@@ -30,32 +30,30 @@ Map<String, dynamic> _$$OptimalLineupImplToJson(_$OptimalLineupImpl instance) =>
       'forwards': instance.forwards,
     };
 
-_$LineupComparisonImpl _$$LineupComparisonImplFromJson(
-  Map<String, dynamic> json,
-) => _$LineupComparisonImpl(
-  currentLineup: OptimalLineup.fromJson(
-    json['currentLineup'] as Map<String, dynamic>,
-  ),
-  optimalLineup: OptimalLineup.fromJson(
-    json['optimalLineup'] as Map<String, dynamic>,
-  ),
-  currentScore: (json['currentScore'] as num).toDouble(),
-  optimalScore: (json['optimalScore'] as num).toDouble(),
-  suggestedAdditions: (json['suggestedAdditions'] as List<dynamic>)
-      .map((e) => Player.fromJson(e as Map<String, dynamic>))
-      .toList(),
-  suggestedRemovals: (json['suggestedRemovals'] as List<dynamic>)
-      .map((e) => Player.fromJson(e as Map<String, dynamic>))
-      .toList(),
-);
+_LineupComparison _$LineupComparisonFromJson(Map<String, dynamic> json) =>
+    _LineupComparison(
+      currentLineup: OptimalLineup.fromJson(
+        json['currentLineup'] as Map<String, dynamic>,
+      ),
+      optimalLineup: OptimalLineup.fromJson(
+        json['optimalLineup'] as Map<String, dynamic>,
+      ),
+      currentScore: (json['currentScore'] as num).toDouble(),
+      optimalScore: (json['optimalScore'] as num).toDouble(),
+      suggestedAdditions: (json['suggestedAdditions'] as List<dynamic>)
+          .map((e) => Player.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      suggestedRemovals: (json['suggestedRemovals'] as List<dynamic>)
+          .map((e) => Player.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
 
-Map<String, dynamic> _$$LineupComparisonImplToJson(
-  _$LineupComparisonImpl instance,
-) => <String, dynamic>{
-  'currentLineup': instance.currentLineup,
-  'optimalLineup': instance.optimalLineup,
-  'currentScore': instance.currentScore,
-  'optimalScore': instance.optimalScore,
-  'suggestedAdditions': instance.suggestedAdditions,
-  'suggestedRemovals': instance.suggestedRemovals,
-};
+Map<String, dynamic> _$LineupComparisonToJson(_LineupComparison instance) =>
+    <String, dynamic>{
+      'currentLineup': instance.currentLineup,
+      'optimalLineup': instance.optimalLineup,
+      'currentScore': instance.currentScore,
+      'optimalScore': instance.optimalScore,
+      'suggestedAdditions': instance.suggestedAdditions,
+      'suggestedRemovals': instance.suggestedRemovals,
+    };

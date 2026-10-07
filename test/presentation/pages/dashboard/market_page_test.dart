@@ -18,6 +18,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final container = ProviderContainer(
+      retry: (failureCount, error) => null,
       overrides: [
         marketPlayersProvider.overrideWith((ref) => Stream.value([_player])),
       ],

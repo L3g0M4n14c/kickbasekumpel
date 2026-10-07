@@ -5,7 +5,7 @@ part 'lineup_model.g.dart';
 
 /// Response from GET /v4/leagues/{leagueId}/lineup
 @freezed
-class LineupResponse with _$LineupResponse {
+abstract class LineupResponse with _$LineupResponse {
   const factory LineupResponse({
     @JsonKey(name: 'it') required List<LineupPlayer> players,
   }) = _LineupResponse;
@@ -16,7 +16,7 @@ class LineupResponse with _$LineupResponse {
 
 /// Player in lineup with performance history
 @freezed
-class LineupPlayer with _$LineupPlayer {
+abstract class LineupPlayer with _$LineupPlayer {
   const factory LineupPlayer({
     /// Player ID
     @JsonKey(name: 'i') required String id,
@@ -61,7 +61,7 @@ class LineupPlayer with _$LineupPlayer {
 
 /// Performance history entry
 @freezed
-class PerformanceHistory with _$PerformanceHistory {
+abstract class PerformanceHistory with _$PerformanceHistory {
   const factory PerformanceHistory({
     /// Points
     @JsonKey(name: 'p') @Default(0) int points,
@@ -77,7 +77,7 @@ class PerformanceHistory with _$PerformanceHistory {
 /// Request body for POST /v4/leagues/{leagueId}/lineup
 /// Contains list of player IDs in the desired lineup order
 @freezed
-class LineupUpdateRequest with _$LineupUpdateRequest {
+abstract class LineupUpdateRequest with _$LineupUpdateRequest {
   const factory LineupUpdateRequest({
     /// List of player IDs in lineup order (first 11 are starters, rest are bench)
     required List<String> playerIds,

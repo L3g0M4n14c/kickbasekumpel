@@ -5,7 +5,7 @@ part 'match_model.g.dart';
 
 /// Match Model - Bundesliga Match
 @freezed
-class Match with _$Match {
+abstract class Match with _$Match {
   const factory Match({
     required String id,
     required String matchDay,
@@ -25,7 +25,7 @@ class Match with _$Match {
 
 /// Match Data - Detaillierte Match Informationen
 @freezed
-class MatchData with _$MatchData {
+abstract class MatchData with _$MatchData {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory MatchData({
     required String id,
@@ -52,7 +52,7 @@ class MatchData with _$MatchData {
 
 /// Highlight Model - Spieler-Highlights
 @freezed
-class Highlight with _$Highlight {
+abstract class Highlight with _$Highlight {
   const factory Highlight({
     required String id,
     required String playerId,
@@ -70,7 +70,7 @@ class Highlight with _$Highlight {
 
 /// Matches Response - Match Liste
 @freezed
-class MatchesResponse with _$MatchesResponse {
+abstract class MatchesResponse with _$MatchesResponse {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory MatchesResponse({
     required List<Match> matches,
@@ -83,7 +83,7 @@ class MatchesResponse with _$MatchesResponse {
 
 /// Match Day Info - Info für einen Spieltag
 @freezed
-class MatchDayInfo with _$MatchDayInfo {
+abstract class MatchDayInfo with _$MatchDayInfo {
   const factory MatchDayInfo({
     required String matchDay,
     required int startTime,

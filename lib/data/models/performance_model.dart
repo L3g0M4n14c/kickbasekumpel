@@ -5,7 +5,7 @@ part 'performance_model.g.dart';
 
 /// Player Performance Response
 @freezed
-class PlayerPerformanceResponse with _$PlayerPerformanceResponse {
+abstract class PlayerPerformanceResponse with _$PlayerPerformanceResponse {
   const factory PlayerPerformanceResponse({
     required List<SeasonPerformance> it,
   }) = _PlayerPerformanceResponse;
@@ -19,7 +19,7 @@ class PlayerPerformanceResponse with _$PlayerPerformanceResponse {
 /// [sid] = Saison-ID (z.B. "28"), aufsteigend über die Jahre. Wird benötigt,
 /// um aus der Liste aller Saisons (`it`) die AKTUELLE zu identifizieren.
 @freezed
-class SeasonPerformance with _$SeasonPerformance {
+abstract class SeasonPerformance with _$SeasonPerformance {
   const factory SeasonPerformance({
     String? sid,
     required String ti,
@@ -33,7 +33,7 @@ class SeasonPerformance with _$SeasonPerformance {
 
 /// Match Performance
 @freezed
-class MatchPerformance with _$MatchPerformance {
+abstract class MatchPerformance with _$MatchPerformance {
   const factory MatchPerformance({
     required int day,
     int? p,
@@ -59,7 +59,7 @@ class MatchPerformance with _$MatchPerformance {
 
 /// Enhanced Match Performance (mit Team-Informationen)
 @freezed
-class EnhancedMatchPerformance with _$EnhancedMatchPerformance {
+abstract class EnhancedMatchPerformance with _$EnhancedMatchPerformance {
   const factory EnhancedMatchPerformance({
     required MatchPerformance basePerformance,
     String? team1Name,

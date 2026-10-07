@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../config/screen_size.dart';
 import '../../../data/models/market_model.dart';
 import '../../../data/providers/league_providers.dart';
 import '../../widgets/responsive_layout.dart';
@@ -41,34 +40,29 @@ class _MarketPageState extends ConsumerState<MarketPage> {
     final leagueId = ref.watch(selectedLeagueIdProvider);
     if (leagueId == null) {
       return Scaffold(
-        appBar: ScreenSize.isMobile(context)
-            ? AppBar(
-                title: const Text('Transfermarkt'),
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.filter_list),
-                    onPressed: () => _showFilterBottomSheet(context),
-                  ),
-                ],
-              )
-            : null,
+        appBar: AppBar(
+          title: const Text('Transfermarkt'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.filter_list),
+              onPressed: () => _showFilterBottomSheet(context),
+            ),
+          ],
+        ),
         body: const Center(child: Text('Keine Liga ausgewählt')),
       );
     }
 
     return Scaffold(
-      appBar: ScreenSize.isMobile(context)
-          ? AppBar(
-              title: const Text('Transfermarkt'),
-              actions: [
-                IconButton(
-                  // ignore: undefined_operator,invalid_constant,undefined_identifier
-                  icon: const Icon(Icons.filter_list),
-                  onPressed: () => _showFilterBottomSheet(context),
-                ),
-              ],
-            )
-          : null,
+      appBar: AppBar(
+        title: const Text('Transfermarkt'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: () => _showFilterBottomSheet(context),
+          ),
+        ],
+      ),
       body: ResponsiveLayout(
         mobile: _buildMobileLayout(context),
         tablet: _buildTabletLayout(context),

@@ -13,7 +13,7 @@ void main() {
     service = TransferPlannerService();
   });
 
-  Player _p(String id, int position, double ap, int mv) {
+  Player p(String id, int position, double ap, int mv) {
     return Player(
       id: id,
       firstName: 'First',
@@ -37,25 +37,25 @@ void main() {
 
   /// Exakt 11 Spieler (4-4-2 ist die einzig legale Formation) – damit
   /// Cross-Position-Fallbacks die Formation zerstören und verworfen werden.
-  List<Player> _legalSquad() => [
-    _p('gk-1', 1, 8.0, 8000000),
-    _p('def-1', 2, 7.0, 12000000),
-    _p('def-2', 2, 6.5, 10000000),
-    _p('def-3', 2, 6.0, 9000000),
-    _p('def-4', 2, 5.5, 8000000),
-    _p('mid-1', 3, 9.0, 15000000),
-    _p('mid-2', 3, 8.5, 14000000),
-    _p('mid-3', 3, 8.0, 13000000),
-    _p('mid-4', 3, 7.5, 11000000),
-    _p('fwd-1', 4, 10.0, 18000000),
-    _p('fwd-2', 4, 9.5, 16000000),
+  List<Player> legalSquad() => [
+    p('gk-1', 1, 8.0, 8000000),
+    p('def-1', 2, 7.0, 12000000),
+    p('def-2', 2, 6.5, 10000000),
+    p('def-3', 2, 6.0, 9000000),
+    p('def-4', 2, 5.5, 8000000),
+    p('mid-1', 3, 9.0, 15000000),
+    p('mid-2', 3, 8.5, 14000000),
+    p('mid-3', 3, 8.0, 13000000),
+    p('mid-4', 3, 7.5, 11000000),
+    p('fwd-1', 4, 10.0, 18000000),
+    p('fwd-2', 4, 9.5, 16000000),
   ];
 
   test('leerer Kader: noPlanDetails nennt Kader als Ursache', () {
     final result = service.buildPlans(
       TransferPlannerInput(
         squadPlayers: const [],
-        marketPlayers: [_p('m-1', 2, 9.0, 5000000)],
+        marketPlayers: [p('m-1', 2, 9.0, 5000000)],
         currentBudget: 10000000,
       ),
     );
@@ -72,7 +72,7 @@ void main() {
   test('leerer Markt: noPlanDetails nennt Markt als Ursache', () {
     final result = service.buildPlans(
       TransferPlannerInput(
-        squadPlayers: _legalSquad(),
+        squadPlayers: legalSquad(),
         marketPlayers: const [],
         currentBudget: 10000000,
       ),
@@ -90,11 +90,11 @@ void main() {
   test('Positions-Mismatch: noPlanDetails nennt fehlende Position', () {
     final result = service.buildPlans(
       TransferPlannerInput(
-        squadPlayers: _legalSquad(),
+        squadPlayers: legalSquad(),
         // position=0 wie bei fehlgeschlagenem pos-Parsing
         marketPlayers: [
-          _p('m-unknown-pos', 0, 99.0, 5000000),
-          _p('m-unknown-pos-2', 0, 98.0, 4000000),
+          p('m-unknown-pos', 0, 99.0, 5000000),
+          p('m-unknown-pos-2', 0, 98.0, 4000000),
         ],
         currentBudget: 10000000,
       ),
@@ -112,14 +112,14 @@ void main() {
   test('keine Verbesserung: noPlanDetails nennt fehlenden Punktegewinn', () {
     final result = service.buildPlans(
       TransferPlannerInput(
-        squadPlayers: _legalSquad(),
+        squadPlayers: legalSquad(),
         // Schwächer als der schwächste Starter jeder Position UND schwächer
         // als jeder Cross-Position-Fallback-Verkauf – also ohne Formation-
         // Shift einen positiven Gewinn möglich.
         marketPlayers: [
-          _p('m-def-barely', 2, 5.3, 500000),
-          _p('m-mid-barely', 3, 5.4, 500000),
-          _p('m-fwd-barely', 4, 5.4, 500000),
+          p('m-def-barely', 2, 5.3, 500000),
+          p('m-mid-barely', 3, 5.4, 500000),
+          p('m-fwd-barely', 4, 5.4, 500000),
         ],
         currentBudget: 10000000,
       ),
@@ -137,8 +137,8 @@ void main() {
   test('Szenarien gefunden: noPlanDetails bleibt null', () {
     final result = service.buildPlans(
       TransferPlannerInput(
-        squadPlayers: _legalSquad(),
-        marketPlayers: [_p('m-upgrade', 4, 15.0, 20000000)],
+        squadPlayers: legalSquad(),
+        marketPlayers: [p('m-upgrade', 4, 15.0, 20000000)],
         currentBudget: 30000000,
       ),
     );

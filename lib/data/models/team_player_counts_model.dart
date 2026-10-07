@@ -5,7 +5,7 @@ part 'team_player_counts_model.g.dart';
 
 /// Team Spieler-Zählungen nach Position
 @freezed
-class TeamPlayerCounts with _$TeamPlayerCounts {
+abstract class TeamPlayerCounts with _$TeamPlayerCounts {
   const factory TeamPlayerCounts({
     required int total,
     required int goalkeepers,
@@ -20,7 +20,7 @@ class TeamPlayerCounts with _$TeamPlayerCounts {
 
 /// Fixture-Analyse für kommende Spiele
 @freezed
-class FixtureAnalysis with _$FixtureAnalysis {
+abstract class FixtureAnalysis with _$FixtureAnalysis {
   const factory FixtureAnalysis({
     required double averageDifficulty,
     required int topTeamOpponents,

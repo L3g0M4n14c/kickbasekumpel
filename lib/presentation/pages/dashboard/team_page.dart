@@ -40,183 +40,188 @@ class _TeamPageState extends ConsumerState<TeamPage> {
     final teamBudgetAsync = ref.watch(teamBudgetProvider);
     final selectedForSale = ref.watch(selectedTeamPlayersForSaleProvider);
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        // Refresh team data
-        ref.invalidate(teamPlayersProvider);
-        ref.invalidate(teamBudgetProvider);
-      },
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Budget Header
-              teamBudgetAsync.when(
-                data: (budget) {
-                  final saleValue = _calculateSaleValue(
-                    teamPlayersAsync.maybeWhen(
-                      data: (players) => players,
-                      orElse: () => [],
-                    ),
-                    selectedForSale,
-                  );
-                  return TeamBudgetHeader(
-                    currentBudget: budget,
-                    saleValue: saleValue,
-                  );
-                },
-                loading: () => const SizedBox(
-                  height: 120,
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-                error: (err, stack) => const SizedBox.shrink(),
-              ),
-              const SizedBox(height: 16),
-
-              // Player Count Overview
-              teamPlayersAsync.when(
-                data: (players) {
-                  final availablePlayers = players
-                      .where((p) => !selectedForSale.contains(p.id))
-                      .toList();
-                  final counts = _calculatePlayerCounts(availablePlayers);
-                  return PlayerCountOverview(playerCounts: counts);
-                },
-                loading: () => const SizedBox.shrink(),
-                error: (err, stack) => const SizedBox.shrink(),
-              ),
-              const SizedBox(height: 16),
-
-              // Kader-Benchmark: eigene Kader-Positionen vs. Ligen-Durchschnitt
-              const SquadBenchmarkCard(),
-              const SizedBox(height: 16),
-
-              // Sort Controls
-              SizedBox(
-                width: double.infinity,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Sortieren:',
-                        style: Theme.of(context).textTheme.labelMedium,
+    return Scaffold(
+      appBar: AppBar(title: const Text('Team')),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          // Refresh team data
+          ref.invalidate(teamPlayersProvider);
+          ref.invalidate(teamBudgetProvider);
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Budget Header
+                teamBudgetAsync.when(
+                  data: (budget) {
+                    final saleValue = _calculateSaleValue(
+                      teamPlayersAsync.maybeWhen(
+                        data: (players) => players,
+                        orElse: () => [],
                       ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: DropdownButton<SortOption>(
-                        value: _sortBy,
-                        isExpanded: true,
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() => _sortBy = value);
-                          }
-                        },
-                        items: SortOption.values
-                            .map(
-                              (e) => DropdownMenuItem(
-                                value: e,
-                                child: Text(_getSortLabel(e)),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                    ),
-                  ],
+                      selectedForSale,
+                    );
+                    return TeamBudgetHeader(
+                      currentBudget: budget,
+                      saleValue: saleValue,
+                    );
+                  },
+                  loading: () => const SizedBox(
+                    height: 120,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  error: (err, stack) => const SizedBox.shrink(),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              // Team Players List
-              teamPlayersAsync.when(
-                data: (players) {
-                  final sortedPlayers = _sortPlayers(players, _sortBy);
-                  return ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: sortedPlayers.length,
-                    separatorBuilder: (_, __) => const Divider(height: 8),
-                    itemBuilder: (context, index) {
-                      final player = sortedPlayers[index];
-                      return PlayerRowWithSale(
-                        player: player,
-                        isSelectedForSale: selectedForSale.contains(player.id),
-                        onToggleSale: (isSelected) {
-                          if (isSelected) {
-                            ref
-                                .read(
-                                  selectedTeamPlayersForSaleProvider.notifier,
-                                )
-                                .togglePlayer(player.id);
-                          } else {
-                            ref
-                                .read(
-                                  selectedTeamPlayersForSaleProvider.notifier,
-                                )
-                                .togglePlayer(player.id);
-                          }
-                        },
-                        onTap: selectedLeague != null
-                            ? () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => PlayerDetailScreen(
-                                      playerId: player.id,
-                                      leagueId: selectedLeague.i,
-                                    ),
-                                  ),
-                                );
-                              }
-                            : null,
-                      );
-                    },
-                  );
-                },
-                loading: () => const SizedBox(
-                  height: 300,
-                  child: Center(child: CircularProgressIndicator()),
+                // Player Count Overview
+                teamPlayersAsync.when(
+                  data: (players) {
+                    final availablePlayers = players
+                        .where((p) => !selectedForSale.contains(p.id))
+                        .toList();
+                    final counts = _calculatePlayerCounts(availablePlayers);
+                    return PlayerCountOverview(playerCounts: counts);
+                  },
+                  loading: () => const SizedBox.shrink(),
+                  error: (err, stack) => const SizedBox.shrink(),
                 ),
-                error: (err, stack) => Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                const SizedBox(height: 16),
+
+                // Kader-Benchmark: eigene Kader-Positionen vs. Ligen-Durchschnitt
+                const SquadBenchmarkCard(),
+                const SizedBox(height: 16),
+
+                // Sort Controls
+                SizedBox(
+                  width: double.infinity,
+                  child: Row(
                     children: [
-                      const Icon(
-                        Icons.lock_outline,
-                        size: 48,
-                        color: Colors.orange,
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Kickbase-Sitzung abgelaufen',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                      Expanded(
+                        child: Text(
+                          'Sortieren:',
+                          style: Theme.of(context).textTheme.labelMedium,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        err.toString().contains('403') ||
-                                err.toString().contains('abgelaufen')
-                            ? 'Deine Sitzung ist abgelaufen.\nBitte melde dich erneut an.'
-                            : 'Fehler beim Laden der Spieler:\n${err.toString()}',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                      const SizedBox(height: 12),
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Erneut versuchen'),
-                        onPressed: () => ref.invalidate(teamPlayersProvider),
+                      Expanded(
+                        flex: 2,
+                        child: DropdownButton<SortOption>(
+                          value: _sortBy,
+                          isExpanded: true,
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() => _sortBy = value);
+                            }
+                          },
+                          items: SortOption.values
+                              .map(
+                                (e) => DropdownMenuItem(
+                                  value: e,
+                                  child: Text(_getSortLabel(e)),
+                                ),
+                              )
+                              .toList(),
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+
+                // Team Players List
+                teamPlayersAsync.when(
+                  data: (players) {
+                    final sortedPlayers = _sortPlayers(players, _sortBy);
+                    return ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: sortedPlayers.length,
+                      separatorBuilder: (_, _) => const Divider(height: 8),
+                      itemBuilder: (context, index) {
+                        final player = sortedPlayers[index];
+                        return PlayerRowWithSale(
+                          player: player,
+                          isSelectedForSale: selectedForSale.contains(
+                            player.id,
+                          ),
+                          onToggleSale: (isSelected) {
+                            if (isSelected) {
+                              ref
+                                  .read(
+                                    selectedTeamPlayersForSaleProvider.notifier,
+                                  )
+                                  .togglePlayer(player.id);
+                            } else {
+                              ref
+                                  .read(
+                                    selectedTeamPlayersForSaleProvider.notifier,
+                                  )
+                                  .togglePlayer(player.id);
+                            }
+                          },
+                          onTap: selectedLeague != null
+                              ? () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => PlayerDetailScreen(
+                                        playerId: player.id,
+                                        leagueId: selectedLeague.i,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              : null,
+                        );
+                      },
+                    );
+                  },
+                  loading: () => const SizedBox(
+                    height: 300,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  error: (err, stack) => Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.lock_outline,
+                          size: 48,
+                          color: Colors.orange,
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Kickbase-Sitzung abgelaufen',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          err.toString().contains('403') ||
+                                  err.toString().contains('abgelaufen')
+                              ? 'Deine Sitzung ist abgelaufen.\nBitte melde dich erneut an.'
+                              : 'Fehler beim Laden der Spieler:\n${err.toString()}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                        const SizedBox(height: 12),
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Erneut versuchen'),
+                          onPressed: () => ref.invalidate(teamPlayersProvider),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

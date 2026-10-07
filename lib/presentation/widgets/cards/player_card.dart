@@ -131,7 +131,7 @@ class PlayerCard extends StatelessWidget {
             ? DecorationImage(
                 image: NetworkImage(player.profileBigUrl),
                 fit: BoxFit.cover,
-                onError: (_, __) {},
+                onError: (_, _) {},
               )
             : null,
         color: Colors.grey[300],

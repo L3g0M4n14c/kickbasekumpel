@@ -359,14 +359,4 @@ class AutoSaleBudgetService {
 
     return AutoSaleComputation(totalIncome: totalIncome, events: events);
   }
-
-  /// Normalisiert Timestamps, die je nach Endpoint in Millisekunden oder
-  /// Sekunden seit Epoch geliefert werden (analog zur MV-Normalisierung).
-  DateTime _normalizeTimestamp(int value) {
-    if (value.abs() < 100000000000) {
-      // Sekunden -> Millisekunden
-      return DateTime.fromMillisecondsSinceEpoch(value * 1000, isUtc: true);
-    }
-    return DateTime.fromMillisecondsSinceEpoch(value, isUtc: true);
-  }
 }

@@ -6,9 +6,9 @@ part of 'budget_calculation_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$ManagerBudgetCalculationImpl _$$ManagerBudgetCalculationImplFromJson(
+_ManagerBudgetCalculation _$ManagerBudgetCalculationFromJson(
   Map<String, dynamic> json,
-) => _$ManagerBudgetCalculationImpl(
+) => _ManagerBudgetCalculation(
   managerId: json['managerId'] as String,
   managerName: json['managerName'] as String,
   leagueId: json['leagueId'] as String,
@@ -31,8 +31,8 @@ _$ManagerBudgetCalculationImpl _$$ManagerBudgetCalculationImplFromJson(
   calculatedAt: DateTime.parse(json['calculatedAt'] as String),
 );
 
-Map<String, dynamic> _$$ManagerBudgetCalculationImplToJson(
-  _$ManagerBudgetCalculationImpl instance,
+Map<String, dynamic> _$ManagerBudgetCalculationToJson(
+  _ManagerBudgetCalculation instance,
 ) => <String, dynamic>{
   'managerId': instance.managerId,
   'managerName': instance.managerName,
@@ -48,15 +48,15 @@ Map<String, dynamic> _$$ManagerBudgetCalculationImplToJson(
   'calculatedAt': instance.calculatedAt.toIso8601String(),
 };
 
-_$InitialPlayerImpl _$$InitialPlayerImplFromJson(Map<String, dynamic> json) =>
-    _$InitialPlayerImpl(
+_InitialPlayer _$InitialPlayerFromJson(Map<String, dynamic> json) =>
+    _InitialPlayer(
       playerId: json['playerId'] as String,
       playerName: json['playerName'] as String,
       marketValue: (json['marketValue'] as num).toInt(),
       transferDate: DateTime.parse(json['transferDate'] as String),
     );
 
-Map<String, dynamic> _$$InitialPlayerImplToJson(_$InitialPlayerImpl instance) =>
+Map<String, dynamic> _$InitialPlayerToJson(_InitialPlayer instance) =>
     <String, dynamic>{
       'playerId': instance.playerId,
       'playerName': instance.playerName,
@@ -64,32 +64,30 @@ Map<String, dynamic> _$$InitialPlayerImplToJson(_$InitialPlayerImpl instance) =>
       'transferDate': instance.transferDate.toIso8601String(),
     };
 
-_$ManagerTransferImpl _$$ManagerTransferImplFromJson(
-  Map<String, dynamic> json,
-) => _$ManagerTransferImpl(
-  transferId: json['transferId'] as String,
-  playerId: json['playerId'] as String,
-  playerName: json['playerName'] as String,
-  price: (json['price'] as num).toInt(),
-  transferType: (json['transferType'] as num).toInt(),
-  timestamp: DateTime.parse(json['timestamp'] as String),
-  marketValueAtTransfer: (json['marketValueAtTransfer'] as num?)?.toInt(),
-);
+_ManagerTransfer _$ManagerTransferFromJson(Map<String, dynamic> json) =>
+    _ManagerTransfer(
+      transferId: json['transferId'] as String,
+      playerId: json['playerId'] as String,
+      playerName: json['playerName'] as String,
+      price: (json['price'] as num).toInt(),
+      transferType: (json['transferType'] as num).toInt(),
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      marketValueAtTransfer: (json['marketValueAtTransfer'] as num?)?.toInt(),
+    );
 
-Map<String, dynamic> _$$ManagerTransferImplToJson(
-  _$ManagerTransferImpl instance,
-) => <String, dynamic>{
-  'transferId': instance.transferId,
-  'playerId': instance.playerId,
-  'playerName': instance.playerName,
-  'price': instance.price,
-  'transferType': instance.transferType,
-  'timestamp': instance.timestamp.toIso8601String(),
-  'marketValueAtTransfer': instance.marketValueAtTransfer,
-};
+Map<String, dynamic> _$ManagerTransferToJson(_ManagerTransfer instance) =>
+    <String, dynamic>{
+      'transferId': instance.transferId,
+      'playerId': instance.playerId,
+      'playerName': instance.playerName,
+      'price': instance.price,
+      'transferType': instance.transferType,
+      'timestamp': instance.timestamp.toIso8601String(),
+      'marketValueAtTransfer': instance.marketValueAtTransfer,
+    };
 
-_$AutoSaleEventImpl _$$AutoSaleEventImplFromJson(Map<String, dynamic> json) =>
-    _$AutoSaleEventImpl(
+_AutoSaleEvent _$AutoSaleEventFromJson(Map<String, dynamic> json) =>
+    _AutoSaleEvent(
       matchday: (json['matchday'] as num).toInt(),
       playerId: json['playerId'] as String,
       playerName: json['playerName'] as String,
@@ -99,7 +97,7 @@ _$AutoSaleEventImpl _$$AutoSaleEventImplFromJson(Map<String, dynamic> json) =>
       uncertain: json['uncertain'] as bool? ?? false,
     );
 
-Map<String, dynamic> _$$AutoSaleEventImplToJson(_$AutoSaleEventImpl instance) =>
+Map<String, dynamic> _$AutoSaleEventToJson(_AutoSaleEvent instance) =>
     <String, dynamic>{
       'matchday': instance.matchday,
       'playerId': instance.playerId,
@@ -110,9 +108,9 @@ Map<String, dynamic> _$$AutoSaleEventImplToJson(_$AutoSaleEventImpl instance) =>
       'uncertain': instance.uncertain,
     };
 
-_$BudgetCalculationResultImpl _$$BudgetCalculationResultImplFromJson(
+_BudgetCalculationResult _$BudgetCalculationResultFromJson(
   Map<String, dynamic> json,
-) => _$BudgetCalculationResultImpl(
+) => _BudgetCalculationResult(
   managerId: json['managerId'] as String,
   managerName: json['managerName'] as String,
   leagueId: json['leagueId'] as String,
@@ -142,8 +140,8 @@ _$BudgetCalculationResultImpl _$$BudgetCalculationResultImplFromJson(
   loginBonusDays: (json['loginBonusDays'] as num?)?.toInt() ?? 0,
 );
 
-Map<String, dynamic> _$$BudgetCalculationResultImplToJson(
-  _$BudgetCalculationResultImpl instance,
+Map<String, dynamic> _$BudgetCalculationResultToJson(
+  _BudgetCalculationResult instance,
 ) => <String, dynamic>{
   'managerId': instance.managerId,
   'managerName': instance.managerName,

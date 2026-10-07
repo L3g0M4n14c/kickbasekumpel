@@ -171,7 +171,7 @@ final marketPlayersProvider = StreamProvider.autoDispose<List<MarketPlayer>>((
     throw Exception(
       'Deine Kickbase-Sitzung ist abgelaufen. Bitte melde dich erneut an.\n(${e.message})',
     );
-  } catch (e, _) {
+  } catch (e) {
     throw Exception('Fehler beim Laden der Spieler: $e');
   }
 });

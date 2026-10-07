@@ -33,7 +33,7 @@ enum PlayerMatchStatus {
 
 // Market Seller Info
 @freezed
-class MarketSeller with _$MarketSeller {
+abstract class MarketSeller with _$MarketSeller {
   const factory MarketSeller({required String id, required String name}) =
       _MarketSeller;
 
@@ -43,7 +43,7 @@ class MarketSeller with _$MarketSeller {
 
 // Player Owner (für das "u" Feld in Marktspielern)
 @freezed
-class PlayerOwner with _$PlayerOwner {
+abstract class PlayerOwner with _$PlayerOwner {
   const factory PlayerOwner({
     required String i,
     required String n,
@@ -58,7 +58,7 @@ class PlayerOwner with _$PlayerOwner {
 
 // Team Info (minimal - für Team-Profil)
 @freezed
-class TeamInfo with _$TeamInfo {
+abstract class TeamInfo with _$TeamInfo {
   const factory TeamInfo({
     required String tid,
     required String tn,
@@ -71,7 +71,7 @@ class TeamInfo with _$TeamInfo {
 
 // Team Stats
 @freezed
-class TeamStats with _$TeamStats {
+abstract class TeamStats with _$TeamStats {
   const factory TeamStats({
     required int teamValue,
     required int teamValueTrend,
@@ -89,7 +89,7 @@ class TeamStats with _$TeamStats {
 
 // User Stats (gleich wie TeamStats)
 @freezed
-class UserStats with _$UserStats {
+abstract class UserStats with _$UserStats {
   const factory UserStats({
     required int teamValue,
     required int teamValueTrend,
@@ -107,7 +107,7 @@ class UserStats with _$UserStats {
 
 // Team Profile Response
 @freezed
-class TeamProfileResponse with _$TeamProfileResponse {
+abstract class TeamProfileResponse with _$TeamProfileResponse {
   const factory TeamProfileResponse({
     required String tid,
     required String tn,

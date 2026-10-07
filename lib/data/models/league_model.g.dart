@@ -6,7 +6,7 @@ part of 'league_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$LeagueImpl _$$LeagueImplFromJson(Map<String, dynamic> json) => _$LeagueImpl(
+_League _$LeagueFromJson(Map<String, dynamic> json) => _League(
   i: json['i'] as String,
   cpi: json['cpi'] as String? ?? '1',
   n: json['n'] as String,
@@ -33,55 +33,53 @@ _$LeagueImpl _$$LeagueImplFromJson(Map<String, dynamic> json) => _$LeagueImpl(
   seasonStartDate: _seasonStartDateFromJson(json['dt']),
 );
 
-Map<String, dynamic> _$$LeagueImplToJson(_$LeagueImpl instance) =>
-    <String, dynamic>{
-      'i': instance.i,
-      'cpi': instance.cpi,
-      'n': instance.n,
-      'cn': instance.cn,
-      'an': instance.an,
-      'c': instance.c,
-      's': instance.s,
-      'md': instance.md,
-      'cu': instance.cu,
-      'b': instance.b,
-      'tv': instance.tv,
-      'pl': instance.pl,
-      'un': instance.un,
-      'f': instance.f,
-      'lpc': instance.lpc,
-      'bs': instance.bs,
-      'vr': instance.vr,
-      'adm': instance.adm,
-      'idf': instance.idf,
-      'lim': instance.lim,
-      'cpim': instance.cpim,
-      'gpm': instance.gpm,
-      'rnkm': instance.rnkm,
-      'dt': _seasonStartDateToJson(instance.seasonStartDate),
-    };
+Map<String, dynamic> _$LeagueToJson(_League instance) => <String, dynamic>{
+  'i': instance.i,
+  'cpi': instance.cpi,
+  'n': instance.n,
+  'cn': instance.cn,
+  'an': instance.an,
+  'c': instance.c,
+  's': instance.s,
+  'md': instance.md,
+  'cu': instance.cu,
+  'b': instance.b,
+  'tv': instance.tv,
+  'pl': instance.pl,
+  'un': instance.un,
+  'f': instance.f,
+  'lpc': instance.lpc,
+  'bs': instance.bs,
+  'vr': instance.vr,
+  'adm': instance.adm,
+  'idf': instance.idf,
+  'lim': instance.lim,
+  'cpim': instance.cpim,
+  'gpm': instance.gpm,
+  'rnkm': instance.rnkm,
+  'dt': _seasonStartDateToJson(instance.seasonStartDate),
+};
 
-_$LeagueUserImpl _$$LeagueUserImplFromJson(Map<String, dynamic> json) =>
-    _$LeagueUserImpl(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      teamName: json['teamName'] as String,
-      budget: (json['budget'] as num).toInt(),
-      teamValue: (json['teamValue'] as num).toInt(),
-      points: (json['points'] as num).toInt(),
-      placement: (json['placement'] as num).toInt(),
-      won: (json['won'] as num).toInt(),
-      drawn: (json['drawn'] as num).toInt(),
-      lost: (json['lost'] as num).toInt(),
-      se11: (json['se11'] as num).toInt(),
-      ttm: (json['ttm'] as num).toInt(),
-      mpst: (json['mpst'] as num?)?.toInt(),
-      lp:
-          (json['lp'] as List<dynamic>?)?.map((e) => e as String).toList() ??
-          const [],
-    );
+_LeagueUser _$LeagueUserFromJson(Map<String, dynamic> json) => _LeagueUser(
+  id: json['id'] as String,
+  name: json['name'] as String,
+  teamName: json['teamName'] as String,
+  budget: (json['budget'] as num).toInt(),
+  teamValue: (json['teamValue'] as num).toInt(),
+  points: (json['points'] as num).toInt(),
+  placement: (json['placement'] as num).toInt(),
+  won: (json['won'] as num).toInt(),
+  drawn: (json['drawn'] as num).toInt(),
+  lost: (json['lost'] as num).toInt(),
+  se11: (json['se11'] as num).toInt(),
+  ttm: (json['ttm'] as num).toInt(),
+  mpst: (json['mpst'] as num?)?.toInt(),
+  lp:
+      (json['lp'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      const [],
+);
 
-Map<String, dynamic> _$$LeagueUserImplToJson(_$LeagueUserImpl instance) =>
+Map<String, dynamic> _$LeagueUserToJson(_LeagueUser instance) =>
     <String, dynamic>{
       'id': instance.id,
       'name': instance.name,
@@ -99,14 +97,12 @@ Map<String, dynamic> _$$LeagueUserImplToJson(_$LeagueUserImpl instance) =>
       'lp': instance.lp,
     };
 
-_$LeaguesResponseImpl _$$LeaguesResponseImplFromJson(
-  Map<String, dynamic> json,
-) => _$LeaguesResponseImpl(
-  leagues: (json['leagues'] as List<dynamic>)
-      .map((e) => League.fromJson(e as Map<String, dynamic>))
-      .toList(),
-);
+_LeaguesResponse _$LeaguesResponseFromJson(Map<String, dynamic> json) =>
+    _LeaguesResponse(
+      leagues: (json['leagues'] as List<dynamic>)
+          .map((e) => League.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
 
-Map<String, dynamic> _$$LeaguesResponseImplToJson(
-  _$LeaguesResponseImpl instance,
-) => <String, dynamic>{'leagues': instance.leagues};
+Map<String, dynamic> _$LeaguesResponseToJson(_LeaguesResponse instance) =>
+    <String, dynamic>{'leagues': instance.leagues};

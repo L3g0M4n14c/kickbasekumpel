@@ -51,7 +51,7 @@ class _LigainsiderScreenState extends ConsumerState<LigainsiderScreen> {
 
           return ListView.separated(
             itemCount: matches.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
+            separatorBuilder: (_, _) => const Divider(height: 1),
             itemBuilder: (context, index) {
               final match = matches[index];
               return _MatchTile(match: match);
@@ -181,7 +181,7 @@ class _TeamLogo extends StatelessWidget {
       width: 30,
       height: 30,
       fit: BoxFit.contain,
-      errorBuilder: (_, __, ___) => const SizedBox(
+      errorBuilder: (_, _, _) => const SizedBox(
         width: 30,
         height: 30,
         child: Icon(Icons.shield_outlined, size: 22, color: Colors.grey),
@@ -262,7 +262,7 @@ class _PlayerPill extends StatelessWidget {
                 width: 40,
                 height: 40,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => CircleAvatar(
+                errorBuilder: (_, _, _) => CircleAvatar(
                   radius: 20,
                   child: Text(player.name.isNotEmpty ? player.name[0] : '?'),
                 ),

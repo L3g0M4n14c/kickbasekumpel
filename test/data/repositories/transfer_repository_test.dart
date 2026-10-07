@@ -220,10 +220,6 @@ void main() {
           firestore: fakeFirestore,
           apiClient: mockApiClient,
         );
-        final playerRepo = PlayerRepository(
-          firestore: fakeFirestore,
-          apiClient: mockApiClient,
-        );
 
         final fromUser = TestData.createTestUser(
           id: 'user-1',
@@ -232,10 +228,6 @@ void main() {
         final toUser = TestData.createTestUser(
           id: 'user-2',
           budget: 20000000, // Not enough budget
-        );
-        final player = TestData.createTestPlayer(
-          id: 'player-123',
-          marketValue: 15000000,
         );
 
         await fakeFirestore
@@ -247,9 +239,11 @@ void main() {
             .doc('user-2')
             .set(userRepo.toFirestore(toUser));
         await fakeFirestore
-            .collection('players')
+            .collection('leagues')
+            .doc('league-1')
+            .collection('ownedPlayers')
             .doc('player-123')
-            .set(playerRepo.toFirestore(player));
+            .set({'ownerId': 'user-1'});
 
         // Act
         final result = await repository.validateTransfer(

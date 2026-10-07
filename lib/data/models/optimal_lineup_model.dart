@@ -6,7 +6,7 @@ part 'optimal_lineup_model.g.dart';
 
 /// Optimale Aufstellung für einen Spieler
 @freezed
-class OptimalLineup with _$OptimalLineup {
+abstract class OptimalLineup with _$OptimalLineup {
   const factory OptimalLineup({
     required Player? goalkeeper,
     required List<Player> defenders,
@@ -20,7 +20,7 @@ class OptimalLineup with _$OptimalLineup {
 
 /// Lineup Vergleich (Aktuell vs. Optimal)
 @freezed
-class LineupComparison with _$LineupComparison {
+abstract class LineupComparison with _$LineupComparison {
   const factory LineupComparison({
     required OptimalLineup currentLineup,
     required OptimalLineup optimalLineup,

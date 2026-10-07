@@ -5,7 +5,7 @@ part 'ligainsider_match_model.g.dart';
 
 /// Represents a lineup player in a match
 @freezed
-class LineupPlayer with _$LineupPlayer {
+abstract class LineupPlayer with _$LineupPlayer {
   const factory LineupPlayer({
     required String name,
     String? ligainsiderId,
@@ -19,7 +19,7 @@ class LineupPlayer with _$LineupPlayer {
 
 /// Row of players (e.g., GK, Defense, Mid, Attack)
 @freezed
-class LineupRow with _$LineupRow {
+abstract class LineupRow with _$LineupRow {
   const factory LineupRow({
     required String rowName,
     required List<LineupPlayer> players,
@@ -31,7 +31,7 @@ class LineupRow with _$LineupRow {
 
 /// Match with lineups for home and away
 @freezed
-class LigainsiderMatch with _$LigainsiderMatch {
+abstract class LigainsiderMatch with _$LigainsiderMatch {
   const factory LigainsiderMatch({
     required String id,
     required String homeTeam,

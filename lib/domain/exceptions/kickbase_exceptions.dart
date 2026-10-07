@@ -1,6 +1,6 @@
 /// Exception classes for Kickbase API errors
 ///
-/// Uses sealed class pattern for exhaustive error handling similar to AuthResult<T>
+/// Uses sealed class pattern for exhaustive error handling similar to `AuthResult<T>`
 library;
 
 /// Base class for all Kickbase API exceptions

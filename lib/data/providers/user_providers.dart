@@ -53,7 +53,7 @@ final currentUserDataProvider = Provider<User?>((ref) {
   return userAsync.when(
     data: (user) => user,
     loading: () => null,
-    error: (_, __) => null,
+    error: (_, _) => null,
   );
 });
 

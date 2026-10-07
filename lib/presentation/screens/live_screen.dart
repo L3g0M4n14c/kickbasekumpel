@@ -516,7 +516,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
                       width: 40,
                       height: 40,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => CircleAvatar(
+                      errorBuilder: (_, _, _) => CircleAvatar(
                         child: Text(
                           firstName.isNotEmpty ? firstName[0] : '?',
                           style: TextStyle(
@@ -731,7 +731,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
               child: ListView.separated(
                 shrinkWrap: true,
                 itemCount: filteredEvents.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (ctx, idx) {
                   final ev = filteredEvents[idx];
                   final minuteLabel = _formatEventMinute(ev);

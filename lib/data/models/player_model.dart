@@ -5,7 +5,7 @@ part 'player_model.g.dart';
 
 /// Player Model - Kickbase Spieler
 @freezed
-class Player with _$Player {
+abstract class Player with _$Player {
   const factory Player({
     required String id,
     required String firstName,
@@ -35,7 +35,7 @@ typedef TeamPlayer = Player;
 
 /// Player Detail Response
 @freezed
-class PlayerDetailResponse with _$PlayerDetailResponse {
+abstract class PlayerDetailResponse with _$PlayerDetailResponse {
   const factory PlayerDetailResponse({
     String? fn,
     String? ln,
@@ -63,7 +63,7 @@ class PlayerDetailResponse with _$PlayerDetailResponse {
 
 /// Players Response
 @freezed
-class PlayersResponse with _$PlayersResponse {
+abstract class PlayersResponse with _$PlayersResponse {
   const factory PlayersResponse({required List<Player> players}) =
       _PlayersResponse;
 

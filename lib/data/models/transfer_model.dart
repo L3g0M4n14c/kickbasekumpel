@@ -5,7 +5,7 @@ part 'transfer_model.g.dart';
 
 /// Transfer Model - Spielertransfer zwischen Teams
 @freezed
-class Transfer with _$Transfer {
+abstract class Transfer with _$Transfer {
   const factory Transfer({
     required String id,
     required String leagueId,
@@ -27,7 +27,7 @@ class Transfer with _$Transfer {
 
 /// Ein historischer Transfer aus dem managerbezogenen Kickbase-Endpunkt.
 @freezed
-class ManagerTransferHistoryEntry with _$ManagerTransferHistoryEntry {
+abstract class ManagerTransferHistoryEntry with _$ManagerTransferHistoryEntry {
   const factory ManagerTransferHistoryEntry({
     required String id,
     required String leagueId,
@@ -47,7 +47,7 @@ class ManagerTransferHistoryEntry with _$ManagerTransferHistoryEntry {
 
 /// Recommendation Model - Transfer Empfehlung
 @freezed
-class Recommendation with _$Recommendation {
+abstract class Recommendation with _$Recommendation {
   const factory Recommendation({
     required String id,
     required String leagueId,
@@ -73,7 +73,7 @@ class Recommendation with _$Recommendation {
 
 /// Bid Response - Gebot/Angebot Response
 @freezed
-class BidResponse with _$BidResponse {
+abstract class BidResponse with _$BidResponse {
   const factory BidResponse({
     required String id,
     required String transferId,
@@ -89,7 +89,7 @@ class BidResponse with _$BidResponse {
 
 /// Transfer Request - Für neue Transfer erstellen
 @freezed
-class TransferRequest with _$TransferRequest {
+abstract class TransferRequest with _$TransferRequest {
   const factory TransferRequest({
     required String playerId,
     required String toUserId,
@@ -102,7 +102,7 @@ class TransferRequest with _$TransferRequest {
 
 /// Transfers Response - Liste von Transfers
 @freezed
-class TransfersResponse with _$TransfersResponse {
+abstract class TransfersResponse with _$TransfersResponse {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory TransfersResponse({
     required List<Transfer> transfers,

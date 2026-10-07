@@ -5,7 +5,7 @@ part 'leaderboard_model.g.dart';
 
 /// Leaderboard Entry - Eintrag in der Rangliste
 @freezed
-class LeaderboardEntry with _$LeaderboardEntry {
+abstract class LeaderboardEntry with _$LeaderboardEntry {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory LeaderboardEntry({
     required String leagueId,
@@ -27,7 +27,7 @@ class LeaderboardEntry with _$LeaderboardEntry {
 
 /// Ranking Model - Rangliste/Standings für eine Liga
 @freezed
-class Ranking with _$Ranking {
+abstract class Ranking with _$Ranking {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Ranking({
     required String leagueId,
@@ -44,7 +44,7 @@ class Ranking with _$Ranking {
 
 /// User Ranking - Ranking eines einzelnen Nutzers
 @freezed
-class UserRanking with _$UserRanking {
+abstract class UserRanking with _$UserRanking {
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory UserRanking({
     required String userId,
@@ -63,7 +63,7 @@ class UserRanking with _$UserRanking {
 
 /// League Standings - Komplette Liga Tabelle
 @freezed
-class LeagueStandings with _$LeagueStandings {
+abstract class LeagueStandings with _$LeagueStandings {
   const factory LeagueStandings({
     required String leagueId,
     required String leagueName,
@@ -78,7 +78,7 @@ class LeagueStandings with _$LeagueStandings {
 
 /// Historical Ranking - Historische Rangliste
 @freezed
-class HistoricalRanking with _$HistoricalRanking {
+abstract class HistoricalRanking with _$HistoricalRanking {
   const factory HistoricalRanking({
     required String leagueId,
     required int matchday,
@@ -92,7 +92,7 @@ class HistoricalRanking with _$HistoricalRanking {
 
 /// Ranking Change - Änderung in Ranking
 @freezed
-class RankingChange with _$RankingChange {
+abstract class RankingChange with _$RankingChange {
   const factory RankingChange({
     required String userId,
     required String username,

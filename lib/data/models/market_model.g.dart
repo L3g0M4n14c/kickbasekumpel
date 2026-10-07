@@ -6,8 +6,8 @@ part of 'market_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$MarketPlayerImpl _$$MarketPlayerImplFromJson(Map<String, dynamic> json) =>
-    _$MarketPlayerImpl(
+_MarketPlayer _$MarketPlayerFromJson(Map<String, dynamic> json) =>
+    _MarketPlayer(
       id: json['id'] as String,
       firstName: json['firstName'] as String,
       lastName: json['lastName'] as String,
@@ -33,7 +33,7 @@ _$MarketPlayerImpl _$$MarketPlayerImplFromJson(Map<String, dynamic> json) =>
       exs: (json['exs'] as num).toInt(),
     );
 
-Map<String, dynamic> _$$MarketPlayerImplToJson(_$MarketPlayerImpl instance) =>
+Map<String, dynamic> _$MarketPlayerToJson(_MarketPlayer instance) =>
     <String, dynamic>{
       'id': instance.id,
       'firstName': instance.firstName,
@@ -58,13 +58,12 @@ Map<String, dynamic> _$$MarketPlayerImplToJson(_$MarketPlayerImpl instance) =>
       'exs': instance.exs,
     };
 
-_$MarketResponseImpl _$$MarketResponseImplFromJson(Map<String, dynamic> json) =>
-    _$MarketResponseImpl(
+_MarketResponse _$MarketResponseFromJson(Map<String, dynamic> json) =>
+    _MarketResponse(
       players: (json['players'] as List<dynamic>)
           .map((e) => MarketPlayer.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
 
-Map<String, dynamic> _$$MarketResponseImplToJson(
-  _$MarketResponseImpl instance,
-) => <String, dynamic>{'players': instance.players};
+Map<String, dynamic> _$MarketResponseToJson(_MarketResponse instance) =>
+    <String, dynamic>{'players': instance.players};

@@ -74,7 +74,7 @@ final leagueAutoSaleConfigProvider =
 /// Tabellen-Tabs. Damit lässt sich der Kader-Besitz pro Spieltag auch ohne
 /// Transfer-Historie rekonstruieren (wichtig für Zulostung-Spieler).
 ///
-/// Returns: Map<Spieltag, Map<ManagerId, Set<SpielerId>>>
+/// Returns: `Map<Spieltag, Map<ManagerId, Set<SpielerId>>>`
 final leagueLineupsByMatchdayProvider =
     FutureProvider.family<Map<int, Map<String, Set<String>>>, String>((
       ref,
@@ -520,7 +520,7 @@ DateTime _asDateTime(Object? value) {
 /// - leagueId: Liga ID
 /// - managerIds: Liste der Manager IDs
 ///
-/// Returns: Map<managerId, BudgetCalculationResult>
+/// Returns: `Map<managerId, BudgetCalculationResult>`
 final managersBudgetCalculationProvider =
     FutureProvider.family<
       Map<String, BudgetCalculationResult>,

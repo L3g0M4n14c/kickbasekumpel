@@ -6,7 +6,7 @@ part 'transfer_planner_model.g.dart';
 
 /// Eingabedaten für die Erstellung von Transfer-Plänen.
 @freezed
-class TransferPlannerInput with _$TransferPlannerInput {
+abstract class TransferPlannerInput with _$TransferPlannerInput {
   const factory TransferPlannerInput({
     required List<Player> squadPlayers,
     required List<Player> marketPlayers,
@@ -19,7 +19,7 @@ class TransferPlannerInput with _$TransferPlannerInput {
 
 /// Bewertungsmetriken für ein Transfer-Szenario.
 @freezed
-class TransferPlanScore with _$TransferPlanScore {
+abstract class TransferPlanScore with _$TransferPlanScore {
   const factory TransferPlanScore({
     required double startingElevenGain,
     required double executionRisk,
@@ -32,7 +32,7 @@ class TransferPlanScore with _$TransferPlanScore {
 
 /// Ein einzelner Transfer-Schritt eines Szenarios.
 @freezed
-class TransferPlanMove with _$TransferPlanMove {
+abstract class TransferPlanMove with _$TransferPlanMove {
   const factory TransferPlanMove.sell({
     required Player player,
     required int amount,
@@ -49,7 +49,7 @@ class TransferPlanMove with _$TransferPlanMove {
 
 /// Vollständiges Transfer-Szenario.
 @freezed
-class TransferPlanScenario with _$TransferPlanScenario {
+abstract class TransferPlanScenario with _$TransferPlanScenario {
   const factory TransferPlanScenario({
     required String id,
     required String title,
@@ -69,7 +69,7 @@ class TransferPlanScenario with _$TransferPlanScenario {
 
 /// Ergebnis der Plan-Berechnung.
 @freezed
-class TransferPlannerResult with _$TransferPlannerResult {
+abstract class TransferPlannerResult with _$TransferPlannerResult {
   const factory TransferPlannerResult({
     required List<TransferPlanScenario> scenarios,
     String? noPlanReason,

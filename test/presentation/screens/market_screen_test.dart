@@ -176,6 +176,7 @@ void main() {
       );
 
       final container = ProviderContainer(
+        retry: (failureCount, error) => null,
         overrides: [
           // Override with a stream that yields a player
           marketPlayersProvider.overrideWith((ref) => Stream.value([player])),

@@ -6,9 +6,9 @@ part of 'transfer_planner_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$TransferPlannerInputImpl _$$TransferPlannerInputImplFromJson(
+_TransferPlannerInput _$TransferPlannerInputFromJson(
   Map<String, dynamic> json,
-) => _$TransferPlannerInputImpl(
+) => _TransferPlannerInput(
   squadPlayers: (json['squadPlayers'] as List<dynamic>)
       .map((e) => Player.fromJson(e as Map<String, dynamic>))
       .toList(),
@@ -18,65 +18,62 @@ _$TransferPlannerInputImpl _$$TransferPlannerInputImplFromJson(
   currentBudget: (json['currentBudget'] as num).toInt(),
 );
 
-Map<String, dynamic> _$$TransferPlannerInputImplToJson(
-  _$TransferPlannerInputImpl instance,
+Map<String, dynamic> _$TransferPlannerInputToJson(
+  _TransferPlannerInput instance,
 ) => <String, dynamic>{
   'squadPlayers': instance.squadPlayers,
   'marketPlayers': instance.marketPlayers,
   'currentBudget': instance.currentBudget,
 };
 
-_$TransferPlanScoreImpl _$$TransferPlanScoreImplFromJson(
-  Map<String, dynamic> json,
-) => _$TransferPlanScoreImpl(
-  startingElevenGain: (json['startingElevenGain'] as num).toDouble(),
-  executionRisk: (json['executionRisk'] as num).toDouble(),
-  valueStability: (json['valueStability'] as num).toDouble(),
-);
+_TransferPlanScore _$TransferPlanScoreFromJson(Map<String, dynamic> json) =>
+    _TransferPlanScore(
+      startingElevenGain: (json['startingElevenGain'] as num).toDouble(),
+      executionRisk: (json['executionRisk'] as num).toDouble(),
+      valueStability: (json['valueStability'] as num).toDouble(),
+    );
 
-Map<String, dynamic> _$$TransferPlanScoreImplToJson(
-  _$TransferPlanScoreImpl instance,
-) => <String, dynamic>{
-  'startingElevenGain': instance.startingElevenGain,
-  'executionRisk': instance.executionRisk,
-  'valueStability': instance.valueStability,
-};
+Map<String, dynamic> _$TransferPlanScoreToJson(_TransferPlanScore instance) =>
+    <String, dynamic>{
+      'startingElevenGain': instance.startingElevenGain,
+      'executionRisk': instance.executionRisk,
+      'valueStability': instance.valueStability,
+    };
 
-_$TransferPlanMoveSellImpl _$$TransferPlanMoveSellImplFromJson(
+TransferPlanMoveSell _$TransferPlanMoveSellFromJson(
   Map<String, dynamic> json,
-) => _$TransferPlanMoveSellImpl(
+) => TransferPlanMoveSell(
   player: Player.fromJson(json['player'] as Map<String, dynamic>),
   amount: (json['amount'] as num).toInt(),
   $type: json['runtimeType'] as String?,
 );
 
-Map<String, dynamic> _$$TransferPlanMoveSellImplToJson(
-  _$TransferPlanMoveSellImpl instance,
+Map<String, dynamic> _$TransferPlanMoveSellToJson(
+  TransferPlanMoveSell instance,
 ) => <String, dynamic>{
   'player': instance.player,
   'amount': instance.amount,
   'runtimeType': instance.$type,
 };
 
-_$TransferPlanMoveBuyImpl _$$TransferPlanMoveBuyImplFromJson(
-  Map<String, dynamic> json,
-) => _$TransferPlanMoveBuyImpl(
-  player: Player.fromJson(json['player'] as Map<String, dynamic>),
-  amount: (json['amount'] as num).toInt(),
-  $type: json['runtimeType'] as String?,
-);
+TransferPlanMoveBuy _$TransferPlanMoveBuyFromJson(Map<String, dynamic> json) =>
+    TransferPlanMoveBuy(
+      player: Player.fromJson(json['player'] as Map<String, dynamic>),
+      amount: (json['amount'] as num).toInt(),
+      $type: json['runtimeType'] as String?,
+    );
 
-Map<String, dynamic> _$$TransferPlanMoveBuyImplToJson(
-  _$TransferPlanMoveBuyImpl instance,
+Map<String, dynamic> _$TransferPlanMoveBuyToJson(
+  TransferPlanMoveBuy instance,
 ) => <String, dynamic>{
   'player': instance.player,
   'amount': instance.amount,
   'runtimeType': instance.$type,
 };
 
-_$TransferPlanScenarioImpl _$$TransferPlanScenarioImplFromJson(
+_TransferPlanScenario _$TransferPlanScenarioFromJson(
   Map<String, dynamic> json,
-) => _$TransferPlanScenarioImpl(
+) => _TransferPlanScenario(
   id: json['id'] as String,
   title: json['title'] as String,
   sells: (json['sells'] as List<dynamic>)
@@ -97,8 +94,8 @@ _$TransferPlanScenarioImpl _$$TransferPlanScenarioImplFromJson(
   score: TransferPlanScore.fromJson(json['score'] as Map<String, dynamic>),
 );
 
-Map<String, dynamic> _$$TransferPlanScenarioImplToJson(
-  _$TransferPlanScenarioImpl instance,
+Map<String, dynamic> _$TransferPlanScenarioToJson(
+  _TransferPlanScenario instance,
 ) => <String, dynamic>{
   'id': instance.id,
   'title': instance.title,
@@ -112,9 +109,9 @@ Map<String, dynamic> _$$TransferPlanScenarioImplToJson(
   'score': instance.score,
 };
 
-_$TransferPlannerResultImpl _$$TransferPlannerResultImplFromJson(
+_TransferPlannerResult _$TransferPlannerResultFromJson(
   Map<String, dynamic> json,
-) => _$TransferPlannerResultImpl(
+) => _TransferPlannerResult(
   scenarios: (json['scenarios'] as List<dynamic>)
       .map((e) => TransferPlanScenario.fromJson(e as Map<String, dynamic>))
       .toList(),
@@ -122,8 +119,8 @@ _$TransferPlannerResultImpl _$$TransferPlannerResultImplFromJson(
   noPlanDetails: json['noPlanDetails'] as String?,
 );
 
-Map<String, dynamic> _$$TransferPlannerResultImplToJson(
-  _$TransferPlannerResultImpl instance,
+Map<String, dynamic> _$TransferPlannerResultToJson(
+  _TransferPlannerResult instance,
 ) => <String, dynamic>{
   'scenarios': instance.scenarios,
   'noPlanReason': instance.noPlanReason,
