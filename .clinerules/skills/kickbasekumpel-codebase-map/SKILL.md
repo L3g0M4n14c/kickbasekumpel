@@ -28,7 +28,7 @@ description: KickbaseKumpel Datei- und Ordnerkarte - welche Datei wofür zustän
 | `http_client_wrapper.dart` | HTTP-Wrapper mit Retry |
 | `token_storage.dart` | Secure Storage für Tokens |
 | `bid_recommendation_service.dart` | Gebots-Empfehlungen |
-| `budget_calculation_service.dart`, `achievement_budget_service.dart`, `auto_sale_budget_service.dart` | Budget-Logik |
+| `budget_calculation_service.dart`, `achievement_budget_service.dart`, `achievement_derivation_service.dart`, `auto_sale_budget_service.dart` | Budget-Logik, Erfolgs-Ableitung |
 | `deterministic_recommendation_service.dart` | Verkaufsempfehlungen |
 | `squad_benchmark_service.dart`, `transfer_planner_service.dart` | Kader-Benchmark, Transferplanung |
 | `manager_transfer_history_service.dart` | Transferhistorie |

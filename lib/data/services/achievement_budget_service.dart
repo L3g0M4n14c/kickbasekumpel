@@ -7,68 +7,89 @@ import '../models/achievement_model.dart';
 ///
 /// Kickbase vergütet starke Leistungen mit Budget-Boni, die NICHT in der
 /// Transfer-Historie erscheinen und daher bei der Budget-Berechnung
-/// (Startbudget + Verkäufe − Käufe) fehlen:
+/// (Startbudget + Verkäufe − Käufe) fehlen. Der Erfolgs-Katalog umfasst
+/// Serien (Live-Dump 07.10.2026, Namen/Schwellen/Beträge siehe
+/// [knownAchievementRewards]):
 ///
-/// | Erfolg | Bedingung | Gewinn |
-/// |---|---|---|
-/// | Spieltagssieger | Spieltag gewinnen | 1 Mio. |
-/// | Spieltagspunkte Silber | ≥ 1000 Pkt. an einem Spieltag | 250.000 |
-/// | Spieltagspunkte Gold | ≥ 1500 Pkt. an einem Spieltag | 500.000 |
-/// | Jahrhundertspiel | ≥ 2000 Pkt. an einem Spieltag | 1 Mio. |
-/// | Topscorer | 200 Pkt. für max. einen Spieler | 100.000 |
-/// | Matchwinner | 300 Pkt. für max. einen Spieler | 500.000 |
-/// | Weltklasse | 400 Pkt. für max. einen Spieler | 1 Mio. |
-/// | Fussballgott | 500 Pkt. für max. einen Spieler | 2 Mio. |
-/// | MVP | Stärkster Spieler eines Spieltags | 1 Mio. |
-/// | Tormaschine | Meiste Tore der Liga am Spieltag | 250.000 |
-/// | Bronzenes Händchen | 3 Mio. Gewinn mit einem Spieler | 250.000 |
-/// | Silbernes Händchen | 5 Mio. Gewinn mit einem Spieler | 500.000 |
-/// | Goldenes Händchen | 10 Mio. Gewinn mit einem Spieler | 1 Mio. |
-/// | Königstransfer | 25 Mio. Gewinn mit einem Spieler | 2 Mio. |
-/// | Meister (Saison) | 1. Platz am Saisonende | 2 Mio. |
-/// | Vizemeister (Saison) | 2. Platz am Saisonende | 1 Mio. |
+/// - **Match day winner** (t=1–5): Spieltags-Siege
+/// - **Match day points** (t=100–103): ≥ 500/1000/1500/2000 Pkt. an einem Spieltag
+/// - **Season points** (t=200–204): ≥ 1000 Pkt. in einer Saison (silver+ offen)
+/// - **Top scorer/Match winner/World class/Football god** (t=300–303):
+///   ≥ 200/300/400/500 Pkt. mit einem Spieler
+/// - **Team value** (t=400–404): Teamwert ≥ 125/150 Mio. (gold+ offen)
+/// - **First deal/Transfer King** (t=500–504): ≥ 1/50 Transfers pro Saison
+/// - **Händchen-Serie** (t=700–704): „The right touch/Bronze/Silver/Golden
+///   hand/Royal transfer" = 1/3/5/10/25 Mio. Gewinn mit einem Spieler
+/// - **Champion/Runner-up** (t=2001/2002): 1./2. Platz am Saisonende
+/// - Sonstige einmalige (Kreisliga, Panini, Manager license, …)
 ///
-/// (Quelle: Kickbase Help Center – Beträge können sich ändern; der API-Wert
-/// `er` ist maßgeblich. In privaten Ligen können Erfolgs-Geldboni deaktiviert
-/// sein – dann liefert die API `er = 0` und dieser Service zählt nichts.)
+/// (Beträge können sich ändern; der API-Wert `er` ist maßgeblich. In privaten
+/// Ligen können Erfolgs-Geldboni deaktiviert sein – dann liefert die API
+/// `er = 0` und dieser Typ zählt nichts.)
 ///
 /// ## Ermittlungswege
 ///
-/// 1. **Eigener Manager (exakt):** `GET /leagues/{id}/user/achievements`
-///    liefert alle Erfolge des authentifizierten Users mit `ac` (Anzahl) –
-///    multipliziert mit `er` (Belohnung aus dem Detail-Endpoint) ergibt das
-///    die exakten Budget-Einnahmen.
-/// 2. **Andere Manager (Feed-Attribution):** Der Aktivitäten-Feed
-///    (`GET /leagues/{id}/activitiesFeed`) enthält ligaweit die Erfolgs-
-///    Ereignisse aller Manager (Einträge mit `t == 26`). Diese werden pro
-///    Manager attribuiert und mit der Belohnung des jeweiligen Erfolgs-Typs
-///    aufgelöst.
+/// 1. **Eigener Manager (Kalibrierung):** `GET /leagues/{id}/user/achievements`
+///    liefert `ac` (KARRIERE-Anzahl) und `dt` (letzter Erfolg) – Grundlage
+///    der Schranken-Kalibrierung, NICHT der Saison-Budgets.
+/// 2. **Alle Manager (Ableitung):** Die API zeigt Erfolge fremder Manager
+///    nirgends (der Aktivitäten-Feed enthält laut Live-Verifikation nur die
+///    eigenen). Diese werden deterministisch aus Spieltags-Ranking, Lineup-
+///    Punkten und Transfer-Historie abgeleitet – siehe
+///    [AchievementDerivationService].
 class AchievementBudgetService {
-  /// Feed-Eintragstyp „Achievement erhalten".
-  static const int feedTypeAchievement = 26;
-
-  /// Offizieller Erfolgs-Katalog (Name → Belohnung in €).
+  /// Offizieller Erfolgs-Katalog der API (Name → Belohnung in €).
   ///
-  /// Als Fallback/Dokumentation. Die Belohnung aus der API (`er`) ist immer
-  /// maßgeblich – dieser Katalog wird nur verwendet, wenn die API keine
-  /// Belohnung liefert und der Erfolgs-Name bekannt ist.
+  /// Quelle: Live-Dump 07.10.2026 (`/user/achievements` + Detail-Endpoints).
+  /// Beträge ohne Stern sind API-bestätigt (`er`); die mit * stammen aus
+  /// ac = 0-Typen (Detail nicht geladen) und sind systematische Schätzungen
+  /// nach dem Muster der jeweiligen Serie.
   static const Map<String, int> knownAchievementRewards = {
-    'Spieltagssieger': 1000000,
-    'Spieltagspunkte Silber': 250000,
-    'Spieltagspunkte Gold': 500000,
-    'Jahrhundertspiel': 1000000,
-    'Topscorer': 100000,
-    'Matchwinner': 500000,
-    'Weltklasse': 1000000,
-    'Fussballgott': 2000000,
+    'Match day winner': 1000000, // *
+    'Match day winner bronze': 250000, // *
+    'Match day winner silver': 500000, // *
+    'Match day winner gold': 1000000, // *
+    'The Special One': 2000000, // *
+    'Match day points bronze': 100000,
+    'Match day points silver': 250000,
+    'Match day points gold': 1000000,
+    'Match of the century': 1000000, // *
+    'Season points bronze': 100000,
+    'Season points silver': 250000, // *
+    'Season points gold': 500000, // *
+    'Season points platinum': 1000000, // *
+    'World cup winner': 1000000, // *
+    'Top scorer': 100000,
+    'Match winner': 500000,
+    'World class': 1000000,
+    'Football god': 2000000,
+    'Team value bronze': 100000,
+    'Team value silver': 250000,
+    'Team value gold': 500000, // *
+    'Team value platinum': 1000000, // *
+    'The Galactics': 2000000, // *
+    'First deal': 100000,
+    'Transfer King bronze': 250000,
+    'Transfer King silver': 500000, // *
+    'Transfer King gold': 1000000, // *
+    'F. Magath': 2000000, // *
+    'Kreisliga': 1000000,
+    'Regionalliga': 1000000,
+    '2. Liga': 1000000, // *
+    '1. Liga': 2000000, // *
+    'The right touch': 100000,
+    'Bronze hand': 250000,
+    'Silver hand': 500000,
+    'Golden hand': 1000000,
+    'Royal transfer': 2000000, // *
+    'Manager license': 0,
+    'Champion': 2000000, // *
+    'Runner-up': 1000000,
+    'Long bench': 100000,
+    'Panini': 100000,
+    'Choreo': 100000,
     'MVP': 1000000,
-    'Tormaschine': 250000,
-    'Bronzenes Händchen': 250000,
-    'Silbernes Händchen': 500000,
-    'Goldenes Händchen': 1000000,
-    'Königstransfer': 2000000,
-    'Meister': 2000000,
-    'Vizemeister': 1000000,
+    'Goal machine': 250000, // *
   };
 
   // ---------------------------------------------------------------------------
@@ -111,73 +132,20 @@ class AchievementBudgetService {
     );
   }
 
-  /// Extrahiert alle Achievement-Ereignisse aus dem Aktivitäten-Feed.
-  ///
-  /// Erkennt Einträge mit `t == 26` (Erfolg erhalten). Die User-Attribution
-  /// im Eintrag ist undokumentiert und wird defensiv über mehrere Kandidaten-
-  /// Felder ermittelt:
-  /// - `data.u` als Map (`{'i': id, 'n': name}`) oder als String (ID)
-  /// - `data.ui` / `data.unm` (ID / Name)
-  ///
-  /// Einträge ohne erkennbaren Empfänger werden NICHT verworfen, sondern mit
-  /// leerem [AchievementFeedEvent.managerId] zurückgegeben (sollten bei der
-  /// Buchung übersprungen werden).
-  List<AchievementFeedEvent> parseFeedEvents(Map<String, dynamic> feedResponse) {
-    final entries = (feedResponse['af'] as List<dynamic>? ?? const [])
-        .whereType<Map<String, dynamic>>()
-        .toList();
-
-    final events = <AchievementFeedEvent>[];
-    for (final entry in entries) {
-      if (_asInt(entry['t']) != feedTypeAchievement) continue;
-
-      final data = entry['data'];
-      final dataMap = data is Map<String, dynamic> ? data : <String, dynamic>{};
-
-      final typeId = (dataMap['t'] ?? entry['at'] ?? '').toString();
-      if (typeId.isEmpty) continue;
-
-      final user = _extractUser(dataMap);
-      events.add(
-        AchievementFeedEvent(
-          activityId: (entry['id'] ?? entry['i'] ?? '').toString(),
-          managerId: user.$1,
-          managerName: user.$2,
-          achievementTypeId: typeId,
-          timestamp: _asDateTime(entry['dt'] ?? dataMap['dt']),
-        ),
-      );
-    }
-    return events;
-  }
-
-  /// Versucht, Empfänger (ID, Name) aus einem Feed-`data`-Objekt zu ziehen.
-  (String, String) _extractUser(Map<String, dynamic> data) {
-    final u = data['u'];
-    if (u is Map) {
-      return ((u['i'] ?? u['id'] ?? '').toString(), (u['n'] ?? '').toString());
-    }
-    if (u is String && u.isNotEmpty) {
-      return (u, (data['un'] ?? '').toString());
-    }
-    final ui = data['ui'];
-    if (ui != null) {
-      return (ui.toString(), (data['unm'] ?? data['un'] ?? '').toString());
-    }
-    return ('', '');
-  }
-
   // ---------------------------------------------------------------------------
   // Berechnung
   // ---------------------------------------------------------------------------
 
-  /// Exakte Budget-Einnahmen des eigenen Managers durch Erfolge:
+  /// KARRIERE-Einnahmen des eigenen Managers durch Erfolge:
   /// Summe aus `achievedCount × earnedReward` über alle Erfolge.
   ///
-  /// Der API-Wert `er` ist maßgeblich: `er = 0` (z.B. deaktivierte
-  /// Erfolgs-Geldboni in der Liga) trägt bewusst NICHTS bei – hier greift
-  /// kein Katalog-Fallback, sonst würden deaktivierte Boni fälschlich
-  /// gezählt.
+  /// WICHTIG: `ac` ist eine Karriere-Summe (alle Saisons je gespielt) –
+  /// dieser Wert ist eine Referenz für die Kalibrierung, NICHT die
+  /// Saison-Budget-Berechnung (dort zählt die Ableitung nur Ereignisse
+  /// seit dem Saisonstart).
+  ///
+  /// Der API-Wert `er` ist maßgeblich: `er = 0` (z.B. „Manager license"
+  /// oder deaktivierte Erfolgs-Geldboni) trägt bewusst NICHTS bei.
   AchievementIncomeSummary exactOwnIncome(
     List<KickbaseAchievement> achievements,
   ) {
@@ -206,44 +174,6 @@ class AchievementBudgetService {
     );
   }
 
-  /// Attribuiert Feed-Ereignisse pro Manager und löst die Belohnungen auf.
-  ///
-  /// [rewardByType] - Belohnung pro Erfolgs-Typ-ID (aus der eigenen
-  ///   Achievements-Liste + Detail-Endpoints; die Belohnungen sind ligaweit
-  ///   identisch, auch wenn die `ac`-Zahlen user-spezifisch sind).
-  /// [events] - Feed-Ereignisse (siehe [parseFeedEvents]).
-  ///
-  /// Returns: Map managerId → Summary. Ereignisse ohne Empfänger werden
-  /// übersprungen (nicht gebucht).
-  Map<String, AchievementIncomeSummary> attributeFeedIncome({
-    required List<AchievementFeedEvent> events,
-    required Map<String, int> rewardByType,
-  }) {
-    final byManager = <String, List<AchievementEvent>>{};
-    for (final event in events) {
-      if (event.managerId.isEmpty) continue; // unattribuiert → nicht buchen
-      final reward = rewardByType[event.achievementTypeId] ?? 0;
-      if (reward <= 0) continue;
-      byManager.putIfAbsent(event.managerId, () => []).add(
-            AchievementEvent(
-              achievementTypeId: event.achievementTypeId,
-              name: event.managerName,
-              reward: reward,
-              timestamp: event.timestamp,
-            ),
-          );
-    }
-
-    return {
-      for (final entry in byManager.entries)
-        entry.key: AchievementIncomeSummary(
-          managerId: entry.key,
-          totalIncome: entry.value.fold(0, (sum, e) => sum + e.reward),
-          events: entry.value,
-        ),
-    };
-  }
-
   /// Belohnung eines Erfolgs aus dem Katalog (nur für Dokumentation/Anzeige).
   /// Die API (`er`) ist immer maßgeblich.
   int catalogReward(String name) => knownAchievementRewards[name] ?? 0;
@@ -258,15 +188,4 @@ class AchievementBudgetService {
     String value => int.tryParse(value) ?? 0,
     _ => 0,
   };
-
-  DateTime? _asDateTime(Object? value) {
-    if (value == null) return null;
-    if (value is num) {
-      return DateTime.fromMillisecondsSinceEpoch(
-        value.toInt() * 1000,
-        isUtc: true,
-      );
-    }
-    return DateTime.tryParse(value.toString())?.toUtc();
-  }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../data/models/achievement_model.dart';
 import '../../data/models/budget_calculation_model.dart';
 import '../../data/models/transfer_model.dart';
@@ -192,9 +193,8 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
           const SizedBox(height: 12),
           Text(
             name,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.headlineSmall
+                ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Row(
@@ -234,15 +234,13 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
         const SizedBox(height: 4),
         Text(
           value,
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleLarge
+              ?.copyWith(fontWeight: FontWeight.bold),
         ),
         Text(
           label,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+          style: Theme.of(context).textTheme.bodySmall
+              ?.copyWith(color: Colors.grey),
         ),
       ],
     );
@@ -270,9 +268,9 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
         // Nach Position sortieren: 1=TW, 2=ABW, 3=MF, 4=ST
         final sorted = List<dynamic>.from(players)
           ..sort(
-            (a, b) => _positionOrder(
-              a['pos'] ?? a['position'] ?? 0,
-            ).compareTo(_positionOrder(b['pos'] ?? b['position'] ?? 0)),
+            (a, b) =>
+                _positionOrder(a['pos'] ?? a['position'] ?? 0)
+                    .compareTo(_positionOrder(b['pos'] ?? b['position'] ?? 0)),
           );
 
         return ListView.builder(
@@ -323,9 +321,9 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
 
         final sorted = List<Map<String, dynamic>>.from(players)
           ..sort(
-            (a, b) => _positionOrder(
-              a['pos'] ?? a['position'] ?? 0,
-            ).compareTo(_positionOrder(b['pos'] ?? b['position'] ?? 0)),
+            (a, b) =>
+                _positionOrder(a['pos'] ?? a['position'] ?? 0)
+                    .compareTo(_positionOrder(b['pos'] ?? b['position'] ?? 0)),
           );
 
         return _buildPlayerList(context, sorted);
@@ -482,9 +480,8 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
           matchDayPoints != null
               ? 'Ø ${avgPoints.toStringAsFixed(1)} Pkt/Spieltag'
               : 'Ø ${avgPoints.toStringAsFixed(1)} Pkt/Spieltag',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+          style: Theme.of(context).textTheme.bodySmall
+              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
         trailing: matchDayPoints != null
             ? Column(
@@ -503,9 +500,8 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
                   ),
                   Text(
                     '${(marketValue / 1_000_000).toStringAsFixed(1)}M€',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: Colors.grey),
                   ),
                 ],
               )
@@ -522,9 +518,8 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
                   ),
                   Text(
                     '$points Pkt',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: Colors.grey),
                   ),
                 ],
               ),
@@ -620,9 +615,9 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
                           'Gesamtpunkte',
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                               ),
                         ),
                       ],
@@ -641,9 +636,9 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
                           'Ø Pkt/Spieltag',
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                               ),
                         ),
                       ],
@@ -659,9 +654,9 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
                           'Platz',
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                               ),
                         ),
                       ],
@@ -680,9 +675,8 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
             const SizedBox(height: 16),
             Text(
               'Spieltag-Details',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             ...playedDays.map<Widget>(
@@ -788,18 +782,16 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
                     flex: 2,
                     child: Text(
                       'Spieler',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                   ),
                   Expanded(
                     flex: 1,
                     child: Text(
                       'Datum',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -807,9 +799,8 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
                     flex: 1,
                     child: Text(
                       'Gezahlt',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
                       textAlign: TextAlign.right,
                     ),
                   ),
@@ -817,9 +808,8 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
                     flex: 1,
                     child: Text(
                       'Marktwert',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
                       textAlign: TextAlign.right,
                     ),
                   ),
@@ -827,9 +817,8 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
                     flex: 1,
                     child: Text(
                       'Differenz',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
                       textAlign: TextAlign.right,
                     ),
                   ),
@@ -936,10 +925,7 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
   }
 
   Widget _buildBudgetTab(BuildContext context) {
-    final budgetParams = (
-      leagueId: widget.leagueId,
-      managerId: widget.userId,
-    );
+    final budgetParams = (leagueId: widget.leagueId, managerId: widget.userId);
     final budgetCalculationAsync = ref.watch(
       managerBudgetCalculationProvider(budgetParams),
     );
@@ -957,10 +943,7 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Übersichtskarten
-              _BudgetOverviewCards(
-                calculation: calculation,
-                achievements: achievements,
-              ),
+              _BudgetOverviewCards(calculation: calculation),
               const SizedBox(height: 24),
 
               // Auto-Verkauf (250er-Regel): nur anzeigen, wenn Einnahmen
@@ -1009,18 +992,17 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
 
 class _BudgetOverviewCards extends StatelessWidget {
   final BudgetCalculationResult calculation;
-  final AchievementIncomeSummary? achievements;
 
-  const _BudgetOverviewCards({
-    required this.calculation,
-    this.achievements,
-  });
+  const _BudgetOverviewCards({required this.calculation});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final achievementIncome = achievements?.totalIncome ?? 0;
-    final totalBudget = calculation.currentBudget + achievementIncome;
+    // Erfolgs-Boni sind seit der Achievement-Ableitung bereits in
+    // [BudgetCalculationResult.currentBudget] enthalten – hier nur noch
+    // als eigene Karte ausschweisen, nicht doppelt addieren.
+    final achievementIncome = calculation.achievementIncome;
+    final totalBudget = calculation.currentBudget;
 
     return Card(
       elevation: 0,
@@ -1101,8 +1083,7 @@ class _BudgetOverviewCards extends StatelessWidget {
             _BudgetCard(
               icon: Icons.account_balance_wallet,
               label: 'AKTUELLES BUDGET (inkl. Boni)',
-              value:
-                  '${(totalBudget / 1000000).toStringAsFixed(2)} M €',
+              value: '${(totalBudget / 1000000).toStringAsFixed(2)} M €',
               color: totalBudget >= 0 ? Colors.green : Colors.red,
               isHighlighted: true,
             ),

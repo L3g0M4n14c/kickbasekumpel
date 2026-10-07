@@ -1,7 +1,8 @@
 # 💡 Ideen & Roadmap
 
 > Sammlung der Feature-Ideen aus der Analyse vom 01.10.2026.
-> Umgesetzt: Ligainsider-Status-Badge, Kader-Benchmark, Achievements im Budget.
+> Umgesetzt: Ligainsider-Status-Badge, Kader-Benchmark, Achievements im Budget
+> (seit 07.10.2026 deterministisch abgeleitet für alle Manager).
 
 ---
 
@@ -18,8 +19,10 @@ der 250er-Regel sind teils hartkodiert/berechnet. Mit den echten Liga-Settings:
 - einen „Liga-Regeln"-Info-Bereich anzeigen
 
 ### 2. Aktivitäten-Feed als Social/Strategie-Feature — `GET /leagues/{id}/activitiesFeed`
-Der Feed wird bereits für die Achievements-Budget-Berechnung genutzt. Weitere
-Möglichkeiten:
+Der Feed enthält laut Live-Verifikation (07.10.2026) nur die **eigenen**
+Erfolge/Transfers und wird für die Achievements-Budget-Berechnung NICHT
+genutzt (die läuft deterministisch, siehe `AchievementDerivationService`).
+Weitere Möglichkeiten:
 - **Mitbieter-Identifikation**: Wer kauft/wen verkauft gerade → Gegenreaktionen antizipieren
 - Das ist genau die Lücke, die der `BidRecommendationService` in seinem
   Docstring selbst benennt („Konkurrenz auf dem Markt ist über die API nicht
@@ -104,12 +107,32 @@ verbleibende Ungenauigkeit der Budget-Berechnung.
 `managerBudgetCalculationProvider` aufrechnen und gegen das echte eigene
 Budget (`me/budget`) kalibrieren.
 
-### 2. Achievements anderer Manager — Attribution
-Die Achievements-Ermittlung läuft über den Aktivitäten-Feed (Einträge mit
-`t == 26`). Die User-Attribution im Feed-Eintrag konnte ohne Live-API noch
-nicht verifiziert werden — der Parser probiert mehrere Felder (`data.u.i`,
-`data.ui`, `data.u` als String). Bitte einmal gegen die echte API prüfen und
-ggf. im `AchievementBudgetService` nachziehen.
+### 2. Achievements aller Manager — deterministische Ableitung (in Umsetzung)
+Erfolge fremder Manager zeigt die API nirgends – sie werden im
+`AchievementDerivationService` aus Spieltags-Ranking (`mdp`), Lineup-Punkten
+und Transfer-Historie abgeleitet (14 von 16 Typen; Tormaschine fehlt bewusst).
+Offen: **Kalibrierung** – `ac` ist eine Karriere-Summe (alle Saisons), die
+Ableitung zählt nur die aktuelle. Der Check läuft daher als Schranken-
+Vergleich (Log „🧭 Achievement-Kalibrierung"): Minimum = per `dt` in dieser
+Saison nachweislich erreicht, Maximum = Karriere-`ac`. Fällt eine Ableitung
+aus den Schranken, die Regel-Annahmen justieren
+(`AchievementDerivationRules`: Gleichstand Spieltagssieger, kumulative Boni,
+MVP-Regel „bester Lineup-Spieler", Händchen-Gewinn = VK − EK).
+
+**Live-Katalog (Dump 07.10.2026) ist umgesetzt:** API-Namen sind englisch,
+Serien mit `t`-Bereichen (1–5 Match day winner, 100er Match day points,
+200er Season points, 300er Spieler-Punkte, 400er Team value, 500er Transfers,
+700er Händchen = „… hand", 2001/2002 Champion/Runner-up). Der Katalog in
+`AchievementBudgetService.knownAchievementRewards` enthält die `er`-Beträge
+(* = Schätzung für ac = 0-Typen). Offene Punkte für die nächste Kalibrierung:
+- **„Match day winner" (t=5) ist verdächtig:** ac = 0 trotz 137× „Match day
+  points silver" – entweder Battle-Bezug (dann Ableitung streichen) oder du
+  warst wirklich nie Spieltagssieger. Die Kalibrierung meldet „abgeleitet N,
+  erwartet 0…0", falls die Punkt-Max-Regel nicht zum Typ passt.
+- Schwellen für Series-Spitzen unbekannt (Match day winner bronze/silver/gold,
+  Season points silver+, Team value gold+, Transfer King silver+, The Special
+  One, The Galactics, F. Magath) – per Detail-Endpoint sichtbar, sobald ac > 0.
+- „Champion" `er` unbestätigt (Schätzung 2 Mio. aus Help-Center).
 
 ### 3. Anmeldebonus anderer Manager
 Der Anmeldebonus wird aktuell für alle Manager gleich angenommen (Annahme:

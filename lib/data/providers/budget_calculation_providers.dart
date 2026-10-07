@@ -6,10 +6,12 @@ import '../models/budget_calculation_model.dart';
 import '../models/market_value_model.dart';
 import '../models/performance_model.dart';
 import '../models/transfer_model.dart';
+import '../services/achievement_derivation_service.dart';
 import '../services/auto_sale_budget_service.dart';
 import '../services/budget_calculation_service.dart';
 import 'achievement_providers.dart';
 import 'kickbase_api_provider.dart';
+import 'league_detail_providers.dart';
 import 'manager_providers.dart';
 import 'player_detail_providers.dart';
 
@@ -80,54 +82,16 @@ final leagueLineupsByMatchdayProvider =
       ref,
       leagueId,
     ) async {
-      final apiClient = ref.watch(kickbaseApiClientProvider);
-
-      // Aktuelle Ranking-Response: `lfmd` = letzter abgeschlossener Spieltag.
-      final current = await apiClient.getLeagueRanking(leagueId);
-      final lastFinished = _asInt(current['lfmd']);
+      final data = await ref.watch(leagueMatchdayDataProvider(leagueId).future);
       final result = <int, Map<String, Set<String>>>{};
-      if (lastFinished <= 0) return result;
-
-      const maxConcurrent = 8;
-      final days = List<int>.generate(lastFinished, (i) => i + 1);
-      for (var i = 0; i < days.length; i += maxConcurrent) {
-        final batch = days.skip(i).take(maxConcurrent);
-        final pages = await Future.wait(
-          batch.map((day) async {
-            try {
-              final ranking = await apiClient.getLeagueRanking(
-                leagueId,
-                matchDay: day,
-              );
-              return MapEntry(day, ranking);
-            } catch (_) {
-              // Ein fehlender Spieltag darf die Gesamtauswertung nicht
-              // blockieren.
-              return MapEntry(day, null);
-            }
-          }),
-        );
-
-        for (final entry in pages) {
-          final ranking = entry.value;
-          if (ranking == null) continue;
-          final users = (ranking['us'] as List? ?? [])
-              .whereType<Map<String, dynamic>>()
-              .toList();
-          final byUser = <String, Set<String>>{};
-          for (final user in users) {
-            final userId = user['i']?.toString() ?? '';
-            final lineup = (user['lp'] as List? ?? [])
-                .map((id) => id.toString())
-                .toSet();
-            if (userId.isNotEmpty && lineup.isNotEmpty) {
-              byUser[userId] = lineup;
-            }
-          }
-          if (byUser.isNotEmpty) result[entry.key] = byUser;
-        }
+      for (final entry in data.byMatchday.entries) {
+        final byUser = <String, Set<String>>{
+          for (final manager in entry.value.entries)
+            if (manager.value.lineup.isNotEmpty)
+              manager.key: manager.value.lineup,
+        };
+        if (byUser.isNotEmpty) result[entry.key] = byUser;
       }
-
       return result;
     });
 
@@ -172,6 +136,61 @@ final leagueSeasonStartDateProvider = FutureProvider.family<DateTime, String>((
   return kLeagueSeasonStartDate;
 });
 
+/// Transfer-Historie eines Managers: alle Transfers ab Saisonstart, geparst
+/// in [ManagerTransferHistoryEntry].
+///
+/// Wird von der Budget-Berechnung und der Händchen-Ableitung gemeinsam
+/// genutzt – ein Request pro Manager, von Riverpod gecacht. Die Kickbase-API
+/// liefert pro Aufruf nur die neuesten ~25 Transfers; der API-Client blättert
+/// seitenweise weiter, bis die ältesten Transfers vor dem Saisonstart liegen.
+final managerTransfersProvider =
+    FutureProvider.family<
+      List<ManagerTransferHistoryEntry>,
+      ({String leagueId, String managerId})
+    >((ref, params) async {
+      final apiClient = ref.watch(kickbaseApiClientProvider);
+      final seasonStartDate = await ref.watch(
+        leagueSeasonStartDateProvider(params.leagueId).future,
+      );
+
+      final transferHistoryData = await apiClient
+          .getManagerTransferHistoryPaged(
+            params.leagueId,
+            params.managerId,
+            since: seasonStartDate,
+          );
+
+      final rawTransfers = (transferHistoryData['it'] as List<dynamic>? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .toList();
+
+      final managerId =
+          transferHistoryData['u']?.toString() ?? params.managerId;
+      final managerName =
+          transferHistoryData['unm']?.toString() ?? 'Unbekannter Manager';
+
+      return rawTransfers
+          .map(
+            (rawTransfer) => ManagerTransferHistoryEntry(
+              id: rawTransfer['tid']?.toString() ?? '',
+              leagueId: params.leagueId,
+              managerId: managerId,
+              managerName: managerName,
+              playerId: rawTransfer['pi']?.toString() ?? '',
+              playerName: rawTransfer['pn']?.toString() ?? '',
+              price: _asInt(rawTransfer['trp']),
+              transferType: _asInt(rawTransfer['tty']),
+              timestamp: _asDateTime(rawTransfer['dt']),
+            ),
+          )
+          .where((transfer) {
+            // Nur Transfers nach oder am Saisondatum berücksichtigen
+            return transfer.timestamp.isAtSameMomentAs(seasonStartDate) ||
+                transfer.timestamp.isAfter(seasonStartDate);
+          })
+          .toList();
+    });
+
 /// Provider für die Budget-Berechnung eines Managers
 ///
 /// Berechnet das aktuelle Budget basierend auf:
@@ -210,49 +229,15 @@ final managerBudgetCalculationProvider =
           dashboardData['name'] ??
           'Unbekannter Manager';
 
-      // 2. Transferhistorie SEITENWEISE laden: Die Kickbase API liefert pro
-      // Aufruf nur die neuesten ~25 Transfers. Für eine korrekte Budget-
-      // berechnung müssen ALLE Transfers ab dem Saison-Startdatum berück-
-      // sichtigt werden, daher laden wir so lange ältere Seiten nach, bis
-      // die ältesten Transfers vor dem Saison-Start liegen.
-      final transferHistoryData = await apiClient
-          .getManagerTransferHistoryPaged(
-            params.leagueId,
-            params.managerId,
-            since: seasonStartDate,
-          );
-
-      // 4. Transferhistorie normalisieren und nach Saisondatum filtern
-      final rawTransfers = (transferHistoryData['it'] as List<dynamic>? ?? [])
-          .whereType<Map<String, dynamic>>()
-          .toList();
-
-      final managerId =
-          transferHistoryData['u']?.toString() ?? params.managerId;
-      final managerNameFromTransfer =
-          transferHistoryData['unm']?.toString() ?? managerName;
-
-      // Transfers in ManagerTransferHistoryEntry umwandeln und nach Saison filtern
-      final allTransfers = rawTransfers
-          .map((rawTransfer) {
-            return ManagerTransferHistoryEntry(
-              id: rawTransfer['tid']?.toString() ?? '',
-              leagueId: params.leagueId,
-              managerId: managerId,
-              managerName: managerNameFromTransfer,
-              playerId: rawTransfer['pi']?.toString() ?? '',
-              playerName: rawTransfer['pn']?.toString() ?? '',
-              price: _asInt(rawTransfer['trp']),
-              transferType: _asInt(rawTransfer['tty']),
-              timestamp: _asDateTime(rawTransfer['dt']),
-            );
-          })
-          .where((transfer) {
-            // Nur Transfers nach oder am Saisondatum berücksichtigen
-            return transfer.timestamp.isAtSameMomentAs(seasonStartDate) ||
-                transfer.timestamp.isAfter(seasonStartDate);
-          })
-          .toList();
+      // 2./4. Transferhistorie ab Saisonstart aus dem gecachten
+      // [managerTransfersProvider] – derselbe Datensatz wie für die
+      // Händchen-Ableitung (ein Request pro Manager).
+      final allTransfers = await ref.watch(
+        managerTransfersProvider((
+          leagueId: params.leagueId,
+          managerId: params.managerId,
+        )).future,
+      );
 
       // 5. Budget berechnen
       var result = calculationService.calculateManagerBudget(
@@ -272,8 +257,9 @@ final managerBudgetCalculationProvider =
         seasonStart: seasonStartDate,
       );
       if (loginBonus > 0) {
-        final loginBonusDays = calculationService
-            .loginBonusDaysSince(seasonStartDate);
+        final loginBonusDays = calculationService.loginBonusDaysSince(
+          seasonStartDate,
+        );
         _logger.i(
           '🎁 Anmeldebonus: $loginBonusDays Liga-Tag(e) → '
           '+$loginBonus € für Manager ${params.managerId}',
@@ -418,40 +404,93 @@ final managerBudgetCalculationProvider =
         );
       }
 
+      // 7. Erfolgs-Boni (Achievements): eigener Manager exakt (ac × er),
+      // Fremd-Manager deterministisch abgeleitet – siehe
+      // [managerAchievementIncomeProvider].
+      final achievementSummary = await ref.watch(
+        managerAchievementIncomeProvider((
+          leagueId: params.leagueId,
+          managerId: params.managerId,
+        )).future,
+      );
+      final achievementIncome = achievementSummary?.totalIncome ?? 0;
+      if (achievementIncome > 0) {
+        result = result.copyWith(
+          achievementIncome: achievementIncome,
+          currentBudget: result.currentBudget + achievementIncome,
+        );
+      }
+
       return result;
     });
 
 /// Provider für die Budget-Einnahmen eines Managers durch Erfolge
 /// (Achievements).
 ///
-/// Kickbase vergütet Erfolge (Spieltagssieger, Topscorer, goldene Händchen
-/// etc.) mit Budget, das NICHT in der Transfer-Historie erscheint und daher
-/// in [managerBudgetCalculationProvider] fehlt. Dieses Ergebnis muss vom
-/// Aufrufer separat auf das Budget aufgerechnet werden:
+/// Kickbase vergütet Erfolge (Match day winner, Top scorer, … hands) mit
+/// Budget, das NICHT in der Transfer-Historie erscheint und daher in
+/// [managerBudgetCalculationProvider] fehlt (dort aber bereits aufgerechnet
+/// wird – die Summe hier dient der Anzeige/Aufschlüsselung).
 ///
-/// - eigener Manager: exakt (achievements: ac × er)
-/// - Fremd-Manager: Feed-Attribution (activitiesFeed, t == 26)
+/// WICHTIG: Alle Manager (auch der eigene) laufen durch dieselbe
+/// deterministische SAISON-ABLEITUNG (Spieltags-/Spieler-/Saison-Erfolge +
+/// Händchen/Transfer-Anzahl aus der Transfer-Historie). Die `ac`-Werte aus
+/// `/user/achievements` sind KARRIERE-Summen (alle Saisons je gespielt) –
+/// ihre direkte Summierung (`ac × er`) überschätzt die Saison-Budgets
+/// massiv und dient nur der Kalibrierung.
 ///
 /// Liefert null, wenn keine Einnahmen ermittelbar sind.
-final managerAchievementIncomeProvider = FutureProvider.family<
-    AchievementIncomeSummary?, ({String leagueId, String managerId})>((
-  ref,
-  params,
-) async {
-  try {
-    final incomeByManager = await ref.watch(
-      leagueAchievementIncomeByManagerProvider(params.leagueId).future,
-    );
-    final summary = incomeByManager[params.managerId];
-    if (summary == null || summary.totalIncome <= 0) return null;
-    return summary.copyWith(managerId: params.managerId);
-  } catch (e) {
-    _logger.w(
-      '⚠️ Achievements-Budget für ${params.managerId} nicht ermittelbar: $e',
-    );
-    return null;
-  }
-});
+final managerAchievementIncomeProvider =
+    FutureProvider.family<
+      AchievementIncomeSummary?,
+      ({String leagueId, String managerId})
+    >((ref, params) async {
+      try {
+        // Belohnungen (er = 0 zahlt nichts) und abgeleitete Spieltags-/
+        // Spieler-/Saison-Erfolge – für alle Manager einheitlich.
+        final apiRewards = await ref.watch(
+          achievementApiRewardsByNameProvider(params.leagueId).future,
+        );
+        final derivationService = AchievementDerivationService(
+          apiRewardsByName: apiRewards,
+        );
+        final derivedByManager = await ref.watch(
+          leagueDerivedAchievementEventsProvider(params.leagueId).future,
+        );
+        final events = <AchievementEvent>[
+          ...derivedByManager[params.managerId] ?? [],
+        ];
+
+        // 3. Händchen/Königstransfer aus der Transfer-Historie des Managers.
+        // ponytail: Auto-Verkäufe (250er-Regel) zählen hier nicht als Verkauf –
+        // sie sind in [managerBudgetCalculationProvider] bekannt, würden aber den
+        // Provider-Key sprengen. Ceiling: Händchen-Unterzählung nur bei
+        // MV-Gewinnen über die 250er-Regel; Upgrade: autoSaleEvents übergeben.
+        final transfers = await ref.watch(
+          managerTransfersProvider((
+            leagueId: params.leagueId,
+            managerId: params.managerId,
+          )).future,
+        );
+        events.addAll(derivationService.deriveHandEvents(transfers: transfers));
+        // Transfer-Anzahl-Boni (First deal, Transfer King bronze).
+        final dealCount = transfers
+            .where((t) => t.transferType == 1 || t.transferType == 2)
+            .length;
+        events.addAll(
+          derivationService.deriveTransferCountEvents(transferCount: dealCount),
+        );
+
+        if (events.isEmpty) return null;
+        final summary = derivationService.summarize(params.managerId, events);
+        return summary.totalIncome > 0 ? summary : null;
+      } catch (e) {
+        _logger.w(
+          '⚠️ Achievements-Budget für ${params.managerId} nicht ermittelbar: $e',
+        );
+        return null;
+      }
+    });
 
 /// Hilfsfunktion: Konvertiere Wert in int
 int _asInt(Object? value) => switch (value) {

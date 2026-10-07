@@ -5,6 +5,7 @@ import '../models/player_model.dart';
 import '../models/squad_benchmark_model.dart';
 import '../services/squad_benchmark_service.dart';
 import '../utils/parsing_utils.dart';
+import 'kickbase_auth_provider.dart';
 import 'league_detail_providers.dart';
 import 'manager_providers.dart';
 
@@ -27,6 +28,13 @@ final myLeagueUserIdProvider = FutureProvider.family<String, String>((
   ref,
   leagueId,
 ) async {
+  // Eigene Kickbase-User-ID aus dem Login-Auth-State (Feld `i` des Users).
+  // WICHTIG: `/leagues/{id}/me` enthält KEIN User-ID-Feld (nur Budget/Team/
+  // League-Infos) – `me['u']` war daher immer leer.
+  final authUserId = ref.watch(kickbaseUserIdProvider) ?? '';
+  if (authUserId.isNotEmpty) return authUserId;
+
+  // Fallback: alte me['u']-Parsing (falls der Auth-State noch nicht geladen).
   final me = await ref.watch(leagueMeProvider(leagueId).future);
   final u = me['u'];
   if (u is Map) return (u['i'] ?? u['id'] ?? '').toString();
@@ -48,7 +56,9 @@ final leagueSquadBenchmarkProvider = FutureProvider.family<SquadBenchmark, Strin
   final apiService = ref.watch(squadBenchmarkServiceProvider);
 
   // 1. Alle Manager der Liga über das aktuelle Ranking ermitteln.
-  final ranking = await ref.watch(currentLeagueRankingProvider(leagueId).future);
+  final ranking = await ref.watch(
+    currentLeagueRankingProvider(leagueId).future,
+  );
   final users = (ranking['us'] as List? ?? [])
       .whereType<Map<String, dynamic>>()
       .toList();
@@ -85,7 +95,8 @@ final leagueSquadBenchmarkProvider = FutureProvider.family<SquadBenchmark, Strin
       batch.map((managerId) async {
         try {
           final squadData = await ref.watch(
-            managerSquadProvider((leagueId: leagueId, userId: managerId)).future,
+            managerSquadProvider((leagueId: leagueId, userId: managerId))
+                .future,
           );
           final players = (squadData['it'] as List? ?? [])
               .whereType<Map<String, dynamic>>()

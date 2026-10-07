@@ -156,6 +156,10 @@ abstract class BudgetCalculationResult with _$BudgetCalculationResult {
     /// Anzahl der Liga-Tage, für die der Anmeldebonus gewährt wurde
     /// (Tag 1 = erster Tag der Liga).
     @Default(0) int loginBonusDays,
+
+    /// Summe der Budget-Einnahmen durch Erfolge (Achievements). Bereits in
+    /// [currentBudget] enthalten.
+    @Default(0) int achievementIncome,
   }) = _BudgetCalculationResult;
 
   factory BudgetCalculationResult.fromJson(Map<String, dynamic> json) =>

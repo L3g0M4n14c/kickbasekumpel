@@ -7,10 +7,9 @@
 /// gutgeschrieben, erscheint aber NICHT in der Transfer-Historie – daher
 /// muss sie für die Budget-Berechnung separat ermittelt werden.
 ///
-/// Hinweis: Plain-Dart-Klasse statt Freezed, da die Freezed-Toolchain
-/// (analyzer 7.x) mit dem aktuellen Flutter-SDK nicht lauffähig ist
-/// (Dot-Shorthand-Syntax im Framework). Struktur ist freezed-kompatibel
-/// gehalten, damit ein späterer Wechsel einfach bleibt.
+/// Hinweis: Plain-Dart-Klasse statt Freezed – interne Modelle ohne
+/// JSON-Bedarf brauchen keine Code-Generierung. Struktur ist
+/// freezed-kompatibel gehalten, damit ein späterer Wechsel einfach bleibt.
 class KickbaseAchievement {
   /// Typ-ID des Erfolgs (Feld `t` in der API)
   final String typeId;
@@ -25,7 +24,8 @@ class KickbaseAchievement {
   /// Geld-Belohnung pro Erreichen in € (Feld `er`), z.B. 1000000 = 1 Mio.
   final int earnedReward;
 
-  /// true, wenn der Erfolg saison-/ligaweit einmalig ist (Feld `ise`)
+  /// Flag aus der API (Feld `ise`) – korreliert mit `ac > 0`
+  /// (vermutlich „erreicht"; keine inhaltliche Nutzung).
   final bool isOneTime;
 
   /// Beschreibung des Erfolgs (Feld `d`, nur im Detail-Endpoint)
@@ -69,42 +69,7 @@ class KickbaseAchievement {
       'KickbaseAchievement($typeId, $name, ac=$achievedCount, er=$earnedReward)';
 }
 
-/// Ein Erfolgs-Ereignis aus dem Aktivitäten-Feed
-/// (`GET /leagues/{id}/activitiesFeed`, Einträge mit `t == 26`).
-///
-/// Der Feed ist ligaweit – d.h. hier erscheinen auch die Erfolge der
-/// Konkurrenz-Manager. Die User-Attribution im Feed-Eintrag wird defensiv
-/// über mehrere Felder geparst (siehe [AchievementBudgetService]).
-class AchievementFeedEvent {
-  /// Aktivitäts-ID des Feed-Eintrags
-  final String activityId;
-
-  /// Manager-ID des Empfängers (leer, wenn nicht zuordenbar)
-  final String managerId;
-
-  /// Manager-Name (falls im Feed enthalten)
-  final String managerName;
-
-  /// Erfolgs-Typ-ID (Feld `data.t`)
-  final String achievementTypeId;
-
-  /// Zeitpunkt des Ereignisses
-  final DateTime? timestamp;
-
-  const AchievementFeedEvent({
-    this.activityId = '',
-    this.managerId = '',
-    this.managerName = '',
-    required this.achievementTypeId,
-    this.timestamp,
-  });
-
-  @override
-  String toString() =>
-      'AchievementFeedEvent($managerId, $achievementTypeId)';
-}
-
-/// Einzelner Erfolgs-Budget-Posten (bereits mit Belohnung aufgelöst).
+/// Ein einzelner Erfolgs-Budget-Posten (bereits mit Belohnung aufgelöst).
 class AchievementEvent {
   /// Erfolgs-Typ-ID
   final String achievementTypeId;
