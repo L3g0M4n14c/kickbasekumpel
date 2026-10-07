@@ -249,6 +249,22 @@ class AutoSaleBudgetService {
   // Matchday-Ende & Marktwert
   // ============================================================================
 
+  /// Liefert den Anpfiff (`md`, Kickoff) des Spieltags [day] dieses Spielers
+  /// oder null, wenn kein Eintrag mit parsebarem Datum existiert.
+  ///
+  /// Ist der Anker für die Besitz-Prüfung beim Auto-Verkauf: Der Verkauf
+  /// erfolgt mit der finalen Berechnung des Crossing-Spieltags, also nach
+  /// diesem Anpfiff. Wer den Spieler erst danach gekauft hat, besaß ihn beim
+  /// Verkauf nicht.
+  DateTime? matchdayKickoff(List<MatchPerformance> ph, int day) {
+    for (final entry in ph) {
+      if (entry.day != day) continue;
+      final kickoff = DateTime.tryParse(entry.md)?.toUtc();
+      if (kickoff != null) return kickoff;
+    }
+    return null;
+  }
+
   /// Ermittelt das Ende eines Spieltags: Der Auto-Verkauf erfolgt mit der
   /// finalen Spieltagsberechnung, also nach dem letzten Spiel des Spieltags.
   /// Als Stichtag verwenden wir das Match-Datum (`md`, Kickoff) des FOLGE-
@@ -333,9 +349,24 @@ class AutoSaleBudgetService {
       // Verkauf erfolgt mit der finalen Spieltagsberechnung.
       final saleInstant = matchdayEnd(day: crossing.day, ph: ph, fallback: now);
 
-      // Der Manager muss den Spieler zum Verkaufszeitpunkt noch besessen
-      // haben (anschließender Kauf eines bereits verkauften Spielers vom
-      // Markt erzeugt KEINE Einnahme).
+      // Der Manager muss den Spieler schon beim Crossing-Spiel besessen
+      // haben. Der Verkauf passiert am Abend der finalen Berechnung dieses
+      // Spieltags, also nach dem Anpfiff des Crossing-Spiels. Ein Rückkauf
+      // vom Markt (Kauf NACH dem Auto-Verkauf – "Spieler ist jetzt im Kader,
+      // beim Crossing-Spieltag aber noch nicht") beginnt erst danach und
+      // darf die Einnahme nicht abbekommen. Allein die Prüfung gegen
+      // [saleInstant] reicht NICHT: Das ist der Kickoff des Folgespieltags
+      // bzw. "jetzt" und liegt je nach Datenlage Tage bis Wochen nach dem
+      // eigentlichen Verkauf.
+      final crossingKickoff = matchdayKickoff(ph, crossing.day);
+      if (crossingKickoff == null || !period.covers(crossingKickoff)) {
+        continue;
+      }
+
+      // Zusätzlich muss der Besitz bis zum Verkauf bestanden haben (manueller
+      // Verkauf vor der finalen Berechnung erzeugt keine Einnahme; ein
+      // anschließender Kauf eines bereits verkauften Spielers vom Markt
+      // ebenfalls nicht).
       if (!period.covers(saleInstant)) continue;
 
       final marketValues = marketValuesByPlayer[period.playerId] ?? const [];

@@ -368,6 +368,31 @@ void main() {
     });
   });
 
+  group('AutoSaleBudgetService.matchdayKickoff', () {
+    test('liefert den Anpfiff des Spieltags', () {
+      final ph = [_perf(1, _day1Start), _perf(2, _day2Start)];
+
+      expect(service.matchdayKickoff(ph, 2), _day2Start);
+      expect(service.matchdayKickoff(ph, 1), _day1Start);
+    });
+
+    test('null bei fehlendem oder unparsebarem md', () {
+      final broken = MatchPerformance(
+        day: 1,
+        cur: false,
+        md: 'kein-datum',
+        t1: 'A',
+        t2: 'B',
+        st: 1,
+        mdst: 0,
+      );
+
+      expect(service.matchdayKickoff([broken], 1), isNull);
+      expect(service.matchdayKickoff([_perf(2, _day2Start)], 1), isNull);
+      expect(service.matchdayKickoff([], 1), isNull);
+    });
+  });
+
   group('AutoSaleBudgetService.marketValueAt', () {
     test(
       'liefert den letzten bekannten Marktwert am oder vor dem Stichtag',
@@ -562,6 +587,75 @@ void main() {
         );
 
         expect(computation.events, isEmpty);
+      },
+    );
+
+    test('KEIN Event für Rückkauf vom Markt nach dem Auto-Verkauf', () {
+      // Crossing bei ST 3 (12.09) – letzter bekannter Spieltag, der Verkauf
+      // erfolgte also mit der finalen Berechnung von ST 3. Der Spieler wurde
+      // am 15.09 vom Markt gekauft (Rückkauf NACH dem Auto-Verkauf) und ist
+      // jetzt im Kader – beim Crossing-Spieltag hatte man ihn aber noch
+      // nicht. Vor dem Fix wurde der Besitz fälschlich erst zum Fallback-
+      // Instant "now" (20.09) geprüft und der Rückkauf bekam die Einnahme
+      // zugeschrieben.
+      final computation = service.computeAutoSales(
+        threshold: 250,
+        seasonStart: seasonStart,
+        periods: [
+          OwnershipPeriod(
+            playerId: 'p1',
+            playerName: 'Stürmer',
+            start: _day3Start.add(const Duration(days: 3)), // Kauf nach ST 3
+          ),
+        ],
+        performanceByPlayer: {'p1': performance},
+        marketValuesByPlayer: {
+          'p1': mvHistory(mvAtDay2: 15000000, mvAtDay3: 18000000),
+        },
+        now: now,
+      );
+
+      expect(computation.events, isEmpty);
+      expect(computation.totalIncome, 0);
+    });
+
+    test(
+      'KEIN Event für Rückkauf zwischen Crossing-Spieltag und Folgespieltag',
+      () {
+        // Crossing bei ST 1 (22.08), Verkauf mit der finalen Berechnung von
+        // ST 1. Der Rückkauf vom Markt erfolgte am 24.08 – vor dem Fix wurde
+        // der Besitz erst zum Kickoff von ST 2 (29.08) geprüft und der
+        // Rückkauf fälschlich als Besitz beim Verkauf gewertet.
+        final crossingAtDay1 = _season('28', [
+          _perf(1, _day1Start, p: 300),
+          _perf(2, _day2Start, p: 300),
+          _perf(3, _day3Start, p: 300),
+        ]);
+
+        final computation = service.computeAutoSales(
+          threshold: 250,
+          seasonStart: seasonStart,
+          periods: [
+            OwnershipPeriod(
+              playerId: 'p1',
+              playerName: 'Stürmer',
+              start: _day1Start.add(const Duration(days: 2)), // Kauf nach ST 1
+            ),
+          ],
+          performanceByPlayer: {
+            'p1': PlayerPerformanceResponse(it: [crossingAtDay1]),
+          },
+          marketValuesByPlayer: {
+            'p1': [
+              MarketValueEntry(dt: _daysSinceEpoch(_day1Start), mv: 10000000),
+              MarketValueEntry(dt: _daysSinceEpoch(_day2Start), mv: 15000000),
+            ],
+          },
+          now: now,
+        );
+
+        expect(computation.events, isEmpty);
+        expect(computation.totalIncome, 0);
       },
     );
 
