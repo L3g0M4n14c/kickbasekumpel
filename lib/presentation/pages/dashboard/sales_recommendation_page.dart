@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:kickbasekumpel/config/router.dart';
+import 'package:kickbasekumpel/data/models/performance_model.dart';
 import 'package:kickbasekumpel/data/models/player_model.dart';
 import 'package:kickbasekumpel/data/models/transfer_model.dart';
+import 'package:kickbasekumpel/data/providers/budget_calculation_providers.dart';
+import 'package:kickbasekumpel/data/providers/kickbase_api_provider.dart';
 import 'package:kickbasekumpel/data/providers/league_providers.dart';
 import 'package:kickbasekumpel/data/providers/recommendation_providers.dart';
+import 'package:kickbasekumpel/data/services/auto_sale_budget_service.dart';
+import 'package:kickbasekumpel/data/services/kickbase_api_client.dart';
 import 'package:kickbasekumpel/presentation/providers/dashboard_providers.dart';
 import 'package:kickbasekumpel/presentation/widgets/charts/position_badge.dart';
 import 'package:kickbasekumpel/presentation/widgets/transfers/transfer_plan_formatters.dart';
@@ -54,9 +59,21 @@ class _SalesRecommendationPageState
     final ownedSquad = [
       for (final player in squad) player.copyWith(userOwnsPlayer: true),
     ];
+    // Letzte Performances laden, damit die Form auf den letzten Spieltagen
+    // basiert und nicht auf den Saison-Schnitt ausweicht.
+    final recentPerformances = await _loadRecentPerformances(
+      ref.read(kickbaseApiClientProvider),
+      leagueId,
+      ownedSquad,
+    );
+    if (!mounted) return;
     await ref
         .read(generateRecommendationsNotifierProvider.notifier)
-        .generateForPlayers(leagueId, ownedSquad);
+        .generateForPlayers(
+          leagueId,
+          ownedSquad,
+          recentPerformances: recentPerformances,
+        );
   }
 
   @override
@@ -269,4 +286,54 @@ class _SectionTitle extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Lädt die Spieltagspunkte der aktuellen Saison pro Spieler parallel und
+/// toleriert Fehler einzelner Spieler (dann greift der Saison-Schnitt-
+/// Fallback der Analyse).
+///
+/// Der Performance-Endpunkt liefert `p` als KUMULIERTE Saison-Gesamtpunktzahl
+/// (siehe [AutoSaleBudgetService.crossingMatchday]), die Form-Berechnung
+/// erwartet jedoch Punkte pro Spieltag – daher wird in
+/// [_perMatchDayPoints] auf Differenzen umgerechnet.
+Future<Map<String, List<MatchPerformance>>> _loadRecentPerformances(
+  KickbaseAPIClient apiClient,
+  String leagueId,
+  List<Player> players,
+) async {
+  final budgetService = AutoSaleBudgetService();
+  final entries = await Future.wait(
+    players.map((player) async {
+      try {
+        final stats = await apiClient.getPlayerStats(leagueId, player.id);
+        final season = budgetService.currentSeasonPerformance(
+          stats,
+          seasonStart: kLeagueSeasonStartDate,
+        );
+        return MapEntry(player.id, _perMatchDayPoints(season?.ph ?? const []));
+      } catch (_) {
+        return MapEntry(player.id, const <MatchPerformance>[]);
+      }
+    }),
+  );
+  return {for (final entry in entries) entry.key: entry.value};
+}
+
+/// Rechnet kumulierte Saisonpunkte ([ph]) in Punkte pro Spieltag um.
+///
+/// ponytail: Setzt voraus, dass [ph] die komplette Saison ab dem ersten
+/// Spieltag umfasst (erster Wert = Punkte des ersten Spieltags).
+/// Upgrade-Pfad, falls die API je nur Ausschnitte liefert: Startwert aus dem
+/// Saisonstart rekonstruieren.
+List<MatchPerformance> _perMatchDayPoints(List<MatchPerformance> ph) {
+  final sorted = [...ph]..sort((a, b) => a.day.compareTo(b.day));
+  final result = <MatchPerformance>[];
+  var previous = 0;
+  for (final match in sorted) {
+    final cumulative = match.p;
+    if (cumulative == null) continue;
+    result.add(match.copyWith(p: cumulative - previous));
+    previous = cumulative;
+  }
+  return result;
 }
