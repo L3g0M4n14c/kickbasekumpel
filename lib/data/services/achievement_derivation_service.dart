@@ -11,9 +11,9 @@ import 'achievement_budget_service.dart';
 class AchievementDerivationRules {
   const AchievementDerivationRules({
     this.tiesShare = true,
-    this.stackPointBonuses = true,
-    this.stackPlayerBonuses = true,
-    this.handThresholdsStack = true,
+    this.stackPointBonuses = false,
+    this.stackPlayerBonuses = false,
+    this.handThresholdsStack = false,
     this.handAutoSalesCount = true,
     this.seasonWinnerTiesShare = false,
   });
@@ -23,12 +23,24 @@ class AchievementDerivationRules {
   final bool tiesShare;
 
   /// Punkte-Boni stapeln: 1600 Pkt. zählt als Silber UND Gold.
+  ///
+  /// Standard false (Live-Beweis 07.10.2026): `Match day points bronze` hat
+  /// ac = 1 neben `silver` ac = 137 – hätte jeder Silber-Spieltag auch
+  /// Bronze gezahlt, wäre ac(bronze) ≥ 137. Pro Spieltag zählt nur die
+  /// höchste erreichte Stufe (keine Dopplungen).
   final bool stackPointBonuses;
 
   /// Spieler-Boni stapeln: 350 Pkt. zählen als Topscorer UND Matchwinner.
+  ///
+  /// Standard false – analog zu [stackPointBonuses] zählt pro
+  /// Manager/Spieltag nur die höchste Stufe.
   final bool stackPlayerBonuses;
 
   /// Händchen-Schwellen stapeln: 6 Mio. Gewinn zählt als Bronze UND Silber.
+  ///
+  /// Standard false (Live-Beweis): `The right touch` (≥ 1 Mio.) hat ac = 1
+  /// neben `Bronze hand` (≥ 3 Mio.) ac = 102 – pro Gewinn-Ereignis zählt
+  /// nur die höchste Stufe.
   final bool handThresholdsStack;
 
   /// Auto-Verkäufe (250er-Regel) zählen als Verkauf zum Marktwert.
@@ -399,10 +411,14 @@ class AchievementDerivationService {
   }) {
     final eventsByManager = <String, List<AchievementEvent>>{};
     for (final entry in teamValuesByManager.entries) {
+      // stack: false – Karriere-Trophäen („Own a team with a value of X"):
+      // pro Manager zählt nur die höchste erreichte Stufe. Der Live-Dump
+      // zeigt bronze (dt=2018) und silver (dt=2026) als getrennte, einmalige
+      // Erfolge – beide in eine Saison zu zählen ist eine Dopplung.
       for (final threshold in _crossedThresholds(
         entry.value,
         teamValueThresholds,
-        stack: true,
+        stack: false,
       )) {
         eventsByManager
             .putIfAbsent(entry.key, () => [])

@@ -133,6 +133,12 @@ Serien mit `t`-Bereichen (1–5 Match day winner, 100er Match day points,
   Season points silver+, Team value gold+, Transfer King silver+, The Special
   One, The Galactics, F. Magath) – per Detail-Endpoint sichtbar, sobald ac > 0.
 - „Champion" `er` unbestätigt (Schätzung 2 Mio. aus Help-Center).
+- **Keine Dopplungen (Live-Beweis):** pro Ereignis zählt nur die höchste
+  Stufe – `Match day points bronze` ac=1 neben `silver` ac=137 zeigt, dass
+  Silber-Spieltage KEIN Bronze zahlen; analog `The right touch` ac=1 neben
+  `Bronze hand` ac=102. Entstapelt in `AchievementDerivationRules`
+  (Defaults `stackPointBonuses/stackPlayerBonuses/handThresholdsStack =
+  false`; Team value ebenso nur höchste Stufe).
 
 ### 3. Anmeldebonus anderer Manager
 Der Anmeldebonus wird aktuell für alle Manager gleich angenommen (Annahme:

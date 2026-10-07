@@ -76,7 +76,9 @@ void main() {
     });
 
     test('Punkte-Boni: Schwellen 500/1000/1500/2000 werden gestapelt', () {
-      final service = AchievementDerivationService();
+      final service = AchievementDerivationService(
+        rules: const AchievementDerivationRules(stackPointBonuses: true),
+      );
       final events = service.deriveMatchdayEvents(
         pointsByMatchday: {
           1: {'m1': 1200}, // Bronze + Silber
@@ -114,7 +116,9 @@ void main() {
 
   group('AchievementDerivationService.derivePlayerEvents', () {
     test('Spieler-Punkte-Schwellen 200/300/400/500 werden gestapelt', () {
-      final service = AchievementDerivationService();
+      final service = AchievementDerivationService(
+        rules: const AchievementDerivationRules(stackPlayerBonuses: true),
+      );
       final events = service.derivePlayerEvents(
         lineupsByMatchday: {
           1: {
@@ -184,7 +188,9 @@ void main() {
 
   group('AchievementDerivationService.deriveHandEvents', () {
     test('Gewinn pro Spieler löst Händchen-Schwellen gestapelt aus', () {
-      final service = AchievementDerivationService();
+      final service = AchievementDerivationService(
+        rules: const AchievementDerivationRules(handThresholdsStack: true),
+      );
       final events = service.deriveHandEvents(
         transfers: [
           _transfer(playerId: 'p1', transferType: 1, price: 5000000),
@@ -239,7 +245,7 @@ void main() {
           ],
         );
 
-        expect(events.map((e) => e.name), ['The right touch', 'Bronze hand']);
+        expect(events.map((e) => e.name), ['Bronze hand']);
       },
     );
 
@@ -259,8 +265,8 @@ void main() {
         ],
       );
 
-      // Gewinn 4 Mio. → The right touch + Bronze hand
-      expect(events.map((e) => e.name), ['The right touch', 'Bronze hand']);
+      // Gewinn 4 Mio. → nur Bronze hand (keine Dopplung mit The right touch)
+      expect(events.map((e) => e.name), ['Bronze hand']);
     });
 
     test('Gewinne eines Spielers werden über die Saison kumuliert', () {
@@ -278,10 +284,9 @@ void main() {
         ],
       );
 
-      // Gesamtgewinn 5 Mio. → Bronze + Silber (jeweils nur einmal pro Spieler)
+      // Gesamtgewinn 5 Mio. → nur die höchste Stufe (Silver hand).
       final names = events.map((e) => e.name).toList();
-      expect(names.where((n) => n == 'Bronze hand'), hasLength(1));
-      expect(names.where((n) => n == 'Silver hand'), hasLength(1));
+      expect(names, ['Silver hand']);
     });
   });
 
@@ -445,10 +450,9 @@ void main() {
         teamValuesByManager: {'m1': 160000000, 'm2': 130000000, 'm3': 50000000},
       );
 
-      expect(
-        events['m1']!.map((e) => e.name),
-        containsAll(['Team value bronze', 'Team value silver']),
-      );
+      // m1 (160 Mio.): nur die höchste Stufe – Bronze ist eine separate
+      // einmalige Trophäe (keine Dopplung).
+      expect(events['m1']!.map((e) => e.name), ['Team value silver']);
       expect(events['m2']!.single.name, 'Team value bronze');
       expect(events['m3'], isNull);
     });
