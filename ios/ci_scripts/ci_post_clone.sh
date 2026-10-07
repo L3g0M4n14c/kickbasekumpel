@@ -6,7 +6,7 @@
 # Required Xcode Cloud environment variable (set in App Store Connect → Xcode Cloud → Workflow → Environment):
 #   FLUTTER_VERSION  – Flutter release, exact (e.g. "3.32.2") or wildcard (e.g. "3.38.x")
 #                      Wildcard is resolved to the latest stable patch from the Flutter releases API.
-#                      Default 3.47.x: pubspec.yaml requires Dart ^3.9.2 (Flutter 3.35+),
+#                      Default 3.47.x: pubspec.yaml requires Dart ^3.13.0 (Flutter 3.47+, via freezed 4.x),
 #                      und 3.47.x = die lokal verifizierte Version (CocoaPods-Setup).
 
 set -e
