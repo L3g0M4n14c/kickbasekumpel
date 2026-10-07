@@ -134,16 +134,10 @@ void main() {
       ];
 
       final rising = service.analyze(
-        PlayerAnalysisInput(
-          player: buildPlayer(),
-          marketValueHistory: history,
-        ),
+        PlayerAnalysisInput(player: buildPlayer(), marketValueHistory: history),
       );
       final stable = service.analyze(
-        PlayerAnalysisInput(
-          player: buildPlayer(),
-          marketValueHistory: flat,
-        ),
+        PlayerAnalysisInput(player: buildPlayer(), marketValueHistory: flat),
       );
 
       expect(rising.score, greaterThan(stable.score));
@@ -200,6 +194,91 @@ void main() {
       for (final result in results) {
         expect(result.score, inInclusiveRange(0, 100));
       }
+    });
+
+    test('Status 4 (Aufbautraining) führt zum Strong-Sell', () {
+      final result = service.analyze(
+        PlayerAnalysisInput(
+          player: buildPlayer(status: 4, userOwnsPlayer: true),
+        ),
+      );
+
+      expect(result.score, lessThan(20));
+      expect(result.action, 'strong-sell');
+      expect(result.reason, contains('Aufbautraining'));
+    });
+
+    test('Status 3 (Gesperrt) wird als Sperre behandelt', () {
+      final result = service.analyze(
+        PlayerAnalysisInput(
+          player: buildPlayer(status: 3, userOwnsPlayer: true),
+        ),
+      );
+
+      expect(result.action, 'strong-sell');
+      expect(result.reason, contains('gesperrt'));
+    });
+
+    test('kommende Gegner werden über bis zu drei Spiele gemittelt', () {
+      List<FixtureInfo> fixtures(int position) => [
+        for (var i = 0; i < 3; i++)
+          FixtureInfo(
+            opponentName: 'FC Gegner ${i + 1}',
+            opponentTablePosition: position,
+            isHomeGame: true,
+          ),
+      ];
+
+      final weakOpponents = service.analyze(
+        PlayerAnalysisInput(
+          player: buildPlayer(),
+          upcomingFixtures: fixtures(16),
+        ),
+      );
+      final topOpponents = service.analyze(
+        PlayerAnalysisInput(
+          player: buildPlayer(),
+          upcomingFixtures: fixtures(1),
+        ),
+      );
+
+      // Schwache Gegner (Platz 16, Heim): +6 pro Spiel, Top-Teams (Heim): -4.
+      expect(
+        weakOpponents.score,
+        greaterThanOrEqualTo(topOpponents.score + 10),
+      );
+      expect(weakOpponents.reason, contains('Nächste Gegner'));
+    });
+
+    test('gemischte Gegnerstärke ergibt den Mittelwert', () {
+      final mixed = service.analyze(
+        PlayerAnalysisInput(
+          player: buildPlayer(),
+          upcomingFixtures: const [
+            FixtureInfo(
+              opponentName: 'Top',
+              opponentTablePosition: 1,
+              isHomeGame: false,
+            ),
+            FixtureInfo(
+              opponentName: 'Mittel',
+              opponentTablePosition: 10,
+              isHomeGame: true,
+            ),
+            FixtureInfo(
+              opponentName: 'Schwach',
+              opponentTablePosition: 16,
+              isHomeGame: true,
+            ),
+          ],
+        ),
+      );
+      final neutral = service.analyze(
+        PlayerAnalysisInput(player: buildPlayer()),
+      );
+
+      // Top auswärts: -6; Platz 10 Heim: +2; Platz 16 Heim: +6 -> Ø +0.67.
+      expect(mixed.score, closeTo(neutral.score + 0.67, 0.5));
     });
 
     test('analyzeBatch keyed Ergebnisse nach Spieler-ID', () {

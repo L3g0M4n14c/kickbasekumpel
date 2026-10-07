@@ -136,6 +136,7 @@ void main() {
                 ),
               ),
               teamPlayersProvider.overrideWith((ref) => Future.value([player])),
+              teamBudgetProvider.overrideWith((ref) => Future.value(-5000000)),
               selectedLeagueIdProvider.overrideWithValue('league-a'),
             ],
             child: const MaterialApp(home: SalesRecommendationPage()),
@@ -153,6 +154,66 @@ void main() {
         expect(input.recentPerformances!.map((m) => m.p), [12, 7, 15]);
       },
     );
+
+    testWidgets('zeigt Ziel-Auswahl und kritische Verkaufsempfehlung', (
+      tester,
+    ) async {
+      final firestore = FakeFirebaseFirestore();
+      final mockApiClient = MockKickbaseAPIClient();
+      final fakeService = _FakeDeterministicRecommendationService();
+
+      when(
+        () => mockApiClient.getCompetitionTable(any()),
+      ).thenAnswer((_) async => {'it': []});
+      when(
+        () => mockApiClient.getCompetitionMatchdays(any()),
+      ).thenAnswer((_) async => {'it': []});
+      when(
+        () => mockApiClient.getLineup(any()),
+      ).thenAnswer((_) async => const LineupResponse(players: []));
+      when(
+        () => mockApiClient.getPlayerStats(any(), any()),
+      ).thenAnswer((_) async => PlayerPerformanceResponse(it: const []));
+
+      // Kader mit spielbarer Startelf (4-4-2) plus ein verletzter
+      // Mittelfeld-Zusatz – als einziger verkäuflich.
+      final players = [
+        _buildPlayer(id: 'tw', position: 1),
+        for (var i = 1; i <= 4; i++) _buildPlayer(id: 'abw$i', position: 2),
+        for (var i = 1; i <= 4; i++) _buildPlayer(id: 'm$i', position: 3),
+        _buildPlayer(id: 'player-a', status: 1),
+        for (var i = 1; i <= 2; i++) _buildPlayer(id: 'st$i', position: 4),
+      ];
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            firestoreProvider.overrideWithValue(firestore),
+            kickbaseApiClientProvider.overrideWithValue(mockApiClient),
+            recommendationRepositoryProvider.overrideWithValue(
+              RecommendationRepository(
+                firestore: firestore,
+                recommendationService: fakeService,
+              ),
+            ),
+            teamPlayersProvider.overrideWith((ref) => Future.value(players)),
+            teamBudgetProvider.overrideWith((ref) => Future.value(-5000000)),
+            selectedLeagueIdProvider.overrideWithValue('league-a'),
+          ],
+          child: const MaterialApp(home: SalesRecommendationPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Ziel-Auswahl mit allen drei Zielen.
+      expect(find.text('Budget ins Plus'), findsOneWidget);
+      expect(find.text('Maximaler Profit'), findsOneWidget);
+      expect(find.text('Beste Spieler behalten'), findsOneWidget);
+      // Kritischer Spieler (verletzt) -> Verkaufsempfehlung mit Priorität Hoch.
+      expect(find.text('Verkaufsempfehlungen'), findsOneWidget);
+      expect(find.text('Hoch'), findsOneWidget);
+      expect(find.text('Max Eigentor'), findsWidgets);
+    });
   });
 }
 
@@ -179,7 +240,7 @@ class _FakeDeterministicRecommendationService
   }
 }
 
-Player _buildPlayer({required String id}) {
+Player _buildPlayer({required String id, int status = 0, int position = 3}) {
   return Player(
     id: id,
     firstName: 'Max',
@@ -187,7 +248,7 @@ Player _buildPlayer({required String id}) {
     profileBigUrl: 'https://example.com/player.png',
     teamName: 'FC Test',
     teamId: 'team-1',
-    position: 3,
+    position: position,
     number: 10,
     averagePoints: 5.5,
     totalPoints: 88,
@@ -196,21 +257,20 @@ Player _buildPlayer({required String id}) {
     tfhmvt: 250000,
     prlo: 0,
     stl: 3,
-    status: 0,
+    status: status,
     userOwnsPlayer: true,
   );
 }
 
-MatchPerformance _match({
-  required int day,
-  required int cumulativePoints,
-}) {
+MatchPerformance _match({required int day, required int cumulativePoints}) {
   return MatchPerformance(
     day: day,
     p: cumulativePoints,
-    md: DateTime.utc(2026, 8, 22)
-        .add(Duration(days: (day - 1) * 7))
-        .toIso8601String(),
+    md: DateTime.utc(
+      2026,
+      8,
+      22,
+    ).add(Duration(days: (day - 1) * 7)).toIso8601String(),
     t1: 'FC Test',
     t2: 'FC Gegner',
     st: 1,

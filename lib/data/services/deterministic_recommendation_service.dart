@@ -5,6 +5,21 @@ import '../models/market_value_model.dart';
 import '../models/performance_model.dart';
 import '../models/ligainsider_model.dart';
 
+/// Ein einzelnes kommendes Spiel für die Spielplan-Komponente.
+class FixtureInfo {
+  const FixtureInfo({
+    required this.opponentName,
+    this.opponentTablePosition,
+    required this.isHomeGame,
+  });
+
+  final String opponentName;
+
+  /// Tabellenposition des Gegners (0 = unbekannt).
+  final int? opponentTablePosition;
+  final bool isHomeGame;
+}
+
 /// Input-Datenstruktur für die deterministische Spieleranalyse.
 class PlayerAnalysisInput {
   final Player player;
@@ -19,6 +34,11 @@ class PlayerAnalysisInput {
   final int? ownTeamTablePosition;
   final String? nextMatchLocation;
 
+  /// Kommende Spiele (bis [DeterministicRecommendationService.maxUpcomingFixtures]).
+  /// Wenn gesetzt, fließt die Gegner-Stärke gemittelt über alle Spiele ein;
+  /// sonst greift der Fallback auf den nächsten Gegner.
+  final List<FixtureInfo>? upcomingFixtures;
+
   const PlayerAnalysisInput({
     required this.player,
     this.marketValueHistory,
@@ -31,6 +51,7 @@ class PlayerAnalysisInput {
     this.nextOpponentTablePosition,
     this.ownTeamTablePosition,
     this.nextMatchLocation,
+    this.upcomingFixtures,
   });
 }
 
@@ -127,17 +148,31 @@ class DeterministicRecommendationService {
   /// Status-Codes für Verletzung.
   static const Set<int> injuryStatuses = {1, 2};
 
-  /// Status-Codes für Sperre.
-  static const Set<int> suspensionStatuses = {8, 32};
+  /// Status-Codes für Sperre (3 = gesperrt, 8 = Sperre, 32 = Gelbsperre).
+  static const Set<int> suspensionStatuses = {3, 8, 32};
+
+  /// Status-Codes für Aufbautraining (Comeback nach Verletzung).
+  static const Set<int> recoveryStatuses = {4};
 
   /// Status-Codes für Abwesenheit.
   static const Set<int> absenceStatuses = {256};
+
+  /// true, wenn der Spieler nicht voll verfügbar ist (verletzt/angeschlagen,
+  /// gesperrt, im Aufbautraining oder abwesend).
+  static bool isUnavailable(int status) =>
+      injuryStatuses.contains(status) ||
+      suspensionStatuses.contains(status) ||
+      recoveryStatuses.contains(status) ||
+      absenceStatuses.contains(status);
 
   /// Wie viele Spieltage maximal in die Form einfließen.
   static const int maxFormMatchdays = 5;
 
   /// Wie viele Marktwert-Einträge maximal in die Historien-Steigung einfließen.
   static const int maxValueHistoryEntries = 10;
+
+  /// Wie viele kommende Spiele maximal in die Spielplan-Bewertung einfließen.
+  static const int maxUpcomingFixtures = 3;
 
   const DeterministicRecommendationService();
 
@@ -173,8 +208,6 @@ class DeterministicRecommendationService {
       );
     }
 
-
-
     // 2. Form (gewichteter Schnitt der letzten Spieltage, neuere zählen mehr).
     final form = _weightedForm(input.recentPerformances);
     double formDelta;
@@ -188,7 +221,8 @@ class DeterministicRecommendationService {
           'Form: ${form.toStringAsFixed(1)} Pkt Ø letzte $matchdaysUsed Spiele';
     } else {
       formDelta = _formDelta(player.averagePoints);
-      formSummary = 'Form: ${player.averagePoints.toStringAsFixed(1)} Pkt '
+      formSummary =
+          'Form: ${player.averagePoints.toStringAsFixed(1)} Pkt '
           '(Saison-Schnitt, keine aktuellen Spiele)';
     }
     components['form'] = formDelta;
@@ -252,7 +286,6 @@ class DeterministicRecommendationService {
     List<PlayerAnalysisInput> players,
   ) => {for (final input in players) input.player.id: analyze(input)};
 
-
   // ---------------------------------------------------------------------------
   // Komponenten
   // ---------------------------------------------------------------------------
@@ -261,6 +294,7 @@ class DeterministicRecommendationService {
   String? _availabilityLabel(int status) {
     if (injuryStatuses.contains(status)) return 'verletzt / angeschlagen';
     if (suspensionStatuses.contains(status)) return 'gesperrt';
+    if (recoveryStatuses.contains(status)) return 'im Aufbautraining';
     if (absenceStatuses.contains(status)) return 'abwesend';
     return null;
   }
@@ -270,9 +304,7 @@ class DeterministicRecommendationService {
     List<MatchPerformance>? performances,
   ) {
     if (performances == null) return const [];
-    return performances
-        .where((p) => p.p != null)
-        .toList()
+    return performances.where((p) => p.p != null).toList()
       ..sort((a, b) => a.day.compareTo(b.day));
   }
 
@@ -308,15 +340,57 @@ class DeterministicRecommendationService {
       ((efficiency - efficiencyReference) / efficiencyBand).clamp(-1.0, 1.0) *
       maxEfficiencyDelta;
 
-  ({double delta, String? summary}) _fixtureDelta(
-    PlayerAnalysisInput input,
-  ) {
+  ({double delta, String? summary}) _fixtureDelta(PlayerAnalysisInput input) {
+    // Bevorzugt: bis zu drei kommende Spiele, gemittelt wie in der
+    // Vorgänger-App (Fixture-Analyse über die nächsten Gegner).
+    final upcoming = input.upcomingFixtures;
+    if (upcoming != null && upcoming.isNotEmpty) {
+      final fixtures = upcoming.take(maxUpcomingFixtures).toList();
+      var total = 0.0;
+      for (final fixture in fixtures) {
+        total += _singleFixtureDelta(
+          fixture.opponentTablePosition ?? 0,
+          fixture.isHomeGame,
+        ).delta;
+      }
+      final details = fixtures
+          .map(
+            (f) =>
+                '${f.opponentName} (Platz ${f.opponentTablePosition ?? 0}, '
+                '${_singleFixtureDelta(f.opponentTablePosition ?? 0, false).difficulty}'
+                '${f.isHomeGame ? ', Heimspiel' : ', Auswärts'})',
+          )
+          .join('; ');
+      return (
+        delta: total / fixtures.length,
+        summary: 'Nächste Gegner: $details',
+      );
+    }
+
+    // Fallback: nur der nächste Gegner.
     final opponentPosition = input.nextOpponentTablePosition ?? 0;
     if (opponentPosition <= 0) {
       return (delta: 0.0, summary: null);
     }
-    var delta = 0.0;
-    var difficulty = '';
+    final isHome = input.nextMatchLocation == 'Heimspiel';
+    final single = _singleFixtureDelta(opponentPosition, isHome);
+    final opponent = input.nextOpponent ?? 'Gegner';
+    final summary =
+        'Nächster Gegner: $opponent (Platz $opponentPosition, '
+        '${single.difficulty}${isHome ? ', Heimspiel' : ', Auswärts'})';
+    return (delta: single.delta, summary: summary);
+  }
+
+  /// Schwierigkeit eines einzelnen Spiels anhand der Gegner-Tabellenposition.
+  ({double delta, String difficulty}) _singleFixtureDelta(
+    int opponentPosition,
+    bool isHome,
+  ) {
+    if (opponentPosition <= 0) {
+      return (delta: 0.0, difficulty: 'Schwierigkeit unbekannt');
+    }
+    double delta;
+    String difficulty;
     if (opponentPosition <= 4) {
       delta = -maxFixtureDelta;
       difficulty = 'Top-4-Team';
@@ -330,13 +404,8 @@ class DeterministicRecommendationService {
       delta = maxFixtureDelta * 2 / 3;
       difficulty = 'schwach';
     }
-    final isHome = input.nextMatchLocation == 'Heimspiel';
     if (isHome) delta += homeBonus;
-
-    final opponent = input.nextOpponent ?? 'Gegner';
-    final summary = 'Nächster Gegner: $opponent (Platz $opponentPosition, '
-        '$difficulty${isHome ? ', Heimspiel' : ', Auswärts'})';
-    return (delta: delta, summary: summary);
+    return (delta: delta, difficulty: difficulty);
   }
 
   List<MarketValueEntry> _historyEntries(List<MarketValueEntry>? history) {

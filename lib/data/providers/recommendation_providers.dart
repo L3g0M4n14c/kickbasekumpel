@@ -606,6 +606,7 @@ class GenerateRecommendationsNotifier
       List<MatchPerformance> performances =
           recentPerformances?[player.id] ?? [];
       final nextFixture = promptContext.nextFixtureFor(player);
+      final upcomingFixtures = promptContext.upcomingFixturesFor(player);
 
       // Swap-Kandidaten für eigene Spieler: Top-3 nicht-eigene Alternativen
       // gleicher Position, sortiert nach Durchschnittspunkten
@@ -633,6 +634,7 @@ class GenerateRecommendationsNotifier
               nextFixture?.ownTeamTablePosition ??
               promptContext.teamPositionFor(player),
           nextMatchLocation: nextFixture?.matchLocationLabel,
+          upcomingFixtures: upcomingFixtures,
         ),
       );
 
@@ -679,11 +681,9 @@ class GenerateRecommendationsNotifier
 // =============================================================================
 
 /// Prüft, ob ein Spieler basierend auf seinem Status nicht verfügbar ist
-/// (verletzt, gesperrt oder abwesend).
+/// (verletzt/angeschlagen, gesperrt, im Aufbautraining oder abwesend).
 bool _isPlayerUnavailable(int status) =>
-    DeterministicRecommendationService.injuryStatuses.contains(status) ||
-    DeterministicRecommendationService.suspensionStatuses.contains(status) ||
-    DeterministicRecommendationService.absenceStatuses.contains(status);
+    DeterministicRecommendationService.isUnavailable(status);
 
 /// Schwierigkeitsbewertung eines Gegners anhand seiner Tabellenposition.
 String _fixtureDifficulty(int tablePosition) {
@@ -728,7 +728,7 @@ Future<_RecommendationAnalysisContext> _loadRecommendationAnalysisContext(
   } catch (_) {}
 
   final nextFixtures = <String, List<String>>{};
-  final nextFixtureByKey = <String, _NextFixtureInfo>{};
+  final nextFixtureInfosByKey = <String, List<_NextFixtureInfo>>{};
   try {
     final matchdays = (matchdaysData['it'] as List<dynamic>?) ?? [];
     for (final md in matchdays) {
@@ -769,7 +769,7 @@ Future<_RecommendationAnalysisContext> _loadRecommendationAnalysisContext(
 
         _addNextFixture(
           nextFixtures: nextFixtures,
-          nextFixtureByKey: nextFixtureByKey,
+          nextFixtureByKey: nextFixtureInfosByKey,
           keys: [homeTeamId, homeTeamName],
           summary:
               'Spieltag $day: vs $awayTeamName '
@@ -783,7 +783,7 @@ Future<_RecommendationAnalysisContext> _loadRecommendationAnalysisContext(
         );
         _addNextFixture(
           nextFixtures: nextFixtures,
-          nextFixtureByKey: nextFixtureByKey,
+          nextFixtureByKey: nextFixtureInfosByKey,
           keys: [awayTeamId, awayTeamName],
           summary:
               'Spieltag $day: vs $homeTeamName '
@@ -819,14 +819,14 @@ Future<_RecommendationAnalysisContext> _loadRecommendationAnalysisContext(
     teamPositions: teamPositions,
     teamNamesByKey: teamNamesByKey,
     nextFixtures: nextFixtures,
-    nextFixtureByKey: nextFixtureByKey,
+    nextFixtureByKey: nextFixtureInfosByKey,
     lineupSummary: lineupSummary,
   );
 }
 
 void _addNextFixture({
   required Map<String, List<String>> nextFixtures,
-  required Map<String, _NextFixtureInfo> nextFixtureByKey,
+  required Map<String, List<_NextFixtureInfo>> nextFixtureByKey,
   required List<String> keys,
   required String summary,
   required _NextFixtureInfo fixtureInfo,
@@ -837,7 +837,10 @@ void _addNextFixture({
     if (nextFixtures[key]!.length < 3) {
       nextFixtures[key]!.add(summary);
     }
-    nextFixtureByKey.putIfAbsent(key, () => fixtureInfo);
+    final infos = nextFixtureByKey.putIfAbsent(key, () => []);
+    if (infos.length < DeterministicRecommendationService.maxUpcomingFixtures) {
+      infos.add(fixtureInfo);
+    }
   }
 }
 
@@ -845,7 +848,7 @@ class _RecommendationAnalysisContext {
   final Map<String, int> teamPositions;
   final Map<String, String> teamNamesByKey;
   final Map<String, List<String>> nextFixtures;
-  final Map<String, _NextFixtureInfo> nextFixtureByKey;
+  final Map<String, List<_NextFixtureInfo>> nextFixtureByKey;
   final String? lineupSummary;
 
   const _RecommendationAnalysisContext({
@@ -874,9 +877,27 @@ class _RecommendationAnalysisContext {
   }
 
   _NextFixtureInfo? nextFixtureFor(Player player) {
+    final infos = _fixtureInfosFor(player);
+    return infos.isEmpty ? null : infos.first;
+  }
+
+  /// Kommende Spiele des Teams des Spielers (bis zu drei).
+  List<FixtureInfo> upcomingFixturesFor(Player player) {
+    return [
+      for (final info in _fixtureInfosFor(player))
+        FixtureInfo(
+          opponentName: info.opponentName,
+          opponentTablePosition: info.opponentTablePosition,
+          isHomeGame: info.isHomeGame,
+        ),
+    ];
+  }
+
+  List<_NextFixtureInfo> _fixtureInfosFor(Player player) {
     final resolvedPlayer = resolvePlayer(player);
     return nextFixtureByKey[resolvedPlayer.teamId] ??
-        nextFixtureByKey[resolvedPlayer.teamName];
+        nextFixtureByKey[resolvedPlayer.teamName] ??
+        const [];
   }
 
   String? fixtureContextFor(Player player) {

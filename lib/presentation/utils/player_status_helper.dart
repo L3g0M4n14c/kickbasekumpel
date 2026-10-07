@@ -11,8 +11,12 @@ class PlayerStatusHelper {
         return '❌'; // Verletzt
       case 2:
         return '💊'; // Angeschlagen (Tabletten)
+      case 3:
+        return '🚫'; // Gesperrt
       case 4:
         return '🏋️‍♂️'; // Aufbautraining
+      case 8:
+        return '🟥'; // Sperre
       case 32:
         return '🟨'; // Gelbe Karte
       case 256:
@@ -31,8 +35,12 @@ class PlayerStatusHelper {
         return 'Verletzt';
       case 2:
         return 'Angeschlagen';
+      case 3:
+        return 'Gesperrt';
       case 4:
         return 'Aufbautraining';
+      case 8:
+        return 'Sperre';
       case 32:
         return 'Gelbsperre';
       case 256:
@@ -51,8 +59,12 @@ class PlayerStatusHelper {
         return Colors.red;
       case 2:
         return Colors.orange;
+      case 3:
+        return Colors.red;
       case 4:
         return Colors.blue;
+      case 8:
+        return Colors.red;
       case 32:
         return Colors.yellow;
       case 256:

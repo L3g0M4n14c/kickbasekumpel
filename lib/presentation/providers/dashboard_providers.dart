@@ -8,6 +8,8 @@ import 'package:kickbasekumpel/data/providers/user_providers.dart';
 import 'package:kickbasekumpel/data/providers/league_providers.dart';
 import 'package:kickbasekumpel/data/providers/league_detail_providers.dart';
 import 'package:kickbasekumpel/data/providers/kickbase_api_provider.dart';
+import 'package:kickbasekumpel/data/providers/recommendation_providers.dart';
+import 'package:kickbasekumpel/data/services/sales_goal_service.dart';
 import 'package:kickbasekumpel/data/utils/parsing_utils.dart';
 import 'package:kickbasekumpel/domain/exceptions/kickbase_exceptions.dart';
 
@@ -235,4 +237,40 @@ final teamBudgetProvider = FutureProvider<int>((ref) async {
     _logger.e('❌ Error in teamBudgetProvider: $e', error: e, stackTrace: stack);
     return 0;
   }
+});
+
+// ============================================================================
+// SALES GOAL NOTIFIER & PROVIDER
+// ============================================================================
+
+/// UI-Selection: aktives Verkaufsziel (docs/UI_MIGRATION.md, Screen 3).
+class SaleGoalNotifier extends Notifier<SaleGoal> {
+  @override
+  SaleGoal build() => SaleGoal.keepBest;
+
+  void set(SaleGoal goal) => state = goal;
+}
+
+final saleGoalProvider = NotifierProvider<SaleGoalNotifier, SaleGoal>(
+  SaleGoalNotifier.new,
+);
+
+/// Zielbasierte Verkaufsempfehlungen aus Kader, Analyse und Budget.
+///
+/// Neu berechnet, wenn sich das Ziel, der Kader, das Budget oder die
+/// Spieleranalyse ([recommendationsForLeagueProvider]) ändert.
+final saleAdvicesProvider = FutureProvider.family<SalesGoalOutcome, String>((
+  ref,
+  leagueId,
+) async {
+  final goal = ref.watch(saleGoalProvider);
+  final squad = await ref.watch(teamPlayersProvider.future);
+  final budget = await ref.watch(teamBudgetProvider.future);
+  final recommendations = ref.watch(recommendationsForLeagueProvider(leagueId));
+  return const SalesGoalService().rankForGoal(
+    goal: goal,
+    squad: squad,
+    recommendations: recommendations,
+    budget: budget,
+  );
 });

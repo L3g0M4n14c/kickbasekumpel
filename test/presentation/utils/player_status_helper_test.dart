@@ -17,6 +17,14 @@ void main() {
         expect(PlayerStatusHelper.getStatusEmoji(2), '💊');
       });
 
+      test('returns 🚫 for status 3 (Gesperrt)', () {
+        expect(PlayerStatusHelper.getStatusEmoji(3), '🚫');
+      });
+
+      test('returns 🟥 for status 8 (Sperre)', () {
+        expect(PlayerStatusHelper.getStatusEmoji(8), '🟥');
+      });
+
       test('returns 🟨 for status 32 (Gelbe Karte)', () {
         expect(PlayerStatusHelper.getStatusEmoji(32), '🟨');
       });
@@ -42,6 +50,14 @@ void main() {
 
       test('returns "Angeschlagen" for status 2', () {
         expect(PlayerStatusHelper.getStatusName(2), 'Angeschlagen');
+      });
+
+      test('returns "Gesperrt" for status 3', () {
+        expect(PlayerStatusHelper.getStatusName(3), 'Gesperrt');
+      });
+
+      test('returns "Sperre" for status 8', () {
+        expect(PlayerStatusHelper.getStatusName(8), 'Sperre');
       });
 
       test('returns "Gelbsperre" for status 32', () {
