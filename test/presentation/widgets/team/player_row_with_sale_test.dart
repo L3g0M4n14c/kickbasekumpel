@@ -66,6 +66,25 @@ void main() {
       expect(find.text('FC Bayern'), findsOneWidget);
     });
 
+    testWidgets('displays position label', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: PlayerRowWithSale(
+                player: mockPlayer,
+                isSelectedForSale: false,
+                onToggleSale: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // mockPlayer.position = 2 → 'ABW'
+      expect(find.text('ABW'), findsOneWidget);
+    });
+
     testWidgets('displays player avatar widget', (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(

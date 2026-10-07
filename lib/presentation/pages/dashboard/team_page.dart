@@ -27,7 +27,7 @@ class _TeamPageState extends ConsumerState<TeamPage> {
   @override
   void initState() {
     super.initState();
-    _sortBy = SortOption.marketValue;
+    _sortBy = SortOption.position;
   }
 
   @override
@@ -241,7 +241,13 @@ class _TeamPageState extends ConsumerState<TeamPage> {
       case SortOption.trend:
         return [...players]..sort((a, b) => b.tfhmvt.compareTo(a.tfhmvt));
       case SortOption.position:
-        return [...players]..sort((a, b) => a.position.compareTo(b.position));
+        return [...players]..sort((a, b) {
+          final byPosition = a.position.compareTo(b.position);
+          // Innerhalb der Position nach Marktwert absteigend
+          return byPosition != 0
+              ? byPosition
+              : b.marketValue.compareTo(a.marketValue);
+        });
     }
   }
 
