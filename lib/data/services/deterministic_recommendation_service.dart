@@ -214,9 +214,8 @@ class DeterministicRecommendationService {
     String formSummary;
     if (form != null) {
       formDelta = _formDelta(form);
-      final matchdaysUsed = _performedMatches(
-        input.recentPerformances,
-      ).length.clamp(0, maxFormMatchdays);
+      final matchdaysUsed = _performedMatches(input.recentPerformances).length
+          .clamp(0, maxFormMatchdays);
       formSummary =
           'Form: ${form.toStringAsFixed(1)} Pkt Ø letzte $matchdaysUsed Spiele';
     } else {
@@ -348,7 +347,7 @@ class DeterministicRecommendationService {
       final fixtures = upcoming.take(maxUpcomingFixtures).toList();
       var total = 0.0;
       for (final fixture in fixtures) {
-        total += _singleFixtureDelta(
+        total += singleFixtureDelta(
           fixture.opponentTablePosition ?? 0,
           fixture.isHomeGame,
         ).delta;
@@ -357,7 +356,7 @@ class DeterministicRecommendationService {
           .map(
             (f) =>
                 '${f.opponentName} (Platz ${f.opponentTablePosition ?? 0}, '
-                '${_singleFixtureDelta(f.opponentTablePosition ?? 0, false).difficulty}'
+                '${singleFixtureDelta(f.opponentTablePosition ?? 0, false).difficulty}'
                 '${f.isHomeGame ? ', Heimspiel' : ', Auswärts'})',
           )
           .join('; ');
@@ -373,7 +372,7 @@ class DeterministicRecommendationService {
       return (delta: 0.0, summary: null);
     }
     final isHome = input.nextMatchLocation == 'Heimspiel';
-    final single = _singleFixtureDelta(opponentPosition, isHome);
+    final single = singleFixtureDelta(opponentPosition, isHome);
     final opponent = input.nextOpponent ?? 'Gegner';
     final summary =
         'Nächster Gegner: $opponent (Platz $opponentPosition, '
@@ -382,7 +381,7 @@ class DeterministicRecommendationService {
   }
 
   /// Schwierigkeit eines einzelnen Spiels anhand der Gegner-Tabellenposition.
-  ({double delta, String difficulty}) _singleFixtureDelta(
+  static ({double delta, String difficulty}) singleFixtureDelta(
     int opponentPosition,
     bool isHome,
   ) {

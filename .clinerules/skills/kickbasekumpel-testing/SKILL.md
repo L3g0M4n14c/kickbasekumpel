@@ -39,10 +39,27 @@ expect(result, ResultMatchers.isFailureContaining('not found'));
 ## Befehle
 
 ```bash
-flutter test                                    # alle
-flutter test test/data/services/bid_recommendation_service_test.dart
+# Default: gezielt – nur Tests, die betroffen sein können
+flutter test test/data/services/lineup_recommendation_service_test.dart
+flutter test test/data/services/        # betroffene Gruppe
+flutter test                            # Voll-Lauf NUR bei breitem/unklarem Scope (s.u.)
 flutter test --coverage
 ```
+
+## Test-Regel: Scope statt Voll-Lauf
+
+Während der Entwicklung NUR die Tests ausführen, die von den Änderungen betroffen
+sein können. `test/` spiegelt `lib/` – der geänderte Pfad verrät den Scope:
+
+| Änderung in `lib/` | Ausführen |
+|---|---|
+| einzelne Datei (z. B. `services/x.dart`) | spiegelnde Testdatei + Tests direkter Nutzer |
+| `models/`, `providers/`, `utils/`, gemeinsame Widgets | betroffener Ordner-Baum (`flutter test test/data/...`) |
+| Rename/Refactor über Dateigrenzen, unklarer Blast Radius, Abschluss-Check | `flutter test` (Voll-Lauf) |
+
+Faustregel: roter/grüner Lauf = gezielt und schnell; der Voll-Lauf passiert
+höchstens einmal am Ende (CI führt ihn ohnehin aus). Niemals nach jeder
+kleinen Änderung die gesamte Suite starten.
 
 ⚠️ CI führt VOR den Tests `build_runner build` aus – bei neuen `@GenerateMocks`/Freezed-Änderungen lokal denselben Schritt ausführen, sonst schlagen Tests fehl.
 

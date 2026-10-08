@@ -1,10 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../models/player_model.dart';
 import '../models/lineup_model.dart';
+import '../models/ligainsider_model.dart';
+import '../services/deterministic_recommendation_service.dart';
+import '../services/lineup_recommendation_service.dart';
 import '../../domain/repositories/repository_interfaces.dart';
 import 'kickbase_api_provider.dart';
 import 'repository_providers.dart';
 import 'league_providers.dart';
+import 'recommendation_providers.dart';
+import 'service_providers.dart';
 
 // ============================================================================
 // PLAYER STREAM PROVIDERS
@@ -723,3 +729,80 @@ final myLineupProvider = FutureProvider.family<List<LineupPlayer>, String>((
   final response = await apiClient.getLineup(leagueId);
   return response.players;
 });
+
+// ============================================================================
+// LINEUP RECOMMENDATION
+// ============================================================================
+
+/// Empfohlene Aufstellung für eine Liga.
+///
+/// Bewertet den Kader mit Form, Spielplan (Gegnerstärke + Heim/Auswärts),
+/// Verfügbarkeit und Ligainsider-Startelf-Status und wählt die beste
+/// formation-legale Startelf (siehe [LineupRecommendationService]).
+final lineupRecommendationProvider =
+    FutureProvider.family<LineupRecommendation, String>((ref, leagueId) async {
+      final players = await ref.watch(myLineupProvider(leagueId).future);
+      final apiClient = ref.watch(kickbaseApiClientProvider);
+      final context = await loadRecommendationAnalysisContext(
+        apiClient,
+        leagueId,
+      );
+
+      // Fixtures je Team-ID einmal auflösen (LineupPlayer hat keinen Team-Namen).
+      final fixturesByTeamKey = <String, List<FixtureInfo>>{};
+      for (final player in players) {
+        if (player.teamId.isEmpty ||
+            fixturesByTeamKey.containsKey(player.teamId)) {
+          continue;
+        }
+        fixturesByTeamKey[player.teamId] = context.upcomingFixturesForKey(
+          player.teamId,
+        );
+      }
+
+      final ligainsiderStatus = await _loadLigainsiderStatus(ref, players);
+
+      return const LineupRecommendationService().recommend(
+        squad: players,
+        fixturesByTeamKey: fixturesByTeamKey,
+        ligainsiderStatusByPlayerId: ligainsiderStatus,
+      );
+    });
+
+/// Liest den Ligainsider-Startelf-Status je Spieler.
+///
+/// Pinned: Ligainsider liefert nur S11 + Alternativen. Liegen Daten vor,
+/// ist "nicht gefunden (out)" gleichbedeutend mit "kein S11-Platz" und wird
+/// als Ausschluss-Kriterium weitergereicht. Ohne Daten (kein Cache, offline)
+/// bleibt die Map leer – die Empfehlung funktioniert dann ohne dieses
+/// Kriterium weiter.
+Future<Map<String, LigainsiderPlayerStatus>> _loadLigainsiderStatus(
+  Ref ref,
+  List<LineupPlayer> players,
+) async {
+  try {
+    final service = await ref.watch(ligainsiderServiceFutureProvider.future);
+    if (!service.isReady) {
+      await service.fetchLineups();
+    }
+    final statusByPlayerId = <String, LigainsiderPlayerStatus>{};
+    // Pinned: Ligainsider liefert nur S11 + Alternativen. Nur wenn Daten
+    // vorliegen, gilt "nicht gefunden (out) = nicht in der Startelf" als
+    // Ausschlusskriterium – ohne Daten bleibt es neutral.
+    final dataAvailable = service.playerCacheCount > 0;
+    for (final player in players) {
+      final parts = player.name.trim().split(RegExp(r'\s+'));
+      final lastName = parts.length > 1 ? parts.last : player.name.trim();
+      final firstName = parts.length > 1
+          ? parts.sublist(0, parts.length - 1).join(' ')
+          : '';
+      final status = service.getPlayerStatus(firstName, lastName);
+      if (dataAvailable) {
+        statusByPlayerId[player.id] = status;
+      }
+    }
+    return statusByPlayerId;
+  } catch (_) {
+    return const {};
+  }
+}

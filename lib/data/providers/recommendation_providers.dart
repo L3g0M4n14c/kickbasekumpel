@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../models/transfer_model.dart';
 import '../models/player_model.dart';
 import '../models/market_value_model.dart';
@@ -487,7 +488,7 @@ class GenerateRecommendationsNotifier
 
     final repo = ref.read(recommendationRepositoryProvider);
     final apiClient = ref.read(kickbaseApiClientProvider);
-    final promptContext = await _loadRecommendationAnalysisContext(
+    final promptContext = await loadRecommendationAnalysisContext(
       apiClient,
       leagueId,
     );
@@ -570,7 +571,7 @@ class GenerateRecommendationsNotifier
       debugPrint('⚠️ generateForPlayers: Löschen fehlgeschlagen ($e)');
     }
     final apiClient = ref.read(kickbaseApiClientProvider);
-    final promptContext = await _loadRecommendationAnalysisContext(
+    final promptContext = await loadRecommendationAnalysisContext(
       apiClient,
       leagueId,
     );
@@ -694,7 +695,7 @@ String _fixtureDifficulty(int tablePosition) {
   return 'leicht';
 }
 
-Future<_RecommendationAnalysisContext> _loadRecommendationAnalysisContext(
+Future<RecommendationAnalysisContext> loadRecommendationAnalysisContext(
   dynamic apiClient,
   String leagueId,
 ) async {
@@ -728,7 +729,7 @@ Future<_RecommendationAnalysisContext> _loadRecommendationAnalysisContext(
   } catch (_) {}
 
   final nextFixtures = <String, List<String>>{};
-  final nextFixtureInfosByKey = <String, List<_NextFixtureInfo>>{};
+  final nextFixtureInfosByKey = <String, List<TeamFixtureInfo>>{};
   try {
     final matchdays = (matchdaysData['it'] as List<dynamic>?) ?? [];
     for (final md in matchdays) {
@@ -736,10 +737,21 @@ Future<_RecommendationAnalysisContext> _loadRecommendationAnalysisContext(
       final day = (m['day'] as int?) ?? 0;
       final finished = (m['finished'] as bool?) ?? (m['f'] as bool?) ?? false;
       if (finished) continue;
+      // Echtes Schema (api-endpoints.json "Fixtures"): Matches liegen unter
+      // 'it' (verschachtelt); ältere Varianten nutzen 'ms'/'m'.
       final matches =
-          (m['ms'] as List<dynamic>?) ?? (m['m'] as List<dynamic>?) ?? [];
+          (m['it'] as List<dynamic>?) ??
+          (m['ms'] as List<dynamic>?) ??
+          (m['m'] as List<dynamic>?) ??
+          [];
       for (final match in matches) {
         final mm = match as Map<String, dynamic>;
+        // Echtes Schema hat kein 'finished'-Flag pro Match – 'dt' (Kickoff)
+        // entscheidet, ob das Spiel noch aussteht.
+        final kickoff = DateTime.tryParse((mm['dt'] ?? '').toString());
+        if (kickoff != null && !kickoff.isAfter(DateTime.now())) {
+          continue;
+        }
         final homeTeamId =
             (mm['t1id'] as String?) ?? (mm['t1i'] as String?) ?? '';
         final awayTeamId =
@@ -748,6 +760,8 @@ Future<_RecommendationAnalysisContext> _loadRecommendationAnalysisContext(
             (mm['t1n'] as String?) ?? (mm['t1'] as String?) ?? '';
         final awayTeamName =
             (mm['t2n'] as String?) ?? (mm['t2'] as String?) ?? '';
+        final homeTeamShort = (mm['t1sy'] as String?) ?? '';
+        final awayTeamShort = (mm['t2sy'] as String?) ?? '';
 
         if (homeTeamId.isNotEmpty && homeTeamName.isNotEmpty) {
           teamNamesByKey[homeTeamId] = homeTeamName;
@@ -770,11 +784,11 @@ Future<_RecommendationAnalysisContext> _loadRecommendationAnalysisContext(
         _addNextFixture(
           nextFixtures: nextFixtures,
           nextFixtureByKey: nextFixtureInfosByKey,
-          keys: [homeTeamId, homeTeamName],
+          keys: [homeTeamId, homeTeamName, homeTeamShort],
           summary:
               'Spieltag $day: vs $awayTeamName '
               '(Heimspiel, Platz ${awayPosition ?? 0} – ${_fixtureDifficulty(awayPosition ?? 0)})',
-          fixtureInfo: _NextFixtureInfo(
+          fixtureInfo: TeamFixtureInfo(
             opponentName: awayTeamName,
             opponentTablePosition: awayPosition,
             ownTeamTablePosition: homePosition,
@@ -784,11 +798,11 @@ Future<_RecommendationAnalysisContext> _loadRecommendationAnalysisContext(
         _addNextFixture(
           nextFixtures: nextFixtures,
           nextFixtureByKey: nextFixtureInfosByKey,
-          keys: [awayTeamId, awayTeamName],
+          keys: [awayTeamId, awayTeamName, awayTeamShort],
           summary:
               'Spieltag $day: vs $homeTeamName '
               '(Auswärtsspiel, Platz ${homePosition ?? 0} – ${_fixtureDifficulty(homePosition ?? 0)})',
-          fixtureInfo: _NextFixtureInfo(
+          fixtureInfo: TeamFixtureInfo(
             opponentName: homeTeamName,
             opponentTablePosition: homePosition,
             ownTeamTablePosition: awayPosition,
@@ -815,7 +829,7 @@ Future<_RecommendationAnalysisContext> _loadRecommendationAnalysisContext(
         'ST: ${positionCounts[4]}';
   }
 
-  return _RecommendationAnalysisContext(
+  return RecommendationAnalysisContext(
     teamPositions: teamPositions,
     teamNamesByKey: teamNamesByKey,
     nextFixtures: nextFixtures,
@@ -826,10 +840,10 @@ Future<_RecommendationAnalysisContext> _loadRecommendationAnalysisContext(
 
 void _addNextFixture({
   required Map<String, List<String>> nextFixtures,
-  required Map<String, List<_NextFixtureInfo>> nextFixtureByKey,
+  required Map<String, List<TeamFixtureInfo>> nextFixtureByKey,
   required List<String> keys,
   required String summary,
-  required _NextFixtureInfo fixtureInfo,
+  required TeamFixtureInfo fixtureInfo,
 }) {
   for (final key in keys) {
     if (key.isEmpty) continue;
@@ -844,14 +858,14 @@ void _addNextFixture({
   }
 }
 
-class _RecommendationAnalysisContext {
+class RecommendationAnalysisContext {
   final Map<String, int> teamPositions;
   final Map<String, String> teamNamesByKey;
   final Map<String, List<String>> nextFixtures;
-  final Map<String, List<_NextFixtureInfo>> nextFixtureByKey;
+  final Map<String, List<TeamFixtureInfo>> nextFixtureByKey;
   final String? lineupSummary;
 
-  const _RecommendationAnalysisContext({
+  const RecommendationAnalysisContext({
     required this.teamPositions,
     required this.teamNamesByKey,
     required this.nextFixtures,
@@ -876,24 +890,35 @@ class _RecommendationAnalysisContext {
     return null;
   }
 
-  _NextFixtureInfo? nextFixtureFor(Player player) {
+  TeamFixtureInfo? nextFixtureFor(Player player) {
     final infos = _fixtureInfosFor(player);
     return infos.isEmpty ? null : infos.first;
   }
 
   /// Kommende Spiele des Teams des Spielers (bis zu drei).
   List<FixtureInfo> upcomingFixturesFor(Player player) {
-    return [
-      for (final info in _fixtureInfosFor(player))
-        FixtureInfo(
-          opponentName: info.opponentName,
-          opponentTablePosition: info.opponentTablePosition,
-          isHomeGame: info.isHomeGame,
-        ),
-    ];
+    return _toFixtureInfos(_fixtureInfosFor(player));
   }
 
-  List<_NextFixtureInfo> _fixtureInfosFor(Player player) {
+  /// Kommende Spiele eines Teams über Team-ID oder Team-Name (bis zu drei).
+  List<FixtureInfo> upcomingFixturesForKey(String key) {
+    return _toFixtureInfos(
+      nextFixtureByKey[key] ??
+          nextFixtureByKey[teamNamesByKey[key] ?? ''] ??
+          const [],
+    );
+  }
+
+  List<FixtureInfo> _toFixtureInfos(List<TeamFixtureInfo> infos) => [
+    for (final info in infos)
+      FixtureInfo(
+        opponentName: info.opponentName,
+        opponentTablePosition: info.opponentTablePosition,
+        isHomeGame: info.isHomeGame,
+      ),
+  ];
+
+  List<TeamFixtureInfo> _fixtureInfosFor(Player player) {
     final resolvedPlayer = resolvePlayer(player);
     return nextFixtureByKey[resolvedPlayer.teamId] ??
         nextFixtureByKey[resolvedPlayer.teamName] ??
@@ -941,13 +966,13 @@ class _RecommendationAnalysisContext {
   }
 }
 
-class _NextFixtureInfo {
+class TeamFixtureInfo {
   final String opponentName;
   final int? opponentTablePosition;
   final int? ownTeamTablePosition;
   final bool isHomeGame;
 
-  const _NextFixtureInfo({
+  const TeamFixtureInfo({
     required this.opponentName,
     required this.opponentTablePosition,
     required this.ownTeamTablePosition,

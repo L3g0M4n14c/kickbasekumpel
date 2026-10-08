@@ -505,31 +505,39 @@ class LigainsiderService {
 
   /// Get player status (starting XI, bench, alternative, out)
   LigainsiderPlayerStatus getPlayerStatus(String firstName, String lastName) {
-    final normalizedLastName = _normalize(lastName);
-    final normalizedFirstName = _normalize(firstName);
+    final lastNameSegments = _nameSegments(_normalize(lastName));
+    final firstNameSegments = _nameSegments(_normalize(firstName));
 
-    // Check if player is an alternative
-    final isAlternative = _alternativeNames.any((altName) {
-      final normalizedAlt = _normalize(altName);
-      return normalizedLastName == normalizedAlt ||
-          normalizedAlt.contains(normalizedLastName);
-    });
+    // Leere Namen dürfen nie matchen – Contains auf '' wäre immer wahr.
+    if (lastNameSegments.isEmpty && firstNameSegments.isEmpty) {
+      return LigainsiderPlayerStatus.out;
+    }
+    final querySegments = lastNameSegments.isNotEmpty
+        ? lastNameSegments
+        : firstNameSegments;
+
+    // Check if player is an alternative. Segment-Match statt Contains:
+    // 'Lang' darf nicht an 'Langkamp' matchen.
+    final isAlternative = _alternativeNames.any(
+      (altName) => _nameSegments(altName).containsAll(querySegments),
+    );
 
     if (isAlternative) {
       return LigainsiderPlayerStatus.isAlternative;
     }
 
-    // Search in cache
+    // Search in cache (Segment-Match wie in getLigainsiderPlayer)
     var candidates = _playerCache.entries.where((entry) {
-      final normalizedKey = _normalize(entry.key);
-      return normalizedKey.contains(normalizedLastName);
+      return _nameSegments(_normalize(entry.key)).containsAll(querySegments);
     }).toList();
 
     // Fallback to first name
-    if (candidates.isEmpty && normalizedFirstName.isNotEmpty) {
+    if (candidates.isEmpty &&
+        lastNameSegments.isNotEmpty &&
+        firstNameSegments.isNotEmpty) {
       candidates = _playerCache.entries.where((entry) {
-        final normalizedKey = _normalize(entry.key);
-        return normalizedKey.contains(normalizedFirstName);
+        return _nameSegments(_normalize(entry.key))
+            .containsAll(firstNameSegments);
       }).toList();
     }
 
@@ -540,15 +548,14 @@ class LigainsiderService {
     } else if (candidates.length > 1) {
       // Prefer both names present
       foundEntry = candidates.where((entry) {
-        final normalizedKey = _normalize(entry.key);
-        final parts = normalizedKey.split(RegExp(r'[ _-]'));
-        return parts.contains(normalizedFirstName) &&
-            parts.contains(normalizedLastName);
+        final parts = _nameSegments(_normalize(entry.key));
+        return parts.containsAll(lastNameSegments) &&
+            parts.containsAll(firstNameSegments);
       }).firstOrNull;
 
       foundEntry ??= candidates.where((entry) {
-        final normalizedKey = _normalize(entry.key);
-        return normalizedKey.contains(normalizedFirstName);
+        return _nameSegments(_normalize(entry.key))
+            .containsAll(firstNameSegments);
       }).firstOrNull;
 
       foundEntry ??= candidates.firstOrNull;
@@ -719,6 +726,14 @@ class LigainsiderService {
   }
 
   // MARK: - Name Normalization
+
+  /// Namen-Segmente eines normalisierten Texts (z. B. "kevin bauer_123" →
+  /// {kevin, bauer, 123}). Basis für exakten Segment-Match statt Contains –
+  /// damit z. B. "Lang" nicht an "Langkamp" matched.
+  static Set<String> _nameSegments(String normalized) => normalized
+      .split(RegExp(r'[ _-]'))
+      .where((segment) => segment.isNotEmpty)
+      .toSet();
 
   /// Normalize text for matching (remove accents, convert umlauts, etc.)
   String _normalize(String text) {

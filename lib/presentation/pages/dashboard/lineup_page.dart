@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../data/models/lineup_model.dart';
 import '../../../data/providers/player_providers.dart';
 import '../../../data/providers/league_providers.dart';
+import '../../../data/providers/kickbase_api_provider.dart';
 import '../../../data/providers/ligainsider_photo_provider.dart';
+import '../../../data/services/lineup_recommendation_service.dart';
 import '../../../data/utils/parsing_utils.dart';
+import '../../providers/lineup_providers.dart';
 import '../../widgets/responsive_layout.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/error_widget.dart';
@@ -20,6 +24,7 @@ class LineupPage extends ConsumerWidget {
     final lineupAsync = leagueId != null
         ? ref.watch(myLineupProvider(leagueId))
         : const AsyncValue<List<LineupPlayer>>.loading();
+    final showRecommended = ref.watch(lineupViewProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -39,43 +44,89 @@ class LineupPage extends ConsumerWidget {
       ),
       body: selectedLeague == null
           ? const Center(child: Text('Keine Liga ausgewählt'))
-          : lineupAsync.when(
-              loading: () => const LoadingWidget(),
-              error: (error, stack) => ErrorWidgetCustom(
-                error: error,
-                onRetry: () => ref.invalidate(myLineupProvider(leagueId!)),
-              ),
-              data: (players) {
-                // Kickbase-Konvention: Torwart hat lo=0, Feldspieler lo=1..11
-                // Bench: lo > 11 oder (lo == 0 und kein Torwart)
-                bool isStarter(LineupPlayer p) {
-                  if (p.position == 1 && p.lineupOrder == 0) return true;
-                  return p.lineupOrder >= 1 && p.lineupOrder <= 11;
-                }
-
-                final starters = players.where(isStarter).toList()
-                  ..sort((a, b) {
-                    // Torwart (lo=0) ans Ende der Sortierung (unterste Reihe)
-                    final aOrder = a.lineupOrder == 0 ? 11 : a.lineupOrder;
-                    final bOrder = b.lineupOrder == 0 ? 11 : b.lineupOrder;
-                    return aOrder.compareTo(bOrder);
-                  });
-
-                final bench = players.where((p) => !isStarter(p)).toList();
-
-                return ResponsiveLayout(
-                  mobile: _buildMobileLayout(context, starters, bench),
-                  tablet: _buildTabletLayout(context, starters, bench),
-                  desktop: _buildDesktopLayout(
-                    context,
-                    ref,
-                    starters,
-                    bench,
-                    selectedLeague,
-                    leagueId!,
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: SegmentedButton<bool>(
+                    segments: const [
+                      ButtonSegment(
+                        value: false,
+                        label: Text('Aktuell'),
+                        icon: Icon(Icons.sports_soccer),
+                      ),
+                      ButtonSegment(
+                        value: true,
+                        label: Text('Empfohlen'),
+                        icon: Icon(Icons.auto_awesome),
+                      ),
+                    ],
+                    selected: {showRecommended},
+                    onSelectionChanged: (selection) => ref
+                        .read(lineupViewProvider.notifier)
+                        .showRecommended(selection.first),
                   ),
-                );
-              },
+                ),
+                Expanded(
+                  child: showRecommended
+                      ? _buildRecommendedView(context, ref, leagueId!)
+                      : lineupAsync.when(
+                          loading: () => const LoadingWidget(),
+                          error: (error, stack) => ErrorWidgetCustom(
+                            error: error,
+                            onRetry: () =>
+                                ref.invalidate(myLineupProvider(leagueId!)),
+                          ),
+                          data: (players) {
+                            // Kickbase-Konvention: Torwart hat lo=0, Feldspieler lo=1..11
+                            // Bench: lo > 11 oder (lo == 0 und kein Torwart)
+                            bool isStarter(LineupPlayer p) {
+                              if (p.position == 1 && p.lineupOrder == 0) {
+                                return true;
+                              }
+                              return p.lineupOrder >= 1 && p.lineupOrder <= 11;
+                            }
+
+                            final starters = players.where(isStarter).toList()
+                              ..sort((a, b) {
+                                // Torwart (lo=0) ans Ende der Sortierung (unterste Reihe)
+                                final aOrder = a.lineupOrder == 0
+                                    ? 11
+                                    : a.lineupOrder;
+                                final bOrder = b.lineupOrder == 0
+                                    ? 11
+                                    : b.lineupOrder;
+                                return aOrder.compareTo(bOrder);
+                              });
+
+                            final bench = players
+                                .where((p) => !isStarter(p))
+                                .toList();
+
+                            return ResponsiveLayout(
+                              mobile: _buildMobileLayout(
+                                context,
+                                starters,
+                                bench,
+                              ),
+                              tablet: _buildTabletLayout(
+                                context,
+                                starters,
+                                bench,
+                              ),
+                              desktop: _buildDesktopLayout(
+                                context,
+                                ref,
+                                starters,
+                                bench,
+                                selectedLeague,
+                                leagueId!,
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
             ),
     );
   }
@@ -163,6 +214,174 @@ class LineupPage extends ConsumerWidget {
       ],
     );
   }
+
+  Widget _buildRecommendedView(
+    BuildContext context,
+    WidgetRef ref,
+    String leagueId,
+  ) {
+    final recommendationAsync = ref.watch(
+      lineupRecommendationProvider(leagueId),
+    );
+    return recommendationAsync.when(
+      loading: () => const LoadingWidget(),
+      error: (error, stack) => ErrorWidgetCustom(
+        error: error,
+        onRetry: () => ref.invalidate(lineupRecommendationProvider(leagueId)),
+      ),
+      data: (recommendation) =>
+          _buildRecommendedLayout(context, ref, recommendation, leagueId),
+    );
+  }
+
+  Widget _buildRecommendedLayout(
+    BuildContext context,
+    WidgetRef ref,
+    LineupRecommendation recommendation,
+    String leagueId,
+  ) {
+    final banner = _RecommendationBanner(
+      recommendation: recommendation,
+      onApply: () =>
+          _applyRecommendation(context, ref, leagueId, recommendation),
+    );
+
+    return ResponsiveLayout(
+      mobile: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            banner,
+            const SizedBox(height: 16),
+            _FormationField(
+              starters: recommendation.starters,
+              compact: true,
+              scores: recommendation.scores,
+            ),
+            const SizedBox(height: 16),
+            if (recommendation.bench.isNotEmpty)
+              _BenchSection(
+                players: recommendation.bench,
+                scores: recommendation.scores,
+              ),
+          ],
+        ),
+      ),
+      tablet: ResponsiveSplitView(
+        listFlex: 3,
+        detailFlex: 2,
+        list: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              banner,
+              const SizedBox(height: 16),
+              _FormationField(
+                starters: recommendation.starters,
+                compact: false,
+                scores: recommendation.scores,
+              ),
+            ],
+          ),
+        ),
+        detail: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: _BenchSection(
+            players: recommendation.bench,
+            scores: recommendation.scores,
+          ),
+        ),
+      ),
+      desktop: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(32.0),
+              child: _FormationField(
+                starters: recommendation.starters,
+                compact: false,
+                scores: recommendation.scores,
+              ),
+            ),
+          ),
+          const VerticalDivider(width: 1),
+          Expanded(
+            flex: 2,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(32.0),
+              child: _BenchSection(
+                players: recommendation.bench,
+                scores: recommendation.scores,
+              ),
+            ),
+          ),
+          const VerticalDivider(width: 1),
+          Expanded(
+            flex: 1,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(32.0),
+              child: banner,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Schreibt die empfohlene Aufstellung nach Bestätigung an Kickbase
+  /// (POST /v4/leagues/{leagueId}/lineup) und lädt beide Ansichten neu.
+  Future<void> _applyRecommendation(
+    BuildContext context,
+    WidgetRef ref,
+    String leagueId,
+    LineupRecommendation recommendation,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Aufstellung übernehmen?'),
+        content: Text(
+          'Die empfohlene Startelf (${recommendation.formationName}) '
+          'wird an Kickbase gesendet.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Übernehmen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final apiClient = ref.read(kickbaseApiClientProvider);
+      final playerIds = [
+        ...recommendation.starters.map((p) => p.id),
+        ...recommendation.bench.map((p) => p.id),
+      ];
+      await apiClient.updateLineup(
+        leagueId,
+        LineupUpdateRequest(playerIds: playerIds),
+      );
+      ref.invalidate(myLineupProvider(leagueId));
+      ref.invalidate(lineupRecommendationProvider(leagueId));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Aufstellung übernommen')),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Übernehmen fehlgeschlagen: $e')),
+      );
+    }
+  }
 }
 
 /// Visuelles Formationsfeld das Starter-Spieler nach Position anzeigt
@@ -170,7 +389,14 @@ class _FormationField extends StatelessWidget {
   final List<LineupPlayer> starters;
   final bool compact;
 
-  const _FormationField({required this.starters, required this.compact});
+  /// Optionale Score-Bewertung je Spieler-ID (Empfehlungs-Ansicht).
+  final Map<String, LineupPlayerScore>? scores;
+
+  const _FormationField({
+    required this.starters,
+    required this.compact,
+    this.scores,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -194,9 +420,8 @@ class _FormationField extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   'Startelf (${starters.length}/11)',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -229,6 +454,7 @@ class _FormationField extends StatelessWidget {
                     Expanded(
                       child: _PositionRow(
                         players: forwards,
+                        scores: scores,
                         label: 'Sturm',
                         emptyLabel: 'ST',
                         targetCount: 3,
@@ -237,6 +463,7 @@ class _FormationField extends StatelessWidget {
                     Expanded(
                       child: _PositionRow(
                         players: midfielders,
+                        scores: scores,
                         label: 'Mittelfeld',
                         emptyLabel: 'MF',
                         targetCount: 4,
@@ -245,6 +472,7 @@ class _FormationField extends StatelessWidget {
                     Expanded(
                       child: _PositionRow(
                         players: defenders,
+                        scores: scores,
                         label: 'Abwehr',
                         emptyLabel: 'ABW',
                         targetCount: 4,
@@ -253,6 +481,7 @@ class _FormationField extends StatelessWidget {
                     Expanded(
                       child: _PositionRow(
                         players: goalkeepers,
+                        scores: scores,
                         label: 'Torwart',
                         emptyLabel: 'TW',
                         targetCount: 1,
@@ -274,12 +503,14 @@ class _PositionRow extends StatelessWidget {
   final String label;
   final String emptyLabel;
   final int targetCount;
+  final Map<String, LineupPlayerScore>? scores;
 
   const _PositionRow({
     required this.players,
     required this.label,
     required this.emptyLabel,
     required this.targetCount,
+    this.scores,
   });
 
   @override
@@ -305,7 +536,9 @@ class _PositionRow extends StatelessWidget {
                 (_) => _EmptyPlayerSlot(label: emptyLabel),
               )
             else
-              ...players.map((p) => _FieldPlayerBadge(player: p)),
+              ...players.map(
+                (p) => _FieldPlayerBadge(player: p, playerScore: scores?[p.id]),
+              ),
           ],
         ),
       ],
@@ -316,7 +549,10 @@ class _PositionRow extends StatelessWidget {
 class _FieldPlayerBadge extends ConsumerWidget {
   final LineupPlayer player;
 
-  const _FieldPlayerBadge({required this.player});
+  /// Optionale Bewertung aus der Empfehlung (Score + Ausschluss-Grund).
+  final LineupPlayerScore? playerScore;
+
+  const _FieldPlayerBadge({required this.player, this.playerScore});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -332,6 +568,15 @@ class _FieldPlayerBadge extends ConsumerWidget {
 
     // Aufstellungsnummer: Torwart (lo=0) zeigt 'TW' statt '0'
     final orderLabel = player.lineupOrder == 0 ? 'TW' : '${player.lineupOrder}';
+
+    final scoreValue = playerScore?.score;
+    final exclusionLabel = playerScore?.availabilityLabel;
+    final scoreText = Text(
+      scoreValue != null
+          ? 'Score ${scoreValue.toStringAsFixed(0)}'
+          : '${player.averagePoints}Ø',
+      style: const TextStyle(color: Colors.white70, fontSize: 9),
+    );
 
     final photoMap = ref.watch(ligainsiderPhotoMapProvider).asData?.value;
     // player.name ist der Anzeigename (meist Nachname)
@@ -407,10 +652,9 @@ class _FieldPlayerBadge extends ConsumerWidget {
               textAlign: TextAlign.center,
             ),
           ),
-          Text(
-            '${player.averagePoints}Ø',
-            style: const TextStyle(color: Colors.white70, fontSize: 9),
-          ),
+          exclusionLabel != null
+              ? Tooltip(message: exclusionLabel, child: scoreText)
+              : scoreText,
         ],
       ),
     );
@@ -496,7 +740,10 @@ class _PitchLinePainter extends CustomPainter {
 class _BenchSection extends StatelessWidget {
   final List<LineupPlayer> players;
 
-  const _BenchSection({required this.players});
+  /// Optionale Score-Bewertung je Spieler-ID (Empfehlungs-Ansicht).
+  final Map<String, LineupPlayerScore>? scores;
+
+  const _BenchSection({required this.players, this.scores});
 
   @override
   Widget build(BuildContext context) {
@@ -529,7 +776,9 @@ class _BenchSection extends StatelessWidget {
                 ),
               )
             else
-              ...players.map((p) => _BenchPlayerTile(player: p)),
+              ...players.map(
+                (p) => _BenchPlayerTile(player: p, playerScore: scores?[p.id]),
+              ),
           ],
         ),
       ),
@@ -540,7 +789,10 @@ class _BenchSection extends StatelessWidget {
 class _BenchPlayerTile extends ConsumerWidget {
   final LineupPlayer player;
 
-  const _BenchPlayerTile({required this.player});
+  /// Optionale Bewertung aus der Empfehlung (Score + Ausschluss-Grund).
+  final LineupPlayerScore? playerScore;
+
+  const _BenchPlayerTile({required this.player, this.playerScore});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -578,11 +830,133 @@ class _BenchPlayerTile extends ConsumerWidget {
         player.name,
         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
       ),
+      subtitle: playerScore?.availabilityLabel != null
+          ? Text(
+              playerScore!.availabilityLabel!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            )
+          : null,
       trailing: Text(
-        '${player.averagePoints} Ø',
+        playerScore != null
+            ? 'Score ${playerScore!.score.toStringAsFixed(0)}'
+            : '${player.averagePoints} Ø',
         style: theme.textTheme.bodySmall?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
         ),
+      ),
+    );
+  }
+}
+
+/// Wechsel-Banner der empfohlenen Aufstellung inkl. Übernehmen-Aktion.
+class _RecommendationBanner extends StatelessWidget {
+  const _RecommendationBanner({
+    required this.recommendation,
+    required this.onApply,
+  });
+
+  final LineupRecommendation recommendation;
+  final VoidCallback onApply;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final swaps = recommendation.swaps;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.auto_awesome, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    swaps.isEmpty
+                        ? 'Keine Wechsel nötig'
+                        : '${swaps.length} Wechsel empfohlen',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Text(
+                  'Formation ${recommendation.formationName}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            for (final swap in swaps)
+              _SwapTile(swap: swap, scores: recommendation.scores),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: onApply,
+                icon: const Icon(Icons.done_all),
+                label: const Text('Aufstellung übernehmen'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Einzelner Tauschvorschlag: „X für Y" mit Score-Gewinn und Begründung.
+class _SwapTile extends StatelessWidget {
+  const _SwapTile({required this.swap, required this.scores});
+
+  final LineupSwap swap;
+  final Map<String, LineupPlayerScore> scores;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final gain = swap.gain;
+    final gainColor = gain >= 0 ? Colors.green : Colors.red;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.swap_vert, size: 18, color: gainColor),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${swap.inPlayer.name} für ${swap.outPlayer.name}',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  'Score ${scores[swap.inPlayer.id]?.score.toStringAsFixed(0) ?? '?'} '
+                  'statt ${scores[swap.outPlayer.id]?.score.toStringAsFixed(0) ?? '?'} '
+                  '· ${swap.reason}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '${gain >= 0 ? '+' : ''}${gain.toStringAsFixed(1)}',
+            style: TextStyle(fontWeight: FontWeight.bold, color: gainColor),
+          ),
+        ],
       ),
     );
   }

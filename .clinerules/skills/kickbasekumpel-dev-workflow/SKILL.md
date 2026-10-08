@@ -17,7 +17,8 @@ flutter pub run build_runner watch --delete-conflicting-outputs
 
 dart format lib/
 flutter analyze
-flutter test                       # alle
+flutter test                       # NUR bei breitem/unklarem Scope; sonst gezielt
+                                   # nur betroffene Testdateien (siehe kickbasekumpel-testing)
 flutter test test/data/repositories/   # gezielt
 flutter test --coverage
 flutter run

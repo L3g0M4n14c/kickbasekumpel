@@ -27,15 +27,12 @@ void main() {
       mockApiClient = MockKickbaseAPIClient();
       fakeRecommendationService = _FakeDeterministicRecommendationService();
 
-      when(
-        () => mockApiClient.getCompetitionTable(any()),
-      ).thenAnswer((_) async => {'it': []});
-      when(
-        () => mockApiClient.getCompetitionMatchdays(any()),
-      ).thenAnswer((_) async => {'it': []});
-      when(
-        () => mockApiClient.getLineup(any()),
-      ).thenAnswer((_) async => const LineupResponse(players: []));
+      when(() => mockApiClient.getCompetitionTable(any()))
+          .thenAnswer((_) async => {'it': []});
+      when(() => mockApiClient.getCompetitionMatchdays(any()))
+          .thenAnswer((_) async => {'it': []});
+      when(() => mockApiClient.getLineup(any()))
+          .thenAnswer((_) async => const LineupResponse(players: []));
 
       final repository = RecommendationRepository(
         firestore: firestore,
@@ -148,42 +145,89 @@ void main() {
       },
     );
 
+    test('generateForPlayers does not request market values or performances when no optional maps are provided', () async {
+      final notifier = container.read(
+        generateRecommendationsNotifierProvider.notifier,
+      );
+      final players = [
+        _buildPlayer(id: 'player-a', userOwnsPlayer: false),
+        _buildPlayer(id: 'player-b', userOwnsPlayer: true),
+      ];
+
+      await notifier.generateForPlayers('league-a', players);
+
+      verifyNever(
+        () => mockApiClient.getPlayerMarketValue(
+          any(),
+          any(),
+          timeframe: any(named: 'timeframe'),
+        ),
+      );
+      verifyNever(() => mockApiClient.getPlayerStats(any(), any()));
+      expect(
+        container.read(recommendationsForLeagueProvider('league-a')),
+        hasLength(2),
+      );
+    });
+
+    test('generateForPlayers reloads team names and adds next fixture metadata to analysis inputs', () async {
+      final notifier = container.read(
+        generateRecommendationsNotifierProvider.notifier,
+      );
+      final player = _buildPlayer(
+        id: 'player-a',
+        userOwnsPlayer: false,
+      ).copyWith(teamName: '');
+
+      when(() => mockApiClient.getCompetitionTable(any())).thenAnswer(
+        (_) async => {
+          'it': [
+            {'tid': 'team-1', 'tp': 12, 'tn': 'FC Nachgeladen'},
+            {'tid': 'team-2', 'tp': 4, 'tn': 'FC Gegner'},
+          ],
+        },
+      );
+      when(() => mockApiClient.getCompetitionMatchdays(any())).thenAnswer(
+        (_) async => {
+          'it': [
+            {
+              'day': 28,
+              'finished': false,
+              'ms': [
+                {
+                  't1id': 'team-1',
+                  't1n': 'FC Nachgeladen',
+                  't2id': 'team-2',
+                  't2n': 'FC Gegner',
+                },
+              ],
+            },
+          ],
+        },
+      );
+
+      await notifier.generateForPlayers('league-a', [player]);
+
+      final promptInput = fakeRecommendationService.lastPlayers.single;
+      expect(promptInput.player.teamName, 'FC Nachgeladen');
+      expect(promptInput.nextOpponent, 'FC Gegner');
+      expect(promptInput.nextOpponentTablePosition, 4);
+      expect(promptInput.ownTeamTablePosition, 12);
+      expect(promptInput.nextMatchLocation, 'Heimspiel');
+      expect(
+        promptInput.fixtureContext,
+        contains('Spieltag 28: vs FC Gegner (Heimspiel, Platz 4'),
+      );
+    });
+
     test(
-      'generateForPlayers does not request market values or performances when no optional maps are provided',
-      () async {
-        final notifier = container.read(
-          generateRecommendationsNotifierProvider.notifier,
-        );
-        final players = [
-          _buildPlayer(id: 'player-a', userOwnsPlayer: false),
-          _buildPlayer(id: 'player-b', userOwnsPlayer: true),
-        ];
-
-        await notifier.generateForPlayers('league-a', players);
-
-        verifyNever(
-          () => mockApiClient.getPlayerMarketValue(
-            any(),
-            any(),
-            timeframe: any(named: 'timeframe'),
-          ),
-        );
-        verifyNever(() => mockApiClient.getPlayerStats(any(), any()));
-        expect(
-          container.read(recommendationsForLeagueProvider('league-a')),
-          hasLength(2),
-        );
-      },
-    );
-
-    test(
-      'generateForPlayers reloads team names and adds next fixture metadata to analysis inputs',
+      'parsest das echte Matchdays-Schema (Matches unter it, Team-Namen, dt)',
       () async {
         final notifier = container.read(
           generateRecommendationsNotifierProvider.notifier,
         );
         final player = _buildPlayer(
-          id: 'player-a',
+          id: 'player-real',
           userOwnsPlayer: false,
         ).copyWith(teamName: '');
 
@@ -195,18 +239,47 @@ void main() {
             ],
           },
         );
+        // Echtes Schema (api-endpoints.json, "Fixtures"): Spieltage mit
+        // verschachteltem 'it', Matches mit Team-Namen (t1/t2/t1sy) und 'dt'.
+        final past = DateTime.now().subtract(const Duration(days: 7));
+        final future = DateTime.now().add(const Duration(days: 7));
         when(() => mockApiClient.getCompetitionMatchdays(any())).thenAnswer(
           (_) async => {
             'it': [
               {
-                'day': 28,
-                'finished': false,
-                'ms': [
+                // Bereits gespielt – muss gefiltert werden (dt in der Vergangenheit).
+                'day': 27,
+                'it': [
                   {
-                    't1id': 'team-1',
-                    't1n': 'FC Nachgeladen',
-                    't2id': 'team-2',
-                    't2n': 'FC Gegner',
+                    'day': 27,
+                    'dt': past.toIso8601String(),
+                    'il': false,
+                    'mi': 'match-past',
+                    'st': 2,
+                    't1': 'FC Nachgeladen',
+                    't1g': 2,
+                    't1sy': 'FCN',
+                    't2': 'FC Vergangen',
+                    't2g': 1,
+                    't2sy': 'FCV',
+                  },
+                ],
+              },
+              {
+                'day': 28,
+                'it': [
+                  {
+                    'day': 28,
+                    'dt': future.toIso8601String(),
+                    'il': false,
+                    'mi': 'match-next',
+                    'st': 0,
+                    't1': 'FC Nachgeladen',
+                    't1g': 0,
+                    't1sy': 'FCN',
+                    't2': 'FC Gegner',
+                    't2g': 0,
+                    't2sy': 'FCG',
                   },
                 ],
               },
@@ -217,15 +290,11 @@ void main() {
         await notifier.generateForPlayers('league-a', [player]);
 
         final promptInput = fakeRecommendationService.lastPlayers.single;
-        expect(promptInput.player.teamName, 'FC Nachgeladen');
         expect(promptInput.nextOpponent, 'FC Gegner');
         expect(promptInput.nextOpponentTablePosition, 4);
         expect(promptInput.ownTeamTablePosition, 12);
         expect(promptInput.nextMatchLocation, 'Heimspiel');
-        expect(
-          promptInput.fixtureContext,
-          contains('Spieltag 28: vs FC Gegner (Heimspiel, Platz 4'),
-        );
+        expect(promptInput.fixtureContext, contains('vs FC Gegner'));
       },
     );
   });

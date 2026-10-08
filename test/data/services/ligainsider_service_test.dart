@@ -48,9 +48,8 @@ void main() {
   group('Name Normalization', () {
     test('should normalize German umlauts', () {
       // Mock successful fetch
-      when(
-        mockConnectivity.checkConnectivity(),
-      ).thenAnswer((_) async => [ConnectivityResult.wifi]);
+      when(mockConnectivity.checkConnectivity())
+          .thenAnswer((_) async => [ConnectivityResult.wifi]);
 
       final mockHtml = '''
         <html>
@@ -60,9 +59,8 @@ void main() {
         </html>
       ''';
 
-      when(
-        mockHttpClient.get(any),
-      ).thenAnswer((_) async => http.Response(mockHtml, 200));
+      when(mockHttpClient.get(any))
+          .thenAnswer((_) async => http.Response(mockHtml, 200));
 
       // The service should find player using normalized name
       // This is tested implicitly through matching logic
@@ -71,9 +69,8 @@ void main() {
 
   group('HTML Parsing', () {
     test('should parse player links from HTML', () async {
-      when(
-        mockConnectivity.checkConnectivity(),
-      ).thenAnswer((_) async => [ConnectivityResult.wifi]);
+      when(mockConnectivity.checkConnectivity())
+          .thenAnswer((_) async => [ConnectivityResult.wifi]);
 
       // Mock overview page with player links
       final mockOverviewHtml = '''
@@ -123,13 +120,11 @@ void main() {
     });
 
     test('should handle empty HTML', () async {
-      when(
-        mockConnectivity.checkConnectivity(),
-      ).thenAnswer((_) async => [ConnectivityResult.wifi]);
+      when(mockConnectivity.checkConnectivity())
+          .thenAnswer((_) async => [ConnectivityResult.wifi]);
 
-      when(
-        mockHttpClient.get(any),
-      ).thenAnswer((_) async => http.Response('<html></html>', 200));
+      when(mockHttpClient.get(any))
+          .thenAnswer((_) async => http.Response('<html></html>', 200));
 
       await service.fetchLineups();
 
@@ -137,9 +132,8 @@ void main() {
     });
 
     test('should skip invalid player links', () async {
-      when(
-        mockConnectivity.checkConnectivity(),
-      ).thenAnswer((_) async => [ConnectivityResult.wifi]);
+      when(mockConnectivity.checkConnectivity())
+          .thenAnswer((_) async => [ConnectivityResult.wifi]);
 
       final mockOverviewHtml = '''
         <html>
@@ -178,9 +172,8 @@ void main() {
     test(
       'should fetch image from player detail page when missing in overview',
       () async {
-        when(
-          mockConnectivity.checkConnectivity(),
-        ).thenAnswer((_) async => [ConnectivityResult.wifi]);
+        when(mockConnectivity.checkConnectivity())
+            .thenAnswer((_) async => [ConnectivityResult.wifi]);
 
         final mockOverviewHtml = '''
         <html>
@@ -223,9 +216,8 @@ void main() {
 
   group('Player Matching', () {
     setUp(() async {
-      when(
-        mockConnectivity.checkConnectivity(),
-      ).thenAnswer((_) async => [ConnectivityResult.wifi]);
+      when(mockConnectivity.checkConnectivity())
+          .thenAnswer((_) async => [ConnectivityResult.wifi]);
 
       final mockOverviewHtml = '''
         <html>
@@ -312,9 +304,8 @@ void main() {
 
   group('Player Status', () {
     setUp(() async {
-      when(
-        mockConnectivity.checkConnectivity(),
-      ).thenAnswer((_) async => [ConnectivityResult.wifi]);
+      when(mockConnectivity.checkConnectivity())
+          .thenAnswer((_) async => [ConnectivityResult.wifi]);
 
       final mockOverviewHtml = '''
         <html>
@@ -352,11 +343,28 @@ void main() {
       expect(status, LigainsiderPlayerStatus.likelyStart);
     });
 
+    test('leerer Name matched nie (kein contains-False-Positive)', () {
+      // Cache enthält "Starter Player" – ein leerer Suchname darf trotzdem
+      // keinen beliebigen Spieler als S11/Alternative ausweisen.
+      expect(service.getPlayerStatus('', ''), LigainsiderPlayerStatus.out);
+    });
+
+    test('Namens-Substring matched nicht (Contains → Segment-Match)', () {
+      // Cache: "starter-player_99999". Teilstücke wie "Sta"/"ayer" dürfen den
+      // Spieler nicht finden (dasselbe Problem wie "Lang" ⊂ "Langkamp").
+      expect(service.getPlayerStatus('', 'Sta'), LigainsiderPlayerStatus.out);
+      expect(service.getPlayerStatus('', 'ayer'), LigainsiderPlayerStatus.out);
+      // Echter Segment-Treffer bleibt ein Treffer.
+      expect(
+        service.getPlayerStatus('', 'Starter'),
+        LigainsiderPlayerStatus.likelyStart,
+      );
+    });
+
     test('should return out for unknown player', () async {
       // Clear cache and add only one specific player
-      when(
-        mockConnectivity.checkConnectivity(),
-      ).thenAnswer((_) async => [ConnectivityResult.wifi]);
+      when(mockConnectivity.checkConnectivity())
+          .thenAnswer((_) async => [ConnectivityResult.wifi]);
 
       final mockOverviewHtml = '''
         <html>
@@ -396,9 +404,8 @@ void main() {
 
   group('Caching', () {
     test('should save players to cache after fetch', () async {
-      when(
-        mockConnectivity.checkConnectivity(),
-      ).thenAnswer((_) async => [ConnectivityResult.wifi]);
+      when(mockConnectivity.checkConnectivity())
+          .thenAnswer((_) async => [ConnectivityResult.wifi]);
 
       final mockOverviewHtml = '''
         <html>
@@ -434,9 +441,8 @@ void main() {
     });
 
     test('should load from cache when offline', () async {
-      when(
-        mockConnectivity.checkConnectivity(),
-      ).thenAnswer((_) async => [ConnectivityResult.none]);
+      when(mockConnectivity.checkConnectivity())
+          .thenAnswer((_) async => [ConnectivityResult.none]);
 
       final cachedPlayer = LigainsiderPlayer(
         id: 'cached',
@@ -452,9 +458,8 @@ void main() {
 
       final cachedData = jsonEncode([cachedPlayer.toJson()]);
       when(mockPrefs.getString('ligainsider_cache')).thenReturn(cachedData);
-      when(
-        mockPrefs.getInt('ligainsider_cache_timestamp'),
-      ).thenReturn(DateTime.now().millisecondsSinceEpoch);
+      when(mockPrefs.getInt('ligainsider_cache_timestamp'))
+          .thenReturn(DateTime.now().millisecondsSinceEpoch);
 
       await service.fetchLineups();
 
@@ -467,9 +472,8 @@ void main() {
     });
 
     test('should ignore expired cache', () async {
-      when(
-        mockConnectivity.checkConnectivity(),
-      ).thenAnswer((_) async => [ConnectivityResult.wifi]);
+      when(mockConnectivity.checkConnectivity())
+          .thenAnswer((_) async => [ConnectivityResult.wifi]);
 
       final cachedData = jsonEncode([
         {
@@ -491,13 +495,11 @@ void main() {
           .millisecondsSinceEpoch;
 
       when(mockPrefs.getString('ligainsider_cache')).thenReturn(cachedData);
-      when(
-        mockPrefs.getInt('ligainsider_cache_timestamp'),
-      ).thenReturn(expiredTimestamp);
+      when(mockPrefs.getInt('ligainsider_cache_timestamp'))
+          .thenReturn(expiredTimestamp);
 
-      when(
-        mockHttpClient.get(any),
-      ).thenAnswer((_) async => http.Response('<html></html>', 200));
+      when(mockHttpClient.get(any))
+          .thenAnswer((_) async => http.Response('<html></html>', 200));
 
       await service.fetchLineups();
 
@@ -507,9 +509,8 @@ void main() {
 
     test('should clear cache', () async {
       // Populate cache first
-      when(
-        mockConnectivity.checkConnectivity(),
-      ).thenAnswer((_) async => [ConnectivityResult.wifi]);
+      when(mockConnectivity.checkConnectivity())
+          .thenAnswer((_) async => [ConnectivityResult.wifi]);
 
       final mockOverviewHtml = '''
         <html>
@@ -554,13 +555,11 @@ void main() {
 
   group('Error Handling', () {
     test('should handle HTTP errors gracefully', () async {
-      when(
-        mockConnectivity.checkConnectivity(),
-      ).thenAnswer((_) async => [ConnectivityResult.wifi]);
+      when(mockConnectivity.checkConnectivity())
+          .thenAnswer((_) async => [ConnectivityResult.wifi]);
 
-      when(
-        mockHttpClient.get(any),
-      ).thenAnswer((_) async => http.Response('Error', 500));
+      when(mockHttpClient.get(any))
+          .thenAnswer((_) async => http.Response('Error', 500));
 
       await service.fetchLineups();
 
@@ -569,9 +568,8 @@ void main() {
     });
 
     test('should handle network errors gracefully', () async {
-      when(
-        mockConnectivity.checkConnectivity(),
-      ).thenAnswer((_) async => [ConnectivityResult.wifi]);
+      when(mockConnectivity.checkConnectivity())
+          .thenAnswer((_) async => [ConnectivityResult.wifi]);
 
       when(mockHttpClient.get(any)).thenThrow(Exception('Network error'));
 
