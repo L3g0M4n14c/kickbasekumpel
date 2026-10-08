@@ -66,6 +66,7 @@ Diese Richtlinien stellen sicher, dass die technische Dokumentation mit der Code
 6. **API-Änderungen**
    - Datei: `docs/api-endpoints.json` (falls relevant)
    - In-Code: API Client Methoden Kommentare
+   - Daten-Landkarte: Skill `kickbasekumpel-data-map` (`reference/endpoint-map.md`, `reference/kickbase-keys.md`, `reference/storage-map.md`) – Endpunkt-/Key-/Persistenz-Zuordnung aktuell halten
 
 7. **Dependency-Updates**
    - Datei: `ARCHITECTURE.md` → Abschnitt "Technologie-Stack"

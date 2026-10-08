@@ -7,6 +7,8 @@ description: KickbaseKumpel Datei- und Ordnerkarte - welche Datei wofür zustän
 
 ## Einstieg
 
+> Daten-Wo-ist-was-Fragen (Endpunkte, JSON-Kurzkeys, Modelle, Persistenz): Skill **kickbasekumpel-data-map** – nicht hier suchen.
+
 | Datei | Inhalt |
 |---|---|
 | `lib/main.dart` | Startup, ProviderScope (Auto-Retry aus), Fallback-FirebaseErrorApp |
