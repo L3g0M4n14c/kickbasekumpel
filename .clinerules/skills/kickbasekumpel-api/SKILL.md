@@ -48,3 +48,5 @@ JSON → Modell-Helfer in `lib/data/utils/parsing_utils.dart`; Models nutzen `fr
 ## Endpunkt-Referenz
 
 **`docs/api-endpoints.json`** – vollständige Swagger-Spezifikation der Kickbase v4 (von kevinskyba/kickbase-api-doc). IMMER hier nachsehen, wenn ein neuer Endpunkt angebunden oder Parameters/Responses geprüft werden sollen, statt die API blind zu erkunden. Ungenutzte Endpunkte der Roadmap: siehe kickbasekumpel-features + Ideen.md.
+
+**Daten-Landkarte** (wo welche Daten liegen: Endpunkt → Methode → JSON-Kurzkeys → Modell → Provider → UI): Skill **kickbasekumpel-data-map** mit `reference/endpoint-map.md`, `reference/kickbase-keys.md`, `reference/storage-map.md`. Vor jedem Feature mit API-Daten und jedem Parsing-Problem dort nachschauen.
