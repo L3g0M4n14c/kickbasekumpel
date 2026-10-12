@@ -330,9 +330,18 @@ final managerBudgetCalculationProvider =
                 );
                 if (performance.it.isNotEmpty) {
                   performanceByPlayer[playerId] = performance;
+                } else {
+                  _logger.w(
+                    '⚠️ Auto-Verkauf: leere Performance-Daten für $playerId '
+                    '– Spieler wird nicht ausgewertet',
+                  );
                 }
-              } catch (_) {
+              } catch (e) {
                 // Fehlende Performance-Daten: Spieler ohne Auto-Sale-Ereignis.
+                _logger.w(
+                  '⚠️ Auto-Verkauf: Performance-Request fehlgeschlagen für '
+                  '$playerId – Spieler wird nicht ausgewertet ($e)',
+                );
               }
 
               try {

@@ -659,6 +659,85 @@ void main() {
       },
     );
 
+    test(
+      'Event auch bei ZWEI Besitz-Phasen, wenn nur die ZWEITE den Verkauf abdeckt',
+      () {
+        // Feldfall-Form: Initialkader → manueller Verkauf 01.09 → Rückkauf
+        // 03.09. Das Crossing (ST 3, 12.09) liegt ausschließlich in der
+        // ZWEITEN Besitz-Phase. Vor dem Fix wurde nur die ERSTE Periode
+        // geprüft (seenPlayers-Gate vor den Covers-Prüfungen) und das Event
+        // still verworfen.
+        final computation = service.computeAutoSales(
+          threshold: 250,
+          seasonStart: seasonStart,
+          periods: [
+            OwnershipPeriod(
+              playerId: 'p1',
+              playerName: 'Stürmer',
+              start: seasonStart,
+              end: DateTime.utc(2026, 9, 1),
+            ),
+            OwnershipPeriod(
+              playerId: 'p1',
+              playerName: 'Stürmer',
+              start: DateTime.utc(2026, 9, 3),
+            ),
+          ],
+          performanceByPlayer: {'p1': performance},
+          marketValuesByPlayer: {
+            'p1': mvHistory(mvAtDay2: 15000000, mvAtDay3: 18000000),
+          },
+          now: now,
+        );
+
+        expect(computation.events, hasLength(1));
+        expect(computation.events.first.matchday, 3);
+        expect(computation.events.first.points, 280);
+        expect(computation.events.first.marketValue, 18000000);
+      },
+    );
+
+    test(
+      'Event für Rückkauf eines bereits über der Schwelle liegenden Spielers',
+      () {
+        // Feldbeobachtung (Kickbase verkauft Rückkäufe erneut): Spieler am
+        // 09.09. vom Markt gekauft, als er bereits 260 Saisonpunkte hatte
+        // (Crossing also VOR dem Kauf). Mit der Punkt-Aktualisierung von
+        // ST 3 (19.09., 310 P.) wurde er erneut automatisch verkauft.
+        // Vor dem Fix verwarf die Crossing-Kickoff-Prüfung das Event, weil
+        // das Crossing (ST 1, 22.08.) vor dem Kauf lag.
+        final rebuySeason = _season('28', [
+          _perf(1, _day1Start, p: 260), // Crossing vor dem Kauf (09.09.)
+          _perf(2, _day3Start), // nicht gespielt (p null) → keine Aktualis.
+          _perf(3, DateTime.utc(2026, 9, 19, 15, 30), p: 310),
+        ]);
+
+        final computation = service.computeAutoSales(
+          threshold: 250,
+          seasonStart: seasonStart,
+          periods: [
+            OwnershipPeriod(
+              playerId: 'p1',
+              playerName: 'Stürmer',
+              start: DateTime.utc(2026, 9, 9),
+            ),
+          ],
+          performanceByPlayer: {
+            'p1': PlayerPerformanceResponse(it: [rebuySeason]),
+          },
+          marketValuesByPlayer: {
+            'p1': mvHistory(mvAtDay2: 15000000, mvAtDay3: 18000000),
+          },
+          now: now,
+        );
+
+        expect(computation.events, hasLength(1));
+        expect(computation.events.first.matchday, 3);
+        expect(computation.events.first.points, 310);
+        expect(computation.events.first.marketValue, 18000000);
+      },
+    );
+
     test('fehlende MV-Historie erzeugt uncertain-Event mit Marktwert 0', () {
       final computation = service.computeAutoSales(
         threshold: 250,

@@ -53,12 +53,15 @@ class OwnershipPeriod {
 /// Managers, daher werden sie hier spieltagweise rekonstruiert:
 ///
 /// 1. Besitz-Zeiträume aus der Transfer-Historie ableiten.
-/// 2. Pro Spieler den ersten Spieltag finden, an dem seine Saison-Gesamt-
-///    punkte die Schwelle erreichen ("Crossing").
-/// 3. Den zu diesem Zeitpunkt gültigen Marktwert ermitteln und als Einnahme
-///    verbuchen – aber nur, wenn der Manager den Spieler zu diesem Zeitpunkt
-///    noch besaß (kauft ein Manager einen bereits verkauften Spieler vom
-///    Markt, entsteht ihm dafür kein Einnahmen-Posten mehr).
+/// 2. Pro Spieler die Spieltage finden, an denen eine Punkt-Aktualisierung
+///    die Saison-Gesamtpunkte auf oder über die Schwelle hebt ("Trigger") –
+///    das Überschreiten der Schwelle UND, bei Kauf eines bereits darüber
+///    liegenden Spielers (z.B. Rückkauf vom Markt nach einem Auto-Verkauf),
+///    die nächste Punkt-Aktualisierung im Besitz (Feldbeobachtung: Kickbase
+///    verkauft solche Spieler mit der nächsten Spieltagsberechnung erneut).
+/// 3. Den zum Trigger gültigen Marktwert ermitteln und als Einnahme
+///    verbuchen – aber nur, wenn der Manager den Spieler beim Spiel des
+///    Triggers und bis zur finalen Spieltagsberechnung besaß.
 class AutoSaleBudgetService {
   final ManagerTransferHistoryService _mvService =
       ManagerTransferHistoryService();
@@ -326,9 +329,9 @@ class AutoSaleBudgetService {
     final seenPlayers = <String>{};
 
     for (final period in periods) {
-      // Pro Spieler nur EIN Auto-Verkauf: Die Saison-Punktzahl steigt
-      // monoton, die Schwelle wird genau einmal überschritten.
-      if (!seenPlayers.add(period.playerId)) continue;
+      // Pro Spieler nur EIN Auto-Verkauf (Deduplizierung beim Event unten,
+      // damit mehrere Besitz-Phasen denselben Verkauf nicht doppelt zählen).
+      if (seenPlayers.contains(period.playerId)) continue;
 
       final performance = performanceByPlayer[period.playerId];
       if (performance == null) continue;
@@ -343,46 +346,60 @@ class AutoSaleBudgetService {
       final ph = season.ph;
       if (ph.isEmpty) continue;
 
-      final crossing = crossingMatchday(ph, threshold);
-      if (crossing == null) continue;
+      // Auto-Verkauf-Trigger: jede Punkt-Aktualisierung (Anstieg von `p`),
+      // nach der der Spieler auf oder über der Schwelle liegt. `p` ist die
+      // bereits kumulierte Saison-Gesamtpunktzahl – NICHT summieren (siehe
+      // [crossingMatchday]). Zwei Fälle werden dadurch abgedeckt:
+      // 1. Überschreiten der Schwelle im Besitz (Klassiker: Verkauf mit der
+      //    finalen Berechnung des Crossing-Spieltags).
+      // 2. Kauf eines bereits über der Schwelle liegenden Spielers (z.B.
+      //    Rückkauf vom Markt nach einem Auto-Verkauf): Kickbase verkauft
+      //    ihn mit der nächsten Punkt-Aktualisierung im Besitz erneut
+      //    (Feldbeobachtung). Der Verkauf hängt also NICHT am ersten
+      //    Crossing der Saison – sonst fehlt genau dieser Spieler, weil das
+      //    Crossing vor dem Kauf liegt.
+      var previousPoints = 0;
+      final entries = ph.where((e) => e.p != null).toList()
+        ..sort((a, b) => a.day.compareTo(b.day));
 
-      // Verkauf erfolgt mit der finalen Spieltagsberechnung.
-      final saleInstant = matchdayEnd(day: crossing.day, ph: ph, fallback: now);
+      for (final entry in entries) {
+        final points = entry.p!;
+        final isGain = points > previousPoints;
+        previousPoints = points;
+        if (!isGain || points < threshold) continue;
 
-      // Der Manager muss den Spieler schon beim Crossing-Spiel besessen
-      // haben. Der Verkauf passiert am Abend der finalen Berechnung dieses
-      // Spieltags, also nach dem Anpfiff des Crossing-Spiels. Ein Rückkauf
-      // vom Markt (Kauf NACH dem Auto-Verkauf – "Spieler ist jetzt im Kader,
-      // beim Crossing-Spieltag aber noch nicht") beginnt erst danach und
-      // darf die Einnahme nicht abbekommen. Allein die Prüfung gegen
-      // [saleInstant] reicht NICHT: Das ist der Kickoff des Folgespieltags
-      // bzw. "jetzt" und liegt je nach Datenlage Tage bis Wochen nach dem
-      // eigentlichen Verkauf.
-      final crossingKickoff = matchdayKickoff(ph, crossing.day);
-      if (crossingKickoff == null || !period.covers(crossingKickoff)) {
-        continue;
+        // Der Manager muss den Spieler beim Spiel dieser Aktualisierung
+        // besessen haben (Kauf erst danach = Rückkauf NACH dem Verkauf – der
+        // Verkauf fand beim Vormann statt und ist nicht seine Einnahme).
+        final kickoff = matchdayKickoff(ph, entry.day);
+        if (kickoff == null || !period.covers(kickoff)) continue;
+
+        // Zusätzlich muss der Besitz bis zur finalen Spieltagsberechnung
+        // bestanden haben (manueller Verkauf davor erzeugt keine Einnahme).
+        final saleInstant = matchdayEnd(
+          day: entry.day,
+          ph: ph,
+          fallback: now,
+        );
+        if (!period.covers(saleInstant)) continue;
+
+        final marketValues = marketValuesByPlayer[period.playerId] ?? const [];
+        final marketValue = marketValueAt(marketValues, saleInstant);
+
+        seenPlayers.add(period.playerId);
+        events.add(
+          AutoSaleEvent(
+            matchday: entry.day,
+            playerId: period.playerId,
+            playerName: period.playerName,
+            points: points,
+            threshold: threshold,
+            marketValue: marketValue ?? 0,
+            uncertain: marketValue == null,
+          ),
+        );
+        break; // pro Spieler nur EIN Auto-Verkauf
       }
-
-      // Zusätzlich muss der Besitz bis zum Verkauf bestanden haben (manueller
-      // Verkauf vor der finalen Berechnung erzeugt keine Einnahme; ein
-      // anschließender Kauf eines bereits verkauften Spielers vom Markt
-      // ebenfalls nicht).
-      if (!period.covers(saleInstant)) continue;
-
-      final marketValues = marketValuesByPlayer[period.playerId] ?? const [];
-      final marketValue = marketValueAt(marketValues, saleInstant);
-
-      events.add(
-        AutoSaleEvent(
-          matchday: crossing.day,
-          playerId: period.playerId,
-          playerName: period.playerName,
-          points: crossing.points,
-          threshold: threshold,
-          marketValue: marketValue ?? 0,
-          uncertain: marketValue == null,
-        ),
-      );
     }
 
     events.sort((a, b) => a.matchday.compareTo(b.matchday));
