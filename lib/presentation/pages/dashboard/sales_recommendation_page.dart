@@ -8,11 +8,14 @@ import 'package:kickbasekumpel/data/models/transfer_model.dart';
 import 'package:kickbasekumpel/data/providers/budget_calculation_providers.dart';
 import 'package:kickbasekumpel/data/providers/kickbase_api_provider.dart';
 import 'package:kickbasekumpel/data/providers/league_providers.dart';
+import 'package:kickbasekumpel/data/providers/manager_transfer_history_providers.dart';
 import 'package:kickbasekumpel/data/providers/recommendation_providers.dart';
 import 'package:kickbasekumpel/data/services/auto_sale_budget_service.dart';
 import 'package:kickbasekumpel/data/services/kickbase_api_client.dart';
+import 'package:kickbasekumpel/data/services/manager_transfer_history_service.dart';
 import 'package:kickbasekumpel/data/services/sales_goal_service.dart';
 import 'package:kickbasekumpel/presentation/providers/dashboard_providers.dart';
+import 'package:kickbasekumpel/presentation/widgets/cards/demand_hint_card.dart';
 import 'package:kickbasekumpel/presentation/widgets/charts/position_badge.dart';
 import 'package:kickbasekumpel/presentation/widgets/team/team_budget_header.dart';
 import 'package:kickbasekumpel/presentation/widgets/transfers/transfer_plan_formatters.dart';
@@ -93,6 +96,11 @@ class _SalesRecommendationPageState
         ? null
         : ref.watch(saleAdvicesProvider(leagueId)).asData?.value;
     final budget = ref.watch(teamBudgetProvider).asData?.value ?? 0;
+    // Nachfrage-Hinweis zum Verkaufs-Timing (Story #15) – wird nur geladen,
+    // wenn eine Liga ausgewählt ist.
+    final demand = leagueId == null
+        ? null
+        : ref.watch(leagueTransferDemandProvider(leagueId)).asData?.value;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Verkaufen')),
@@ -106,6 +114,7 @@ class _SalesRecommendationPageState
               recommendations: recommendations,
               playersById: playersById,
               budget: budget,
+              demand: demand,
             ),
     );
   }
@@ -118,6 +127,7 @@ class _SalesRecommendationPageState
     required List<Recommendation> recommendations,
     required Map<String, Player> playersById,
     required int budget,
+    required TransferDemandProfile? demand,
   }) {
     if (genState.isGenerating) {
       return const Center(
@@ -189,6 +199,10 @@ class _SalesRecommendationPageState
                 ref.read(saleGoalProvider.notifier).set(selection.first),
           ),
           const SizedBox(height: 12),
+          if (demand != null && demand.intensity != null) ...[
+            DemandHintCard(profile: demand),
+            const SizedBox(height: 12),
+          ],
           TeamBudgetHeader(
             currentBudget: budget,
             saleValue: outcome.totalProceeds,
@@ -384,9 +398,8 @@ class _SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         title,
-        style: Theme.of(
-          context,
-        ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+        style: Theme.of(context).textTheme.titleSmall
+            ?.copyWith(fontWeight: FontWeight.w700),
       ),
     );
   }

@@ -2,7 +2,8 @@
 
 > Sammlung der Feature-Ideen aus der Analyse vom 01.10.2026.
 > Umgesetzt: Ligainsider-Status-Badge, Kader-Benchmark, Achievements im Budget
-> (seit 07.10.2026 deterministisch abgeleitet für alle Manager).
+> (seit 07.10.2026 deterministisch abgeleitet für alle Manager),
+> Verkaufs-Timing/Nachfrage-Hinweis (seit 18.10.2026, Story #15).
 
 ---
 
@@ -60,10 +61,16 @@ Kombiniere Ligainsider-Startelf-Wahrscheinlichkeiten mit Ø-Punkten:
 - „💡 Tausche X gegen Y: +8,5 Punkte erwartet" im Aufstellungs-Screen
 - Drag & Drop / Tap-to-Swap in der Aufstellung
 
-### B. Verkaufsfenster-Timing
+### B. Verkaufsfenster-Timing ✅ (umgesetzt 18.10.2026, Story #15)
 Aus der Transfer-Historie ableiten, **wann in der Liga die meisten Käufe
 stattfinden** (z.B. direkt nach dem Spieltag) → Hinweis „Verkaufe jetzt,
 Nachfrage ist hoch".
+Umsetzung: `ManagerTransferHistoryService.demandProfile` (Käufe pro
+Wochentag/6h-Zeitfenster, Intensität relativ zum Durchschnitt),
+`leagueTransferDemandProvider` (Historien aller Manager) und die
+`DemandHintCard` in der Verkaufsempfehlung. Der Hinweis entfällt, wenn die
+aggregierte Historie weniger als 4 Wochen zurückreicht oder zu wenige Käufe
+enthält.
 
 ### C. Marktwert-Trend-Momentum als Marktsignal
 - **„Aufstrebende Spieler"-Filter** im Markt (MV steigt + Punkte-Momentum der
