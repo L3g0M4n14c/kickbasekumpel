@@ -160,6 +160,14 @@ abstract class BudgetCalculationResult with _$BudgetCalculationResult {
     /// Summe der Budget-Einnahmen durch Erfolge (Achievements). Bereits in
     /// [currentBudget] enthalten.
     @Default(0) int achievementIncome,
+
+    /// Saison-Gesamtpunkte des Managers (Feld `tp` der aktuellen Saison aus
+    /// `managers/{userId}/performance`) – Grundlage des Punktgelds.
+    @Default(0) int seasonPoints,
+
+    /// Punktgeld (Spieltagsprämie): Saison-Gesamtpunkte × 1.000 €. Bereits
+    /// in [currentBudget] enthalten.
+    @Default(0) int pointsMoney,
   }) = _BudgetCalculationResult;
 
   factory BudgetCalculationResult.fromJson(Map<String, dynamic> json) =>

@@ -19,7 +19,7 @@ Feature → Einstiegspunkte (Logik in `lib/data/services/`, State in Provider, U
 
 ## Budget & Achievements
 
-- `budget_calculation_service.dart` + `budget_calculation_providers.dart` – Gesamtbudget (Startbudget + Transfers + Anmeldebonus + Auto-Verkauf + Erfolge)
+- `budget_calculation_service.dart` + `budget_calculation_providers.dart` – Gesamtbudget (Startbudget + Transfers + Punktgeld/Spieltagsprämie (`tp` × 1000 €) + Anmeldebonus + Auto-Verkauf + Erfolge), Kalibrierung gegen `me/budget` (Log „🧭 Budget-Kalibrierung")
 - `achievement_budget_service.dart` – exakte Summe des eigenen Managers (`ac × er`) + Erfolgs-Katalog
 - `achievement_derivation_service.dart` + `achievement_providers.dart` – **deterministische Ableitung der Erfolge aller Manager** (Spieltags-Ranking `mdp`, Lineup-Punkte, Transfer-Historie), Kalibrierung gegen die eigenen `ac`-Werte (Log „🧭 Achievement-Kalibrierung"). Der Aktivitäten-Feed zeigt nur eigene Erfolge und wird NICHT genutzt.
 

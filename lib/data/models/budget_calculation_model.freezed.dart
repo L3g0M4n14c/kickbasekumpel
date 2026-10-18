@@ -1237,7 +1237,11 @@ mixin _$BudgetCalculationResult {
 /// (Tag 1 = erster Tag der Liga).
  int get loginBonusDays;/// Summe der Budget-Einnahmen durch Erfolge (Achievements). Bereits in
 /// [currentBudget] enthalten.
- int get achievementIncome;
+ int get achievementIncome;/// Saison-Gesamtpunkte des Managers (Feld `tp` der aktuellen Saison aus
+/// `managers/{userId}/performance`) – Grundlage des Punktgelds.
+ int get seasonPoints;/// Punktgeld (Spieltagsprämie): Saison-Gesamtpunkte × 1.000 €. Bereits
+/// in [currentBudget] enthalten.
+ int get pointsMoney;
 /// Create a copy of BudgetCalculationResult
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1251,20 +1255,20 @@ $BudgetCalculationResultCopyWith<BudgetCalculationResult> get copyWith => _$Budg
 @override
 bool operator ==(Object other) {
   final _this = this as BudgetCalculationResult;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is BudgetCalculationResult&&(identical(other.managerId, _this.managerId) || other.managerId == _this.managerId)&&(identical(other.managerName, _this.managerName) || other.managerName == _this.managerName)&&(identical(other.leagueId, _this.leagueId) || other.leagueId == _this.leagueId)&&(identical(other.initialBudget, _this.initialBudget) || other.initialBudget == _this.initialBudget)&&(identical(other.initialSquadValue, _this.initialSquadValue) || other.initialSquadValue == _this.initialSquadValue)&&(identical(other.startingBudget, _this.startingBudget) || other.startingBudget == _this.startingBudget)&&(identical(other.totalSales, _this.totalSales) || other.totalSales == _this.totalSales)&&(identical(other.totalPurchases, _this.totalPurchases) || other.totalPurchases == _this.totalPurchases)&&(identical(other.currentBudget, _this.currentBudget) || other.currentBudget == _this.currentBudget)&&const DeepCollectionEquality().equals(other.initialPlayers, _this.initialPlayers)&&const DeepCollectionEquality().equals(other.sales, _this.sales)&&const DeepCollectionEquality().equals(other.purchases, _this.purchases)&&(identical(other.calculatedAt, _this.calculatedAt) || other.calculatedAt == _this.calculatedAt)&&(identical(other.autoSaleIncome, _this.autoSaleIncome) || other.autoSaleIncome == _this.autoSaleIncome)&&const DeepCollectionEquality().equals(other.autoSaleEvents, _this.autoSaleEvents)&&(identical(other.loginBonus, _this.loginBonus) || other.loginBonus == _this.loginBonus)&&(identical(other.loginBonusDays, _this.loginBonusDays) || other.loginBonusDays == _this.loginBonusDays)&&(identical(other.achievementIncome, _this.achievementIncome) || other.achievementIncome == _this.achievementIncome));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is BudgetCalculationResult&&(identical(other.managerId, _this.managerId) || other.managerId == _this.managerId)&&(identical(other.managerName, _this.managerName) || other.managerName == _this.managerName)&&(identical(other.leagueId, _this.leagueId) || other.leagueId == _this.leagueId)&&(identical(other.initialBudget, _this.initialBudget) || other.initialBudget == _this.initialBudget)&&(identical(other.initialSquadValue, _this.initialSquadValue) || other.initialSquadValue == _this.initialSquadValue)&&(identical(other.startingBudget, _this.startingBudget) || other.startingBudget == _this.startingBudget)&&(identical(other.totalSales, _this.totalSales) || other.totalSales == _this.totalSales)&&(identical(other.totalPurchases, _this.totalPurchases) || other.totalPurchases == _this.totalPurchases)&&(identical(other.currentBudget, _this.currentBudget) || other.currentBudget == _this.currentBudget)&&const DeepCollectionEquality().equals(other.initialPlayers, _this.initialPlayers)&&const DeepCollectionEquality().equals(other.sales, _this.sales)&&const DeepCollectionEquality().equals(other.purchases, _this.purchases)&&(identical(other.calculatedAt, _this.calculatedAt) || other.calculatedAt == _this.calculatedAt)&&(identical(other.autoSaleIncome, _this.autoSaleIncome) || other.autoSaleIncome == _this.autoSaleIncome)&&const DeepCollectionEquality().equals(other.autoSaleEvents, _this.autoSaleEvents)&&(identical(other.loginBonus, _this.loginBonus) || other.loginBonus == _this.loginBonus)&&(identical(other.loginBonusDays, _this.loginBonusDays) || other.loginBonusDays == _this.loginBonusDays)&&(identical(other.achievementIncome, _this.achievementIncome) || other.achievementIncome == _this.achievementIncome)&&(identical(other.seasonPoints, _this.seasonPoints) || other.seasonPoints == _this.seasonPoints)&&(identical(other.pointsMoney, _this.pointsMoney) || other.pointsMoney == _this.pointsMoney));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as BudgetCalculationResult;
-  return Object.hash(runtimeType,_this.managerId,_this.managerName,_this.leagueId,_this.initialBudget,_this.initialSquadValue,_this.startingBudget,_this.totalSales,_this.totalPurchases,_this.currentBudget,const DeepCollectionEquality().hash(_this.initialPlayers),const DeepCollectionEquality().hash(_this.sales),const DeepCollectionEquality().hash(_this.purchases),_this.calculatedAt,_this.autoSaleIncome,const DeepCollectionEquality().hash(_this.autoSaleEvents),_this.loginBonus,_this.loginBonusDays,_this.achievementIncome);
+  return Object.hashAll([runtimeType,_this.managerId,_this.managerName,_this.leagueId,_this.initialBudget,_this.initialSquadValue,_this.startingBudget,_this.totalSales,_this.totalPurchases,_this.currentBudget,const DeepCollectionEquality().hash(_this.initialPlayers),const DeepCollectionEquality().hash(_this.sales),const DeepCollectionEquality().hash(_this.purchases),_this.calculatedAt,_this.autoSaleIncome,const DeepCollectionEquality().hash(_this.autoSaleEvents),_this.loginBonus,_this.loginBonusDays,_this.achievementIncome,_this.seasonPoints,_this.pointsMoney]);
 }
 
 @override
 String toString() {
   final _this = this as BudgetCalculationResult;
-  return 'BudgetCalculationResult(managerId: ${_this.managerId}, managerName: ${_this.managerName}, leagueId: ${_this.leagueId}, initialBudget: ${_this.initialBudget}, initialSquadValue: ${_this.initialSquadValue}, startingBudget: ${_this.startingBudget}, totalSales: ${_this.totalSales}, totalPurchases: ${_this.totalPurchases}, currentBudget: ${_this.currentBudget}, initialPlayers: ${_this.initialPlayers}, sales: ${_this.sales}, purchases: ${_this.purchases}, calculatedAt: ${_this.calculatedAt}, autoSaleIncome: ${_this.autoSaleIncome}, autoSaleEvents: ${_this.autoSaleEvents}, loginBonus: ${_this.loginBonus}, loginBonusDays: ${_this.loginBonusDays}, achievementIncome: ${_this.achievementIncome})';
+  return 'BudgetCalculationResult(managerId: ${_this.managerId}, managerName: ${_this.managerName}, leagueId: ${_this.leagueId}, initialBudget: ${_this.initialBudget}, initialSquadValue: ${_this.initialSquadValue}, startingBudget: ${_this.startingBudget}, totalSales: ${_this.totalSales}, totalPurchases: ${_this.totalPurchases}, currentBudget: ${_this.currentBudget}, initialPlayers: ${_this.initialPlayers}, sales: ${_this.sales}, purchases: ${_this.purchases}, calculatedAt: ${_this.calculatedAt}, autoSaleIncome: ${_this.autoSaleIncome}, autoSaleEvents: ${_this.autoSaleEvents}, loginBonus: ${_this.loginBonus}, loginBonusDays: ${_this.loginBonusDays}, achievementIncome: ${_this.achievementIncome}, seasonPoints: ${_this.seasonPoints}, pointsMoney: ${_this.pointsMoney})';
 }
 
 
@@ -1275,7 +1279,7 @@ abstract mixin class $BudgetCalculationResultCopyWith<$Res>  {
   factory $BudgetCalculationResultCopyWith(BudgetCalculationResult value, $Res Function(BudgetCalculationResult) _then) = _$BudgetCalculationResultCopyWithImpl;
 @useResult
 $Res call({
- String managerId, String managerName, String leagueId, int initialBudget, int initialSquadValue, int startingBudget, int totalSales, int totalPurchases, int currentBudget, List<InitialPlayer> initialPlayers, List<ManagerTransfer> sales, List<ManagerTransfer> purchases, DateTime calculatedAt, int autoSaleIncome, List<AutoSaleEvent> autoSaleEvents, int loginBonus, int loginBonusDays, int achievementIncome
+ String managerId, String managerName, String leagueId, int initialBudget, int initialSquadValue, int startingBudget, int totalSales, int totalPurchases, int currentBudget, List<InitialPlayer> initialPlayers, List<ManagerTransfer> sales, List<ManagerTransfer> purchases, DateTime calculatedAt, int autoSaleIncome, List<AutoSaleEvent> autoSaleEvents, int loginBonus, int loginBonusDays, int achievementIncome, int seasonPoints, int pointsMoney
 });
 
 
@@ -1292,7 +1296,7 @@ class _$BudgetCalculationResultCopyWithImpl<$Res>
 
 /// Create a copy of BudgetCalculationResult
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? managerId = null,Object? managerName = null,Object? leagueId = null,Object? initialBudget = null,Object? initialSquadValue = null,Object? startingBudget = null,Object? totalSales = null,Object? totalPurchases = null,Object? currentBudget = null,Object? initialPlayers = null,Object? sales = null,Object? purchases = null,Object? calculatedAt = null,Object? autoSaleIncome = null,Object? autoSaleEvents = null,Object? loginBonus = null,Object? loginBonusDays = null,Object? achievementIncome = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? managerId = null,Object? managerName = null,Object? leagueId = null,Object? initialBudget = null,Object? initialSquadValue = null,Object? startingBudget = null,Object? totalSales = null,Object? totalPurchases = null,Object? currentBudget = null,Object? initialPlayers = null,Object? sales = null,Object? purchases = null,Object? calculatedAt = null,Object? autoSaleIncome = null,Object? autoSaleEvents = null,Object? loginBonus = null,Object? loginBonusDays = null,Object? achievementIncome = null,Object? seasonPoints = null,Object? pointsMoney = null,}) {
   return _then(BudgetCalculationResult(
 managerId: null == managerId ? _self.managerId : managerId // ignore: cast_nullable_to_non_nullable
 as String,managerName: null == managerName ? _self.managerName : managerName // ignore: cast_nullable_to_non_nullable
@@ -1312,6 +1316,8 @@ as int,autoSaleEvents: null == autoSaleEvents ? _self.autoSaleEvents : autoSaleE
 as List<AutoSaleEvent>,loginBonus: null == loginBonus ? _self.loginBonus : loginBonus // ignore: cast_nullable_to_non_nullable
 as int,loginBonusDays: null == loginBonusDays ? _self.loginBonusDays : loginBonusDays // ignore: cast_nullable_to_non_nullable
 as int,achievementIncome: null == achievementIncome ? _self.achievementIncome : achievementIncome // ignore: cast_nullable_to_non_nullable
+as int,seasonPoints: null == seasonPoints ? _self.seasonPoints : seasonPoints // ignore: cast_nullable_to_non_nullable
+as int,pointsMoney: null == pointsMoney ? _self.pointsMoney : pointsMoney // ignore: cast_nullable_to_non_nullable
 as int,
   ));
 }
@@ -1397,10 +1403,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String managerId,  String managerName,  String leagueId,  int initialBudget,  int initialSquadValue,  int startingBudget,  int totalSales,  int totalPurchases,  int currentBudget,  List<InitialPlayer> initialPlayers,  List<ManagerTransfer> sales,  List<ManagerTransfer> purchases,  DateTime calculatedAt,  int autoSaleIncome,  List<AutoSaleEvent> autoSaleEvents,  int loginBonus,  int loginBonusDays,  int achievementIncome)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String managerId,  String managerName,  String leagueId,  int initialBudget,  int initialSquadValue,  int startingBudget,  int totalSales,  int totalPurchases,  int currentBudget,  List<InitialPlayer> initialPlayers,  List<ManagerTransfer> sales,  List<ManagerTransfer> purchases,  DateTime calculatedAt,  int autoSaleIncome,  List<AutoSaleEvent> autoSaleEvents,  int loginBonus,  int loginBonusDays,  int achievementIncome,  int seasonPoints,  int pointsMoney)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _BudgetCalculationResult() when $default != null:
-return $default(_that.managerId,_that.managerName,_that.leagueId,_that.initialBudget,_that.initialSquadValue,_that.startingBudget,_that.totalSales,_that.totalPurchases,_that.currentBudget,_that.initialPlayers,_that.sales,_that.purchases,_that.calculatedAt,_that.autoSaleIncome,_that.autoSaleEvents,_that.loginBonus,_that.loginBonusDays,_that.achievementIncome);case _:
+return $default(_that.managerId,_that.managerName,_that.leagueId,_that.initialBudget,_that.initialSquadValue,_that.startingBudget,_that.totalSales,_that.totalPurchases,_that.currentBudget,_that.initialPlayers,_that.sales,_that.purchases,_that.calculatedAt,_that.autoSaleIncome,_that.autoSaleEvents,_that.loginBonus,_that.loginBonusDays,_that.achievementIncome,_that.seasonPoints,_that.pointsMoney);case _:
   return orElse();
 
 }
@@ -1418,10 +1424,10 @@ return $default(_that.managerId,_that.managerName,_that.leagueId,_that.initialBu
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String managerId,  String managerName,  String leagueId,  int initialBudget,  int initialSquadValue,  int startingBudget,  int totalSales,  int totalPurchases,  int currentBudget,  List<InitialPlayer> initialPlayers,  List<ManagerTransfer> sales,  List<ManagerTransfer> purchases,  DateTime calculatedAt,  int autoSaleIncome,  List<AutoSaleEvent> autoSaleEvents,  int loginBonus,  int loginBonusDays,  int achievementIncome)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String managerId,  String managerName,  String leagueId,  int initialBudget,  int initialSquadValue,  int startingBudget,  int totalSales,  int totalPurchases,  int currentBudget,  List<InitialPlayer> initialPlayers,  List<ManagerTransfer> sales,  List<ManagerTransfer> purchases,  DateTime calculatedAt,  int autoSaleIncome,  List<AutoSaleEvent> autoSaleEvents,  int loginBonus,  int loginBonusDays,  int achievementIncome,  int seasonPoints,  int pointsMoney)  $default,) {final _that = this;
 switch (_that) {
 case _BudgetCalculationResult():
-return $default(_that.managerId,_that.managerName,_that.leagueId,_that.initialBudget,_that.initialSquadValue,_that.startingBudget,_that.totalSales,_that.totalPurchases,_that.currentBudget,_that.initialPlayers,_that.sales,_that.purchases,_that.calculatedAt,_that.autoSaleIncome,_that.autoSaleEvents,_that.loginBonus,_that.loginBonusDays,_that.achievementIncome);case _:
+return $default(_that.managerId,_that.managerName,_that.leagueId,_that.initialBudget,_that.initialSquadValue,_that.startingBudget,_that.totalSales,_that.totalPurchases,_that.currentBudget,_that.initialPlayers,_that.sales,_that.purchases,_that.calculatedAt,_that.autoSaleIncome,_that.autoSaleEvents,_that.loginBonus,_that.loginBonusDays,_that.achievementIncome,_that.seasonPoints,_that.pointsMoney);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1438,10 +1444,10 @@ return $default(_that.managerId,_that.managerName,_that.leagueId,_that.initialBu
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String managerId,  String managerName,  String leagueId,  int initialBudget,  int initialSquadValue,  int startingBudget,  int totalSales,  int totalPurchases,  int currentBudget,  List<InitialPlayer> initialPlayers,  List<ManagerTransfer> sales,  List<ManagerTransfer> purchases,  DateTime calculatedAt,  int autoSaleIncome,  List<AutoSaleEvent> autoSaleEvents,  int loginBonus,  int loginBonusDays,  int achievementIncome)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String managerId,  String managerName,  String leagueId,  int initialBudget,  int initialSquadValue,  int startingBudget,  int totalSales,  int totalPurchases,  int currentBudget,  List<InitialPlayer> initialPlayers,  List<ManagerTransfer> sales,  List<ManagerTransfer> purchases,  DateTime calculatedAt,  int autoSaleIncome,  List<AutoSaleEvent> autoSaleEvents,  int loginBonus,  int loginBonusDays,  int achievementIncome,  int seasonPoints,  int pointsMoney)?  $default,) {final _that = this;
 switch (_that) {
 case _BudgetCalculationResult() when $default != null:
-return $default(_that.managerId,_that.managerName,_that.leagueId,_that.initialBudget,_that.initialSquadValue,_that.startingBudget,_that.totalSales,_that.totalPurchases,_that.currentBudget,_that.initialPlayers,_that.sales,_that.purchases,_that.calculatedAt,_that.autoSaleIncome,_that.autoSaleEvents,_that.loginBonus,_that.loginBonusDays,_that.achievementIncome);case _:
+return $default(_that.managerId,_that.managerName,_that.leagueId,_that.initialBudget,_that.initialSquadValue,_that.startingBudget,_that.totalSales,_that.totalPurchases,_that.currentBudget,_that.initialPlayers,_that.sales,_that.purchases,_that.calculatedAt,_that.autoSaleIncome,_that.autoSaleEvents,_that.loginBonus,_that.loginBonusDays,_that.achievementIncome,_that.seasonPoints,_that.pointsMoney);case _:
   return null;
 
 }
@@ -1453,7 +1459,7 @@ return $default(_that.managerId,_that.managerName,_that.leagueId,_that.initialBu
 @JsonSerializable()
 
 class _BudgetCalculationResult implements BudgetCalculationResult {
-  const _BudgetCalculationResult({required this.managerId, required this.managerName, required this.leagueId, required this.initialBudget, required this.initialSquadValue, required this.startingBudget, required this.totalSales, required this.totalPurchases, required this.currentBudget, required  List<InitialPlayer> initialPlayers, required  List<ManagerTransfer> sales, required  List<ManagerTransfer> purchases, required this.calculatedAt, this.autoSaleIncome = 0,  List<AutoSaleEvent> autoSaleEvents = const [], this.loginBonus = 0, this.loginBonusDays = 0, this.achievementIncome = 0}): _initialPlayers = initialPlayers,_sales = sales,_purchases = purchases,_autoSaleEvents = autoSaleEvents;
+  const _BudgetCalculationResult({required this.managerId, required this.managerName, required this.leagueId, required this.initialBudget, required this.initialSquadValue, required this.startingBudget, required this.totalSales, required this.totalPurchases, required this.currentBudget, required  List<InitialPlayer> initialPlayers, required  List<ManagerTransfer> sales, required  List<ManagerTransfer> purchases, required this.calculatedAt, this.autoSaleIncome = 0,  List<AutoSaleEvent> autoSaleEvents = const [], this.loginBonus = 0, this.loginBonusDays = 0, this.achievementIncome = 0, this.seasonPoints = 0, this.pointsMoney = 0}): _initialPlayers = initialPlayers,_sales = sales,_purchases = purchases,_autoSaleEvents = autoSaleEvents;
   factory _BudgetCalculationResult.fromJson(Map<String, dynamic> json) => _$BudgetCalculationResultFromJson(json);
 
 @override final  String managerId;
@@ -1510,6 +1516,12 @@ class _BudgetCalculationResult implements BudgetCalculationResult {
 /// Summe der Budget-Einnahmen durch Erfolge (Achievements). Bereits in
 /// [currentBudget] enthalten.
 @override@JsonKey() final  int achievementIncome;
+/// Saison-Gesamtpunkte des Managers (Feld `tp` der aktuellen Saison aus
+/// `managers/{userId}/performance`) – Grundlage des Punktgelds.
+@override@JsonKey() final  int seasonPoints;
+/// Punktgeld (Spieltagsprämie): Saison-Gesamtpunkte × 1.000 €. Bereits
+/// in [currentBudget] enthalten.
+@override@JsonKey() final  int pointsMoney;
 
 /// Create a copy of BudgetCalculationResult
 /// with the given fields replaced by the non-null parameter values.
@@ -1524,18 +1536,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _BudgetCalculationResult&&(identical(other.managerId, managerId) || other.managerId == managerId)&&(identical(other.managerName, managerName) || other.managerName == managerName)&&(identical(other.leagueId, leagueId) || other.leagueId == leagueId)&&(identical(other.initialBudget, initialBudget) || other.initialBudget == initialBudget)&&(identical(other.initialSquadValue, initialSquadValue) || other.initialSquadValue == initialSquadValue)&&(identical(other.startingBudget, startingBudget) || other.startingBudget == startingBudget)&&(identical(other.totalSales, totalSales) || other.totalSales == totalSales)&&(identical(other.totalPurchases, totalPurchases) || other.totalPurchases == totalPurchases)&&(identical(other.currentBudget, currentBudget) || other.currentBudget == currentBudget)&&const DeepCollectionEquality().equals(other.initialPlayers, _initialPlayers)&&const DeepCollectionEquality().equals(other.sales, _sales)&&const DeepCollectionEquality().equals(other.purchases, _purchases)&&(identical(other.calculatedAt, calculatedAt) || other.calculatedAt == calculatedAt)&&(identical(other.autoSaleIncome, autoSaleIncome) || other.autoSaleIncome == autoSaleIncome)&&const DeepCollectionEquality().equals(other.autoSaleEvents, _autoSaleEvents)&&(identical(other.loginBonus, loginBonus) || other.loginBonus == loginBonus)&&(identical(other.loginBonusDays, loginBonusDays) || other.loginBonusDays == loginBonusDays)&&(identical(other.achievementIncome, achievementIncome) || other.achievementIncome == achievementIncome));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _BudgetCalculationResult&&(identical(other.managerId, managerId) || other.managerId == managerId)&&(identical(other.managerName, managerName) || other.managerName == managerName)&&(identical(other.leagueId, leagueId) || other.leagueId == leagueId)&&(identical(other.initialBudget, initialBudget) || other.initialBudget == initialBudget)&&(identical(other.initialSquadValue, initialSquadValue) || other.initialSquadValue == initialSquadValue)&&(identical(other.startingBudget, startingBudget) || other.startingBudget == startingBudget)&&(identical(other.totalSales, totalSales) || other.totalSales == totalSales)&&(identical(other.totalPurchases, totalPurchases) || other.totalPurchases == totalPurchases)&&(identical(other.currentBudget, currentBudget) || other.currentBudget == currentBudget)&&const DeepCollectionEquality().equals(other.initialPlayers, _initialPlayers)&&const DeepCollectionEquality().equals(other.sales, _sales)&&const DeepCollectionEquality().equals(other.purchases, _purchases)&&(identical(other.calculatedAt, calculatedAt) || other.calculatedAt == calculatedAt)&&(identical(other.autoSaleIncome, autoSaleIncome) || other.autoSaleIncome == autoSaleIncome)&&const DeepCollectionEquality().equals(other.autoSaleEvents, _autoSaleEvents)&&(identical(other.loginBonus, loginBonus) || other.loginBonus == loginBonus)&&(identical(other.loginBonusDays, loginBonusDays) || other.loginBonusDays == loginBonusDays)&&(identical(other.achievementIncome, achievementIncome) || other.achievementIncome == achievementIncome)&&(identical(other.seasonPoints, seasonPoints) || other.seasonPoints == seasonPoints)&&(identical(other.pointsMoney, pointsMoney) || other.pointsMoney == pointsMoney));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,managerId,managerName,leagueId,initialBudget,initialSquadValue,startingBudget,totalSales,totalPurchases,currentBudget,const DeepCollectionEquality().hash(_initialPlayers),const DeepCollectionEquality().hash(_sales),const DeepCollectionEquality().hash(_purchases),calculatedAt,autoSaleIncome,const DeepCollectionEquality().hash(_autoSaleEvents),loginBonus,loginBonusDays,achievementIncome);
+    return Object.hashAll([runtimeType,managerId,managerName,leagueId,initialBudget,initialSquadValue,startingBudget,totalSales,totalPurchases,currentBudget,const DeepCollectionEquality().hash(_initialPlayers),const DeepCollectionEquality().hash(_sales),const DeepCollectionEquality().hash(_purchases),calculatedAt,autoSaleIncome,const DeepCollectionEquality().hash(_autoSaleEvents),loginBonus,loginBonusDays,achievementIncome,seasonPoints,pointsMoney]);
 }
 
 @override
 String toString() {
-    return 'BudgetCalculationResult(managerId: $managerId, managerName: $managerName, leagueId: $leagueId, initialBudget: $initialBudget, initialSquadValue: $initialSquadValue, startingBudget: $startingBudget, totalSales: $totalSales, totalPurchases: $totalPurchases, currentBudget: $currentBudget, initialPlayers: $initialPlayers, sales: $sales, purchases: $purchases, calculatedAt: $calculatedAt, autoSaleIncome: $autoSaleIncome, autoSaleEvents: $autoSaleEvents, loginBonus: $loginBonus, loginBonusDays: $loginBonusDays, achievementIncome: $achievementIncome)';
+    return 'BudgetCalculationResult(managerId: $managerId, managerName: $managerName, leagueId: $leagueId, initialBudget: $initialBudget, initialSquadValue: $initialSquadValue, startingBudget: $startingBudget, totalSales: $totalSales, totalPurchases: $totalPurchases, currentBudget: $currentBudget, initialPlayers: $initialPlayers, sales: $sales, purchases: $purchases, calculatedAt: $calculatedAt, autoSaleIncome: $autoSaleIncome, autoSaleEvents: $autoSaleEvents, loginBonus: $loginBonus, loginBonusDays: $loginBonusDays, achievementIncome: $achievementIncome, seasonPoints: $seasonPoints, pointsMoney: $pointsMoney)';
 }
 
 
@@ -1546,7 +1558,7 @@ abstract mixin class _$BudgetCalculationResultCopyWith<$Res> implements $BudgetC
   factory _$BudgetCalculationResultCopyWith(_BudgetCalculationResult value, $Res Function(_BudgetCalculationResult) _then) = __$BudgetCalculationResultCopyWithImpl;
 @override @useResult
 $Res call({
- String managerId, String managerName, String leagueId, int initialBudget, int initialSquadValue, int startingBudget, int totalSales, int totalPurchases, int currentBudget, List<InitialPlayer> initialPlayers, List<ManagerTransfer> sales, List<ManagerTransfer> purchases, DateTime calculatedAt, int autoSaleIncome, List<AutoSaleEvent> autoSaleEvents, int loginBonus, int loginBonusDays, int achievementIncome
+ String managerId, String managerName, String leagueId, int initialBudget, int initialSquadValue, int startingBudget, int totalSales, int totalPurchases, int currentBudget, List<InitialPlayer> initialPlayers, List<ManagerTransfer> sales, List<ManagerTransfer> purchases, DateTime calculatedAt, int autoSaleIncome, List<AutoSaleEvent> autoSaleEvents, int loginBonus, int loginBonusDays, int achievementIncome, int seasonPoints, int pointsMoney
 });
 
 
@@ -1563,7 +1575,7 @@ class __$BudgetCalculationResultCopyWithImpl<$Res>
 
 /// Create a copy of BudgetCalculationResult
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? managerId = null,Object? managerName = null,Object? leagueId = null,Object? initialBudget = null,Object? initialSquadValue = null,Object? startingBudget = null,Object? totalSales = null,Object? totalPurchases = null,Object? currentBudget = null,Object? initialPlayers = null,Object? sales = null,Object? purchases = null,Object? calculatedAt = null,Object? autoSaleIncome = null,Object? autoSaleEvents = null,Object? loginBonus = null,Object? loginBonusDays = null,Object? achievementIncome = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? managerId = null,Object? managerName = null,Object? leagueId = null,Object? initialBudget = null,Object? initialSquadValue = null,Object? startingBudget = null,Object? totalSales = null,Object? totalPurchases = null,Object? currentBudget = null,Object? initialPlayers = null,Object? sales = null,Object? purchases = null,Object? calculatedAt = null,Object? autoSaleIncome = null,Object? autoSaleEvents = null,Object? loginBonus = null,Object? loginBonusDays = null,Object? achievementIncome = null,Object? seasonPoints = null,Object? pointsMoney = null,}) {
   return _then(_BudgetCalculationResult(
 managerId: null == managerId ? _self.managerId : managerId // ignore: cast_nullable_to_non_nullable
 as String,managerName: null == managerName ? _self.managerName : managerName // ignore: cast_nullable_to_non_nullable
@@ -1583,6 +1595,8 @@ as int,autoSaleEvents: null == autoSaleEvents ? _self._autoSaleEvents : autoSale
 as List<AutoSaleEvent>,loginBonus: null == loginBonus ? _self.loginBonus : loginBonus // ignore: cast_nullable_to_non_nullable
 as int,loginBonusDays: null == loginBonusDays ? _self.loginBonusDays : loginBonusDays // ignore: cast_nullable_to_non_nullable
 as int,achievementIncome: null == achievementIncome ? _self.achievementIncome : achievementIncome // ignore: cast_nullable_to_non_nullable
+as int,seasonPoints: null == seasonPoints ? _self.seasonPoints : seasonPoints // ignore: cast_nullable_to_non_nullable
+as int,pointsMoney: null == pointsMoney ? _self.pointsMoney : pointsMoney // ignore: cast_nullable_to_non_nullable
 as int,
   ));
 }

@@ -1081,6 +1081,14 @@ class _BudgetOverviewCards extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             _BudgetCard(
+              icon: Icons.sports_score,
+              label: 'Punktgeld (Spieltagsprämie)',
+              value:
+                  '+${(calculation.pointsMoney / 1000000).toStringAsFixed(2)} M €',
+              color: Colors.indigo,
+            ),
+            const SizedBox(height: 8),
+            _BudgetCard(
               icon: Icons.account_balance_wallet,
               label: 'AKTUELLES BUDGET (inkl. Boni)',
               value: '${(totalBudget / 1000000).toStringAsFixed(2)} M €',

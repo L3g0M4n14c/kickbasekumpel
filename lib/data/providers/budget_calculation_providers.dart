@@ -14,6 +14,7 @@ import 'kickbase_api_provider.dart';
 import 'league_detail_providers.dart';
 import 'manager_providers.dart';
 import 'player_detail_providers.dart';
+import 'squad_benchmark_providers.dart' show myLeagueUserIdProvider;
 
 // ============================================================================
 // BUDGET CALCULATION PROVIDERS
@@ -196,6 +197,7 @@ final managerTransfersProvider =
 /// Berechnet das aktuelle Budget basierend auf:
 /// - Startbudget: 50 Mio. €
 /// - Transfers: Verkäufe (addieren) und Käufe (subtrahieren)
+/// - Punktgeld (Spieltagsprämie): Saison-Gesamtpunkte × 1.000 €
 ///
 /// Parameter:
 /// - leagueId: Liga ID
@@ -239,15 +241,44 @@ final managerBudgetCalculationProvider =
         )).future,
       );
 
-      // 5. Budget berechnen
+      // 5a. Saison-Gesamtpunkte (`tp`) für das Punktgeld laden.
+      //
+      // Kickbase vergütet Spieltagspunkte mit 1.000 € Budget pro Punkt
+      // (Spieltagsprämie) – das fließt in die Summe des
+      // [BudgetCalculationService] ein.
+      var seasonPoints = 0;
+      try {
+        final performance = await ref.watch(
+          managerPerformanceProvider((
+            leagueId: params.leagueId,
+            userId: params.managerId,
+          )).future,
+        );
+        seasonPoints = calculationService.seasonTotalPoints(performance);
+        if (seasonPoints > 0) {
+          _logger.i(
+            '⚽ Punktgeld: $seasonPoints Saison-Punkte → '
+            '+${calculationService.pointsMoneyFor(seasonPoints)} € '
+            'für Manager ${params.managerId}',
+          );
+        }
+      } catch (e) {
+        _logger.w(
+          '⚠️ Punktgeld: Performance-Daten für ${params.managerId} '
+          'nicht ladbar – Punktgeld wird nicht aufgerechnet ($e)',
+        );
+      }
+
+      // 5b. Budget berechnen
       var result = calculationService.calculateManagerBudget(
         managerId: params.managerId,
         managerName: managerName,
         leagueId: params.leagueId,
         allTransfers: allTransfers,
+        seasonPoints: seasonPoints,
       );
 
-      // 5b. Täglicher Anmeldebonus berücksichtigen.
+      // 5c. Täglicher Anmeldebonus berücksichtigen.
       //
       // Jeder Manager bekommt am ersten Tag der Liga 10.000 €, am zweiten
       // Tag 20.000 €, … am zehnten Tag 100.000 € – und ab da an jedem Tag
@@ -428,6 +459,35 @@ final managerBudgetCalculationProvider =
           achievementIncome: achievementIncome,
           currentBudget: result.currentBudget + achievementIncome,
         );
+      }
+
+      // 8. Kalibrierung gegen das echte eigene Budget (`me/budget`) – analog
+      //    „🧭 Achievement-Kalibrierung" nur Logging: Für den eigenen Manager
+      //    wird die berechnete Summe mit dem tatsächlichen Budget verglichen
+      //    und die Abweichung protokolliert (Zielwert laut Story #9: über
+      //    3 Spieltage ≤ 5 %).
+      try {
+        final myUserId = await ref.watch(
+          myLeagueUserIdProvider(params.leagueId).future,
+        );
+        if (myUserId.isNotEmpty && myUserId == params.managerId) {
+          final budgetData = await ref.watch(
+            myBudgetProvider(params.leagueId).future,
+          );
+          final realBudget = _asInt(budgetData['b']);
+          final deviation = result.currentBudget - realBudget;
+          final deviationPercent = realBudget != 0
+              ? deviation / realBudget * 100
+              : 0.0;
+          _logger.i(
+            '🧭 Budget-Kalibrierung (Liga ${params.leagueId}, User $myUserId): '
+            'berechnet ${result.currentBudget} € vs. echt $realBudget € → '
+            'Abweichung $deviation € '
+            '(${deviationPercent.toStringAsFixed(1)} %, Ziel ≤ 5 %)',
+          );
+        }
+      } catch (e) {
+        _logger.i('Budget-Kalibrierung übersprungen: $e');
       }
 
       return result;
