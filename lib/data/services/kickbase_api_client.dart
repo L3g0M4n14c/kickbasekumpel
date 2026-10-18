@@ -1069,8 +1069,34 @@ class KickbaseAPIClient {
     return _parseJson(response.body);
   }
 
+  /// Get base overview (Home-Übersicht inkl. Bonus-Status).
+  ///
+  /// GET /v4/base/overview
+  ///
+  /// Response-Felder (dokumentierter Stand):
+  /// - `stg`  = Story-/News-Liste, `sect` = News-Sektionen
+  /// - optional `it`/`url` mit Bonus-Einträgen (`li`/`lnm`/`v`/`day`/`b`/`lim`),
+  ///   falls ein Tagesbonus aussteht – Auswertung in `DailyBonusService`
+  Future<Map<String, dynamic>> getBaseOverview() async {
+    _logger.d('📰 Getting base overview...');
+    final response = await _makeRequestWithRetry(
+      endpoint: '/$_apiVersion/base/overview',
+      method: 'GET',
+    );
+
+    return _parseJson(response.body);
+  }
+
   /// Collect daily bonus
   /// GET /v4/bonus/collect
+  ///
+  /// Response-Felder:
+  /// - `it`  = Liste pro Liga: `li` = Liga-ID, `lnm` = Liga-Name,
+  ///   `v` = Bonus-Betrag in €, `day` = Tag der Bonus-Serie,
+  ///   `b` = Budget nach dem Einsammeln in €, `lim` = Liga-Bild
+  /// - `url`/`btt` = optionale Promo-URL/-Text
+  ///
+  /// Parsing in `DailyBonusService.parseCollectResult`.
   Future<Map<String, dynamic>> collectBonus() async {
     _logger.i('🎁 Collecting daily bonus...');
     final response = await _makeRequestWithRetry(

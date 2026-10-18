@@ -40,6 +40,7 @@ lib/presentation/widgets/
 - **ErrorWidget** - Fehler-Anzeige
 - **EmptyStateWidget** - Leerer Zustand
 - **RetryWidget** - Fehler mit Retry-Button
+- **DailyBonusBanner** - Tagesbonus-Erinnerung mit Tap-to-Collect (Story #17)
 
 ### 5. Charts & Stats (`charts/`)
 - **PriceChart** - Marktwert-Trend (Line Chart)

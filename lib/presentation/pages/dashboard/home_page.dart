@@ -7,6 +7,7 @@ import '../../../data/models/league_model.dart';
 import '../../widgets/responsive_layout.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/error_widget.dart';
+import '../../widgets/common/daily_bonus_banner.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -66,6 +67,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         onRefresh: () async {
           ref.invalidate(currentUserProvider);
           ref.invalidate(userLeaguesProvider);
+          ref.invalidate(dailyBonusProvider);
           if (selectedLeagueId != null) {
             ref.invalidate(leagueMeProvider(selectedLeagueId!));
             ref.invalidate(myBudgetProvider(selectedLeagueId!));
@@ -140,6 +142,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     return ListView(
       padding: const EdgeInsets.all(16.0),
       children: [
+        const DailyBonusBanner(),
+        const SizedBox(height: 16),
         _buildWelcomeCard(context, user),
         const SizedBox(height: 16),
         _buildLeagueSelector(context, ref, leagues),
@@ -168,6 +172,8 @@ class _HomePageState extends ConsumerState<HomePage> {
             padding: const EdgeInsets.all(24.0),
             child: Column(
               children: [
+                const DailyBonusBanner(),
+                const SizedBox(height: 24),
                 _buildWelcomeCard(context, user),
                 const SizedBox(height: 24),
                 _buildLeagueSelector(context, ref, leagues),
@@ -204,6 +210,8 @@ class _HomePageState extends ConsumerState<HomePage> {
         desktopMaxWidth: 1600,
         child: Column(
           children: [
+            const DailyBonusBanner(),
+            const SizedBox(height: 32),
             _buildWelcomeCard(context, user),
             const SizedBox(height: 32),
             _buildLeagueSelector(context, ref, leagues),
