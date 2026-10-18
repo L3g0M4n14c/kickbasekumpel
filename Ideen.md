@@ -3,7 +3,8 @@
 > Sammlung der Feature-Ideen aus der Analyse vom 01.10.2026.
 > Umgesetzt: Ligainsider-Status-Badge, Kader-Benchmark, Achievements im Budget
 > (seit 07.10.2026 deterministisch abgeleitet für alle Manager),
-> Verkaufs-Timing/Nachfrage-Hinweis (seit 18.10.2026, Story #15).
+> Verkaufs-Timing/Nachfrage-Hinweis (seit 18.10.2026, Story #15),
+> Konkurrenz-Budget in der Gebotsempfehlung (seit 18.10.2026, Story #10).
 
 ---
 
@@ -78,11 +79,17 @@ enthält.
 - Sparkline der MV-Entwicklung (30 Tage) in der Markt-Liste
   (Daten via `marketvalue/{timeframe}`, einmalig cachen)
 
-### D. Konkurrenz-Budget in der Gebotsempfehlung
+### D. Konkurrenz-Budget in der Gebotsempfehlung ✅ (umgesetzt 18.10.2026, Story #10)
 Die `BudgetCalculationService`-Ergebnisse kennen die Budgets aller Manager.
 In der Bid-Empfehlung anzeigen: „Dein Gebot 4,2 M€ – 3 Manager haben mehr
 Budget, max. Konkurrenz-Budget: 6,8 M€" → Abschätzung, wie realistisch der
 Zuschlag ist.
+Umsetzung: `BudgetCalculationService.analyzeCompetitorBudgets` (Vergleich
+Gebot ↔ Mitbieter-Budgets), `leagueCompetitorBudgetsProvider` +
+`competitorBudgetHintProvider` (Budgets aller Konkurrenten via
+`managersBudgetCalculationProvider`) und die Hinweiszeile in der
+`_RecommendedBid`-Card des Kauf-Dialogs. Der Hinweis entfällt, wenn kein
+Mitbieter mehr Budget als das eigene Gebot hat.
 
 ---
 
