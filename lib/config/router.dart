@@ -24,6 +24,7 @@ import '../presentation/pages/error_page.dart';
 import '../presentation/screens/ligainsider/ligainsider_screen.dart';
 import '../presentation/screens/live_screen.dart';
 import '../presentation/screens/manager_detail_screen.dart';
+import '../presentation/screens/manager_comparison_screen.dart';
 import '../presentation/screens/league_table_screen.dart';
 
 // ============================================================================
@@ -264,6 +265,29 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
 
       // ======================================================================
+      // MANAGER COMPARISON - Direktvergleich "Du vs. Rivale"
+      // WICHTIG: vor '/manager/:leagueId/:userId' deklarieren, sonst würde
+      // ':userId' den Pfadteil 'compare' schlucken.
+      // ======================================================================
+      GoRoute(
+        path: '/manager/:leagueId/compare',
+        name: 'manager-compare',
+        pageBuilder: (context, state) {
+          final leagueId = state.pathParameters['leagueId']!;
+          final managerAId = state.uri.queryParameters['a'] ?? '';
+          final managerBId = state.uri.queryParameters['b'] ?? '';
+          return MaterialPage(
+            key: state.pageKey,
+            child: ManagerComparisonScreen(
+              leagueId: leagueId,
+              managerAId: managerAId,
+              managerBId: managerBId,
+            ),
+          );
+        },
+      ),
+
+      // ======================================================================
       // MANAGER DETAIL - Manager Profile & Squad
       // ======================================================================
       GoRoute(
@@ -434,6 +458,11 @@ extension GoRouterExtensions on BuildContext {
   // Manager Routes
   void goToManager(String leagueId, String userId) =>
       push('/manager/$leagueId/$userId');
+  void goToManagerComparison(
+    String leagueId,
+    String managerAId,
+    String managerBId,
+  ) => push('/manager/$leagueId/compare?a=$managerAId&b=$managerBId');
 
   // Competition Routes
   void goToTable(String competitionId) => push('/table/$competitionId');
@@ -467,6 +496,7 @@ class RouterKeys {
   static const playerStats = 'player-stats';
   static const playerHistory = 'player-history';
   static const managerDetail = 'manager-detail';
+  static const managerComparison = 'manager-compare';
   static const competitionTable = 'competition-table';
 }
 
