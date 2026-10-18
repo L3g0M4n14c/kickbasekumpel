@@ -93,7 +93,10 @@ void main() {
 
       expect(benchmark.managerCount, 0);
       expect(benchmark.positions, hasLength(4));
-      expect(benchmark.positions.every((p) => p.leagueAvgMarketValue == 0), isTrue);
+      expect(
+        benchmark.positions.every((p) => p.leagueAvgMarketValue == 0),
+        isTrue,
+      );
     });
 
     test('Spieler ohne gültige Positions-Code werden ignoriert', () {
@@ -134,6 +137,39 @@ void main() {
       final mf = benchmark.positions.firstWhere((p) => p.position == 3);
       expect(mf.leagueAvgPoints, 75);
       expect(mf.leagueAvgCount, 2);
+    });
+  });
+
+  group('SquadBenchmarkService.positionTotals', () {
+    test('aggregiert Summen je Position aus der Squad-Rohantwort', () {
+      final totals = service.positionTotals([
+        {'pos': 1, 'mv': 5000000, 'p': 100},
+        {'pos': 1, 'mv': 3000000, 'p': 50},
+        {'pos': 2, 'mv': 2000000, 'p': 20},
+        // Unbekannte Positionen werden ignoriert.
+        {'pos': 9, 'mv': 999, 'p': 999},
+      ]);
+
+      expect(totals.keys, [1, 2, 3, 4]);
+
+      final torwart = totals[1]!;
+      expect(torwart.marketValue, 8000000);
+      expect(torwart.points, 150);
+      expect(torwart.count, 2);
+
+      expect(totals[2]!.count, 1);
+      expect(totals[3]!.count, 0);
+      expect(totals[4]!.marketValue, 0);
+    });
+
+    test('liefert Nullsummen für einen leeren Kader', () {
+      final totals = service.positionTotals(const []);
+
+      for (final position in SquadBenchmarkService.allPositions) {
+        expect(totals[position]!.marketValue, 0);
+        expect(totals[position]!.points, 0);
+        expect(totals[position]!.count, 0);
+      }
     });
   });
 }

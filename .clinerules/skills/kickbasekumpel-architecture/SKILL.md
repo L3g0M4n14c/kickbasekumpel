@@ -46,7 +46,7 @@ Verwendung: `switch (result) { Success(:final data) => ..., Failure(:final messa
 
 ## Routing
 
-GoRouter 17 in `lib/config/router.dart` (`goRouterProvider`): `/loading`, `/`, `/auth/signin`, StatefulShellRoute mit `/dashboard[/market|sales|lineup|transfers|ligainsider|table|live|settings]`, `/league/:leagueId`, `/ligainsider/lineups`, `/manager/:leagueId/:userId`.
+GoRouter 17 in `lib/config/router.dart` (`goRouterProvider`): `/loading`, `/`, `/auth/signin`, StatefulShellRoute mit `/dashboard[/market|sales|lineup|transfers|ligainsider|table|live|settings]`, `/league/:leagueId`, `/ligainsider/lineups`, `/manager/:leagueId/compare`, `/manager/:leagueId/:userId`.
 
 ## Neues Feature (Reihenfolge)
 

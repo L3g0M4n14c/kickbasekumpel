@@ -87,3 +87,29 @@ class SquadBenchmark {
   double get totalMarketValueDelta =>
       ownTotalMarketValue - leagueAvgTotalMarketValue;
 }
+
+/// Rohsummen eines Kaders auf einer Position (Marktwert, Punkte, Spieleranzahl).
+///
+/// Wird von [SquadBenchmarkService.positionTotals] aus einer Squad-Rohantwort
+/// (`it`-Liste mit `pos`, `mv`, `p`) aggregiert und u. a. im
+/// Manager-Direktvergleich (`ManagerComparisonService`) weiterverwendet.
+class PositionTotals {
+  const PositionTotals({
+    required this.position,
+    this.marketValue = 0,
+    this.points = 0,
+    this.count = 0,
+  });
+
+  /// Positions-Code (1=TW, 2=ABW, 3=MF, 4=ST).
+  final int position;
+
+  /// Summe der Marktwerte aller Spieler auf dieser Position (€).
+  final int marketValue;
+
+  /// Summe der Gesamtpunkte aller Spieler auf dieser Position (Feld `p`).
+  final double points;
+
+  /// Anzahl der Spieler auf dieser Position.
+  final int count;
+}

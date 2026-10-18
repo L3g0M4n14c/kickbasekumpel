@@ -26,6 +26,7 @@ Feature → Einstiegspunkte (Logik in `lib/data/services/`, State in Provider, U
 ## Liga & Spieler
 
 - Liga-Details/Tabelle: `league_providers.dart`, `league_detail_providers.dart`, Screens `league/`, `league_table_screen`
+- **Manager-Direktvergleich (Du vs. Rivale)**: `manager_comparison_service.dart` + `manager_comparison_providers.dart` – Gegenüberstellung von Kaderwert, Punkten der letzten 5 Spieltage, Transfer-Erfolg (Ø Deal-Qualität, Kursgewinn) und Budget plus Stärken/Schwächen-Kurzfazit als Klartext. Screen `manager_comparison_screen.dart`, Auswahl (max. 2 Manager, Long-Press oder AppBar-Icon) in der Rangliste `league_standings_page.dart`, Route `/manager/:leagueId/compare?a=<id>&b=<id>` (Seite A = „Du")
 - Spieler-Statistiken/Historie: `player_providers.dart`, `player_detail_providers.dart`, `manager_transfer_history_service.dart`
 - Live: `live_providers.dart`, `live_screen.dart`
 - Transferhistorie-Mitbieter: `manager_transfer_history_providers.dart`
