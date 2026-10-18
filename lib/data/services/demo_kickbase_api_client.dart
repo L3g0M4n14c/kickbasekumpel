@@ -23,6 +23,16 @@ class DemoKickbaseAPIClient extends KickbaseAPIClient {
   static const String demoLeagueId = 'demo-liga-001';
   static const String demoLeagueName = 'Demo Liga';
 
+  /// Demo-Eintrag für den Tagesbonus (Struktur wie `GET /v4/bonus/collect`).
+  static const Map<String, dynamic> _demoBonusCollection = {
+    'li': demoLeagueId,
+    'lnm': demoLeagueName,
+    'v': 10000,
+    'day': 1,
+    'b': 50000000,
+    'lim': '',
+  };
+
   final Logger _log = Logger();
 
   DemoKickbaseAPIClient() : super() {
@@ -724,8 +734,19 @@ class DemoKickbaseAPIClient extends KickbaseAPIClient {
   }
 
   @override
+  Future<Map<String, dynamic>> getBaseOverview() async {
+    // Demo: Bonus-Einträge wie in der echten Collect-Response, damit der
+    // Tagesbonus im Demo-Modus verfügbar ist (einmal pro Tag einsammelbar).
+    return {
+      'it': [_demoBonusCollection],
+    };
+  }
+
+  @override
   Future<Map<String, dynamic>> collectBonus() async {
-    return {'ok': true};
+    return {
+      'it': [_demoBonusCollection],
+    };
   }
 
   // Mutations: No-ops im Demo-Modus (geben Erfolg zurück ohne etwas zu tun)

@@ -23,12 +23,3 @@ final liveEventTypesProvider = FutureProvider<Map<String, dynamic>>((ref) async 
   final apiClient = ref.watch(kickbaseApiClientProvider);
   return await apiClient.getLiveEventTypes();
 });
-
-/// Bonus Collect Provider
-/// GET /v4/bonus/collect
-/// Collects daily bonus - note: this is a state-changing operation
-/// Use with caution - calling this provider will trigger the bonus collection
-final collectBonusProvider = FutureProvider<Map<String, dynamic>>((ref) async {
-  final apiClient = ref.watch(kickbaseApiClientProvider);
-  return await apiClient.collectBonus();
-});

@@ -2,30 +2,42 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/providers/kickbase_auth_provider.dart';
-import '../../../data/providers/live_providers.dart';
+import '../../../data/providers/daily_bonus_providers.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
+  /// Formatiert einen Geldbetrag kompakt (z. B. `10k€`, `1.2M€`).
+  String _formatAmount(int value) {
+    if (value >= 1000000) {
+      return '${(value / 1000000).toStringAsFixed(1)}M€';
+    } else if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(0)}k€';
+    }
+    return '$value€';
+  }
+
   Future<void> _collectBonus(BuildContext context, WidgetRef ref) async {
-    try {
-      // Bonus sammeln via Provider
-      final result = await ref.read(collectBonusProvider.future);
-      
-      if (context.mounted) {
-        final amount = result['a'] ?? 0;
+    // Bonus sammeln via Daily-Bonus-Notifier (blendet auch das
+    // Home-Banner bis zum nächsten Tag aus)
+    final result = await ref.read(dailyBonusProvider.notifier).collect();
+
+    if (context.mounted) {
+      if (result != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Bonus erfolgreich gesammelt: ${amount / 1000}k€'),
+            content: Text(
+              'Bonus erfolgreich gesammelt: ${_formatAmount(result.totalValue)}',
+            ),
             backgroundColor: Colors.green,
           ),
         );
-      }
-    } catch (e) {
-      if (context.mounted) {
+      } else {
+        final error =
+            ref.read(dailyBonusProvider).error ?? 'Unbekannter Fehler';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Fehler beim Bonus sammeln: ${e.toString()}'),
+            content: Text('Fehler beim Bonus sammeln: $error'),
             backgroundColor: Colors.red,
           ),
         );
@@ -65,6 +77,7 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(kickbaseAuthProvider);
     final currentUser = authState.currentUser;
+    final bonusState = ref.watch(dailyBonusProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Einstellungen')),
@@ -103,9 +116,15 @@ class SettingsPage extends ConsumerWidget {
               ListTile(
                 leading: const Icon(Icons.card_giftcard),
                 title: const Text('Täglicher Bonus'),
-                subtitle: const Text('Sammle deinen täglichen Bonus'),
+                subtitle: Text(
+                  bonusState.isAvailable
+                      ? 'Sammle deinen täglichen Bonus'
+                      : 'Kein Tagesbonus ausstehend',
+                ),
                 trailing: FilledButton(
-                  onPressed: () => _collectBonus(context, ref),
+                  onPressed: bonusState.isCollecting
+                      ? null
+                      : () => _collectBonus(context, ref),
                   child: const Text('Sammeln'),
                 ),
               ),

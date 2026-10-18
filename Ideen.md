@@ -44,7 +44,7 @@ Der Live-Screen zeigt bisher nur Gesamt-Punkte. Mit den Match-Details:
 - Bundesliga-Tabelle + aktuelle Form der Teams als Kontext für Spielerbewertungen
   („Gegner nächste Woche: Bayern" = eher Bank)
 
-### 6. Daily Bonus — `GET /base/overview` + `GET /bonus/collect`
+### 6. Daily Bonus — `GET /base/overview` + `GET /bonus/collect` ✅ (Story #17 umgesetzt)
 Dezentes Erinnerungs-Banner „Tagesbonus verfügbar" mit Tap-to-Collect.
 
 ### 7. Battles & Achievements als Anzeige — `GET /leagues/{id}/battles/{type}/users`, `/user/achievements`
