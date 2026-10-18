@@ -19,9 +19,9 @@ Parsing** → **Provider** → **UI-Konsument**. Spezifikation: `docs/api-endpoi
 | `GET /v4/leagues/selection` | `getLeagues()` | `List<League>` via `normalizeLeagueJson` | `league_providers`, `kickbase_auth_provider` | Liga-Auswahl |
 | `GET /v4/leagues/{id}/overview` | `getLeague()`, `getLeagueOverview()` | `League` / Map (`dt` = Saisonstart) | `leagueSeasonStartDateProvider` (budget_calculation) | – |
 | `GET /v4/leagues/{id}/me` | `getLeagueMe()` | Map | `leagueMeProvider` | `home_page` |
-| `GET /v4/leagues/{id}/me/budget` | `getMyBudget()` | Map (`b` = echtes Budget) | `myBudgetProvider`, `budget_calculation_providers` (Kalibrierung) | `home_page`, `squad_screen` |
+| `GET /v4/leagues/{id}/me/budget` | `getMyBudget()` | Map (`b` = echtes Budget) | `myBudgetProvider`, `budget_calculation_providers` (Kalibrierung/Sync) | `home_page`, `squad_screen` |
 | `GET /v4/leagues/{id}/ranking` | `getLeagueRanking()` | Map (Spieltags-Ranking `mdp`) | `leagueRankingProvider`, `currentLeagueRankingProvider`, `leagueMatchdayDataProvider`, `bid_recommendation_providers` | `league_standings_page` |
-| `GET /v4/leagues/{id}/activitiesFeed` | `getLeagueActivitiesFeed()` | Map (ungenutzt, s. Roadmap) | – | – |
+| `GET /v4/leagues/{id}/activitiesFeed` | `getLeagueActivitiesFeed()` | Map (`af`: `t` = Typ – 15 Transfer, 22 Anmeldebonus `data.bn`, 26 Erfolg; nur eigene Einträge) | `leagueActivitiesFeedProvider` (budget_calculation: Anmeldebonus) | – |
 | `GET /v4/leagues/{id}/settings` | – | – (Roadmap: echte Liga-Regeln) | – | – |
 
 ## Eigener Kader & Aufstellung

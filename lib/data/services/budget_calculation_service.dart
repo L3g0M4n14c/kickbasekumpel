@@ -32,6 +32,18 @@ class BudgetCalculationService {
   static const int loginBonusMaxPerDay =
       loginBonusPerDayStep * loginBonusMaxDay;
 
+  /// Aktivitäten-Feed: Typ-Code für einen erhaltenen Anmeldebonus
+  /// (Betrag in `data.bn`).
+  static const int activityTypeLoginBonus = 22;
+
+  /// Hilfsfunktion: Wert als int (int/num/String), sonst 0.
+  static int _asInt(Object? value) => switch (value) {
+    int value => value,
+    num value => value.toInt(),
+    String value => int.tryParse(value) ?? 0,
+    _ => 0,
+  };
+
   /// Tagesbonus für einen bestimmten Liga-Tag (1-basiert).
   ///
   /// Tag 1 = 10.000 €, Tag 2 = 20.000 €, … Tag 10 = 100.000 €,
@@ -98,6 +110,45 @@ class BudgetCalculationService {
     return cumulativeLoginBonus(days);
   }
 
+  /// Tatsächlich gutgeschriebener Anmeldebonus aus dem Aktivitäten-Feed.
+  ///
+  /// Der Feed (`activitiesFeed`, Feld `af`) enthält pro ERHALTENEM
+  /// Anmeldebonus einen Eintrag mit Typ [activityTypeLoginBonus] und dem
+  /// Betrag in `data.bn`. Anders als die Formel ([calculateLoginBonus])
+  /// werden hier nur die Boni gezählt, die wirklich gutgeschrieben wurden –
+  /// nicht eingesammelte Tage zählen nicht mit (wichtig: Die Formel ist eine
+  /// Obergrenze und überschätzt das Budget bei verpassten Tagen).
+  ///
+  /// [since] - nur Einträge ab diesem Zeitpunkt (Saisonstart).
+  ///
+  /// Returns: `total` = Summe der Beträge, `count` = Anzahl der
+  /// Gutschriften.
+  ({int total, int count}) loginBonusFromActivityFeed(
+    Map<String, dynamic> feedData, {
+    DateTime? since,
+  }) {
+    final entries = (feedData['af'] as List<dynamic>? ?? const [])
+        .whereType<Map<String, dynamic>>();
+
+    var total = 0;
+    var count = 0;
+    for (final entry in entries) {
+      if (_asInt(entry['t']) != activityTypeLoginBonus) continue;
+
+      if (since != null) {
+        final rawDate = entry['dt'];
+        final date = rawDate is String
+            ? DateTime.tryParse(rawDate)?.toUtc()
+            : null;
+        if (date == null || date.isBefore(since.toUtc())) continue;
+      }
+
+      total += _asInt((entry['data'] as Map<String, dynamic>?)?['bn']);
+      count++;
+    }
+    return (total: total, count: count);
+  }
+
   /// Punktgeld (Spieltagsprämie) für [seasonPoints] Saison-Gesamtpunkte.
   ///
   /// Kickbase vergütet jeden Spieltagspunkt mit 1.000 € Budget
@@ -132,13 +183,7 @@ class BudgetCalculationService {
       hasCurrentMatchday,
       orElse: () => seasons.last,
     );
-    final tp = currentSeason['tp'];
-    return switch (tp) {
-      int value => value,
-      num value => value.toInt(),
-      String value => int.tryParse(value) ?? 0,
-      _ => 0,
-    };
+    return _asInt(currentSeason['tp']);
   }
 
   /// Berechnet das Budget für einen Manager

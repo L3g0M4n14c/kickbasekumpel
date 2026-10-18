@@ -416,4 +416,127 @@ void main() {
       expect(result.currentBudget, 50000000);
     });
   });
+
+  group('BudgetCalculationService – Anmeldebonus aus Aktivitäten-Feed', () {
+    late BudgetCalculationService service;
+
+    setUp(() {
+      service = BudgetCalculationService();
+    });
+
+    test('summiert nur Anmeldebonus-Einträge (Typ 22) über data.bn', () {
+      final feed = {
+        'af': [
+          {
+            // Anmeldebonus
+            't': 22,
+            'dt': '2026-08-22T10:00:00Z',
+            'data': {'bn': 10000, 'day': 2},
+          },
+          {
+            // Transfer – muss ignoriert werden
+            't': 15,
+            'dt': '2026-08-23T10:00:00Z',
+            'data': {'trp': 5000000, 'pn': 'Spieler'},
+          },
+          {
+            // Erfolg – muss ignoriert werden
+            't': 26,
+            'dt': '2026-08-24T10:00:00Z',
+            'data': {'t': 7},
+          },
+          {
+            // weiterer Anmeldebonus
+            't': 22,
+            'dt': '2026-08-24T10:00:00Z',
+            'data': {'bn': 30000, 'day': 4},
+          },
+        ],
+      };
+
+      final result = service.loginBonusFromActivityFeed(feed);
+
+      expect(result.total, 40000);
+      expect(result.count, 2);
+    });
+
+    test('filtert Einträge vor dem Saisonstart (since)', () {
+      final feed = {
+        'af': [
+          {
+            't': 22,
+            'dt': '2026-08-10T10:00:00Z', // vor Saisonstart
+            'data': {'bn': 100000},
+          },
+          {
+            't': 22,
+            'dt': '2026-08-21T00:00:00Z', // genau am Saisonstart
+            'data': {'bn': 10000},
+          },
+          {
+            't': 22,
+            'dt': '2026-09-05T10:00:00Z', // danach
+            'data': {'bn': 20000},
+          },
+        ],
+      };
+
+      final result = service.loginBonusFromActivityFeed(
+        feed,
+        since: DateTime.utc(2026, 8, 21),
+      );
+
+      expect(result.total, 30000);
+      expect(result.count, 2);
+    });
+
+    test('robust bei fehlenden Feldern', () {
+      expect(service.loginBonusFromActivityFeed({}).total, 0);
+      expect(service.loginBonusFromActivityFeed({'af': []}).count, 0);
+
+      final result = service.loginBonusFromActivityFeed({
+        'af': [
+          {'t': 22}, // data fehlt
+          {'t': 22, 'dt': '2026-09-01T00:00:00Z'}, // data fehlt
+          {
+            't': 22,
+            'dt': '2026-09-02T00:00:00Z',
+            'data': {'bn': 5000},
+          },
+        ],
+      });
+
+      expect(result.total, 5000);
+      expect(result.count, 3);
+    });
+
+    test('Einträge ohne parsbares Datum fallen bei since raus', () {
+      final feed = {
+        'af': [
+          {
+            't': 22,
+            'data': {'bn': 10000},
+          }, // dt fehlt
+          {
+            't': 22,
+            'dt': 'garbage',
+            'data': {'bn': 20000},
+          },
+          {
+            't': 22,
+            'dt': '2026-09-01T00:00:00Z',
+            'data': {'bn': 30000},
+          },
+        ],
+      };
+
+      final result = service.loginBonusFromActivityFeed(
+        feed,
+        since: DateTime.utc(2026, 8, 21),
+      );
+
+      expect(result.total, 30000);
+      expect(result.count, 1);
+    });
+  });
 }

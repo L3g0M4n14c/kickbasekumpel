@@ -102,10 +102,14 @@ Zuschlag ist.
 Kickbase vergütet Spieltagspunkte mit Budget (Trading-Advisor-Ansatz:
 `totalPoints × 1000 €` aus `managers/{userId}/performance`).
 Umgesetzt: `managerPerformanceProvider` (Feld `tp` der aktuellen Saison)
-× 1000 € fließt im `BudgetCalculationService` in die Budget-Summe ein und
-wird im `managerBudgetCalculationProvider` gegen das echte eigene Budget
-(`me/budget`) kalibriert (Log „🧭 Budget-Kalibrierung", Ziel: Abweichung
-≤ 5 % über 3 Spieltage).
+× 1000 € fließt im `BudgetCalculationService` in die Budget-Summe ein.
+Kalibrierung gegen das echte eigene Budget (`me/budget`): Für den eigenen
+Manager wird die Schätzung durch den echten Wert ersetzt (wie im
+Trading-Advisor „Sync with own actual budget"), die Abweichung wird
+protokolliert (Log „🧭 Budget-Kalibrierung", Ziel: ≤ 5 % über 3 Spieltage)
+und im Budget-Tab mitgezeigt. Zusätzlich ist der Anmeldebonus für den
+eigenen Manager exakt (tatsächliche `bn`-Gutschriften aus dem
+Aktivitäten-Feed, Typ 22) statt Formel-Obergrenze.
 
 ### 2. Achievements aller Manager — deterministische Ableitung (in Umsetzung)
 Erfolge fremder Manager zeigt die API nirgends – sie werden im

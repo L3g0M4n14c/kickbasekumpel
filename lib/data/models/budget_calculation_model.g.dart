@@ -141,6 +141,9 @@ _BudgetCalculationResult _$BudgetCalculationResultFromJson(
   achievementIncome: (json['achievementIncome'] as num?)?.toInt() ?? 0,
   seasonPoints: (json['seasonPoints'] as num?)?.toInt() ?? 0,
   pointsMoney: (json['pointsMoney'] as num?)?.toInt() ?? 0,
+  estimatedBudget: (json['estimatedBudget'] as num?)?.toInt() ?? 0,
+  budgetDeviation: (json['budgetDeviation'] as num?)?.toInt() ?? 0,
+  calibrated: json['calibrated'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$BudgetCalculationResultToJson(
@@ -166,4 +169,7 @@ Map<String, dynamic> _$BudgetCalculationResultToJson(
   'achievementIncome': instance.achievementIncome,
   'seasonPoints': instance.seasonPoints,
   'pointsMoney': instance.pointsMoney,
+  'estimatedBudget': instance.estimatedBudget,
+  'budgetDeviation': instance.budgetDeviation,
+  'calibrated': instance.calibrated,
 };
