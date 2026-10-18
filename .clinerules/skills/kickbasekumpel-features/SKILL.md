@@ -13,6 +13,7 @@ Feature → Einstiegspunkte (Logik in `lib/data/services/`, State in Provider, U
 |---|---|
 | Gebots-Empfehlung | `bid_recommendation_service.dart` (Methoden: minimum/median/quartile, confidence, premium, sampleSize) + `bid_recommendation_providers.dart` |
 | Verkaufsempfehlungen | `deterministic_recommendation_service.dart` + `recommendation_providers.dart` (Ziele: Budgetausgleich, Gewinnmaximierung) |
+| Verkaufs-Timing (Nachfrage-Hinweis) | `manager_transfer_history_service.dart` (`purchasesByTimeWindow`, `demandProfile`: Käufe pro Wochentag/6h-Zeitfenster, Intensität hoch/mittel/niedrig, `null` bei < 4 Wochen Daten) + `leagueTransferDemandProvider` in `manager_transfer_history_providers.dart` + `demand_hint_card.dart` in der Verkaufsempfehlung |
 | Transfer-Planner | `transfer_planner_service.dart` (deterministische Szenarien, Rejection-Gründe: unaffordable/illegalLineup/notInXI/noGain) + `transfer_planner_provider.dart`; Spec: docs/superpowers/specs/2026-05-17-transfer-planner-design.md |
 | Auto-Verkauf/Budget | `auto_sale_budget_service.dart` |
 | Kader-Benchmark | `squad_benchmark_service.dart` + `squad_benchmark_providers.dart` |
@@ -46,4 +47,7 @@ Ungenutzte Kickbase-v4-Endpunkte (Doku: `docs/api-endpoints.json`, Swagger):
 2. `activitiesFeed` – Social-Feed, Mitbieter-Identifikation (Lücke im BidRecommendationService)
 3. `GET /matches/{matchId}/details` + `/live/eventtypes` – Live-Spielereignisse
 
-Umsetzung von Ideen.md ist noch OFFEN – vor Implementierung dort und in docs/superpowers/ (plans/specs) nach aktuellen Stand suchen.
+Umsetzung von Ideen.md: Feature-Idee B (Verkaufs-Timing) ist umgesetzt
+(Story #15, Nachfrage-Hinweis in der Verkaufsempfehlung), der Rest ist noch
+OFFEN – vor Implementierung dort und in docs/superpowers/ (plans/specs) nach
+aktuellen Stand suchen.
