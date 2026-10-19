@@ -24,7 +24,7 @@ Presentation (lib/presentation) → Data (lib/data) → Domain (lib/domain)
 - `lib/config/` – `router.dart` (GoRouter-Provider), `theme.dart`/`app_theme.dart` (AppTheme.lightTheme/darkTheme), `screen_size.dart`, `firebase_config.dart`
 - `lib/domain/` – `repositories/repository_interfaces.dart` (**sealed class Result<T>**), `repositories/auth_repository_interface.dart`, `exceptions/kickbase_exceptions.dart`
 - `lib/data/` – `models/` (Freezed, Barrel: models_barrel.dart), `repositories/` (base_repository.dart, firestore_repositories.dart, auth_repository.dart), `services/` (KickbaseAPIClient etc.), `providers/` (Data-Provider), `sources/auth_source.dart`, `utils/parsing_utils.dart`
-- `lib/presentation/` – `pages/` (auth, dashboard, home_page, loading, error), `screens/` (Feature-Screens: league_table, live, squad, ligainsider, player...), `widgets/` (app_bars, buttons, cards, charts, common, forms, market, team, transfers, responsive_layout), `providers/` (UI-Provider: dashboard, market, transfer_planner), `utils/player_status_helper.dart`
+- `lib/presentation/` – `pages/` (auth, dashboard, league, loading, error), `screens/` (Feature-Screens: league_table, live, squad, ligainsider, player...), `widgets/` (app_bars, buttons, cards, charts, common, forms, market, team, transfers, responsive_layout), `providers/` (UI-Provider: dashboard, market, transfer_planner), `utils/player_status_helper.dart`
 - `lib/firebase_options.dart` – generiert von FlutterFire
 
 ## Datenfluss

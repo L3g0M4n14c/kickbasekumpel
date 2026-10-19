@@ -18,8 +18,8 @@ Parsing** → **Provider** → **UI-Konsument**. Spezifikation: `docs/api-endpoi
 |---|---|---|---|---|
 | `GET /v4/leagues/selection` | `getLeagues()` | `List<League>` via `normalizeLeagueJson` | `league_providers`, `kickbase_auth_provider` | Liga-Auswahl |
 | `GET /v4/leagues/{id}/overview` | `getLeague()`, `getLeagueOverview()` | `League` / Map (`dt` = Saisonstart) | `leagueSeasonStartDateProvider` (budget_calculation) | – |
-| `GET /v4/leagues/{id}/me` | `getLeagueMe()` | Map | `leagueMeProvider` | `home_page` |
-| `GET /v4/leagues/{id}/me/budget` | `getMyBudget()` | Map | `myBudgetProvider` | `home_page`, `squad_screen` |
+| `GET /v4/leagues/{id}/me` | `getLeagueMe()` | Map | `leagueMeProvider` | `team_page` (Squad-Benchmark) |
+| `GET /v4/leagues/{id}/me/budget` | `getMyBudget()` | Map | `myBudgetProvider`, `teamBudgetProvider` | `team_page` (Budget-Header), `squad_screen` |
 | `GET /v4/leagues/{id}/ranking` | `getLeagueRanking()` | Map (Spieltags-Ranking `mdp`) | `leagueRankingProvider`, `currentLeagueRankingProvider`, `leagueMatchdayDataProvider`, `bid_recommendation_providers` | `league_standings_page` |
 | `GET /v4/leagues/{id}/activitiesFeed` | `getLeagueActivitiesFeed()` | Map (ungenutzt, s. Roadmap) | – | – |
 | `GET /v4/leagues/{id}/settings` | – | – (Roadmap: echte Liga-Regeln) | – | – |
@@ -28,7 +28,7 @@ Parsing** → **Provider** → **UI-Konsument**. Spezifikation: `docs/api-endpoi
 
 | Endpunkt | Methode | Parsing | Provider | UI |
 |---|---|---|---|---|
-| `GET /v4/leagues/{id}/squad` | `getMySquad()`, `getLeaguePlayers()` (Squad→Market-Fallback) | Map / `List<Player>` via `normalizePlayerJson` | `mySquadProvider`, `leaguePlayersProvider`, `dashboard_providers` | `squad_screen`, `home_page` |
+| `GET /v4/leagues/{id}/squad` | `getMySquad()`, `getLeaguePlayers()` (Squad→Market-Fallback) | Map / `List<Player>` via `normalizePlayerJson` | `mySquadProvider`, `leaguePlayersProvider`, `dashboard_providers` | `squad_screen`, `player_detail_screen` |
 | `GET /v4/leagues/{id}/lineup` | `getLineup()` | `LineupResponse` (`it`) | `player_providers` (Lineup-Fetch), `recommendation_providers` | – |
 | `POST /v4/leagues/{id}/lineup` | `updateLineup()` | – (ungenutzt) | – | – |
 | `GET /v4/leagues/{id}/teamcenter/myeleven` | `getMyEleven()` | Map (live Punkte) | `myElevenProvider` | `live_screen` |

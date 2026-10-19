@@ -48,7 +48,7 @@ description: KickbaseKumpel Datei- und Ordnerkarte - welche Datei wofür zustän
 ## Screens/Pages (Auswahl)
 
 `presentation/screens/`: `dashboard/`, `league/` (+ `league_table_screen`), `player/`, `ligainsider/`, `live_screen`, `squad_screen`, `manager_detail_screen`, `auth/`, `charts_demo_screen`, `widget_gallery_screen`.
-`presentation/pages/`: `auth/`, `dashboard/`, `league/`, `player/`, `home_page`, `loading_screen`, `error_page`.
+`presentation/pages/`: `auth/`, `dashboard/`, `league/`, `player/`, `loading_screen`, `error_page`.
 
 ## Wichtige Widgets
 
