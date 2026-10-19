@@ -4,7 +4,8 @@
 > Umgesetzt: Ligainsider-Status-Badge, Kader-Benchmark, Achievements im Budget
 > (seit 07.10.2026 deterministisch abgeleitet für alle Manager),
 > Verkaufs-Timing/Nachfrage-Hinweis (seit 18.10.2026, Story #15),
-> Konkurrenz-Budget in der Gebotsempfehlung (seit 18.10.2026, Story #10).
+> Konkurrenz-Budget in der Gebotsempfehlung (seit 18.10.2026, Story #10),
+> Aufstellungs-Optimierung mit erwarteten Punkten (Story #13).
 
 ---
 
@@ -57,10 +58,17 @@ mehr Motivation als taktischer Nutzen.
 
 ## 💡 Feature-Ideen aus bereits vorhandenen Daten
 
-### A. Aufstellungs-Optimierung mit Ligainsider
-Kombiniere Ligainsider-Startelf-Wahrscheinlichkeiten mit Ø-Punkten:
+### A. Aufstellungs-Optimierung mit Ligainsider ✅ (umgesetzt, Story #13)
+Kombiniert Ligainsider-Startelf-Wahrscheinlichkeiten mit Ø-Punkten:
 - „💡 Tausche X gegen Y: +8,5 Punkte erwartet" im Aufstellungs-Screen
-- Drag & Drop / Tap-to-Swap in der Aufstellung
+  (Empfehlungs-Card in `lineup_page.dart`, Tausch-Vorschläge mit erwarteter
+  Punkt-Differenz pro Tausch)
+- Erwartete Punkte = Ø-Punkte × Aufstellungs-Wahrscheinlichkeit
+  (Ligainsider-Status) × Gegner-Stärke (`LineupPlayerScore.expectedPoints`,
+  pro Tausch als `LineupSwap.expectedGain`); ohne verlässliche
+  Ligainsider-Daten Fallback auf Ø-Punkte (`usesLigainsiderData`)
+- Tap-to-Swap: Tippen auf einen Tausch-Vorschlag übernimmt genau diesen
+  Tausch in die Aufstellung (`LineupRecommendationService.swappedLineupIds`)
 
 ### B. Verkaufsfenster-Timing ✅ (umgesetzt 18.10.2026, Story #15)
 Aus der Transfer-Historie ableiten, **wann in der Liga die meisten Käufe
