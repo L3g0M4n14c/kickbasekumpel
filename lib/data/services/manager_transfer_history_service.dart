@@ -73,6 +73,34 @@ class ManagerTransferHistoryService {
     return closestEntry?.mv;
   }
 
+  /// Liefert den ersten Marktwert ab [from] (chronologisch nächster Eintrag).
+  ///
+  /// Gegenstück zu [marketValueAt]: Werte, die mit einer Berechnung
+  /// festgeschrieben wurden (z.B. Auto-Verkauf mit der finalen
+  /// Spieltagsberechnung), erscheinen in der Marktwert-Historie erst AB dem
+  /// Berechnungszeitpunkt – ein "letzter Eintrag ≤ Stichtag" würde den Stand
+  /// DAVOR liefern.
+  int? marketValueOnOrAfter(
+    List<MarketValueEntry> marketValues,
+    DateTime from,
+  ) {
+    final fromMillis = from.toUtc().millisecondsSinceEpoch;
+
+    MarketValueEntry? earliestEntry;
+    int? earliestMs;
+
+    for (final entry in marketValues) {
+      final entryMs = _normalizeMarketValueDt(entry.dt);
+      if (entryMs < fromMillis) continue;
+      if (earliestEntry == null || entryMs < earliestMs!) {
+        earliestEntry = entry;
+        earliestMs = entryMs;
+      }
+    }
+
+    return earliestEntry?.mv;
+  }
+
   int _normalizeMarketValueDt(int dt) {
     // < 100000 -> Tage seit 1970
     if (dt.abs() < 100000) return dt * Duration.millisecondsPerDay;

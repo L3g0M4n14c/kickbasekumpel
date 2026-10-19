@@ -98,5 +98,32 @@ void main() {
         expect(enrichedTransfer.marketValueAtTransfer, 12000000);
       },
     );
+
+    test(
+      'marketValueOnOrAfter liefert den nächsten Eintrag ab dem Stichtag',
+      () {
+        // Arrange
+        final service = ManagerTransferHistoryService();
+        final marketValues = [
+          const MarketValueEntry(dt: 1736812800000, mv: 12000000),
+          const MarketValueEntry(dt: 1737244800000, mv: 12500000),
+          const MarketValueEntry(dt: 1737676800000, mv: 13000000),
+        ];
+
+        // Act & Assert
+        expect(
+          service.marketValueOnOrAfter(marketValues, DateTime.utc(2025, 1, 19)),
+          12500000,
+        );
+        expect(
+          service.marketValueOnOrAfter(marketValues, DateTime.utc(2025, 1, 10)),
+          12000000,
+        );
+        expect(
+          service.marketValueOnOrAfter(marketValues, DateTime.utc(2025, 2, 1)),
+          isNull,
+        );
+      },
+    );
   });
 }
