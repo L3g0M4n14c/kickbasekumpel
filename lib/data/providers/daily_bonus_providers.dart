@@ -133,8 +133,9 @@ class DailyBonusNotifier extends Notifier<DailyBonusState> {
   /// Sammelt den Tagesbonus ein (Tap-to-Collect).
   ///
   /// Gibt das [BonusCollectResult] mit der Bonus-Summe zurück oder `null`
-  /// bei einem Fehler. Nach dem Einsammeln bleibt das Banner bis zum
-  /// nächsten Tag ausgeblendet.
+  /// bei einem Fehler. Auch ein leeres Ergebnis (nichts zu sammeln, z. B.
+  /// bereits in der Kickbase-App eingesammelt) blendet das Banner bis zum
+  /// nächsten Tag aus, damit es nicht stört.
   Future<BonusCollectResult?> collect() async {
     if (state.isCollecting) return null;
     state = state.copyWith(isCollecting: true, error: null);

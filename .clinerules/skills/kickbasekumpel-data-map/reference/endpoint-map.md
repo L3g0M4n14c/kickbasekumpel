@@ -66,7 +66,7 @@ Parsing** → **Provider** → **UI-Konsument**. Spezifikation: `docs/api-endpoi
 |---|---|---|---|---|
 | `GET .../user/achievements` | `getUserAchievements()` | `List<Map>` | `myLeagueAchievementsProvider`, `leagueDerivedAchievementEventsProvider` | Achievements-UI |
 | `GET .../user/achievements/{type}` | `getUserAchievementByType()` | Map (`ac` × `er` = Budget-Anteil) | `achievementApiRewardsByNameProvider` | – |
-| `GET /v4/base/overview` | `getBaseOverview()` | `DailyBonusStatus` (defensiv, via `DailyBonusService`) | `dailyBonusProvider` | `daily_bonus_banner` (Home) |
+| `GET /v4/base/overview` | `getBaseOverview()` | `DailyBonusStatus` (defensiv, via `DailyBonusService`) | `dailyBonusProvider` | `daily_bonus_banner` (Startseite `team_page`) |
 | `GET /v4/bonus/collect` | `collectBonus()` | `BonusCollectResult` (via `DailyBonusService`) | `dailyBonusProvider.collect()` | `daily_bonus_banner`, `settings_page` |
 | `GET /v4/live/eventtypes` | `getLiveEventTypes()` | Map | `liveEventTypesProvider` | `live_screen` |
 

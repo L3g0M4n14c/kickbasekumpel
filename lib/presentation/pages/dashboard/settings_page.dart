@@ -23,22 +23,28 @@ class SettingsPage extends ConsumerWidget {
     final result = await ref.read(dailyBonusProvider.notifier).collect();
 
     if (context.mounted) {
-      if (result != null) {
+      if (result == null) {
+        final error = ref.read(dailyBonusProvider).error ?? 'Unbekannter Fehler';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fehler beim Bonus sammeln: $error'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } else if (result.collections.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Heute ist kein Tagesbonus verfügbar.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               'Bonus erfolgreich gesammelt: ${_formatAmount(result.totalValue)}',
             ),
             backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        final error =
-            ref.read(dailyBonusProvider).error ?? 'Unbekannter Fehler';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Fehler beim Bonus sammeln: $error'),
-            backgroundColor: Colors.red,
           ),
         );
       }

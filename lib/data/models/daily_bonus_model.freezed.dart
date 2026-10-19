@@ -592,9 +592,10 @@ as List<BonusCollection>,
 mixin _$DailyBonusStatus {
 
 /// true = Bonus ausstehend (Overview meldet Bonus-Einträge),
-/// false = kein Bonus ausstehend (Overview ohne Bonus-Einträge),
-/// null = Overview liefert keinen Bonus-Hinweis (z. B. News-Response) –
-/// dann entscheidet der lokale Einsammel-Stand (siehe `DailyBonusService`).
+/// null = Overview liefert keinen Bonus-Hinweis – dann entscheidet der
+/// lokale Einsammel-Stand (siehe `DailyBonusService`).
+/// false = Bonus ausdrücklich nicht ausstehend (derzeit nicht erkennbar,
+/// für künftige API-Hinweise reserviert).
  bool? get isAvailable;
 /// Create a copy of DailyBonusStatus
 /// with the given fields replaced by the non-null parameter values.
@@ -796,9 +797,10 @@ class _DailyBonusStatus implements DailyBonusStatus {
   
 
 /// true = Bonus ausstehend (Overview meldet Bonus-Einträge),
-/// false = kein Bonus ausstehend (Overview ohne Bonus-Einträge),
-/// null = Overview liefert keinen Bonus-Hinweis (z. B. News-Response) –
-/// dann entscheidet der lokale Einsammel-Stand (siehe `DailyBonusService`).
+/// null = Overview liefert keinen Bonus-Hinweis – dann entscheidet der
+/// lokale Einsammel-Stand (siehe `DailyBonusService`).
+/// false = Bonus ausdrücklich nicht ausstehend (derzeit nicht erkennbar,
+/// für künftige API-Hinweise reserviert).
 @override final  bool? isAvailable;
 
 /// Create a copy of DailyBonusStatus

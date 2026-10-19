@@ -30,13 +30,16 @@ class DailyBonusBanner extends ConsumerWidget {
     ref.listen(dailyBonusProvider, (previous, next) {
       final result = next.lastResult;
       if (result == null || previous?.lastResult == result) return;
+      final collected = result.collections.isNotEmpty;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Tagesbonus eingesammelt: ${formatAmount(result.totalValue)}'
-            '${result.maxDay > 0 ? ' (Tag ${result.maxDay})' : ''}',
+            collected
+                ? 'Tagesbonus eingesammelt: ${formatAmount(result.totalValue)}'
+                      '${result.maxDay > 0 ? ' (Tag ${result.maxDay})' : ''}'
+                : 'Heute ist kein Tagesbonus verfügbar.',
           ),
-          backgroundColor: Colors.green,
+          backgroundColor: collected ? Colors.green : Colors.orange,
         ),
       );
     });

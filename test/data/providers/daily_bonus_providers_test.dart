@@ -55,17 +55,22 @@ void main() {
     },
   );
 
-  test('API meldet keinen Bonus → Banner erscheint nicht', () async {
-    when(() => mockApi.getBaseOverview()).thenAnswer((_) async => {'it': []});
+  test(
+    'API ohne Bonus-Hinweis (leeres it) → lokaler Stand entscheidet',
+    () async {
+      // Die Beispiel-Response der Doku zeigt {"it": []} – das ist KEIN
+      // „kein Bonus"-Signal, der Banner darf also nicht verschwinden.
+      when(() => mockApi.getBaseOverview()).thenAnswer((_) async => {'it': []});
 
-    final container = createContainer();
-    addTearDown(container.dispose);
+      final container = createContainer();
+      addTearDown(container.dispose);
 
-    container.read(dailyBonusProvider);
-    await pumpEventQueue();
+      container.read(dailyBonusProvider);
+      await pumpEventQueue();
 
-    expect(container.read(dailyBonusProvider).isAvailable, isFalse);
-  });
+      expect(container.read(dailyBonusProvider).isAvailable, isTrue);
+    },
+  );
 
   test(
     'Tap sammelt ein: Ergebnis, Bestätigungs-Daten und Ausblenden',
@@ -165,4 +170,24 @@ void main() {
       expect(state.isAvailable, isTrue);
     },
   );
+
+  test('Leeres Collect-Ergebnis: Banner aus, bis zum nächsten Tag', () async {
+    when(() => mockApi.collectBonus()).thenAnswer((_) async => {'it': []});
+
+    final container = createContainer();
+    addTearDown(container.dispose);
+
+    container.read(dailyBonusProvider);
+    await pumpEventQueue();
+
+    final result = await container.read(dailyBonusProvider.notifier).collect();
+
+    expect(result, isNotNull);
+    expect(result!.collections, isEmpty);
+    expect(container.read(dailyBonusProvider).isAvailable, isFalse);
+
+    // Persistiert → auch beim nächsten Start ausgeblendet
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString(kDailyBonusLastCollectedKey), isNotNull);
+  });
 }

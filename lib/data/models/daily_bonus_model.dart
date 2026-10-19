@@ -64,9 +64,10 @@ abstract class BonusCollectResult with _$BonusCollectResult {
 abstract class DailyBonusStatus with _$DailyBonusStatus {
   const factory DailyBonusStatus({
     /// true = Bonus ausstehend (Overview meldet Bonus-Einträge),
-    /// false = kein Bonus ausstehend (Overview ohne Bonus-Einträge),
-    /// null = Overview liefert keinen Bonus-Hinweis (z. B. News-Response) –
-    /// dann entscheidet der lokale Einsammel-Stand (siehe `DailyBonusService`).
+    /// null = Overview liefert keinen Bonus-Hinweis – dann entscheidet der
+    /// lokale Einsammel-Stand (siehe `DailyBonusService`).
+    /// false = Bonus ausdrücklich nicht ausstehend (derzeit nicht erkennbar,
+    /// für künftige API-Hinweise reserviert).
     required bool? isAvailable,
   }) = _DailyBonusStatus;
 }
