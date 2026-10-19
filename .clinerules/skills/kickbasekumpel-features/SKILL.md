@@ -23,7 +23,7 @@ Feature → Einstiegspunkte (Logik in `lib/data/services/`, State in Provider, U
 - `budget_calculation_service.dart` + `budget_calculation_providers.dart` – Gesamtbudget (Startbudget + Transfers + Anmeldebonus + Auto-Verkauf + Erfolge)
 - `achievement_budget_service.dart` – exakte Summe des eigenen Managers (`ac × er`) + Erfolgs-Katalog
 - `achievement_derivation_service.dart` + `achievement_providers.dart` – **deterministische Ableitung der Erfolge aller Manager** (Spieltags-Ranking `mdp`, Lineup-Punkte, Transfer-Historie), Kalibrierung gegen die eigenen `ac`-Werte (Log „🧭 Achievement-Kalibrierung"). Der Aktivitäten-Feed zeigt nur eigene Erfolge und wird NICHT genutzt.
-- **Tagesbonus (Story #17)** – `daily_bonus_service.dart` (Status-/Parsing-Logik: `GET /base/overview` Bonus-Status defensiv, `GET /bonus/collect` → `BonusCollectResult`) + `daily_bonus_providers.dart` (`dailyBonusProvider`, Tap-to-Collect, Persistenz `daily_bonus_last_collected` in SharedPreferences) + `daily_bonus_banner.dart` auf `home_page`; der gespeicherte Einsammel-Tag sorgt für „Banner bis zum nächsten Tag aus"
+- **Tagesbonus (Story #17)** – `daily_bonus_service.dart` (Status-/Parsing-Logik: `GET /base/overview` Bonus-Status defensiv – nur explizite Bonus-Einträge (`it` mit `v`/`day`) gelten als Hinweis, `GET /bonus/collect` → `BonusCollectResult`) + `daily_bonus_providers.dart` (`dailyBonusProvider`, Tap-to-Collect, Persistenz `daily_bonus_last_collected` in SharedPreferences) + `daily_bonus_banner.dart` auf `team_page` (Startseite unter `/dashboard`); der gespeicherte Einsammel-Tag sorgt für „Banner bis zum nächsten Tag aus"
 
 ## Liga & Spieler
 

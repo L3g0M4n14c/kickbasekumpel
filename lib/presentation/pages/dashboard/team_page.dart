@@ -6,8 +6,10 @@ import 'package:kickbasekumpel/presentation/widgets/team/team_budget_header.dart
 import 'package:kickbasekumpel/presentation/widgets/team/player_count_overview.dart';
 import 'package:kickbasekumpel/presentation/widgets/team/player_row_with_sale.dart';
 import 'package:kickbasekumpel/presentation/widgets/team/squad_benchmark_card.dart';
+import 'package:kickbasekumpel/presentation/widgets/common/daily_bonus_banner.dart';
 import 'package:kickbasekumpel/presentation/providers/dashboard_providers.dart';
 import 'package:kickbasekumpel/data/providers/league_providers.dart';
+import 'package:kickbasekumpel/data/providers/daily_bonus_providers.dart';
 import 'package:kickbasekumpel/presentation/screens/player/player_detail_screen.dart';
 
 /// Sortierungs-Optionen für Spieler
@@ -47,6 +49,7 @@ class _TeamPageState extends ConsumerState<TeamPage> {
           // Refresh team data
           ref.invalidate(teamPlayersProvider);
           ref.invalidate(teamBudgetProvider);
+          ref.invalidate(dailyBonusProvider);
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -55,6 +58,10 @@ class _TeamPageState extends ConsumerState<TeamPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Tagesbonus-Erinnerung (nur bei verfügbarem Bonus)
+                const DailyBonusBanner(),
+                const SizedBox(height: 16),
+
                 // Budget Header
                 teamBudgetAsync.when(
                   data: (budget) {

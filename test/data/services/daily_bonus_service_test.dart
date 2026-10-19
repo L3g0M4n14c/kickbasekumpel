@@ -89,8 +89,8 @@ void main() {
       expect(status.isAvailable, isTrue);
     });
 
-    test('leeres `it` → nicht verfügbar', () {
-      expect(service.parseBaseOverview({'it': []}).isAvailable, isFalse);
+    test('leeres `it` → unbekannt (lokaler Stand entscheidet)', () {
+      expect(service.parseBaseOverview({'it': []}).isAvailable, isNull);
     });
 
     test('News-Form (stg/sect) → unbekannt (lokaler Stand entscheidet)', () {

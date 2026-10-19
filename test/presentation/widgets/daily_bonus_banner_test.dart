@@ -74,16 +74,33 @@ void main() {
     expect(find.text('Home-Content'), findsOneWidget);
   });
 
-  testWidgets('Banner erscheint nicht, wenn die API keinen Bonus meldet', (
+  testWidgets('Banner bleibt auch ohne API-Bonus-Hinweis sichtbar', (
     tester,
   ) async {
+    // {"it": []} ist die Beispiel-Response der Doku und sagt nichts über
+    // den Bonus-Status aus → lokaler Stand entscheidet (nicht eingesammelt).
     when(() => mockApi.getBaseOverview()).thenAnswer((_) async => {'it': []});
 
     await tester.pumpWidget(buildApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Tagesbonus verfügbar'), findsNothing);
+    expect(find.text('Tagesbonus verfügbar'), findsOneWidget);
     verifyNever(() => mockApi.collectBonus());
+  });
+
+  testWidgets('Leeres Collect-Ergebnis: Hinweis statt Betrag, Banner aus', (
+    tester,
+  ) async {
+    when(() => mockApi.collectBonus()).thenAnswer((_) async => {'it': []});
+
+    await tester.pumpWidget(buildApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(DailyBonusBanner));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Heute ist kein Tagesbonus verfügbar.'), findsOneWidget);
+    expect(find.text('Tagesbonus verfügbar'), findsNothing);
   });
 
   testWidgets('Banner erscheint wieder, wenn zuletzt am Vortag eingesammelt '

@@ -41,12 +41,16 @@ class DailyBonusService {
 
   /// Parst die Antwort von `GET /v4/base/overview` in einen [DailyBonusStatus].
   ///
-  /// Auswertung (defensiv, da die dokumentierte Response keinen Bonus-Status
-  /// enthält):
+  /// Auswertung (defensiv, da die dokumentierte Response keinen eindeutigen
+  /// Bonus-Status enthält):
   /// - `it` mit Bonus-Einträgen (`v`/`day`, wie bei `GET /v4/bonus/collect`)
   ///   → `isAvailable: true`
-  /// - `it` vorhanden, aber leer → `isAvailable: false` (nichts ausstehend)
-  /// - sonst (z. B. News-Form `stg`/`sect`) → `isAvailable: null` (unbekannt)
+  /// - sonst (leeres `it`, News-Form `stg`/`sect`, unbekannte Struktur)
+  ///   → `isAvailable: null` (unbekannt – der lokale Einsammel-Stand entscheidet)
+  ///
+  /// Hinweis: Ein leeres `it` wird bewusst NICHT als „kein Bonus" gewertet –
+  /// die Beispiel-Response der Doku zeigt genau diese Form, ohne dass das
+  /// etwas über den Bonus-Status aussagt.
   DailyBonusStatus parseBaseOverview(Map<String, dynamic> json) {
     final items = json['it'];
     if (items is List) {
@@ -58,11 +62,8 @@ class DailyBonusService {
         _logger.d('🎁 Overview meldet ${bonusItems.length} Bonus-Einträge');
         return const DailyBonusStatus(isAvailable: true);
       }
-      if (items.isEmpty) {
-        return const DailyBonusStatus(isAvailable: false);
-      }
     }
-    // News-Form (stg/sect) oder unbekannte Struktur → kein Hinweis
+    // Kein eindeutiger Hinweis → lokaler Stand entscheidet
     return const DailyBonusStatus(isAvailable: null);
   }
 

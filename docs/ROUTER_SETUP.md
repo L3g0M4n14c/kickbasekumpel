@@ -17,7 +17,6 @@ lib/
         │   └── verify_email_page.dart
         ├── dashboard/                  # Dashboard mit BottomNav
         │   ├── dashboard_shell.dart    # Shell mit BottomNavigationBar
-        │   ├── home_page.dart
         │   ├── leagues_page.dart
         │   ├── market_page.dart
         │   ├── lineup_page.dart
