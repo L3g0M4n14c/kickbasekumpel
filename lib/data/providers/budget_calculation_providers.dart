@@ -694,18 +694,34 @@ final managersBudgetCalculationProvider =
       // Jeder managerBudgetCalculationProvider wird das Saisondatum aus dem
       // leagueSeasonStartDateProvider laden, und Riverpod cached es.
 
-      for (final managerId in params.managerIds) {
-        try {
-          final result = await ref.watch(
-            managerBudgetCalculationProvider((
-              leagueId: params.leagueId,
-              managerId: managerId,
-            )).future,
-          );
-          results[managerId] = result;
-        } catch (e) {
-          // Fehler ignorieren und mit leeren Werten weitermachen
-          continue;
+      // Manager in begrenzten Batches parallel berechnen: Die einzelnen
+      // Budget-Provider cachen über alle Aufrufe hinweg, Fehler einzelner
+      // Manager werden ignoriert und führen nicht zum Abbruch.
+      for (
+        var i = 0;
+        i < params.managerIds.length;
+        i += _maxConcurrentFetches
+      ) {
+        final batch = params.managerIds.skip(i).take(_maxConcurrentFetches);
+        final batchResults =
+            await Future.wait<MapEntry<String, BudgetCalculationResult>?>(
+              batch.map((managerId) async {
+                try {
+                  final result = await ref.watch(
+                    managerBudgetCalculationProvider((
+                      leagueId: params.leagueId,
+                      managerId: managerId,
+                    )).future,
+                  );
+                  return MapEntry(managerId, result);
+                } catch (_) {
+                  // Fehler ignorieren und mit leeren Werten weitermachen
+                  return null;
+                }
+              }),
+            );
+        for (final entry in batchResults) {
+          if (entry != null) results[entry.key] = entry.value;
         }
       }
 

@@ -18,8 +18,8 @@ Parsing** → **Provider** → **UI-Konsument**. Spezifikation: `docs/api-endpoi
 |---|---|---|---|---|
 | `GET /v4/leagues/selection` | `getLeagues()` | `List<League>` via `normalizeLeagueJson` | `league_providers`, `kickbase_auth_provider` | Liga-Auswahl |
 | `GET /v4/leagues/{id}/overview` | `getLeague()`, `getLeagueOverview()` | `League` / Map (`dt` = Saisonstart) | `leagueSeasonStartDateProvider` (budget_calculation) | – |
-| `GET /v4/leagues/{id}/me` | `getLeagueMe()` | Map | `leagueMeProvider` | `home_page` |
-| `GET /v4/leagues/{id}/me/budget` | `getMyBudget()` | Map (`b` = echtes Budget) | `myBudgetProvider`, `budget_calculation_providers` (Kalibrierung/Sync) | `home_page`, `squad_screen` |
+| `GET /v4/leagues/{id}/me` | `getLeagueMe()` | Map | `leagueMeProvider` | `team_page` (Squad-Benchmark) |
+| `GET /v4/leagues/{id}/me/budget` | `getMyBudget()` | Map (`b` = echtes Budget) | `myBudgetProvider`, `teamBudgetProvider`, `budget_calculation_providers` (Kalibrierung/Sync) | `team_page` (Budget-Header), `squad_screen` |
 | `GET /v4/leagues/{id}/ranking` | `getLeagueRanking()` | Map (Spieltags-Ranking `mdp`) | `leagueRankingProvider`, `currentLeagueRankingProvider`, `leagueMatchdayDataProvider`, `bid_recommendation_providers` | `league_standings_page` |
 | `GET /v4/leagues/{id}/activitiesFeed` | `getLeagueActivitiesFeed()` | Map (`af`: `t` = Typ – 15 Transfer, 22 Anmeldebonus `data.bn`, 26 Erfolg; nur eigene Einträge) | `leagueActivitiesFeedProvider` (budget_calculation: Anmeldebonus) | – |
 | `GET /v4/leagues/{id}/settings` | – | – (Roadmap: echte Liga-Regeln) | – | – |
@@ -28,7 +28,7 @@ Parsing** → **Provider** → **UI-Konsument**. Spezifikation: `docs/api-endpoi
 
 | Endpunkt | Methode | Parsing | Provider | UI |
 |---|---|---|---|---|
-| `GET /v4/leagues/{id}/squad` | `getMySquad()`, `getLeaguePlayers()` (Squad→Market-Fallback) | Map / `List<Player>` via `normalizePlayerJson` | `mySquadProvider`, `leaguePlayersProvider`, `dashboard_providers` | `squad_screen`, `home_page` |
+| `GET /v4/leagues/{id}/squad` | `getMySquad()`, `getLeaguePlayers()` (Squad→Market-Fallback) | Map / `List<Player>` via `normalizePlayerJson` | `mySquadProvider`, `leaguePlayersProvider`, `dashboard_providers` | `squad_screen`, `player_detail_screen` |
 | `GET /v4/leagues/{id}/lineup` | `getLineup()` | `LineupResponse` (`it`) | `player_providers` (Lineup-Fetch), `recommendation_providers` | – |
 | `POST /v4/leagues/{id}/lineup` | `updateLineup()` | – (ungenutzt) | – | – |
 | `GET /v4/leagues/{id}/teamcenter/myeleven` | `getMyEleven()` | Map (live Punkte) | `myElevenProvider` | `live_screen` |
@@ -66,7 +66,8 @@ Parsing** → **Provider** → **UI-Konsument**. Spezifikation: `docs/api-endpoi
 |---|---|---|---|---|
 | `GET .../user/achievements` | `getUserAchievements()` | `List<Map>` | `myLeagueAchievementsProvider`, `leagueDerivedAchievementEventsProvider` | Achievements-UI |
 | `GET .../user/achievements/{type}` | `getUserAchievementByType()` | Map (`ac` × `er` = Budget-Anteil) | `achievementApiRewardsByNameProvider` | – |
-| `GET /v4/bonus/collect` | `collectBonus()` | Map | `collectBonusProvider` | `settings_page` |
+| `GET /v4/base/overview` | `getBaseOverview()` | `DailyBonusStatus` (defensiv, via `DailyBonusService`) | `dailyBonusProvider` | `daily_bonus_banner` (Startseite `team_page`) |
+| `GET /v4/bonus/collect` | `collectBonus()` | `BonusCollectResult` (via `DailyBonusService`) | `dailyBonusProvider.collect()` | `daily_bonus_banner`, `settings_page` |
 | `GET /v4/live/eventtypes` | `getLiveEventTypes()` | Map | `liveEventTypesProvider` | `live_screen` |
 
 ## Scouted Players (Watchlist)

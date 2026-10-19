@@ -1,6 +1,31 @@
 import '../models/budget_calculation_model.dart';
 import '../models/transfer_model.dart';
 
+/// Ergebnis des Konkurrenz-Budget-Vergleichs für ein konkretes Gebot.
+///
+/// Die Budgets der Mitbieter stammen aus [BudgetCalculationService]
+/// (Startbudget + Verkäufe - Käufe + Anmeldebonus) und werden genutzt, um
+/// abzuschätzen, wie realistisch der Zuschlag für ein Gebot ist.
+class CompetitorBudgetHint {
+  /// Anzahl Konkurrenz-Manager mit mehr Budget als das eigene Gebot –
+  /// sie könnten das Gebot noch überbieten.
+  final int managersWithHigherBudget;
+
+  /// Höchstes Budget aller Konkurrenz-Manager (0 ohne bekannte Konkurrenz).
+  final int maxCompetitorBudget;
+
+  const CompetitorBudgetHint({
+    required this.managersWithHigherBudget,
+    required this.maxCompetitorBudget,
+  });
+
+  /// true, wenn mindestens ein Mitbieter das Gebot noch überbieten kann.
+  ///
+  /// Nur dann wird der Konkurrenz-Hinweis angezeigt – ohne bedrohliche
+  /// Konkurrenz wäre die Hinweiszeile nur Rauschen.
+  bool get hasHigherBudgetCompetitors => managersWithHigherBudget > 0;
+}
+
 /// Service für die Berechnung des Manager-Budgets
 ///
 /// Vereinfachte Version: Startbudget = 50 Mio. €
@@ -262,6 +287,37 @@ class BudgetCalculationService {
       sales: sales,
       purchases: purchases,
       calculatedAt: now,
+    );
+  }
+
+  /// Vergleicht ein geplantes Gebot mit den Budgets der Konkurrenz-Manager.
+  ///
+  /// [bidAmount] - das geplante eigene Gebot in Euro
+  /// [competitorBudgets] - aktuelle Budgets aller Mitbieter (ohne das eigene)
+  ///
+  /// Gezählt werden die Manager, die **mehr** Budget als das Gebot haben –
+  /// nur sie können es noch überbieten. Ein Budget gleich dem Gebot reicht
+  /// für ein Überbieten nicht aus und zählt daher nicht.
+  ///
+  /// Returns: [CompetitorBudgetHint] mit der Anzahl budgetstärkerer Manager
+  /// und dem höchsten Konkurrenz-Budget.
+  CompetitorBudgetHint analyzeCompetitorBudgets({
+    required int bidAmount,
+    required List<int> competitorBudgets,
+  }) {
+    var managersWithHigherBudget = 0;
+    var maxCompetitorBudget = 0;
+    for (final budget in competitorBudgets) {
+      if (budget > maxCompetitorBudget) {
+        maxCompetitorBudget = budget;
+      }
+      if (budget > bidAmount) {
+        managersWithHigherBudget++;
+      }
+    }
+    return CompetitorBudgetHint(
+      managersWithHigherBudget: managersWithHigherBudget,
+      maxCompetitorBudget: maxCompetitorBudget,
     );
   }
 

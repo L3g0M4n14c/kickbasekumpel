@@ -520,4 +520,239 @@ void main() {
       );
     });
   });
+
+  group('Erwartete Punkte & Tap-to-Swap (Story #13)', () {
+    test('Tausch-Gewinn ist die erwartete Punkt-Differenz', () {
+      final result = service.recommend(
+        squad: [
+          buildPlayer(id: 'gk', name: 'Torwart', position: 1, lineupOrder: 0),
+          buildPlayer(id: 'def', name: 'Abwehr', position: 2, lineupOrder: 1),
+          buildPlayer(id: 'st', name: 'Sturm', position: 4, lineupOrder: 2),
+          buildPlayer(
+            id: 'mid-alt',
+            name: 'Mittelfeld Alt',
+            lineupOrder: 3,
+            averagePoints: 2,
+          ),
+          buildPlayer(
+            id: 'mid-neu',
+            name: 'Mittelfeld Neu',
+            lineupOrder: 12,
+            averagePoints: 9,
+          ),
+        ],
+        formations: const [singleMidfield],
+      );
+
+      expect(result.swaps, hasLength(1));
+      final swap = result.swaps.first;
+      // Ohne Ligainsider/Gegner ist die Erwartung die reine Ø-Punkte-Differenz.
+      expect(swap.expectedGain, closeTo(7.0, 0.01));
+      expect(
+        swap.expectedGain,
+        closeTo(
+          result.scores[swap.inPlayer.id]!.expectedPoints -
+              result.scores[swap.outPlayer.id]!.expectedPoints,
+          0.01,
+        ),
+      );
+    });
+
+    test('Aufstellungs-Wahrscheinlichkeit skaliert die Erwartung', () {
+      final result = service.recommend(
+        squad: [
+          buildPlayer(id: 'gk', name: 'Torwart', position: 1),
+          buildPlayer(id: 'def', name: 'Verteidiger', position: 2),
+          buildPlayer(id: 'st', name: 'Stuermer', position: 4),
+          buildPlayer(id: 's11', name: 'Sven S11', averagePoints: 10),
+          buildPlayer(id: 'alt', name: 'Anton Alternative', averagePoints: 10),
+        ],
+        formations: const [singleMidfield],
+        ligainsiderStatusByPlayerId: {
+          's11': LigainsiderPlayerStatus.likelyStart,
+          'alt': LigainsiderPlayerStatus.isAlternative,
+        },
+      );
+
+      expect(result.usesLigainsiderData, isTrue);
+      expect(result.scores['s11']!.startProbability, closeTo(0.9, 0.001));
+      expect(result.scores['alt']!.startProbability, closeTo(0.4, 0.001));
+      // Ø-Punkte × Start-Wahrscheinlichkeit (× Gegner-Faktor 1.0).
+      expect(result.scores['s11']!.expectedPoints, closeTo(9.0, 0.01));
+      expect(result.scores['alt']!.expectedPoints, closeTo(4.0, 0.01));
+    });
+
+    test('Gegner-Stärke fließt in die Erwartung ein', () {
+      final result = service.recommend(
+        squad: [
+          buildPlayer(id: 'gk', name: 'Torwart', position: 1),
+          buildPlayer(id: 'def', name: 'Verteidiger', position: 2),
+          buildPlayer(id: 'mid', name: 'Mittelfeld', position: 3),
+          buildPlayer(
+            id: 'leicht',
+            name: 'Lena Leicht',
+            position: 4,
+            teamId: 'team-easy',
+            averagePoints: 10,
+          ),
+          buildPlayer(
+            id: 'hart',
+            name: 'Hans Hart',
+            position: 4,
+            teamId: 'team-hard',
+            averagePoints: 10,
+          ),
+        ],
+        formations: const [singleMidfield],
+        fixturesByTeamKey: {
+          'team-easy': const [
+            FixtureInfo(
+              opponentName: 'FC Schlapp',
+              opponentTablePosition: 18,
+              isHomeGame: true,
+            ),
+          ],
+          'team-hard': const [
+            FixtureInfo(
+              opponentName: 'FC Top',
+              opponentTablePosition: 1,
+              isHomeGame: false,
+            ),
+          ],
+        },
+      );
+
+      // Leichter Heim-Gegner: +20 %, Top-4 auswärts: −20 %.
+      expect(result.scores['leicht']!.opponentFactor, closeTo(1.2, 0.01));
+      expect(result.scores['hart']!.opponentFactor, closeTo(0.8, 0.01));
+      expect(result.scores['leicht']!.expectedPoints, closeTo(12.0, 0.01));
+      expect(result.scores['hart']!.expectedPoints, closeTo(8.0, 0.01));
+    });
+
+    test('Fallback ohne Ligainsider-Daten: Erwartung = Ø-Punkte', () {
+      final result = service.recommend(
+        squad: [
+          buildPlayer(id: 'gk', name: 'Torwart', position: 1),
+          buildPlayer(id: 'def', name: 'Verteidiger', position: 2),
+          buildPlayer(id: 'st', name: 'Stuermer', position: 4),
+          buildPlayer(id: 'a', name: 'Anton Gleich', averagePoints: 7),
+        ],
+        formations: const [singleMidfield],
+      );
+
+      expect(result.usesLigainsiderData, isFalse);
+      expect(result.scores['a']!.startProbability, isNull);
+      expect(result.scores['a']!.expectedPoints, closeTo(7.0, 0.01));
+    });
+
+    test('unvollständige Ligainsider-Daten fallen auf Ø-Punkte zurück', () {
+      // Nur eine einzige S11-Bestätigung unter vielen "nicht gefunden" –
+      // die Abdeckung liegt unter minS11Coverage, also greift der Fallback
+      // und die vermeintliche Wahrscheinlichkeit wird ignoriert.
+      final result = service.recommend(
+        squad: [
+          buildPlayer(id: 'gk', name: 'Torwart', position: 1),
+          buildPlayer(id: 'def', name: 'Verteidiger', position: 2),
+          buildPlayer(id: 'st', name: 'Stuermer', position: 4),
+          buildPlayer(id: 'a', name: 'Anton Gleich', averagePoints: 7),
+          buildPlayer(id: 'b', name: 'Bert Gleich', averagePoints: 7),
+        ],
+        formations: const [singleMidfield],
+        ligainsiderStatusByPlayerId: {
+          'a': LigainsiderPlayerStatus.likelyStart,
+          for (final id in ['gk', 'def', 'st', 'b'])
+            id: LigainsiderPlayerStatus.out,
+        },
+      );
+
+      expect(result.usesLigainsiderData, isFalse);
+      expect(result.scores['a']!.startProbability, isNull);
+      expect(result.scores['a']!.expectedPoints, closeTo(7.0, 0.01));
+    });
+
+    test('nicht einsatzbare Spieler haben eine minimale Einsatzchance', () {
+      final result = service.recommend(
+        squad: [
+          buildPlayer(id: 'gk', name: 'Torwart', position: 1),
+          buildPlayer(id: 'def', name: 'Verteidiger', position: 2),
+          buildPlayer(id: 'st', name: 'Stuermer', position: 4),
+          buildPlayer(
+            id: 'verletzt',
+            name: 'Marco Superstar',
+            averagePoints: 30,
+            matchDayStatus: 1,
+          ),
+        ],
+        formations: const [singleMidfield],
+      );
+
+      expect(
+        result.scores['verletzt']!.startProbability,
+        closeTo(LineupRecommendationService.startProbabilityUnavailable, 0.001),
+      );
+      expect(result.scores['verletzt']!.expectedPoints, closeTo(3.0, 0.01));
+    });
+
+    test('Tap-to-Swap tauscht genau die beiden Spieler in der Aufstellung', () {
+      final players = [
+        buildPlayer(id: 'gk', name: 'Torwart', position: 1, lineupOrder: 0),
+        buildPlayer(id: 'def', name: 'Abwehr', position: 2, lineupOrder: 1),
+        buildPlayer(id: 'st', name: 'Sturm', position: 4, lineupOrder: 2),
+        buildPlayer(
+          id: 'mid-alt',
+          name: 'Mittelfeld Alt',
+          lineupOrder: 3,
+          averagePoints: 2,
+        ),
+        buildPlayer(
+          id: 'mid-neu',
+          name: 'Mittelfeld Neu',
+          lineupOrder: 12,
+          averagePoints: 9,
+        ),
+        buildPlayer(
+          id: 'bank',
+          name: 'Bank Zwei',
+          position: 2,
+          lineupOrder: 13,
+          averagePoints: 1,
+        ),
+      ];
+      final swap = LineupSwap(
+        inPlayer: players[4],
+        outPlayer: players[3],
+        gain: 1,
+        expectedGain: 7,
+        reason: 'Form',
+      );
+
+      final ids = LineupRecommendationService.swappedLineupIds(players, swap);
+
+      expect(ids, ['gk', 'def', 'st', 'mid-neu', 'mid-alt', 'bank']);
+    });
+
+    test('Tap-to-Swap ohne Beteiligte lässt die Ordnung unverändert', () {
+      final players = [
+        buildPlayer(id: 'gk', name: 'Torwart', position: 1, lineupOrder: 0),
+        buildPlayer(id: 'def', name: 'Abwehr', position: 2, lineupOrder: 1),
+        buildPlayer(
+          id: 'bank',
+          name: 'Bank Eins',
+          position: 3,
+          lineupOrder: 12,
+        ),
+      ];
+      final swap = LineupSwap(
+        inPlayer: buildPlayer(id: 'unbekannt', name: 'Unbekannt'),
+        outPlayer: buildPlayer(id: 'fehlt', name: 'Fehlt'),
+        gain: 0,
+        expectedGain: 0,
+        reason: 'Test',
+      );
+
+      final ids = LineupRecommendationService.swappedLineupIds(players, swap);
+
+      expect(ids, ['gk', 'def', 'bank']);
+    });
+  });
 }

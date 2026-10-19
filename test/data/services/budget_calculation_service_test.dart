@@ -539,4 +539,67 @@ void main() {
       expect(result.count, 1);
     });
   });
+
+  group('analyzeCompetitorBudgets (Verhältnis Gebot ↔ Mitbieter-Budgets)', () {
+    late BudgetCalculationService service;
+
+    setUp(() {
+      service = BudgetCalculationService();
+    });
+
+    test('zählt Manager mit mehr Budget als das eigene Gebot', () {
+      // Story-Beispiel: Gebot 4,2 M€ – 3 Manager haben mehr Budget
+      final hint = service.analyzeCompetitorBudgets(
+        bidAmount: 4200000,
+        competitorBudgets: [6800000, 5000000, 4500000, 2000000],
+      );
+
+      expect(hint.managersWithHigherBudget, 3);
+      expect(hint.maxCompetitorBudget, 6800000);
+      expect(hint.hasHigherBudgetCompetitors, isTrue);
+    });
+
+    test('Hinweis entfällt, wenn kein Mitbieter mehr Budget hat', () {
+      final hint = service.analyzeCompetitorBudgets(
+        bidAmount: 7000000,
+        competitorBudgets: [6800000, 5000000, 2000000],
+      );
+
+      expect(hint.managersWithHigherBudget, 0);
+      expect(hint.maxCompetitorBudget, 6800000);
+      expect(hint.hasHigherBudgetCompetitors, isFalse);
+    });
+
+    test('Budget gleich dem Gebot zählt nicht (kann nicht überbieten)', () {
+      final hint = service.analyzeCompetitorBudgets(
+        bidAmount: 5000000,
+        competitorBudgets: [5000000],
+      );
+
+      expect(hint.managersWithHigherBudget, 0);
+      expect(hint.hasHigherBudgetCompetitors, isFalse);
+    });
+
+    test('ohne bekannte Konkurrenz kein Hinweis und kein Maximalbudget', () {
+      final hint = service.analyzeCompetitorBudgets(
+        bidAmount: 4200000,
+        competitorBudgets: [],
+      );
+
+      expect(hint.managersWithHigherBudget, 0);
+      expect(hint.maxCompetitorBudget, 0);
+      expect(hint.hasHigherBudgetCompetitors, isFalse);
+    });
+
+    test('ein einzelner budgetstärkerer Mitbieter löst den Hinweis aus', () {
+      final hint = service.analyzeCompetitorBudgets(
+        bidAmount: 4200000,
+        competitorBudgets: [4100000, 4300000],
+      );
+
+      expect(hint.managersWithHigherBudget, 1);
+      expect(hint.maxCompetitorBudget, 4300000);
+      expect(hint.hasHigherBudgetCompetitors, isTrue);
+    });
+  });
 }
