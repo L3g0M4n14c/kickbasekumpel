@@ -244,6 +244,7 @@ class LineupPage extends ConsumerWidget {
       recommendation: recommendation,
       onApply: () =>
           _applyRecommendation(context, ref, leagueId, recommendation),
+      onApplySwap: (swap) => _applySwap(context, ref, leagueId, swap),
     );
 
     return ResponsiveLayout(
@@ -379,6 +380,66 @@ class LineupPage extends ConsumerWidget {
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(content: Text('Übernehmen fehlgeschlagen: $e')),
+      );
+    }
+  }
+
+  /// Übernimmt genau einen empfohlenen Tausch in die Aufstellung
+  /// (Tap-to-Swap, Story #13): Die aktuelle Ordnung bleibt erhalten, nur die
+  /// beiden beteiligten Spieler tauschen ihren Platz (POST /lineup).
+  Future<void> _applySwap(
+    BuildContext context,
+    WidgetRef ref,
+    String leagueId,
+    LineupSwap swap,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Tausch übernehmen?'),
+        content: Text(
+          '${swap.inPlayer.name} rückt für ${swap.outPlayer.name} in die '
+          'Startelf (${_de(swap.expectedGain)} Punkte erwartet).',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Übernehmen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final apiClient = ref.read(kickbaseApiClientProvider);
+      final current = await ref.read(myLineupProvider(leagueId).future);
+      final playerIds = LineupRecommendationService.swappedLineupIds(
+        current,
+        swap,
+      );
+      await apiClient.updateLineup(
+        leagueId,
+        LineupUpdateRequest(playerIds: playerIds),
+      );
+      ref.invalidate(myLineupProvider(leagueId));
+      ref.invalidate(lineupRecommendationProvider(leagueId));
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Tausch übernommen: ${swap.inPlayer.name} für '
+            '${swap.outPlayer.name}',
+          ),
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Tausch fehlgeschlagen: $e')),
       );
     }
   }
@@ -855,15 +916,23 @@ class _RecommendationBanner extends StatelessWidget {
   const _RecommendationBanner({
     required this.recommendation,
     required this.onApply,
+    required this.onApplySwap,
   });
 
   final LineupRecommendation recommendation;
   final VoidCallback onApply;
 
+  /// Tap-to-Swap: übernimmt genau einen Tausch-Vorschlag (Story #13).
+  final ValueChanged<LineupSwap> onApplySwap;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final swaps = recommendation.swaps;
+    final expectedGain = swaps.fold<double>(
+      0.0,
+      (sum, swap) => sum + swap.expectedGain,
+    );
 
     return Card(
       child: Padding(
@@ -893,9 +962,34 @@ class _RecommendationBanner extends StatelessWidget {
                 ),
               ],
             ),
+            if (swaps.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                '${expectedGain >= 0 ? '+' : ''}${_de(expectedGain)} '
+                'Punkte erwartet (Summe)',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: expectedGain >= 0 ? Colors.green : Colors.red,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+            if (!recommendation.usesLigainsiderData) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Keine verlässlichen Ligainsider-Daten – Bewertung '
+                'per Ø-Punkten.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             for (final swap in swaps)
-              _SwapTile(swap: swap, scores: recommendation.scores),
+              _SwapTile(
+                swap: swap,
+                scores: recommendation.scores,
+                onTap: () => onApplySwap(swap),
+              ),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -912,51 +1006,84 @@ class _RecommendationBanner extends StatelessWidget {
   }
 }
 
-/// Einzelner Tauschvorschlag: „X für Y" mit Score-Gewinn und Begründung.
+/// Deutsche Zahlformatierung mit einer Nachkommastelle („+8,5").
+String _de(double? value) =>
+    value == null ? '?' : value.toStringAsFixed(1).replaceAll('.', ',');
+
+/// Einzelner Tauschvorschlag: „X für Y" mit erwarteter Punkt-Differenz.
+/// Tippen übernimmt genau diesen Tausch in die Aufstellung (Tap-to-Swap).
 class _SwapTile extends StatelessWidget {
-  const _SwapTile({required this.swap, required this.scores});
+  const _SwapTile({
+    required this.swap,
+    required this.scores,
+    required this.onTap,
+  });
 
   final LineupSwap swap;
   final Map<String, LineupPlayerScore> scores;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final gain = swap.gain;
-    final gainColor = gain >= 0 ? Colors.green : Colors.red;
+    final expectedGain = swap.expectedGain;
+    final gainColor = expectedGain >= 0 ? Colors.green : Colors.red;
+    final inExpected = scores[swap.inPlayer.id]?.expectedPoints;
+    final outExpected = scores[swap.outPlayer.id]?.expectedPoints;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.swap_vert, size: 18, color: gainColor),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${swap.inPlayer.name} für ${swap.outPlayer.name}',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+    return Tooltip(
+      message: 'Tippen, um diesen Tausch zu übernehmen',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.swap_vert, size: 18, color: gainColor),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${swap.inPlayer.name} für ${swap.outPlayer.name}',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      'Erwartet ${_de(inExpected)} statt ${_de(outExpected)} '
+                      'Pkt · ${swap.reason}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  'Score ${scores[swap.inPlayer.id]?.score.toStringAsFixed(0) ?? '?'} '
-                  'statt ${scores[swap.outPlayer.id]?.score.toStringAsFixed(0) ?? '?'} '
-                  '· ${swap.reason}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${expectedGain >= 0 ? '+' : ''}${_de(expectedGain)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: gainColor,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                  Text(
+                    'Pkt erwartet',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Text(
-            '${gain >= 0 ? '+' : ''}${gain.toStringAsFixed(1)}',
-            style: TextStyle(fontWeight: FontWeight.bold, color: gainColor),
-          ),
-        ],
+        ),
       ),
     );
   }

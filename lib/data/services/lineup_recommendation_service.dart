@@ -11,8 +11,11 @@ class LineupPlayerScore {
     required this.player,
     required this.score,
     required this.summary,
+    required this.expectedPoints,
+    required this.opponentFactor,
     this.form,
     this.availabilityLabel,
+    this.startProbability,
   });
 
   final LineupPlayer player;
@@ -26,6 +29,17 @@ class LineupPlayerScore {
   /// Label der Verfügbarkeits-Einschränkung (null = voll verfügbar).
   final String? availabilityLabel;
 
+  /// Aufstellungs-Wahrscheinlichkeit 0..1 aus dem Ligainsider-Startelf-Status.
+  /// null = keine verlässlichen Daten → Fallback: reine Ø-Punkte (Faktor 1).
+  final double? startProbability;
+
+  /// Gegner-Stärke-Multiplikator des nächsten Spieltags (1.0 = neutral).
+  final double opponentFactor;
+
+  /// Erwartete Punkte für den nächsten Spieltag:
+  /// Ø-Punkte × [startProbability] × [opponentFactor].
+  final double expectedPoints;
+
   /// Kurzbegründung (Form, nächster Gegner, S11-Status).
   final String summary;
 
@@ -38,14 +52,19 @@ class LineupSwap {
     required this.inPlayer,
     required this.outPlayer,
     required this.gain,
+    required this.expectedGain,
     required this.reason,
   });
 
   final LineupPlayer inPlayer;
   final LineupPlayer outPlayer;
 
-  /// Score-Differenz (positiv = erwarteter Zugewinn).
+  /// Score-Differenz im 0-100-Score (positiv = Zugewinn).
   final double gain;
+
+  /// Erwartete Punkt-Differenz in Kickbase-Punkten
+  /// ([LineupPlayerScore.expectedPoints] des Zugangs minus des Abgangs).
+  final double expectedGain;
 
   /// Begründung des Ersatzspielers.
   final String reason;
@@ -60,6 +79,7 @@ class LineupRecommendation {
     required this.swaps,
     required this.formationName,
     required this.isLegalFormation,
+    required this.usesLigainsiderData,
   });
 
   /// Empfohlene Startelf (TW, ABW, MF, ST – je nach Score sortiert).
@@ -71,7 +91,8 @@ class LineupRecommendation {
   /// Bewertung je Spieler-ID.
   final Map<String, LineupPlayerScore> scores;
 
-  /// Wechsel-Vorschläge gegenüber der aktuellen Aufstellung (größter Gewinn zuerst).
+  /// Wechsel-Vorschläge gegenüber der aktuellen Aufstellung
+  /// (größte erwartete Punkt-Differenz zuerst).
   final List<LineupSwap> swaps;
 
   /// Name der gewählten Formation (z. B. '4-4-2') oder 'Freie Auswahl'.
@@ -79,6 +100,11 @@ class LineupRecommendation {
 
   /// false, wenn keine legale Formation möglich war (Top-11 ohne Positions-Regel).
   final bool isLegalFormation;
+
+  /// true, wenn verlässliche Ligainsider-Daten in die Aufstellungs-
+  /// Wahrscheinlichkeiten eingeflossen sind. false = Fallback auf reine
+  /// Ø-Punkte (leere/unvollständige Ligainsider-Daten).
+  final bool usesLigainsiderData;
 }
 
 /// Punkte-Skala des Kaders – normalisiert Form- und Stärke-Bewertung
@@ -127,6 +153,12 @@ class LineupPointsScale {
 /// - Ligainsider-Startelf: S11 = Bonus; ohne S11-Platz (Bank/out) =
 ///   Ausschluss-Kriterium; nur ohne Daten bleibt es neutral
 ///
+/// Zusätzlich bewertet der Service jeden Tausch mit einer erwarteten
+/// Punkt-Differenz (Story #13):
+/// `erwartete Punkte = Ø-Punkte × Aufstellungs-Wahrscheinlichkeit (Ligainsider)
+/// × Gegner-Stärke`. Ohne verlässliche Ligainsider-Daten bleibt die
+/// Wahrscheinlichkeit neutral (Fallback: reine Ø-Punkte).
+///
 /// Die Startelf wird formation-legal aus `Formation.allFormations` gewählt
 /// (genau ein Torwart), Fallback ist die freie Top-11.
 class LineupRecommendationService {
@@ -151,6 +183,21 @@ class LineupRecommendationService {
   /// bleibt out neutral, damit nicht alle Spieler k. o. gehen.
   static const double minS11Coverage = 0.3;
 
+  /// Aufstellungs-Wahrscheinlichkeit je Ligainsider-Startelf-Status
+  /// (Story #13: erwartete Punkte = Ø-Punkte × Wahrscheinlichkeit × Gegner).
+  static const double startProbabilityLikelyStart = 0.9;
+  static const double startProbabilityWithAlternative = 0.7;
+  static const double startProbabilityIsAlternative = 0.4;
+  static const double startProbabilityBench = 0.1;
+  static const double startProbabilityOut = 0.05;
+
+  /// Einsatz unwahrscheinlich (verletzt/gesperrt/nicht einsatzbereit) –
+  /// unabhängig vom Ligainsider-Status.
+  static const double startProbabilityUnavailable = 0.1;
+
+  /// Maximaler Ausschlag der Gegner-Stärke auf die erwarteten Punkte (±20 %).
+  static const double maxOpponentSwing = 0.2;
+
   LineupRecommendation recommend({
     required List<LineupPlayer> squad,
     Map<String, List<FixtureInfo>> fixturesByTeamKey = const {},
@@ -162,6 +209,13 @@ class LineupRecommendationService {
       ligainsiderStatusByPlayerId,
       squad,
     );
+    // Aufstellungs-Wahrscheinlichkeiten nur bei zuverlässiger Abdeckung –
+    // bei leeren/unvollständigen Ligainsider-Daten greift der Fallback auf
+    // reine Ø-Punkte (Story #13).
+    final ligainsiderReliable = _hasReliableCoverage(
+      ligainsiderStatusByPlayerId,
+      squad,
+    );
     final scores = <String, LineupPlayerScore>{};
     for (final player in squad) {
       scores[player.id] = scoreFor(
@@ -169,6 +223,7 @@ class LineupRecommendationService {
         fixturesByTeamKey[player.teamId] ?? const [],
         ligainsiderStatuses[player.id],
         scale: scale,
+        ligainsiderProbabilityAvailable: ligainsiderReliable,
       );
     }
 
@@ -244,6 +299,7 @@ class LineupRecommendationService {
       ),
       formationName: bestName,
       isLegalFormation: bestIsLegal,
+      usesLigainsiderData: ligainsiderReliable,
     );
   }
 
@@ -271,17 +327,57 @@ class LineupRecommendationService {
     };
   }
 
+  /// true, wenn die Ligainsider-Daten den Kader zuverlässig abdecken
+  /// (mindestens [minS11Coverage] bestätigte S11-Status). Nur dann taugen
+  /// die Status-Werte als Aufstellungs-Wahrscheinlichkeit – sonst greift
+  /// der Fallback auf reine Ø-Punkte (Story #13).
+  bool _hasReliableCoverage(
+    Map<String, LigainsiderPlayerStatus> statuses,
+    List<LineupPlayer> squad,
+  ) {
+    var checked = 0;
+    var confirmed = 0;
+    for (final player in squad) {
+      final status = statuses[player.id];
+      if (status == null) continue;
+      checked++;
+      if (status != LigainsiderPlayerStatus.out) confirmed++;
+    }
+    return checked > 0 && confirmed / checked >= minS11Coverage;
+  }
+
   /// Bewertet einen einzelnen Spieler (0-100) inkl. Kurzbegründung.
   ///
   /// [scale] normaliert Form und Saison-Ø relativ zum Kader – nur so
   /// differenzieren beide Komponenten auch auf realer Punkte-Skala.
+  ///
+  /// [ligainsiderProbabilityAvailable] steuert, ob der Ligainsider-Status als
+  /// Aufstellungs-Wahrscheinlichkeit einfließt (false = Fallback auf reine
+  /// Ø-Punkte, Story #13).
   LineupPlayerScore scoreFor(
     LineupPlayer player,
     List<FixtureInfo> fixtures,
     LigainsiderPlayerStatus? ligainsiderStatus, {
     LineupPointsScale scale = LineupPointsScale.fallback,
+    bool ligainsiderProbabilityAvailable = true,
   }) {
     final form = weightedForm(player.performanceHistory);
+
+    // Erwartete Punkte für den nächsten Spieltag (Story #13):
+    // Ø-Punkte × Aufstellungs-Wahrscheinlichkeit × Gegner-Stärke.
+    // Ohne verlässliche Ligainsider-Daten bleibt die Wahrscheinlichkeit
+    // neutral (Fallback: reine Ø-Punkte).
+    final startProbability = player.matchDayStatus != 0
+        ? startProbabilityUnavailable
+        : ligainsiderProbabilityAvailable
+        ? startProbabilityFor(ligainsiderStatus)
+        : null;
+    final opponentFactor = opponentFactorFor(fixtures);
+    final expectedPoints =
+        player.averagePoints.toDouble() *
+        (startProbability ?? 1.0) *
+        opponentFactor;
+
     // Ausschlusskriterien: nicht verfügbar ODER ohne S11-Platz (Ligainsider
     // liefert nur S11 + Alternativen → Bank/nicht gefunden = quasi K.O.).
     final exclusionLabel =
@@ -293,6 +389,9 @@ class LineupRecommendationService {
         score: unavailableScore,
         form: form,
         availabilityLabel: exclusionLabel,
+        startProbability: startProbability,
+        opponentFactor: opponentFactor,
+        expectedPoints: expectedPoints,
         summary: exclusionLabel,
       );
     }
@@ -314,6 +413,9 @@ class LineupRecommendationService {
       player: player,
       score: score,
       form: form,
+      startProbability: startProbability,
+      opponentFactor: opponentFactor,
+      expectedPoints: expectedPoints,
       summary: [
         form == null ? 'Form: keine Daten' : 'Form: ${_fmt(form)}',
         _fixtureSummary(fixtures),
@@ -341,6 +443,34 @@ class LineupRecommendationService {
       weightSum += weight;
     }
     return weightedSum / weightSum;
+  }
+
+  /// Aufstellungs-Wahrscheinlichkeit 0..1 aus dem Ligainsider-Startelf-Status
+  /// (Story #13). null ohne Status → neutraler Faktor 1 (Fallback: Ø-Punkte).
+  static double? startProbabilityFor(LigainsiderPlayerStatus? status) =>
+      switch (status) {
+        LigainsiderPlayerStatus.likelyStart => startProbabilityLikelyStart,
+        LigainsiderPlayerStatus.startWithAlternative =>
+          startProbabilityWithAlternative,
+        LigainsiderPlayerStatus.isAlternative => startProbabilityIsAlternative,
+        LigainsiderPlayerStatus.bench => startProbabilityBench,
+        LigainsiderPlayerStatus.out => startProbabilityOut,
+        null => null,
+      };
+
+  /// Gegner-Stärke-Multiplikator aus dem Spielplan (1.0 = neutral, Story #13).
+  ///
+  /// Der mittlere Fixture-Delta-Bereich
+  /// (±[DeterministicRecommendationService.maxFixtureDelta]) skaliert linear
+  /// auf ±[maxOpponentSwing]: leichter Heim-Gegner → +20 %, Top-4 auswärts
+  /// → −20 % erwartete Punkte. Ohne Spielplan-Daten bleibt der Faktor 1.
+  double opponentFactorFor(List<FixtureInfo> fixtures) {
+    final delta = _fixtureDelta(fixtures);
+    return (1.0 +
+            delta /
+                DeterministicRecommendationService.maxFixtureDelta *
+                maxOpponentSwing)
+        .clamp(1.0 - maxOpponentSwing, 1.0 + maxOpponentSwing);
   }
 
   double _fixtureDelta(List<FixtureInfo> fixtures) {
@@ -416,6 +546,33 @@ class LineupRecommendationService {
     return player.lineupOrder >= 1 && player.lineupOrder <= 11;
   }
 
+  /// Reihenfolge-Liste für `POST /lineup`, in der genau [swap] umgesetzt ist
+  /// (Tap-to-Swap, Story #13): Die aktuelle Ordnung bleibt erhalten, nur die
+  /// beiden beteiligten Spieler tauschen ihren Platz.
+  static List<String> swappedLineupIds(
+    List<LineupPlayer> current,
+    LineupSwap swap,
+  ) {
+    final starters = current.where(isStarter).toList()
+      ..sort((a, b) => a.lineupOrder.compareTo(b.lineupOrder));
+    // Ohne feste Ordnung (lo == 0/≤11) am Ende der Bank, sonst Reihenfolge.
+    int benchOrder(LineupPlayer p) => p.lineupOrder > 11 ? p.lineupOrder : 999;
+    final bench = current.where((p) => !isStarter(p)).toList()
+      ..sort((a, b) {
+        final byOrder = benchOrder(a).compareTo(benchOrder(b));
+        return byOrder != 0 ? byOrder : a.id.compareTo(b.id);
+      });
+
+    final ids = [...starters, ...bench].map((p) => p.id).toList();
+    final outIndex = ids.indexOf(swap.outPlayer.id);
+    final inIndex = ids.indexOf(swap.inPlayer.id);
+    if (outIndex < 0 || inIndex < 0) return ids;
+    final swapped = [...ids];
+    swapped[outIndex] = swap.inPlayer.id;
+    swapped[inIndex] = swap.outPlayer.id;
+    return swapped;
+  }
+
   /// Paart empfohlene Zugänge mit den ausscheidenden Aktuellen (pro Position,
   /// Rest bei Positionswechseln nach Score).
   List<LineupSwap> _swaps({
@@ -424,7 +581,6 @@ class LineupRecommendationService {
     required Map<String, LineupPlayerScore> scores,
     required int Function(LineupPlayer, LineupPlayer) byScoreDesc,
   }) {
-    double scoreOf(LineupPlayer p) => scores[p.id]!.score;
     int byScoreAsc(LineupPlayer a, LineupPlayer b) => byScoreDesc(b, a);
 
     final current = squad.where(isStarter).toList();
@@ -440,12 +596,15 @@ class LineupRecommendationService {
     final usedOutIds = <String>{};
     void addSwap(LineupPlayer inPlayer, LineupPlayer outPlayer) {
       usedOutIds.add(outPlayer.id);
+      final inScore = scores[inPlayer.id]!;
+      final outScore = scores[outPlayer.id]!;
       swaps.add(
         LineupSwap(
           inPlayer: inPlayer,
           outPlayer: outPlayer,
-          gain: scoreOf(inPlayer) - scoreOf(outPlayer),
-          reason: scores[inPlayer.id]!.summary,
+          gain: inScore.score - outScore.score,
+          expectedGain: inScore.expectedPoints - outScore.expectedPoints,
+          reason: inScore.summary,
         ),
       );
     }
@@ -476,7 +635,14 @@ class LineupRecommendationService {
       addSwap(restIn[i], restOut[i]);
     }
 
-    return swaps..sort((a, b) => b.gain.compareTo(a.gain));
+    // Größte erwartete Punkt-Differenz zuerst (Story #13); Score-Gewinn
+    // entscheidet bei Gleichstand, danach Spieler-ID (deterministisch).
+    return swaps..sort((a, b) {
+      final byExpected = b.expectedGain.compareTo(a.expectedGain);
+      if (byExpected != 0) return byExpected;
+      final byGain = b.gain.compareTo(a.gain);
+      return byGain != 0 ? byGain : a.inPlayer.id.compareTo(b.inPlayer.id);
+    });
   }
 
   String _fmt(double value) => value.toStringAsFixed(1).replaceAll('.', ',');
