@@ -32,29 +32,18 @@ class SquadBenchmarkService {
       if (squad.isEmpty) continue;
       managersCounted++;
 
-      final perPosMv = {for (final p in allPositions) p: 0};
-      final perPosPoints = {for (final p in allPositions) p: 0.0};
-      final perPosCount = {for (final p in allPositions) p: 0};
+      final totals = positionTotals(squad);
       var squadMv = 0;
 
-      for (final raw in squad) {
-        final position = _asInt(raw['pos'] ?? raw['position']);
-        if (!allPositions.contains(position)) continue;
-        final mv = _asInt(raw['mv'] ?? raw['marketValue']);
-        // 'p' = Gesamtpunkte in der Squad-Response ('st' ist der Status!).
-        final points = _asDouble(raw['p'] ?? raw['tp'] ?? raw['totalPoints']);
-        perPosMv[position] = perPosMv[position]! + mv;
-        perPosPoints[position] = perPosPoints[position]! + points;
-        perPosCount[position] = perPosCount[position]! + 1;
-        squadMv += mv;
+      for (final p in allPositions) {
+        final totalsForPosition = totals[p]!;
+        mvByPos[p] = mvByPos[p]! + totalsForPosition.marketValue;
+        pointsByPos[p] = pointsByPos[p]! + totalsForPosition.points;
+        countByPos[p] = countByPos[p]! + totalsForPosition.count;
+        squadMv += totalsForPosition.marketValue;
       }
 
       leagueTotalMv += squadMv;
-      for (final p in allPositions) {
-        mvByPos[p] = mvByPos[p]! + perPosMv[p]!;
-        pointsByPos[p] = pointsByPos[p]! + perPosPoints[p]!;
-        countByPos[p] = countByPos[p]! + perPosCount[p]!;
-      }
     }
 
     // Eigener Kader: Summen pro Position.
@@ -85,7 +74,9 @@ class SquadBenchmarkService {
             ? ownPointsSumByPos[p]! / ownCountByPos[p]!
             : 0,
         // Ø pro Spieler (wie ownAvgPoints), nicht Summe pro Manager.
-        leagueAvgPoints: countByPos[p]! > 0 ? pointsByPos[p]! / countByPos[p]! : 0,
+        leagueAvgPoints: countByPos[p]! > 0
+            ? pointsByPos[p]! / countByPos[p]!
+            : 0,
         ownCount: ownCountByPos[p]!,
         leagueAvgCount: managerCountForPos > 0
             ? countByPos[p]! / managerCountForPos
@@ -101,6 +92,42 @@ class SquadBenchmarkService {
           ? leagueTotalMv / managersCounted
           : 0,
     );
+  }
+
+  /// Aggregiert Rohsummen je Position aus einer Squad-Rohantwort.
+  ///
+  /// [squadPlayers] sind Spieler-Maps der Squad-Response (`it`-Liste) mit den
+  /// Feldern `pos`/`position`, `mv`/`marketValue` und `p`/`tp`/`totalPoints`.
+  ///
+  /// Returns: Map Positions-Code → [PositionTotals] für alle [allPositions].
+  /// Positionen ohne Spieler enthalten Nullsummen.
+  Map<int, PositionTotals> positionTotals(
+    List<Map<String, dynamic>> squadPlayers,
+  ) {
+    final mvByPos = {for (final p in allPositions) p: 0};
+    final pointsByPos = {for (final p in allPositions) p: 0.0};
+    final countByPos = {for (final p in allPositions) p: 0};
+
+    for (final raw in squadPlayers) {
+      final position = _asInt(raw['pos'] ?? raw['position']);
+      if (!allPositions.contains(position)) continue;
+      final mv = _asInt(raw['mv'] ?? raw['marketValue']);
+      // 'p' = Gesamtpunkte in der Squad-Response ('st' ist der Status!).
+      final points = _asDouble(raw['p'] ?? raw['tp'] ?? raw['totalPoints']);
+      mvByPos[position] = mvByPos[position]! + mv;
+      pointsByPos[position] = pointsByPos[position]! + points;
+      countByPos[position] = countByPos[position]! + 1;
+    }
+
+    return {
+      for (final p in allPositions)
+        p: PositionTotals(
+          position: p,
+          marketValue: mvByPos[p]!,
+          points: pointsByPos[p]!,
+          count: countByPos[p]!,
+        ),
+    };
   }
 
   int _asInt(Object? value) => switch (value) {

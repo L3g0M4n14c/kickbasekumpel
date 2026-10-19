@@ -2,8 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../data/providers/providers.dart';
 import '../../../config/router.dart';
+import '../../providers/manager_comparison_providers.dart';
 import '../../widgets/responsive_layout.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/error_widget.dart';
@@ -39,11 +41,23 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
               matchDay: resolvedMatchDay,
             )),
           );
+    final comparisonSelection = ref.watch(managerComparisonSelectionProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Rangliste'),
         actions: [
+          IconButton(
+            icon: Icon(
+              comparisonSelection.active ? Icons.close : Icons.compare_arrows,
+            ),
+            tooltip: comparisonSelection.active
+                ? 'Auswahl beenden'
+                : 'Manager vergleichen',
+            onPressed: () => ref
+                .read(managerComparisonSelectionProvider.notifier)
+                .toggleActive(),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
@@ -65,6 +79,9 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
           ),
         ],
       ),
+      bottomNavigationBar: comparisonSelection.active
+          ? _buildComparisonBar(context, comparisonSelection)
+          : null,
       body: totalRankingAsync.when(
         data: (rankingData) {
           final totalUsers = _sortedUsers(rankingData['us'], matchDay: false);
@@ -416,11 +433,14 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
               final isCurrentUser =
                   currentUserAsync.value != null &&
                   user['i'] == currentUserAsync.value!.i;
+              final userId = user['i'] ?? '';
+              final isSelected = ref
+                  .watch(managerComparisonSelectionProvider)
+                  .contains(userId);
 
               return DataRow(
                 onSelectChanged: (selected) {
                   if (selected == true) {
-                    final userId = user['i'] ?? '';
                     _handleUserTap(
                       context,
                       userId,
@@ -429,11 +449,14 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
                     );
                   }
                 },
-                color: isCurrentUser
+                color: isSelected
                     ? WidgetStateProperty.all(
-                        Theme.of(
-                          context,
-                        ).colorScheme.primaryContainer.withValues(alpha: 0.3),
+                        Theme.of(context).colorScheme.secondaryContainer,
+                      )
+                    : isCurrentUser
+                    ? WidgetStateProperty.all(
+                        Theme.of(context).colorScheme.primaryContainer
+                            .withValues(alpha: 0.3),
                       )
                     : null,
                 cells: [
@@ -559,11 +582,25 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
     final teamValue = user['tv'] ?? 0;
     final userId = user['i'] ?? '';
     final uim = user['uim'] as String?;
+    final isSelected = ref
+        .watch(managerComparisonSelectionProvider)
+        .contains(userId);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8.0),
-      color: isCurrentUser
+      color: isSelected
+          ? Theme.of(context).colorScheme.secondaryContainer
+          : isCurrentUser
           ? Theme.of(context).colorScheme.primaryContainer
+          : null,
+      shape: isSelected
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+                width: 2,
+              ),
+            )
           : null,
       child: ListTile(
         onTap: () {
@@ -576,6 +613,9 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
             );
           }
         },
+        onLongPress: userId.isNotEmpty
+            ? () => _handleUserLongPress(userId)
+            : null,
         leading: SizedBox(
           width: 64,
           child: Row(
@@ -615,9 +655,8 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
             ),
             Text(
               '${(teamValue / 1000000).toStringAsFixed(1)}M€',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: Colors.grey),
             ),
           ],
         ),
@@ -638,9 +677,14 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
     final teamValue = user['tv'] ?? 0;
     final userId = user['i'] ?? '';
     final uim = user['uim'] as String?;
+    final isSelected = ref
+        .watch(managerComparisonSelectionProvider)
+        .contains(userId);
 
     return ResponsiveCard(
-      color: isCurrentUser
+      color: isSelected
+          ? Theme.of(context).colorScheme.secondaryContainer
+          : isCurrentUser
           ? Theme.of(context).colorScheme.primaryContainer
           : null,
       child: InkWell(
@@ -654,6 +698,9 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
             );
           }
         },
+        onLongPress: userId.isNotEmpty
+            ? () => _handleUserLongPress(userId)
+            : null,
         child: Row(
           children: [
             SizedBox(
@@ -698,9 +745,8 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
                 ),
                 Text(
                   '${(teamValue / 1000000).toStringAsFixed(1)}M€',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: Colors.grey),
                 ),
               ],
             ),
@@ -716,6 +762,15 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
     required bool matchDay,
     required int? matchDayNumber,
   }) {
+    // Im Auswahlmodus wählt der Tap den Manager für den Direktvergleich ab/zu.
+    final selectionNotifier = ref.read(
+      managerComparisonSelectionProvider.notifier,
+    );
+    if (ref.read(managerComparisonSelectionProvider).active) {
+      selectionNotifier.toggle(userId);
+      return;
+    }
+
     if (matchDay && matchDayNumber != null) {
       context.push(
         '/manager/${widget.leagueId}/$userId?matchDay=$matchDayNumber',
@@ -723,5 +778,104 @@ class _LeagueStandingsPageState extends ConsumerState<LeagueStandingsPage> {
     } else {
       context.goToManager(widget.leagueId, userId);
     }
+  }
+
+  /// Long-Press: Auswahlmodus aktivieren und den Manager direkt auswählen.
+  void _handleUserLongPress(String userId) {
+    final selectionNotifier = ref.read(
+      managerComparisonSelectionProvider.notifier,
+    );
+    if (!ref.read(managerComparisonSelectionProvider).active) {
+      selectionNotifier.toggleActive();
+    }
+    selectionNotifier.toggle(userId);
+  }
+
+  /// Aktionsleiste im Auswahlmodus: Auswahl-Status + Vergleich starten.
+  ///
+  /// Mit einem ausgewählten Manager wird „Du vs. Rivale" verglichen, mit
+  /// zweien die beiden Ausgewählten.
+  Widget _buildComparisonBar(
+    BuildContext context,
+    ManagerComparisonSelection selection,
+  ) {
+    final currentUserId = ref.read(currentUserDataProvider)?.i;
+    final ids = selection.selectedIds;
+    final canCompare =
+        ids.length == 2 ||
+        (ids.length == 1 &&
+            currentUserId != null &&
+            ids.first != currentUserId);
+
+    final String hint;
+    if (ids.isEmpty) {
+      hint = 'Manager antippen zum Auswählen (max. 2)';
+    } else if (ids.length == 1) {
+      hint = ids.first == currentUserId
+          ? 'Du gewählt – jetzt den Rivalen antippen'
+          : '1 Manager gewählt – Vergleich startet „Du vs. Rivale"';
+    } else {
+      hint = '2 Manager gewählt';
+    }
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(hint, style: Theme.of(context).textTheme.bodyMedium),
+            ),
+            TextButton(
+              onPressed: ids.isEmpty
+                  ? null
+                  : () => ref
+                        .read(managerComparisonSelectionProvider.notifier)
+                        .clear(),
+              child: const Text('Leeren'),
+            ),
+            const SizedBox(width: 8),
+            FilledButton.icon(
+              onPressed: canCompare ? () => _startComparison(context) : null,
+              icon: const Icon(Icons.compare_arrows),
+              label: const Text('Vergleichen'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Startet den Direktvergleich für die aktuelle Auswahl.
+  ///
+  /// Der eigene Manager wird dabei – falls beteiligt – als Seite A („Du")
+  /// geführt; mit nur einem (fremden) Auswahl wird „Du vs. Rivale"
+  /// verglichen.
+  void _startComparison(BuildContext context) {
+    final selection = ref.read(managerComparisonSelectionProvider);
+    final currentUserId = ref.read(currentUserDataProvider)?.i;
+    final ids = selection.selectedIds;
+
+    String? managerAId;
+    String? managerBId;
+    if (ids.length == 2) {
+      if (currentUserId != null && ids.contains(currentUserId)) {
+        managerAId = currentUserId;
+        managerBId = ids.firstWhere((id) => id != currentUserId);
+      } else {
+        managerAId = ids.first;
+        managerBId = ids.last;
+      }
+    } else if (ids.length == 1 &&
+        currentUserId != null &&
+        ids.first != currentUserId) {
+      managerAId = currentUserId;
+      managerBId = ids.first;
+    }
+
+    if (managerAId == null || managerBId == null) return;
+
+    ref.read(managerComparisonSelectionProvider.notifier).deactivate();
+    context.goToManagerComparison(widget.leagueId, managerAId, managerBId);
   }
 }

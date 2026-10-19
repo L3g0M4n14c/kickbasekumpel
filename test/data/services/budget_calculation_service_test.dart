@@ -151,18 +151,20 @@ void main() {
       service = BudgetCalculationService();
     });
 
-    test('loginBonusForDay steigt täglich bis Tag 10 und bleibt dann konstant',
-        () {
-      expect(service.loginBonusForDay(1), 10000);
-      expect(service.loginBonusForDay(2), 20000);
-      expect(service.loginBonusForDay(3), 30000);
-      expect(service.loginBonusForDay(9), 90000);
-      expect(service.loginBonusForDay(10), 100000);
-      expect(service.loginBonusForDay(11), 100000);
-      expect(service.loginBonusForDay(25), 100000);
-      expect(service.loginBonusForDay(0), 0);
-      expect(service.loginBonusForDay(-5), 0);
-    });
+    test(
+      'loginBonusForDay steigt täglich bis Tag 10 und bleibt dann konstant',
+      () {
+        expect(service.loginBonusForDay(1), 10000);
+        expect(service.loginBonusForDay(2), 20000);
+        expect(service.loginBonusForDay(3), 30000);
+        expect(service.loginBonusForDay(9), 90000);
+        expect(service.loginBonusForDay(10), 100000);
+        expect(service.loginBonusForDay(11), 100000);
+        expect(service.loginBonusForDay(25), 100000);
+        expect(service.loginBonusForDay(0), 0);
+        expect(service.loginBonusForDay(-5), 0);
+      },
+    );
 
     test('cumulativeLoginBonus summiert die Tagesboni korrekt', () {
       expect(service.cumulativeLoginBonus(0), 0);
@@ -177,7 +179,10 @@ void main() {
       expect(service.cumulativeLoginBonus(10), 550000);
       // Ab Tag 10 kommen täglich 100.000 € hinzu
       expect(service.cumulativeLoginBonus(11), 650000);
-      expect(service.cumulativeLoginBonus(20), 1550000); // 550.000 + 10 × 100.000
+      expect(
+        service.cumulativeLoginBonus(20),
+        1550000,
+      ); // 550.000 + 10 × 100.000
     });
 
     test('calculateLoginBonus am ersten Tag der Liga', () {
@@ -188,7 +193,13 @@ void main() {
       );
 
       expect(result, 10000);
-      expect(service.loginBonusDaysSince(seasonStart, now: DateTime.utc(2026, 8, 21, 23, 59)), 1);
+      expect(
+        service.loginBonusDaysSince(
+          seasonStart,
+          now: DateTime.utc(2026, 8, 21, 23, 59),
+        ),
+        1,
+      );
     });
 
     test('calculateLoginBonus am zweiten Tag der Liga', () {
@@ -218,25 +229,92 @@ void main() {
       expect(result, 650000); // 550.000 + 100.000
     });
 
-    test('calculateLoginBonus ist 0, wenn die Liga noch nicht gestartet ist',
-        () {
-      final result = service.calculateLoginBonus(
-        seasonStart: DateTime.utc(2026, 8, 21),
-        now: DateTime.utc(2026, 8, 20, 23, 59),
-      );
+    test(
+      'calculateLoginBonus ist 0, wenn die Liga noch nicht gestartet ist',
+      () {
+        final result = service.calculateLoginBonus(
+          seasonStart: DateTime.utc(2026, 8, 21),
+          now: DateTime.utc(2026, 8, 20, 23, 59),
+        );
 
-      expect(result, 0);
+        expect(result, 0);
+      },
+    );
+
+    test(
+      'calculateLoginBonus normalisiert Zeitanteile (UTC, Tagesgrenzen)',
+      () {
+        // Saisonstart mit Uhrzeit – muss trotzdem als Tag 21.08. gelten
+        final result = service.calculateLoginBonus(
+          seasonStart: DateTime.utc(2026, 8, 21, 14, 30),
+          now: DateTime.utc(2026, 8, 23, 1, 0),
+        );
+
+        expect(result, 60000); // 10.000 + 20.000 + 30.000
+      },
+    );
+  });
+
+  group('analyzeCompetitorBudgets (Verhältnis Gebot ↔ Mitbieter-Budgets)', () {
+    late BudgetCalculationService service;
+
+    setUp(() {
+      service = BudgetCalculationService();
     });
 
-    test('calculateLoginBonus normalisiert Zeitanteile (UTC, Tagesgrenzen)',
-        () {
-      // Saisonstart mit Uhrzeit – muss trotzdem als Tag 21.08. gelten
-      final result = service.calculateLoginBonus(
-        seasonStart: DateTime.utc(2026, 8, 21, 14, 30),
-        now: DateTime.utc(2026, 8, 23, 1, 0),
+    test('zählt Manager mit mehr Budget als das eigene Gebot', () {
+      // Story-Beispiel: Gebot 4,2 M€ – 3 Manager haben mehr Budget
+      final hint = service.analyzeCompetitorBudgets(
+        bidAmount: 4200000,
+        competitorBudgets: [6800000, 5000000, 4500000, 2000000],
       );
 
-      expect(result, 60000); // 10.000 + 20.000 + 30.000
+      expect(hint.managersWithHigherBudget, 3);
+      expect(hint.maxCompetitorBudget, 6800000);
+      expect(hint.hasHigherBudgetCompetitors, isTrue);
+    });
+
+    test('Hinweis entfällt, wenn kein Mitbieter mehr Budget hat', () {
+      final hint = service.analyzeCompetitorBudgets(
+        bidAmount: 7000000,
+        competitorBudgets: [6800000, 5000000, 2000000],
+      );
+
+      expect(hint.managersWithHigherBudget, 0);
+      expect(hint.maxCompetitorBudget, 6800000);
+      expect(hint.hasHigherBudgetCompetitors, isFalse);
+    });
+
+    test('Budget gleich dem Gebot zählt nicht (kann nicht überbieten)', () {
+      final hint = service.analyzeCompetitorBudgets(
+        bidAmount: 5000000,
+        competitorBudgets: [5000000],
+      );
+
+      expect(hint.managersWithHigherBudget, 0);
+      expect(hint.hasHigherBudgetCompetitors, isFalse);
+    });
+
+    test('ohne bekannte Konkurrenz kein Hinweis und kein Maximalbudget', () {
+      final hint = service.analyzeCompetitorBudgets(
+        bidAmount: 4200000,
+        competitorBudgets: [],
+      );
+
+      expect(hint.managersWithHigherBudget, 0);
+      expect(hint.maxCompetitorBudget, 0);
+      expect(hint.hasHigherBudgetCompetitors, isFalse);
+    });
+
+    test('ein einzelner budgetstärkerer Mitbieter löst den Hinweis aus', () {
+      final hint = service.analyzeCompetitorBudgets(
+        bidAmount: 4200000,
+        competitorBudgets: [4100000, 4300000],
+      );
+
+      expect(hint.managersWithHigherBudget, 1);
+      expect(hint.maxCompetitorBudget, 4300000);
+      expect(hint.hasHigherBudgetCompetitors, isTrue);
     });
   });
 }

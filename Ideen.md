@@ -2,7 +2,10 @@
 
 > Sammlung der Feature-Ideen aus der Analyse vom 01.10.2026.
 > Umgesetzt: Ligainsider-Status-Badge, Kader-Benchmark, Achievements im Budget
-> (seit 07.10.2026 deterministisch abgeleitet für alle Manager).
+> (seit 07.10.2026 deterministisch abgeleitet für alle Manager),
+> Verkaufs-Timing/Nachfrage-Hinweis (seit 18.10.2026, Story #15),
+> Konkurrenz-Budget in der Gebotsempfehlung (seit 18.10.2026, Story #10),
+> Aufstellungs-Optimierung mit erwarteten Punkten (Story #13).
 
 ---
 
@@ -55,15 +58,28 @@ mehr Motivation als taktischer Nutzen.
 
 ## 💡 Feature-Ideen aus bereits vorhandenen Daten
 
-### A. Aufstellungs-Optimierung mit Ligainsider
-Kombiniere Ligainsider-Startelf-Wahrscheinlichkeiten mit Ø-Punkten:
+### A. Aufstellungs-Optimierung mit Ligainsider ✅ (umgesetzt, Story #13)
+Kombiniert Ligainsider-Startelf-Wahrscheinlichkeiten mit Ø-Punkten:
 - „💡 Tausche X gegen Y: +8,5 Punkte erwartet" im Aufstellungs-Screen
-- Drag & Drop / Tap-to-Swap in der Aufstellung
+  (Empfehlungs-Card in `lineup_page.dart`, Tausch-Vorschläge mit erwarteter
+  Punkt-Differenz pro Tausch)
+- Erwartete Punkte = Ø-Punkte × Aufstellungs-Wahrscheinlichkeit
+  (Ligainsider-Status) × Gegner-Stärke (`LineupPlayerScore.expectedPoints`,
+  pro Tausch als `LineupSwap.expectedGain`); ohne verlässliche
+  Ligainsider-Daten Fallback auf Ø-Punkte (`usesLigainsiderData`)
+- Tap-to-Swap: Tippen auf einen Tausch-Vorschlag übernimmt genau diesen
+  Tausch in die Aufstellung (`LineupRecommendationService.swappedLineupIds`)
 
-### B. Verkaufsfenster-Timing
+### B. Verkaufsfenster-Timing ✅ (umgesetzt 18.10.2026, Story #15)
 Aus der Transfer-Historie ableiten, **wann in der Liga die meisten Käufe
 stattfinden** (z.B. direkt nach dem Spieltag) → Hinweis „Verkaufe jetzt,
 Nachfrage ist hoch".
+Umsetzung: `ManagerTransferHistoryService.demandProfile` (Käufe pro
+Wochentag/6h-Zeitfenster, Intensität relativ zum Durchschnitt),
+`leagueTransferDemandProvider` (Historien aller Manager) und die
+`DemandHintCard` in der Verkaufsempfehlung. Der Hinweis entfällt, wenn die
+aggregierte Historie weniger als 4 Wochen zurückreicht oder zu wenige Käufe
+enthält.
 
 ### C. Marktwert-Trend-Momentum als Marktsignal
 - **„Aufstrebende Spieler"-Filter** im Markt (MV steigt + Punkte-Momentum der
@@ -71,11 +87,17 @@ Nachfrage ist hoch".
 - Sparkline der MV-Entwicklung (30 Tage) in der Markt-Liste
   (Daten via `marketvalue/{timeframe}`, einmalig cachen)
 
-### D. Konkurrenz-Budget in der Gebotsempfehlung
+### D. Konkurrenz-Budget in der Gebotsempfehlung ✅ (umgesetzt 18.10.2026, Story #10)
 Die `BudgetCalculationService`-Ergebnisse kennen die Budgets aller Manager.
 In der Bid-Empfehlung anzeigen: „Dein Gebot 4,2 M€ – 3 Manager haben mehr
 Budget, max. Konkurrenz-Budget: 6,8 M€" → Abschätzung, wie realistisch der
 Zuschlag ist.
+Umsetzung: `BudgetCalculationService.analyzeCompetitorBudgets` (Vergleich
+Gebot ↔ Mitbieter-Budgets), `leagueCompetitorBudgetsProvider` +
+`competitorBudgetHintProvider` (Budgets aller Konkurrenten via
+`managersBudgetCalculationProvider`) und die Hinweiszeile in der
+`_RecommendedBid`-Card des Kauf-Dialogs. Der Hinweis entfällt, wenn kein
+Mitbieter mehr Budget als das eigene Gebot hat.
 
 ---
 

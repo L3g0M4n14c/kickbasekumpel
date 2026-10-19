@@ -19,7 +19,7 @@ description: KickbaseKumpel Datei- und Ordnerkarte - welche Datei wofür zustän
 
 ## Models (`lib/data/models/` – alle Freezed, Barrel: `models_barrel.dart`)
 
-`user_model`, `league_model`, `player_model`, `transfer_model`, `market_model`, `market_value_model`, `lineup_model`, `optimal_lineup_model`, `match_model`, `leaderboard_model`, `performance_model`, `achievement_model`, `budget_calculation_model`, `sales_recommendation_model`, `squad_benchmark_model`, `team_player_counts_model`, `transfer_planner_model`, `ligainsider_model`, `ligainsider_match_model`, `common_models`, `achievement_model`. Generiert: `*.freezed.dart`, `*.g.dart`.
+`user_model`, `league_model`, `player_model`, `transfer_model`, `market_model`, `market_value_model`, `lineup_model`, `optimal_lineup_model`, `match_model`, `leaderboard_model`, `performance_model`, `achievement_model`, `budget_calculation_model`, `sales_recommendation_model`, `squad_benchmark_model`, `manager_comparison_model`, `team_player_counts_model`, `transfer_planner_model`, `ligainsider_model`, `ligainsider_match_model`, `common_models`, `achievement_model`. Generiert: `*.freezed.dart`, `*.g.dart`. Plain-Dart (ohne Freezed, Toolchain inkompatibel): `squad_benchmark_model`, `manager_comparison_model`.
 
 ## Services (`lib/data/services/`)
 
@@ -34,6 +34,7 @@ description: KickbaseKumpel Datei- und Ordnerkarte - welche Datei wofür zustän
 | `deterministic_recommendation_service.dart` | Verkaufsempfehlungen |
 | `squad_benchmark_service.dart`, `transfer_planner_service.dart` | Kader-Benchmark, Transferplanung |
 | `manager_transfer_history_service.dart` | Transferhistorie |
+| `manager_comparison_service.dart` | Manager-Direktvergleich (Du vs. Rivale) |
 | `ligainsider_service.dart`, `ligainsider_scraper_service.dart` | LigaInsider-Daten/Scraping |
 
 ## Repositories
@@ -42,12 +43,12 @@ description: KickbaseKumpel Datei- und Ordnerkarte - welche Datei wofür zustän
 
 ## Provider
 
-- **Data** (`lib/data/providers/`): `auth_provider`, `kickbase_api_provider`, `kickbase_auth_provider`, `repository_providers`, `service_providers`, `providers.dart` (Barrel), `league_providers`, `league_detail_providers`, `player_providers`, `player_detail_providers`, `market…` → `presentation/providers/market_providers`, `transfer_providers`, `recommendation_providers`, `bid_recommendation_providers`, `budget_calculation_providers`, `scouted_players_providers`, `squad_benchmark_providers`, `manager_transfer_history_providers`, `achievement_providers`, `competition_providers`, `live_providers`, `ligainsider_provider`, `ligainsider_photo_provider`, `user_providers`, `demo_mode_provider`, `http_client_wrapper_provider`
-- **UI** (`lib/presentation/providers/`): `dashboard_providers`, `market_providers`, `transfer_planner_provider`
+- **Data** (`lib/data/providers/`): `auth_provider`, `kickbase_api_provider`, `kickbase_auth_provider`, `repository_providers`, `service_providers`, `providers.dart` (Barrel), `league_providers`, `league_detail_providers`, `player_providers`, `player_detail_providers`, `market…` → `presentation/providers/market_providers`, `transfer_providers`, `recommendation_providers`, `bid_recommendation_providers`, `budget_calculation_providers`, `scouted_players_providers`, `squad_benchmark_providers`, `manager_transfer_history_providers`, `manager_comparison_providers`, `achievement_providers`, `competition_providers`, `live_providers`, `ligainsider_provider`, `ligainsider_photo_provider`, `user_providers`, `demo_mode_provider`, `http_client_wrapper_provider`
+- **UI** (`lib/presentation/providers/`): `dashboard_providers`, `market_providers`, `transfer_planner_provider`, `manager_comparison_providers` (Auswahl-State Direktvergleich)
 
 ## Screens/Pages (Auswahl)
 
-`presentation/screens/`: `dashboard/`, `league/` (+ `league_table_screen`), `player/`, `ligainsider/`, `live_screen`, `squad_screen`, `manager_detail_screen`, `auth/`, `charts_demo_screen`, `widget_gallery_screen`.
+`presentation/screens/`: `dashboard/`, `league/` (+ `league_table_screen`), `player/`, `ligainsider/`, `live_screen`, `squad_screen`, `manager_detail_screen`, `manager_comparison_screen`, `auth/`, `charts_demo_screen`, `widget_gallery_screen`.
 `presentation/pages/`: `auth/`, `dashboard/`, `league/`, `player/`, `loading_screen`, `error_page`.
 
 ## Wichtige Widgets

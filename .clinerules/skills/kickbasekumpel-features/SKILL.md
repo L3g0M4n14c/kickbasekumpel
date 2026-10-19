@@ -13,6 +13,7 @@ Feature → Einstiegspunkte (Logik in `lib/data/services/`, State in Provider, U
 |---|---|
 | Gebots-Empfehlung | `bid_recommendation_service.dart` (Methoden: minimum/median/quartile, confidence, premium, sampleSize) + `bid_recommendation_providers.dart` |
 | Verkaufsempfehlungen | `deterministic_recommendation_service.dart` + `recommendation_providers.dart` (Ziele: Budgetausgleich, Gewinnmaximierung) |
+| Verkaufs-Timing (Nachfrage-Hinweis) | `manager_transfer_history_service.dart` (`purchasesByTimeWindow`, `demandProfile`: Käufe pro Wochentag/6h-Zeitfenster, Intensität hoch/mittel/niedrig, `null` bei < 4 Wochen Daten) + `leagueTransferDemandProvider` in `manager_transfer_history_providers.dart` + `demand_hint_card.dart` in der Verkaufsempfehlung |
 | Transfer-Planner | `transfer_planner_service.dart` (deterministische Szenarien, Rejection-Gründe: unaffordable/illegalLineup/notInXI/noGain) + `transfer_planner_provider.dart`; Spec: docs/superpowers/specs/2026-05-17-transfer-planner-design.md |
 | Auto-Verkauf/Budget | `auto_sale_budget_service.dart` |
 | Kader-Benchmark | `squad_benchmark_service.dart` + `squad_benchmark_providers.dart` |
@@ -27,6 +28,7 @@ Feature → Einstiegspunkte (Logik in `lib/data/services/`, State in Provider, U
 ## Liga & Spieler
 
 - Liga-Details/Tabelle: `league_providers.dart`, `league_detail_providers.dart`, Screens `league/`, `league_table_screen`
+- **Manager-Direktvergleich (Du vs. Rivale)**: `manager_comparison_service.dart` + `manager_comparison_providers.dart` – Gegenüberstellung von Kaderwert, Punkten der letzten 5 Spieltage, Transfer-Erfolg (Ø Deal-Qualität, Kursgewinn) und Budget plus Stärken/Schwächen-Kurzfazit als Klartext. Screen `manager_comparison_screen.dart`, Auswahl (max. 2 Manager, Long-Press oder AppBar-Icon) in der Rangliste `league_standings_page.dart`, Route `/manager/:leagueId/compare?a=<id>&b=<id>` (Seite A = „Du")
 - Spieler-Statistiken/Historie: `player_providers.dart`, `player_detail_providers.dart`, `manager_transfer_history_service.dart`
 - Live: `live_providers.dart`, `live_screen.dart`
 - Transferhistorie-Mitbieter: `manager_transfer_history_providers.dart`
@@ -47,4 +49,7 @@ Ungenutzte Kickbase-v4-Endpunkte (Doku: `docs/api-endpoints.json`, Swagger):
 2. `activitiesFeed` – Social-Feed, Mitbieter-Identifikation (Lücke im BidRecommendationService)
 3. `GET /matches/{matchId}/details` + `/live/eventtypes` – Live-Spielereignisse
 
-Umsetzung von Ideen.md ist noch OFFEN – vor Implementierung dort und in docs/superpowers/ (plans/specs) nach aktuellen Stand suchen.
+Umsetzung von Ideen.md: Feature-Idee B (Verkaufs-Timing) ist umgesetzt
+(Story #15, Nachfrage-Hinweis in der Verkaufsempfehlung), der Rest ist noch
+OFFEN – vor Implementierung dort und in docs/superpowers/ (plans/specs) nach
+aktuellen Stand suchen.

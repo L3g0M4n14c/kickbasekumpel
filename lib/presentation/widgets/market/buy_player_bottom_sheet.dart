@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../../data/models/market_model.dart';
 import '../../../data/providers/league_providers.dart';
 import '../../../data/providers/user_providers.dart';
 import '../../../data/providers/kickbase_api_provider.dart';
 import '../../../data/providers/bid_recommendation_providers.dart';
 import '../../../data/services/bid_recommendation_service.dart';
+import '../../../data/services/budget_calculation_service.dart';
 import '../../providers/market_providers.dart';
 
 /// Buy Player Bottom Sheet
@@ -57,6 +59,7 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
     final currentUser = ref.watch(currentUserProvider).value;
     final budget = currentUser?.b ?? 0;
     final leagueId = ref.watch(selectedLeagueIdProvider);
+    final bidAmount = _selectedPrice ?? widget.player.price;
     final recommendedBid = leagueId == null
         ? null
         : ref.watch(
@@ -66,6 +69,19 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
               minimumBid: widget.player.price,
             )),
           );
+    // Konkurrenz-Budget-Hinweis folgt sofort jeder Gebots-Änderung; die
+    // Budgets der Mitbieter werden pro Liga nur einmal geladen.
+    final competitorHint = leagueId == null
+        ? null
+        : ref
+              .watch(
+                competitorBudgetHintProvider((
+                  leagueId: leagueId,
+                  bidAmount: bidAmount,
+                )),
+              )
+              .asData
+              ?.value;
 
     return Container(
       decoration: BoxDecoration(
@@ -183,12 +199,15 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
                   recommendedBid.when(
                     data: (recommendation) => _RecommendedBid(
                       recommendation: recommendation,
+                      bidAmount: bidAmount,
+                      competitorHint: competitorHint,
                       onApply: () {
                         setState(() {
                           _selectedPrice = recommendation.amount;
-                          _priceController.text = (recommendation.amount /
-                                  1000000)
-                              .toStringAsFixed(2);
+                          _priceController.text =
+                              (recommendation.amount / 1000000).toStringAsFixed(
+                                2,
+                              );
                         });
                       },
                     ),
@@ -318,9 +337,8 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
 
     final leagueId = ref.read(selectedLeagueIdProvider);
     if (leagueId == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Keine Liga ausgewählt')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Keine Liga ausgewählt')));
       return;
     }
 
@@ -401,9 +419,8 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Fehler: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Fehler: $e')));
       }
     }
   }
@@ -605,7 +622,22 @@ class _RecommendedBid extends StatelessWidget {
   final BidRecommendation recommendation;
   final VoidCallback onApply;
 
-  const _RecommendedBid({required this.recommendation, required this.onApply});
+  /// Das aktuell geplante eigene Gebot (für den Konkurrenz-Hinweis).
+  final int bidAmount;
+
+  /// Konkurrenz-Budget-Hinweis zum geplanten Gebot (null, solange die
+  /// Budgets der Mitbieter noch geladen werden).
+  final CompetitorBudgetHint? competitorHint;
+
+  const _RecommendedBid({
+    required this.recommendation,
+    required this.onApply,
+    required this.bidAmount,
+    this.competitorHint,
+  });
+
+  String _formatInMillions(int value) =>
+      '${(value / 1000000).toStringAsFixed(2)}M €';
 
   @override
   Widget build(BuildContext context) {
@@ -614,6 +646,10 @@ class _RecommendedBid extends StatelessWidget {
       '${recommendation.sampleSize} Käufe',
       recommendation.scope,
     ];
+    // Der Hinweis entfällt, wenn kein Mitbieter mehr Budget als das eigene
+    // Gebot hat – dann ist der Zuschlag nicht gefährdet.
+    final showCompetitorHint =
+        competitorHint != null && competitorHint!.hasHigherBudgetCompetitors;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -643,11 +679,26 @@ class _RecommendedBid extends StatelessWidget {
                 Text(
                   detailParts.join(' · '),
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSecondaryContainer
-                        .withValues(alpha: 0.8),
+                    color: theme.colorScheme.onSecondaryContainer.withValues(
+                      alpha: 0.8,
+                    ),
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
+                if (showCompetitorHint) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Dein Gebot ${_formatInMillions(bidAmount)} – '
+                    '${competitorHint!.managersWithHigherBudget} '
+                    '${competitorHint!.managersWithHigherBudget == 1 ? 'Manager hat' : 'Manager haben'} '
+                    'mehr Budget, max. Konkurrenz-Budget: '
+                    '${_formatInMillions(competitorHint!.maxCompetitorBudget)}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSecondaryContainer,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
