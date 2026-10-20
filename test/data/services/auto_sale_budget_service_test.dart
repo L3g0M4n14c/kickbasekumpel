@@ -260,38 +260,38 @@ void main() {
   });
 
   group('AutoSaleBudgetService.crossingMatchday', () {
-    test(
-      'findet den ERSTEN Spieltag, an dem die Saison-Punktzahl die Schwelle erreicht',
-      () {
-        // `p` ist die kumulierte Saison-Gesamtpunktzahl zum Spieltag.
-        final ph = [
-          _perf(1, _day1Start, p: 30),
-          _perf(2, _day2Start, p: 55),
-          _perf(3, _day3Start, p: 95),
-        ];
-
-        // Tag 2: 55 Punkte (unter Schwelle), Tag 3: 95 Punkte → Crossing
-        final crossing = service.crossingMatchday(ph, 60);
-
-        expect(crossing, isNotNull);
-        expect(crossing!.day, 3);
-        expect(crossing.points, 95);
-      },
-    );
-
-    test('summiert p NICHT (das wäre die mehrfach gezählte Gesamtpunktzahl)', () {
-      // Würde p summiert, wäre die Laufsumme nach ST 2 bereits 85 – bei einer
-      // Schwelle von 60 fälschlich ST 2 statt ST 3.
+    test('findet den ERSTEN Spieltag, an dem die Saison-Punktzahl die Schwelle erreicht', () {
+      // `p` ist die kumulierte Saison-Gesamtpunktzahl zum Spieltag.
       final ph = [
         _perf(1, _day1Start, p: 30),
         _perf(2, _day2Start, p: 55),
         _perf(3, _day3Start, p: 95),
       ];
 
+      // Tag 2: 55 Punkte (unter Schwelle), Tag 3: 95 Punkte → Crossing
       final crossing = service.crossingMatchday(ph, 60);
 
+      expect(crossing, isNotNull);
       expect(crossing!.day, 3);
+      expect(crossing.points, 95);
     });
+
+    test(
+      'summiert p NICHT (das wäre die mehrfach gezählte Gesamtpunktzahl)',
+      () {
+        // Würde p summiert, wäre die Laufsumme nach ST 2 bereits 85 – bei einer
+        // Schwelle von 60 fälschlich ST 2 statt ST 3.
+        final ph = [
+          _perf(1, _day1Start, p: 30),
+          _perf(2, _day2Start, p: 55),
+          _perf(3, _day3Start, p: 95),
+        ];
+
+        final crossing = service.crossingMatchday(ph, 60);
+
+        expect(crossing!.day, 3);
+      },
+    );
 
     test('ignoriert tp (das ist die KARRIERE-Gesamtpunktzahl!)', () {
       // p bleibt kumuliert weit unter der Schwelle, tp (=9999) wäre längst drüber.
@@ -422,6 +422,109 @@ void main() {
     });
   });
 
+  group('AutoSaleBudgetService.saleMarketValue', () {
+    // Feldbeobachtung (Caci): Am 5. Spieltag für 9,6 Mio verkauft – die
+    // Historie enthält den Stand VOR dem Spieltag (11,0 Mio), den mit der
+    // finalen Berechnung festgeschriebenen Wert (9,6 Mio) und spätere Stände.
+    final kickoff = DateTime.utc(2026, 10, 11, 15, 30); // Anpfiff ST 5
+    final caciHistory = [
+      // dt = Tage seit 1970 (normalisiert auf 00:00 UTC des Tages)
+      MarketValueEntry(
+        dt: _daysSinceEpoch(DateTime.utc(2026, 10, 11)),
+        mv: 11000000,
+      ), // "Wert vom Start des Spieltags"
+      MarketValueEntry(
+        dt: _daysSinceEpoch(DateTime.utc(2026, 10, 12)),
+        mv: 9600000,
+      ), // festgeschrieben mit der finalen Berechnung
+      MarketValueEntry(
+        dt: _daysSinceEpoch(DateTime.utc(2026, 10, 18)),
+        mv: 11000000,
+      ), // später wieder gestiegen
+    ];
+
+    test('liefert den mit der Verkaufs-Berechnung festgeschriebenen Wert', () {
+      expect(
+        service.saleMarketValue(
+          caciHistory,
+          matchdayKickoff: kickoff,
+          now: DateTime.utc(2026, 10, 18),
+        ),
+        9600000,
+      );
+    });
+
+    test('auch bei späterer Erholung des Marktwerts (kein "jetzt"-Wert)', () {
+      // Ohne Folgespieltag in `ph` nutzte die alte Logik den Fallback "jetzt"
+      // und zeigte den AKTUELLEN Stand (11,0 Mio) statt des Verkaufswerts.
+      expect(
+        service.saleMarketValue(
+          caciHistory,
+          matchdayKickoff: kickoff,
+          now: DateTime.utc(2026, 10, 18), // Marktwert wieder bei 11,0 Mio
+        ),
+        9600000,
+      );
+    });
+
+    test('greift auch bei grober Historie (Eintrag erst Tage später)', () {
+      // Sparse-Historie: der Verkaufswert erscheint erst mit dem nächsten
+      // Eintrag – deutlich NACH dem Kickoff des Folgespieltags (die alte
+      // "letzter Eintrag ≤ Stichtag"-Logik lieferte 11,0 Mio).
+      final sparse = [
+        MarketValueEntry(
+          dt: _daysSinceEpoch(DateTime.utc(2026, 10, 11)),
+          mv: 11000000,
+        ),
+        MarketValueEntry(
+          dt: _daysSinceEpoch(DateTime.utc(2026, 10, 18)),
+          mv: 9600000,
+        ),
+      ];
+
+      expect(
+        service.saleMarketValue(
+          sparse,
+          matchdayKickoff: kickoff,
+          now: DateTime.utc(2026, 10, 20),
+        ),
+        9600000,
+      );
+    });
+
+    test(
+      'Fallback: laufender Spieltag ohne Folge-Eintrag → aktueller Stand',
+      () {
+        // Verkauf gerade erst erfolgt, die Historie hat noch keinen Eintrag ab
+        // dem Verkaufstag → bester verfügbarer Wert = aktueller Stand.
+        expect(
+          service.saleMarketValue(
+            [
+              MarketValueEntry(
+                dt: _daysSinceEpoch(DateTime.utc(2026, 10, 11)),
+                mv: 11000000,
+              ),
+            ],
+            matchdayKickoff: kickoff,
+            now: DateTime.utc(2026, 10, 12),
+          ),
+          11000000,
+        );
+      },
+    );
+
+    test('leere Historie liefert null', () {
+      expect(
+        service.saleMarketValue(
+          const [],
+          matchdayKickoff: kickoff,
+          now: DateTime.utc(2026, 10, 12),
+        ),
+        isNull,
+      );
+    });
+  });
+
   group('AutoSaleBudgetService.computeAutoSales', () {
     /// Aktuelle Saison (sid 28): ST 1–3, Crossing bei ST 3 (280 Punkte).
     /// `p` ist die kumulierte Saison-Gesamtpunktzahl zum Spieltag.
@@ -479,6 +582,60 @@ void main() {
       expect(computation.totalIncome, 18000000);
     });
 
+    test('Regression Caci: Verkaufswert statt Start-Spieltags-Wert', () {
+      // Feldbeobachtung: Crossing an ST 5 (Anpfiff 11.10.), danach keine
+      // Spiele mehr in `ph`. Historie: 11,0 Mio (Stand Start ST 5) → 9,6 Mio
+      // (festgeschrieben mit der finalen Berechnung = tatsächliche Einnahme)
+      // → 11,0 Mio (Erholung bis heute). Die alte Logik zeigte den Fallback-
+      // "jetzt"-Wert (11,0 Mio), angezeigt werden muss 9,6 Mio.
+      final caciKickoff = DateTime.utc(2026, 10, 11, 15, 30);
+      final today = DateTime.utc(2026, 10, 18);
+
+      final computation = service.computeAutoSales(
+        threshold: 250,
+        seasonStart: seasonStart,
+        periods: [
+          OwnershipPeriod(
+            playerId: 'p1',
+            playerName: 'Caci',
+            start: seasonStart,
+          ),
+        ],
+        performanceByPlayer: {
+          'p1': PlayerPerformanceResponse(
+            it: [
+              _season('28', [
+                _perf(4, DateTime.utc(2026, 10, 4, 15, 30), p: 220),
+                _perf(5, caciKickoff, p: 260),
+              ]),
+            ],
+          ),
+        },
+        marketValuesByPlayer: {
+          'p1': [
+            MarketValueEntry(
+              dt: _daysSinceEpoch(DateTime.utc(2026, 10, 11)),
+              mv: 11000000,
+            ),
+            MarketValueEntry(
+              dt: _daysSinceEpoch(DateTime.utc(2026, 10, 12)),
+              mv: 9600000,
+            ),
+            MarketValueEntry(
+              dt: _daysSinceEpoch(DateTime.utc(2026, 10, 18)),
+              mv: 11000000,
+            ),
+          ],
+        },
+        now: today,
+      );
+
+      expect(computation.events, hasLength(1));
+      expect(computation.events.first.matchday, 5);
+      expect(computation.events.first.marketValue, 9600000);
+      expect(computation.totalIncome, 9600000);
+    });
+
     test(
       'alte Saisons mit hohen Karriere-Punkten lösen KEINEN Auto-Verkauf aus',
       () {
@@ -506,46 +663,43 @@ void main() {
       },
     );
 
-    test(
-      'nutzt den MV des Folgespieltags, wenn der Crossing-Spieltag nicht der letzte ist',
-      () {
-        // Crossing bereits bei ST 1 (300 Punkte) → Sale instant = Kickoff ST 2.
-        final crossingAtDay1 = _season('28', [
-          _perf(1, _day1Start, p: 300),
-          _perf(2, _day2Start, p: 300),
-          _perf(3, _day3Start, p: 300),
-        ]);
+    test('nutzt den MV des Folgespieltags, wenn der Crossing-Spieltag nicht der letzte ist', () {
+      // Crossing bereits bei ST 1 (300 Punkte) → Sale instant = Kickoff ST 2.
+      final crossingAtDay1 = _season('28', [
+        _perf(1, _day1Start, p: 300),
+        _perf(2, _day2Start, p: 300),
+        _perf(3, _day3Start, p: 300),
+      ]);
 
-        final computation = service.computeAutoSales(
-          threshold: 250,
-          seasonStart: seasonStart,
-          periods: [
-            OwnershipPeriod(
-              playerId: 'p1',
-              playerName: 'Stürmer',
-              start: seasonStart,
-            ),
+      final computation = service.computeAutoSales(
+        threshold: 250,
+        seasonStart: seasonStart,
+        periods: [
+          OwnershipPeriod(
+            playerId: 'p1',
+            playerName: 'Stürmer',
+            start: seasonStart,
+          ),
+        ],
+        performanceByPlayer: {
+          'p1': PlayerPerformanceResponse(it: [crossingAtDay1]),
+        },
+        marketValuesByPlayer: {
+          'p1': [
+            MarketValueEntry(dt: _daysSinceEpoch(_day1Start), mv: 10000000),
+            MarketValueEntry(dt: _daysSinceEpoch(_day2Start), mv: 15000000),
+            MarketValueEntry(dt: _daysSinceEpoch(_day3Start), mv: 18000000),
           ],
-          performanceByPlayer: {
-            'p1': PlayerPerformanceResponse(it: [crossingAtDay1]),
-          },
-          marketValuesByPlayer: {
-            'p1': [
-              MarketValueEntry(dt: _daysSinceEpoch(_day1Start), mv: 10000000),
-              MarketValueEntry(dt: _daysSinceEpoch(_day2Start), mv: 15000000),
-              MarketValueEntry(dt: _daysSinceEpoch(_day3Start), mv: 18000000),
-            ],
-          },
-          now: now,
-        );
+        },
+        now: now,
+      );
 
-        // Sale instant = Kickoff ST 2 → MV von ST 2 (der mit der finalen
-        // Berechnung von ST 1 festgeschriebene Wert).
-        expect(computation.events, hasLength(1));
-        expect(computation.events.first.matchday, 1);
-        expect(computation.events.first.marketValue, 15000000);
-      },
-    );
+      // Sale instant = Kickoff ST 2 → MV von ST 2 (der mit der finalen
+      // Berechnung von ST 1 festgeschriebene Wert).
+      expect(computation.events, hasLength(1));
+      expect(computation.events.first.matchday, 1);
+      expect(computation.events.first.marketValue, 15000000);
+    });
 
     test('KEIN Event, wenn der Kauf erst NACH dem Crossing erfolgte', () {
       final computation = service.computeAutoSales(
@@ -659,43 +813,40 @@ void main() {
       },
     );
 
-    test(
-      'Event auch bei ZWEI Besitz-Phasen, wenn nur die ZWEITE den Verkauf abdeckt',
-      () {
-        // Feldfall-Form: Initialkader → manueller Verkauf 01.09 → Rückkauf
-        // 03.09. Das Crossing (ST 3, 12.09) liegt ausschließlich in der
-        // ZWEITEN Besitz-Phase. Vor dem Fix wurde nur die ERSTE Periode
-        // geprüft (seenPlayers-Gate vor den Covers-Prüfungen) und das Event
-        // still verworfen.
-        final computation = service.computeAutoSales(
-          threshold: 250,
-          seasonStart: seasonStart,
-          periods: [
-            OwnershipPeriod(
-              playerId: 'p1',
-              playerName: 'Stürmer',
-              start: seasonStart,
-              end: DateTime.utc(2026, 9, 1),
-            ),
-            OwnershipPeriod(
-              playerId: 'p1',
-              playerName: 'Stürmer',
-              start: DateTime.utc(2026, 9, 3),
-            ),
-          ],
-          performanceByPlayer: {'p1': performance},
-          marketValuesByPlayer: {
-            'p1': mvHistory(mvAtDay2: 15000000, mvAtDay3: 18000000),
-          },
-          now: now,
-        );
+    test('Event auch bei ZWEI Besitz-Phasen, wenn nur die ZWEITE den Verkauf abdeckt', () {
+      // Feldfall-Form: Initialkader → manueller Verkauf 01.09 → Rückkauf
+      // 03.09. Das Crossing (ST 3, 12.09) liegt ausschließlich in der
+      // ZWEITEN Besitz-Phase. Vor dem Fix wurde nur die ERSTE Periode
+      // geprüft (seenPlayers-Gate vor den Covers-Prüfungen) und das Event
+      // still verworfen.
+      final computation = service.computeAutoSales(
+        threshold: 250,
+        seasonStart: seasonStart,
+        periods: [
+          OwnershipPeriod(
+            playerId: 'p1',
+            playerName: 'Stürmer',
+            start: seasonStart,
+            end: DateTime.utc(2026, 9, 1),
+          ),
+          OwnershipPeriod(
+            playerId: 'p1',
+            playerName: 'Stürmer',
+            start: DateTime.utc(2026, 9, 3),
+          ),
+        ],
+        performanceByPlayer: {'p1': performance},
+        marketValuesByPlayer: {
+          'p1': mvHistory(mvAtDay2: 15000000, mvAtDay3: 18000000),
+        },
+        now: now,
+      );
 
-        expect(computation.events, hasLength(1));
-        expect(computation.events.first.matchday, 3);
-        expect(computation.events.first.points, 280);
-        expect(computation.events.first.marketValue, 18000000);
-      },
-    );
+      expect(computation.events, hasLength(1));
+      expect(computation.events.first.matchday, 3);
+      expect(computation.events.first.points, 280);
+      expect(computation.events.first.marketValue, 18000000);
+    });
 
     test(
       'Event für Rückkauf eines bereits über der Schwelle liegenden Spielers',

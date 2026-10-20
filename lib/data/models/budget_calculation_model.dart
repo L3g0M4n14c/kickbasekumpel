@@ -160,6 +160,26 @@ abstract class BudgetCalculationResult with _$BudgetCalculationResult {
     /// Summe der Budget-Einnahmen durch Erfolge (Achievements). Bereits in
     /// [currentBudget] enthalten.
     @Default(0) int achievementIncome,
+
+    /// Saison-Gesamtpunkte des Managers (Feld `tp` der aktuellen Saison aus
+    /// `managers/{userId}/performance`) – Grundlage des Punktgelds.
+    @Default(0) int seasonPoints,
+
+    /// Punktgeld (Spieltagsprämie): Saison-Gesamtpunkte × 1.000 €. Bereits
+    /// in [currentBudget] enthalten.
+    @Default(0) int pointsMoney,
+
+    /// Berechnete Summe (Schätzung) vor der Kalibrierung gegen das echte
+    /// Budget. Ohne Kalibrierung identisch mit [currentBudget].
+    @Default(0) int estimatedBudget,
+
+    /// Abweichung der Schätzung vom echten Budget
+    /// (estimatedBudget − currentBudget). 0, wenn nicht kalibriert.
+    @Default(0) int budgetDeviation,
+
+    /// true, wenn [currentBudget] gegen den echten Wert (`me/budget`)
+    /// kalibriert wurde (nur eigener Manager möglich).
+    @Default(false) bool calibrated,
   }) = _BudgetCalculationResult;
 
   factory BudgetCalculationResult.fromJson(Map<String, dynamic> json) =>

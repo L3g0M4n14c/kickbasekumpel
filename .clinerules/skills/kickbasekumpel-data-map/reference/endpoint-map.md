@@ -19,9 +19,9 @@ Parsing** → **Provider** → **UI-Konsument**. Spezifikation: `docs/api-endpoi
 | `GET /v4/leagues/selection` | `getLeagues()` | `List<League>` via `normalizeLeagueJson` | `league_providers`, `kickbase_auth_provider` | Liga-Auswahl |
 | `GET /v4/leagues/{id}/overview` | `getLeague()`, `getLeagueOverview()` | `League` / Map (`dt` = Saisonstart) | `leagueSeasonStartDateProvider` (budget_calculation) | – |
 | `GET /v4/leagues/{id}/me` | `getLeagueMe()` | Map | `leagueMeProvider` | `team_page` (Squad-Benchmark) |
-| `GET /v4/leagues/{id}/me/budget` | `getMyBudget()` | Map | `myBudgetProvider`, `teamBudgetProvider` | `team_page` (Budget-Header), `squad_screen` |
+| `GET /v4/leagues/{id}/me/budget` | `getMyBudget()` | Map (`b` = echtes Budget) | `myBudgetProvider`, `teamBudgetProvider`, `budget_calculation_providers` (Kalibrierung/Sync) | `team_page` (Budget-Header), `squad_screen` |
 | `GET /v4/leagues/{id}/ranking` | `getLeagueRanking()` | Map (Spieltags-Ranking `mdp`) | `leagueRankingProvider`, `currentLeagueRankingProvider`, `leagueMatchdayDataProvider`, `bid_recommendation_providers` | `league_standings_page` |
-| `GET /v4/leagues/{id}/activitiesFeed` | `getLeagueActivitiesFeed()` | Map (ungenutzt, s. Roadmap) | – | – |
+| `GET /v4/leagues/{id}/activitiesFeed` | `getLeagueActivitiesFeed()` | Map (`af`: `t` = Typ – 15 Transfer, 22 Anmeldebonus `data.bn`, 26 Erfolg; nur eigene Einträge) | `leagueActivitiesFeedProvider` (budget_calculation: Anmeldebonus) | – |
 | `GET /v4/leagues/{id}/settings` | – | – (Roadmap: echte Liga-Regeln) | – | – |
 
 ## Eigener Kader & Aufstellung
@@ -57,7 +57,7 @@ Parsing** → **Provider** → **UI-Konsument**. Spezifikation: `docs/api-endpoi
 | Endpunkt | Methode | Parsing | Provider | UI |
 |---|---|---|---|---|
 | `GET .../managers/{userId}/dashboard` | `getManagerDashboard()` | Map | `managerDashboardProvider` | `manager_detail_screen` |
-| `GET .../managers/{userId}/performance` | `getManagerPerformance()` | Map | `managerPerformanceProvider` | `manager_detail_screen` |
+| `GET .../managers/{userId}/performance` | `getManagerPerformance()` | Map (`it` → Saisons mit `tp`) | `managerPerformanceProvider`, `budget_calculation_providers` (Punktgeld) | `manager_detail_screen` |
 | `GET .../managers/{userId}/squad` | `getManagerSquad()` | Map via `normalizePlayerJson` | `managerSquadProvider`, `managerSquadEnrichedProvider`, `managerLineup*Provider` | `manager_detail_screen` |
 
 ## Achievements, Bonus & Live

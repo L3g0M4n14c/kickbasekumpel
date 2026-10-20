@@ -91,6 +91,14 @@ Match: `day`, `p` (Punkte), `mp` (Match-Performance?), `md`, `t1`/`t2` (Teams),
 `t1g`/`t2g` (Tore), `pt` (Punkte-Text?), `k` (Key-Events?), `st`, `cur` (aktuell),
 `mdst`, `ap`, `tp`, `asp` – einzelne Bedeutungen teils unklar.
 
+## Manager-Performance (`/managers/{userId}/performance`)
+
+`it` → Saisons (`sid`, `sn`, `tp` = **Saison-Gesamtpunkte**, `ap`, `pl`, `mdw`),
+sortiert alt → neu; Spieltag: `day`, `mdp` (Punkte), `tw` (Sieg), `cur`
+(aktuell), `md`. Aktuelle Saison = neueste mit `cur`-Spieltag (Fallback: letzte).
+`tp` × 1.000 € = Punktgeld (Spieltagsprämie) in der Budget-Berechnung
+(`BudgetCalculationService.seasonTotalPoints`).
+
 ## MarketValue (`/players/{id}/marketvalue/{timeframe}`)
 
 `it` → Einträge (`dt` = **Datum** (Zahl!), `mv` = Marktwert), Response-Level `prlo`.

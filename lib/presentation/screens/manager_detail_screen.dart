@@ -1081,12 +1081,38 @@ class _BudgetOverviewCards extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             _BudgetCard(
+              icon: Icons.sports_score,
+              label: 'Punktgeld (Spieltagsprämie)',
+              value:
+                  '+${(calculation.pointsMoney / 1000000).toStringAsFixed(2)} M €',
+              color: Colors.indigo,
+            ),
+            const SizedBox(height: 8),
+            _BudgetCard(
               icon: Icons.account_balance_wallet,
-              label: 'AKTUELLES BUDGET (inkl. Boni)',
+              label: calculation.calibrated
+                  ? 'AKTUELLES BUDGET (echt)'
+                  : 'AKTUELLES BUDGET (inkl. Boni)',
               value: '${(totalBudget / 1000000).toStringAsFixed(2)} M €',
               color: totalBudget >= 0 ? Colors.green : Colors.red,
               isHighlighted: true,
             ),
+            // Kalibrierungs-Hinweis: Für den eigenen Manager zeigt die App den
+            // echten Wert (me/budget) – daneben bleibt die Berechnung als
+            // Schätzung mit Abweichung sichtbar.
+            if (calculation.calibrated && calculation.budgetDeviation != 0) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Kalibrierung: Berechnung (Schätzung) '
+                '${(calculation.estimatedBudget / 1000000).toStringAsFixed(2)} M € '
+                '→ Abweichung ${calculation.budgetDeviation > 0 ? '+' : ''}'
+                '${(calculation.budgetDeviation / 1000000).toStringAsFixed(2)} M €',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ],
         ),
       ),

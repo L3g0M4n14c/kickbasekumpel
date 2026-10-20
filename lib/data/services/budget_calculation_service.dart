@@ -32,10 +32,18 @@ class CompetitorBudgetHint {
 /// Dann werden verrechnet:
 /// - Verkäufe (transferType == 2) werden addiert
 /// - Käufe (transferType == 1) werden subtrahiert
+/// - Punktgeld (Spieltagsprämie): Saison-Gesamtpunkte × 1.000 €
 /// - Täglicher Anmeldebonus (siehe [calculateLoginBonus])
 class BudgetCalculationService {
   /// Festes Startbudget für die vereinfachte Berechnung (50 Mio. €)
   static const int startingBudget = 50000000;
+
+  /// Punktgeld (Spieltagsprämie) pro Saison-Punkt: 1.000 €.
+  ///
+  /// Kickbase vergütet Spieltagspunkte mit Budget (Trading-Advisor-Ansatz:
+  /// `totalPoints × 1000 €`). Da ein Großteil des Budgetwachstums daraus
+  /// resultiert, fließt es seit Story #9 in die Budget-Summe ein.
+  static const int pointsMoneyPerPoint = 1000;
 
   /// Bonus am 1. Tag der Liga (10.000 €), steigt täglich um 10.000 €
   /// bis am 10. Tag 100.000 € erreicht sind – ab dann konstant 100.000 €.
@@ -48,6 +56,18 @@ class BudgetCalculationService {
   /// Maximaler Tagesbonus (100.000 €, ab Tag 10)
   static const int loginBonusMaxPerDay =
       loginBonusPerDayStep * loginBonusMaxDay;
+
+  /// Aktivitäten-Feed: Typ-Code für einen erhaltenen Anmeldebonus
+  /// (Betrag in `data.bn`).
+  static const int activityTypeLoginBonus = 22;
+
+  /// Hilfsfunktion: Wert als int (int/num/String), sonst 0.
+  static int _asInt(Object? value) => switch (value) {
+    int value => value,
+    num value => value.toInt(),
+    String value => int.tryParse(value) ?? 0,
+    _ => 0,
+  };
 
   /// Tagesbonus für einen bestimmten Liga-Tag (1-basiert).
   ///
@@ -115,12 +135,89 @@ class BudgetCalculationService {
     return cumulativeLoginBonus(days);
   }
 
+  /// Tatsächlich gutgeschriebener Anmeldebonus aus dem Aktivitäten-Feed.
+  ///
+  /// Der Feed (`activitiesFeed`, Feld `af`) enthält pro ERHALTENEM
+  /// Anmeldebonus einen Eintrag mit Typ [activityTypeLoginBonus] und dem
+  /// Betrag in `data.bn`. Anders als die Formel ([calculateLoginBonus])
+  /// werden hier nur die Boni gezählt, die wirklich gutgeschrieben wurden –
+  /// nicht eingesammelte Tage zählen nicht mit (wichtig: Die Formel ist eine
+  /// Obergrenze und überschätzt das Budget bei verpassten Tagen).
+  ///
+  /// [since] - nur Einträge ab diesem Zeitpunkt (Saisonstart).
+  ///
+  /// Returns: `total` = Summe der Beträge, `count` = Anzahl der
+  /// Gutschriften.
+  ({int total, int count}) loginBonusFromActivityFeed(
+    Map<String, dynamic> feedData, {
+    DateTime? since,
+  }) {
+    final entries = (feedData['af'] as List<dynamic>? ?? const [])
+        .whereType<Map<String, dynamic>>();
+
+    var total = 0;
+    var count = 0;
+    for (final entry in entries) {
+      if (_asInt(entry['t']) != activityTypeLoginBonus) continue;
+
+      if (since != null) {
+        final rawDate = entry['dt'];
+        final date = rawDate is String
+            ? DateTime.tryParse(rawDate)?.toUtc()
+            : null;
+        if (date == null || date.isBefore(since.toUtc())) continue;
+      }
+
+      total += _asInt((entry['data'] as Map<String, dynamic>?)?['bn']);
+      count++;
+    }
+    return (total: total, count: count);
+  }
+
+  /// Punktgeld (Spieltagsprämie) für [seasonPoints] Saison-Gesamtpunkte.
+  ///
+  /// Kickbase vergütet jeden Spieltagspunkt mit 1.000 € Budget
+  /// (siehe [pointsMoneyPerPoint]).
+  int pointsMoneyFor(int seasonPoints) {
+    if (seasonPoints <= 0) return 0;
+    return seasonPoints * pointsMoneyPerPoint;
+  }
+
+  /// Saison-Gesamtpunkte (`tp`) der AKTUELLEN Saison aus der Roh-Response des
+  /// Performance-Endpoints (`managers/{userId}/performance`).
+  ///
+  /// Die Response enthält unter `it` eine Liste von Saisons
+  /// (`{sid, sn, tp, ap, pl, mdw, it: [{day, mdp, tw, cur, md}, …]}`), sortiert
+  /// alt → neu. Aktuelle Saison = neueste Saison mit einem Spieltag, der
+  /// `cur == true` hat; Fallback: letzte Saison der Liste (= neueste).
+  ///
+  /// Returns: `tp` der aktuellen Saison (0, wenn keine Daten vorhanden sind).
+  int seasonTotalPoints(Map<String, dynamic> performanceData) {
+    final seasons = (performanceData['it'] as List<dynamic>? ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .toList();
+    if (seasons.isEmpty) return 0;
+
+    bool hasCurrentMatchday(Map<String, dynamic> season) {
+      return (season['it'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .any((matchday) => matchday['cur'] == true);
+    }
+
+    final currentSeason = seasons.lastWhere(
+      hasCurrentMatchday,
+      orElse: () => seasons.last,
+    );
+    return _asInt(currentSeason['tp']);
+  }
+
   /// Berechnet das Budget für einen Manager
   ///
   /// [managerId] - ID des Managers
   /// [managerName] - Name des Managers
   /// [leagueId] - Liga ID
   /// [allTransfers] - Alle Transfers (Käufe und Verkäufe) des Managers
+  /// [seasonPoints] - Saison-Gesamtpunkte (Punktgeld, siehe [pointsMoneyFor])
   /// [currentTimestamp] - Aktueller Zeitstempel für die Berechnung
   ///
   /// Returns [BudgetCalculationResult] mit allen Berechnungsschritten
@@ -129,6 +226,7 @@ class BudgetCalculationService {
     required String managerName,
     required String leagueId,
     required List<ManagerTransferHistoryEntry> allTransfers,
+    int seasonPoints = 0,
     DateTime? currentTimestamp,
   }) {
     final now = currentTimestamp ?? DateTime.now().toUtc();
@@ -165,8 +263,13 @@ class BudgetCalculationService {
       (sum, purchase) => sum + purchase.price,
     );
 
-    // 3. Aktuelles Budget berechnen: 50M + Verkäufe - Käufe
-    final currentBudget = startingBudget + totalSales - totalPurchases;
+    // 3. Punktgeld (Spieltagsprämie): Saison-Punkte × 1.000 €
+    final pointsMoney = pointsMoneyFor(seasonPoints);
+
+    // 4. Aktuelles Budget berechnen:
+    //    50M + Verkäufe - Käufe + Punktgeld
+    final currentBudget =
+        startingBudget + totalSales - totalPurchases + pointsMoney;
 
     return BudgetCalculationResult(
       managerId: managerId,
@@ -177,6 +280,8 @@ class BudgetCalculationService {
       startingBudget: startingBudget,
       totalSales: totalSales,
       totalPurchases: totalPurchases,
+      seasonPoints: seasonPoints,
+      pointsMoney: pointsMoney,
       currentBudget: currentBudget,
       initialPlayers: [], // Nicht verwendet in vereinfachter Version
       sales: sales,

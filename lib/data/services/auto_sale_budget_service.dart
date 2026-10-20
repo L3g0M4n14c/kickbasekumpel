@@ -59,9 +59,10 @@ class OwnershipPeriod {
 ///    liegenden Spielers (z.B. Rückkauf vom Markt nach einem Auto-Verkauf),
 ///    die nächste Punkt-Aktualisierung im Besitz (Feldbeobachtung: Kickbase
 ///    verkauft solche Spieler mit der nächsten Spieltagsberechnung erneut).
-/// 3. Den zum Trigger gültigen Marktwert ermitteln und als Einnahme
-///    verbuchen – aber nur, wenn der Manager den Spieler beim Spiel des
-///    Triggers und bis zur finalen Spieltagsberechnung besaß.
+/// 3. Den zum Verkaufszeitpunkt festgeschriebenen Marktwert ermitteln (erster
+///    Historien-Eintrag ab dem Folgetag des Anpfiffs, siehe [saleMarketValue])
+///    und als Einnahme verbuchen – aber nur, wenn der Manager den Spieler
+///    beim Spiel des Triggers und bis zur finalen Spieltagsberechnung besaß.
 class AutoSaleBudgetService {
   final ManagerTransferHistoryService _mvService =
       ManagerTransferHistoryService();
@@ -298,6 +299,37 @@ class AutoSaleBudgetService {
     return nextKickoff ?? fallback;
   }
 
+  /// Liefert den Marktwert, der beim Auto-Verkauf gutgeschrieben wurde
+  /// („der Wert von dem Tag, als er verkauft wurde").
+  ///
+  /// Der Verkauf erfolgt mit der finalen Spieltagsberechnung des Crossing-
+  /// Spieltags – der dabei festgeschriebene Marktwert ist der erste Eintrag
+  /// der Marktwert-Historie ab dem FOLGETAG des Anpfiffs ([matchdayKickoff]).
+  ///
+  /// WICHTIG (Feldbeobachtung): Der "letzte Eintrag ≤ Stichtag" (frühere
+  /// Logik) liefert bei groben Historie-Einträgen den Stand VOR dem Spieltag
+  /// (z.B. 11,0 Mio statt der tatsächlichen 9,6 Mio – der Wert "vom Start
+  /// des Spieltags") bzw. bei Fallback "jetzt" sogar den aktuellen
+  /// Marktwert. Deshalb wird hier der erste Eintrag AB dem Verkaufstag
+  /// genommen.
+  ///
+  /// Fallback (noch kein Historien-Eintrag ab dem Verkaufstag, z.B. laufender
+  /// Spieltag): aktueller Stand ("letzter Eintrag ≤ [now]").
+  int? saleMarketValue(
+    List<MarketValueEntry> marketValues, {
+    required DateTime matchdayKickoff,
+    required DateTime now,
+  }) {
+    final kickoff = matchdayKickoff.toUtc();
+    final saleDay = DateTime.utc(
+      kickoff.year,
+      kickoff.month,
+      kickoff.day,
+    ).add(const Duration(days: 1));
+    return _mvService.marketValueOnOrAfter(marketValues, saleDay) ??
+        marketValueAt(marketValues, now);
+  }
+
   /// Liefert den letzten bekannten Marktwert am oder vor [at].
   /// Delegiert an die bewährte Logik aus [ManagerTransferHistoryService]
   /// (normalisiert Tage-seit-1970 / Sekunden / Millisekunden transparent).
@@ -376,15 +408,18 @@ class AutoSaleBudgetService {
 
         // Zusätzlich muss der Besitz bis zur finalen Spieltagsberechnung
         // bestanden haben (manueller Verkauf davor erzeugt keine Einnahme).
-        final saleInstant = matchdayEnd(
-          day: entry.day,
-          ph: ph,
-          fallback: now,
-        );
+        final saleInstant = matchdayEnd(day: entry.day, ph: ph, fallback: now);
         if (!period.covers(saleInstant)) continue;
 
         final marketValues = marketValuesByPlayer[period.playerId] ?? const [];
-        final marketValue = marketValueAt(marketValues, saleInstant);
+        // Verkaufswert = mit der finalen Spieltagsberechnung festgeschriebener
+        // Marktwert (erster Eintrag ab dem Folgetag des Anpfiffs) – NICHT der
+        // Stand vor/während des Spieltags.
+        final marketValue = saleMarketValue(
+          marketValues,
+          matchdayKickoff: kickoff,
+          now: now,
+        );
 
         seenPlayers.add(period.playerId);
         events.add(
