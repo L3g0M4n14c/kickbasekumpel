@@ -138,9 +138,8 @@ void main() {
     });
 
     test('should throw NetworkException on SocketException', () async {
-      when(
-        mockHttpClient.send(any),
-      ).thenThrow(const SocketException('No internet connection'));
+      when(mockHttpClient.send(any))
+          .thenThrow(const SocketException('No internet connection'));
 
       expect(() => apiClient.getUser(), throwsA(isA<NetworkException>()));
     });
@@ -414,9 +413,8 @@ void main() {
 
   group('Network Connectivity', () {
     test('testNetworkConnectivity should return true on success', () async {
-      when(
-        mockHttpClient.head(any),
-      ).thenAnswer((_) async => http.Response('', 200));
+      when(mockHttpClient.head(any))
+          .thenAnswer((_) async => http.Response('', 200));
 
       final result = await apiClient.testNetworkConnectivity();
 
@@ -444,7 +442,7 @@ void main() {
       final requests = <http.BaseRequest>[];
       when(mockHttpClient.send(any)).thenAnswer((invocation) async {
         requests.add(invocation.positionalArguments.first as http.BaseRequest);
-        return http.StreamedResponse(Stream.value('{}'), 200);
+        return http.StreamedResponse(Stream.value(utf8.encode('{}')), 200);
       });
 
       await apiClient.updateLineup(
@@ -456,13 +454,15 @@ void main() {
       final request = requests.single as http.Request;
       expect(request.method, 'POST');
       expect(request.url.path, '/v4/leagues/league-1/lineup');
-      expect(request.headers['Content-Type'], 'text/plain');
+      expect(request.headers['Content-Type'], startsWith('text/plain'));
       expect(request.body, 'p1,p2,p3');
     });
 
     test('wirft KickbaseException bei fehlgeschlagenem Update', () async {
-      when(mockHttpClient.send(any)).thenAnswer(
-        (_) async => http.StreamedResponse(Stream.value('{}'), 400),
+      when(
+        mockHttpClient.send(any),
+      ).thenAnswer(
+        (_) async => http.StreamedResponse(Stream.value(utf8.encode('{}')), 400),
       );
 
       expect(
