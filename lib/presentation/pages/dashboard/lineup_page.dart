@@ -78,29 +78,26 @@ class LineupPage extends ConsumerWidget {
                                 ref.invalidate(myLineupProvider(leagueId!)),
                           ),
                           data: (players) {
-                            // Kickbase-Konvention: Torwart hat lo=0, Feldspieler lo=1..11
-                            // Bench: lo > 11 oder (lo == 0 und kein Torwart)
-                            bool isStarter(LineupPlayer p) {
-                              if (p.position == 1 && p.lineupOrder == 0) {
-                                return true;
-                              }
-                              return p.lineupOrder >= 1 && p.lineupOrder <= 11;
-                            }
-
-                            final starters = players.where(isStarter).toList()
-                              ..sort((a, b) {
-                                // Torwart (lo=0) ans Ende der Sortierung (unterste Reihe)
-                                final aOrder = a.lineupOrder == 0
-                                    ? 11
-                                    : a.lineupOrder;
-                                final bOrder = b.lineupOrder == 0
-                                    ? 11
-                                    : b.lineupOrder;
-                                return aOrder.compareTo(bOrder);
-                              });
+                            // Kickbase-Konvention: lo ist die Lineup-Reihenfolge –
+                            // Starter lo=1..11, Bank lo=0 oder >11
+                            // (siehe LineupRecommendationService.isStarter).
+                            final starters =
+                                players
+                                        .where(
+                                          LineupRecommendationService
+                                              .isStarter,
+                                        )
+                                        .toList()
+                                  ..sort(
+                                    (a, b) =>
+                                        a.lineupOrder.compareTo(b.lineupOrder),
+                                  );
 
                             final bench = players
-                                .where((p) => !isStarter(p))
+                                .where(
+                                  (p) =>
+                                      !LineupRecommendationService.isStarter(p),
+                                )
                                 .toList();
 
                             return ResponsiveLayout(

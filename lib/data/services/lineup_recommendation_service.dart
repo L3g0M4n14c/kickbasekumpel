@@ -160,7 +160,8 @@ class LineupPointsScale {
 /// Wahrscheinlichkeit neutral (Fallback: reine Ø-Punkte).
 ///
 /// Die Startelf wird formation-legal aus `Formation.allFormations` gewählt
-/// (genau ein Torwart), Fallback ist die freie Top-11.
+/// (genau ein Torwart), Fallback ist die freie Top-11 (ebenfalls genau ein
+/// Torwart).
 class LineupRecommendationService {
   const LineupRecommendationService();
 
@@ -277,7 +278,20 @@ class LineupRecommendationService {
     }
 
     // Fallback: freie Top-11 ohne Positions-Regel (z. B. ohne Torwart im Kader).
-    final selected = bestStarters ?? pool.take(min(11, pool.length)).toList();
+    // Auch hier gilt die Kickbase-Regel „genau ein Torwart": Der beste TW wird
+    // gesetzt, der Rest sind die besten Feldspieler – niemals zwei Torhüter.
+    final List<LineupPlayer> selected;
+    if (bestStarters != null) {
+      selected = bestStarters;
+    } else if (goalkeepers.isNotEmpty) {
+      final fieldPlayers = pool.where((p) => p.position != 1).toList();
+      selected = [
+        goalkeepers.first,
+        ...fieldPlayers.take(min(10, fieldPlayers.length)),
+      ];
+    } else {
+      selected = pool.take(min(11, pool.length)).toList();
+    }
     final starters = [...selected]
       ..sort((a, b) {
         final byPosition = a.position.compareTo(b.position);
@@ -540,11 +554,12 @@ class LineupRecommendationService {
     };
   }
 
-  /// Startelf-Konvention aus der Kickbase-API: TW hat lo=0, Feldspieler lo=1..11.
-  static bool isStarter(LineupPlayer player) {
-    if (player.position == 1 && player.lineupOrder == 0) return true;
-    return player.lineupOrder >= 1 && player.lineupOrder <= 11;
-  }
+  /// Startelf-Konvention aus der Kickbase-API: `lo` ist die Lineup-Reihenfolge.
+  /// Die 11 Starter haben lo=1..11, Bank-/Nicht-Aufgestellte lo=0 oder >11.
+  /// WICHTIG: Ein Torwart mit lo=0 ist KEIN Starter (sonst erscheinen zwei
+  /// Torhüter in der S11), sondern Bank.
+  static bool isStarter(LineupPlayer player) =>
+      player.lineupOrder >= 1 && player.lineupOrder <= 11;
 
   /// Reihenfolge-Liste für `POST /lineup`, in der genau [swap] umgesetzt ist
   /// (Tap-to-Swap, Story #13): Die aktuelle Ordnung bleibt erhalten, nur die

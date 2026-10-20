@@ -345,13 +345,13 @@ void main() {
     test('Wechsel-Vorschlag gegenüber der aktuellen Aufstellung', () {
       final result = service.recommend(
         squad: [
-          buildPlayer(id: 'gk', name: 'Torwart', position: 1, lineupOrder: 0),
-          buildPlayer(id: 'def', name: 'Abwehr', position: 2, lineupOrder: 1),
-          buildPlayer(id: 'st', name: 'Sturm', position: 4, lineupOrder: 2),
+          buildPlayer(id: 'gk', name: 'Torwart', position: 1, lineupOrder: 1),
+          buildPlayer(id: 'def', name: 'Abwehr', position: 2, lineupOrder: 2),
+          buildPlayer(id: 'st', name: 'Sturm', position: 4, lineupOrder: 3),
           buildPlayer(
             id: 'mid-alt',
             name: 'Mittelfeld Alt',
-            lineupOrder: 3,
+            lineupOrder: 4,
             averagePoints: 2,
             performanceHistory: history([1, 1, 1]),
           ),
@@ -525,13 +525,13 @@ void main() {
     test('Tausch-Gewinn ist die erwartete Punkt-Differenz', () {
       final result = service.recommend(
         squad: [
-          buildPlayer(id: 'gk', name: 'Torwart', position: 1, lineupOrder: 0),
-          buildPlayer(id: 'def', name: 'Abwehr', position: 2, lineupOrder: 1),
-          buildPlayer(id: 'st', name: 'Sturm', position: 4, lineupOrder: 2),
+          buildPlayer(id: 'gk', name: 'Torwart', position: 1, lineupOrder: 1),
+          buildPlayer(id: 'def', name: 'Abwehr', position: 2, lineupOrder: 2),
+          buildPlayer(id: 'st', name: 'Sturm', position: 4, lineupOrder: 3),
           buildPlayer(
             id: 'mid-alt',
             name: 'Mittelfeld Alt',
-            lineupOrder: 3,
+            lineupOrder: 4,
             averagePoints: 2,
           ),
           buildPlayer(
@@ -695,13 +695,13 @@ void main() {
 
     test('Tap-to-Swap tauscht genau die beiden Spieler in der Aufstellung', () {
       final players = [
-        buildPlayer(id: 'gk', name: 'Torwart', position: 1, lineupOrder: 0),
-        buildPlayer(id: 'def', name: 'Abwehr', position: 2, lineupOrder: 1),
-        buildPlayer(id: 'st', name: 'Sturm', position: 4, lineupOrder: 2),
+        buildPlayer(id: 'gk', name: 'Torwart', position: 1, lineupOrder: 1),
+        buildPlayer(id: 'def', name: 'Abwehr', position: 2, lineupOrder: 2),
+        buildPlayer(id: 'st', name: 'Sturm', position: 4, lineupOrder: 3),
         buildPlayer(
           id: 'mid-alt',
           name: 'Mittelfeld Alt',
-          lineupOrder: 3,
+          lineupOrder: 4,
           averagePoints: 2,
         ),
         buildPlayer(
@@ -733,8 +733,8 @@ void main() {
 
     test('Tap-to-Swap ohne Beteiligte lässt die Ordnung unverändert', () {
       final players = [
-        buildPlayer(id: 'gk', name: 'Torwart', position: 1, lineupOrder: 0),
-        buildPlayer(id: 'def', name: 'Abwehr', position: 2, lineupOrder: 1),
+        buildPlayer(id: 'gk', name: 'Torwart', position: 1, lineupOrder: 1),
+        buildPlayer(id: 'def', name: 'Abwehr', position: 2, lineupOrder: 2),
         buildPlayer(
           id: 'bank',
           name: 'Bank Eins',
@@ -753,6 +753,110 @@ void main() {
       final ids = LineupRecommendationService.swappedLineupIds(players, swap);
 
       expect(ids, ['gk', 'def', 'bank']);
+    });
+  });
+
+  group('Startelf-Konvention (lo) & Torwart-Regel', () {
+    test('Bank-Torwart (lo=0) ist kein Starter', () {
+      final benchKeeper = buildPlayer(
+        id: 'gk2',
+        name: 'Torwart Bank',
+        position: 1,
+        lineupOrder: 0,
+      );
+      expect(LineupRecommendationService.isStarter(benchKeeper), isFalse);
+    });
+
+    test('Aufgestellte Spieler (lo=1..11) sind Starter', () {
+      expect(
+        LineupRecommendationService.isStarter(
+          buildPlayer(id: 'gk', position: 1, lineupOrder: 1),
+        ),
+        isTrue,
+      );
+      expect(
+        LineupRecommendationService.isStarter(
+          buildPlayer(id: 'st', position: 4, lineupOrder: 11),
+        ),
+        isTrue,
+      );
+      expect(
+        LineupRecommendationService.isStarter(
+          buildPlayer(id: 'bank', position: 3, lineupOrder: 12),
+        ),
+        isFalse,
+      );
+    });
+
+    test('swappedLineupIds hält den Bank-Torwart auf der Bank', () {
+      final players = [
+        buildPlayer(
+          id: 'gk1',
+          name: 'Torwart Eins',
+          position: 1,
+          lineupOrder: 1,
+        ),
+        buildPlayer(id: 'def', name: 'Abwehr', position: 2, lineupOrder: 2),
+        buildPlayer(
+          id: 'gk2',
+          name: 'Torwart Zwei',
+          position: 1,
+          lineupOrder: 0,
+        ),
+      ];
+      final swap = LineupSwap(
+        inPlayer: buildPlayer(id: 'unbekannt', name: 'Unbekannt'),
+        outPlayer: buildPlayer(id: 'fehlt', name: 'Fehlt'),
+        gain: 0,
+        expectedGain: 0,
+        reason: 'Test',
+      );
+
+      final ids = LineupRecommendationService.swappedLineupIds(players, swap);
+
+      // gk2 (lo=0) gehört auf die Bank und darf die S11 nicht belegen.
+      expect(ids, ['gk1', 'def', 'gk2']);
+    });
+
+    test('Empfehlung zeigt nie zwei Torhüter (auch im Fallback)', () {
+      // Zu wenige Feldspieler für eine Formation → Fallback „freie Top-11".
+      final result = service.recommend(
+        squad: [
+          buildPlayer(
+            id: 'gk1',
+            name: 'Torwart Eins',
+            position: 1,
+            lineupOrder: 1,
+            averagePoints: 10,
+          ),
+          buildPlayer(
+            id: 'gk2',
+            name: 'Torwart Zwei',
+            position: 1,
+            lineupOrder: 0,
+            averagePoints: 9,
+          ),
+          buildPlayer(
+            id: 'def',
+            name: 'Abwehr',
+            position: 2,
+            lineupOrder: 2,
+            averagePoints: 8,
+          ),
+          buildPlayer(
+            id: 'mid',
+            name: 'Mittelfeld',
+            position: 3,
+            lineupOrder: 3,
+            averagePoints: 7,
+          ),
+        ],
+      );
+
+      final keepers = result.starters.where((p) => p.position == 1).toList();
+      expect(keepers, hasLength(1));
+      expect(keepers.single.id, 'gk1');
+      expect(result.isLegalFormation, isFalse);
     });
   });
 }
