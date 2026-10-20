@@ -103,10 +103,14 @@ class KickbaseAPIClient {
   // MARK: - Generic API Request Methods
 
   /// Make HTTP request with auth token
+  ///
+  /// [body] wird als JSON kodiert, sofern es eine Map ist. Ein String-Body
+  /// (z. B. `POST /lineup`) wird unverändert gesendet – dort legt der Aufrufer
+  /// den passenden Content-Type via [headers] fest.
   Future<http.Response> _makeRequest({
     required String endpoint,
     String method = 'GET',
-    Map<String, dynamic>? body,
+    Object? body,
     Map<String, String>? headers,
     bool requiresAuth = true,
   }) async {
@@ -138,7 +142,7 @@ class KickbaseAPIClient {
       final request = http.Request(method, url)..headers.addAll(requestHeaders);
 
       if (body != null) {
-        request.body = jsonEncode(body);
+        request.body = body is String ? body : jsonEncode(body);
       }
 
       final streamedResponse = await _httpClient
@@ -242,7 +246,8 @@ class KickbaseAPIClient {
   Future<http.Response> _makeRequestWithRetry({
     required String endpoint,
     String method = 'GET',
-    Map<String, dynamic>? body,
+    Object? body,
+    Map<String, String>? headers,
     int retryCount = 0,
   }) async {
     try {
@@ -250,6 +255,7 @@ class KickbaseAPIClient {
         endpoint: endpoint,
         method: method,
         body: body,
+        headers: headers,
       );
 
       // Handle authentication/authorization errors immediately (no retry)
@@ -298,6 +304,7 @@ class KickbaseAPIClient {
       endpoint: endpoint,
       method: method,
       body: body,
+      headers: headers,
       retryCount: retryCount + 1,
     );
   }
@@ -629,11 +636,16 @@ class KickbaseAPIClient {
 
   /// Update lineup
   /// POST /v4/leagues/{leagueId}/lineup
+  ///
+  /// Die Kickbase-API erwartet den Body als text/plain-Kommaseparated-Liste
+  /// der Spieler-IDs in Lineup-Reihenfolge (erste 11 = Startelf, Rest Bank) –
+  /// siehe [LineupUpdateRequestExtension.toRequestBody].
   Future<void> updateLineup(String leagueId, LineupUpdateRequest lineup) async {
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/lineup',
       method: 'POST',
-      body: {'playerIds': lineup.playerIds},
+      body: lineup.toRequestBody(),
+      headers: const {'Content-Type': 'text/plain'},
     );
 
     if (response.statusCode != 200) {
@@ -1032,7 +1044,9 @@ class KickbaseAPIClient {
   ///
   /// Der Geld-Betrag pro Erfolg (`er`) steht nur im Detail-Endpoint
   /// (siehe [getUserAchievementByType]).
-  Future<List<Map<String, dynamic>>> getUserAchievements(String leagueId) async {
+  Future<List<Map<String, dynamic>>> getUserAchievements(
+    String leagueId,
+  ) async {
     _logger.i('🏅 Getting achievements for league $leagueId...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/user/achievements',

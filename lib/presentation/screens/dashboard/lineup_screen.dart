@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../data/providers/player_providers.dart';
 import '../../../data/providers/league_providers.dart';
 import '../../../data/providers/ligainsider_photo_provider.dart';
 import '../../../data/utils/parsing_utils.dart';
 import '../../../data/models/lineup_model.dart';
+import '../../../data/services/lineup_recommendation_service.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/common/app_logo.dart';
 import '../../widgets/common/ligainsider_status_badge.dart';
@@ -85,20 +87,20 @@ class LineupScreen extends ConsumerWidget {
               },
               child: lineupAsync.when(
                 data: (players) {
-                  // Kickbase-Konvention: Torwart hat lo=0, Feldspieler lo=1..11
-                  bool isStarter(LineupPlayer p) {
-                    if (p.position == 1 && p.lineupOrder == 0) return true;
-                    return p.lineupOrder >= 1 && p.lineupOrder <= 11;
-                  }
+                  // Kickbase-Konvention: lo ist die Lineup-Reihenfolge –
+                  // Starter lo=1..11, Bank lo=0 oder >11
+                  // (siehe LineupRecommendationService.isStarter).
+                  final starters =
+                      players
+                          .where(LineupRecommendationService.isStarter)
+                          .toList()
+                        ..sort(
+                          (a, b) => a.lineupOrder.compareTo(b.lineupOrder),
+                        );
 
-                  final starters = players.where(isStarter).toList()
-                    ..sort((a, b) {
-                      final aOrder = a.lineupOrder == 0 ? 11 : a.lineupOrder;
-                      final bOrder = b.lineupOrder == 0 ? 11 : b.lineupOrder;
-                      return aOrder.compareTo(bOrder);
-                    });
-
-                  final bench = players.where((p) => !isStarter(p)).toList();
+                  final bench = players
+                      .where((p) => !LineupRecommendationService.isStarter(p))
+                      .toList();
 
                   // Group starters by position
                   final goalkeepers = starters

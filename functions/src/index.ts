@@ -404,10 +404,12 @@ export const kickbaseProxy = onRequest(
 
         const kickbaseUrl = `${KICKBASE_BASE_URL}${endpoint}`;
 
-        // Weitergeleitete Header aufbauen
+        // Weitergeleitete Header aufbauen – Content-Type des Clients übernehmen
+        // (z. B. text/plain für POST /lineup), Fallback ist JSON.
+        const contentType = req.headers['content-type'];
         const forwardedHeaders: Record<string, string> = {
             'Accept': 'application/json',
-            'Content-Type': 'application/json',
+            'Content-Type': typeof contentType === 'string' ? contentType : 'application/json',
         };
         if (req.headers.authorization) {
             forwardedHeaders['Authorization'] = req.headers.authorization;
@@ -419,9 +421,17 @@ export const kickbaseProxy = onRequest(
                 headers: forwardedHeaders,
             };
 
-            // Body nur bei POST/PUT/PATCH mitschicken
-            if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
-                fetchOptions.body = JSON.stringify(req.body);
+            // Body nur bei POST/PUT/PATCH mitschicken – unverändert (roh),
+            // damit auch text/plain-Bodies (z. B. POST /lineup) korrekt
+            // weitergeleitet werden.
+            if (req.method !== 'GET' && req.method !== 'HEAD') {
+                if (req.rawBody && req.rawBody.length > 0) {
+                    fetchOptions.body = req.rawBody;
+                } else if (typeof req.body === 'string' && req.body.length > 0) {
+                    fetchOptions.body = req.body;
+                } else if (req.body && typeof req.body === 'object' && Object.keys(req.body).length > 0) {
+                    fetchOptions.body = JSON.stringify(req.body);
+                }
             }
 
             logger.info({ endpoint, method: req.method }, '🔀 Forwarding to Kickbase API');

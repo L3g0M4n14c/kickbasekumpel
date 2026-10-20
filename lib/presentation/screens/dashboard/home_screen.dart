@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../data/providers/user_providers.dart' as user_prov;
 import '../../../data/providers/league_providers.dart';
 import '../../../data/providers/recommendation_providers.dart';
 import '../../../data/providers/player_providers.dart';
+import '../../../data/services/lineup_recommendation_service.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/error_widget.dart';
 
@@ -542,13 +544,16 @@ class _KaderSection extends ConsumerWidget {
               );
             }
 
+            // Kickbase-Konvention: lo ist die Lineup-Reihenfolge –
+            // Starter lo=1..11, Bank lo=0 oder >11
+            // (siehe LineupRecommendationService.isStarter).
             final starters =
-                players
-                    .where((p) => p.lineupOrder > 0 && p.lineupOrder <= 11)
-                    .toList()
+                players.where(LineupRecommendationService.isStarter).toList()
                   ..sort((a, b) => a.lineupOrder.compareTo(b.lineupOrder));
 
-            final bench = players.where((p) => p.lineupOrder > 11).toList();
+            final bench = players
+                .where((p) => !LineupRecommendationService.isStarter(p))
+                .toList();
 
             return Column(
               children: [

@@ -69,3 +69,4 @@ pubspec.lock
 *.js.map
 
 .flutter-plugins
+.tooling/

@@ -9,6 +9,7 @@ import 'package:kickbasekumpel/data/services/token_storage.dart';
 
 import 'package:kickbasekumpel/data/services/kickbase_api_client.dart';
 import 'package:kickbasekumpel/domain/exceptions/kickbase_exceptions.dart';
+import 'package:kickbasekumpel/data/models/lineup_model.dart';
 import 'package:kickbasekumpel/data/models/user_model.dart';
 import 'package:kickbasekumpel/data/models/league_model.dart';
 
@@ -137,9 +138,8 @@ void main() {
     });
 
     test('should throw NetworkException on SocketException', () async {
-      when(
-        mockHttpClient.send(any),
-      ).thenThrow(const SocketException('No internet connection'));
+      when(mockHttpClient.send(any))
+          .thenThrow(const SocketException('No internet connection'));
 
       expect(() => apiClient.getUser(), throwsA(isA<NetworkException>()));
     });
@@ -413,9 +413,8 @@ void main() {
 
   group('Network Connectivity', () {
     test('testNetworkConnectivity should return true on success', () async {
-      when(
-        mockHttpClient.head(any),
-      ).thenAnswer((_) async => http.Response('', 200));
+      when(mockHttpClient.head(any))
+          .thenAnswer((_) async => http.Response('', 200));
 
       final result = await apiClient.testNetworkConnectivity();
 
@@ -428,6 +427,51 @@ void main() {
       final result = await apiClient.testNetworkConnectivity();
 
       expect(result, false);
+    });
+  });
+
+  group('updateLineup', () {
+    const testToken = 'test_token';
+
+    setUp(() async {
+      when(mockTokenStorage.getToken()).thenAnswer((_) async => testToken);
+      await apiClient.setAuthToken(testToken);
+    });
+
+    test('sendet Player-IDs als text/plain-Kommaliste', () async {
+      final requests = <http.BaseRequest>[];
+      when(mockHttpClient.send(any)).thenAnswer((invocation) async {
+        requests.add(invocation.positionalArguments.first as http.BaseRequest);
+        return http.StreamedResponse(Stream.value(utf8.encode('{}')), 200);
+      });
+
+      await apiClient.updateLineup(
+        'league-1',
+        const LineupUpdateRequest(playerIds: ['p1', 'p2', 'p3']),
+      );
+
+      expect(requests, hasLength(1));
+      final request = requests.single as http.Request;
+      expect(request.method, 'POST');
+      expect(request.url.path, '/v4/leagues/league-1/lineup');
+      expect(request.headers['Content-Type'], startsWith('text/plain'));
+      expect(request.body, 'p1,p2,p3');
+    });
+
+    test('wirft KickbaseException bei fehlgeschlagenem Update', () async {
+      when(
+        mockHttpClient.send(any),
+      ).thenAnswer(
+        (_) async => http.StreamedResponse(Stream.value(utf8.encode('{}')), 400),
+      );
+
+      expect(
+        () => apiClient.updateLineup(
+          'league-1',
+          const LineupUpdateRequest(playerIds: ['p1']),
+        ),
+        throwsA(isA<KickbaseException>()),
+      );
     });
   });
 }
