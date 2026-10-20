@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../data/providers/user_providers.dart' as user_prov;
 import '../../../data/providers/league_providers.dart';
 import '../../../data/providers/recommendation_providers.dart';
@@ -547,15 +548,12 @@ class _KaderSection extends ConsumerWidget {
             // Starter lo=1..11, Bank lo=0 oder >11
             // (siehe LineupRecommendationService.isStarter).
             final starters =
-                players
-                    .where(LineupRecommendationService.isStarter)
-                    .toList()
+                players.where(LineupRecommendationService.isStarter).toList()
                   ..sort((a, b) => a.lineupOrder.compareTo(b.lineupOrder));
 
-            final bench =
-                players
-                    .where((p) => !LineupRecommendationService.isStarter(p))
-                    .toList();
+            final bench = players
+                .where((p) => !LineupRecommendationService.isStarter(p))
+                .toList();
 
             return Column(
               children: [

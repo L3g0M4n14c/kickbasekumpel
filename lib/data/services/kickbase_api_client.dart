@@ -1044,7 +1044,9 @@ class KickbaseAPIClient {
   ///
   /// Der Geld-Betrag pro Erfolg (`er`) steht nur im Detail-Endpoint
   /// (siehe [getUserAchievementByType]).
-  Future<List<Map<String, dynamic>>> getUserAchievements(String leagueId) async {
+  Future<List<Map<String, dynamic>>> getUserAchievements(
+    String leagueId,
+  ) async {
     _logger.i('🏅 Getting achievements for league $leagueId...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/user/achievements',

@@ -83,11 +83,10 @@ class LineupPage extends ConsumerWidget {
                             // (siehe LineupRecommendationService.isStarter).
                             final starters =
                                 players
-                                        .where(
-                                          LineupRecommendationService
-                                              .isStarter,
-                                        )
-                                        .toList()
+                                    .where(
+                                      LineupRecommendationService.isStarter,
+                                    )
+                                    .toList()
                                   ..sort(
                                     (a, b) =>
                                         a.lineupOrder.compareTo(b.lineupOrder),

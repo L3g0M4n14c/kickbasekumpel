@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../data/providers/player_providers.dart';
 import '../../../data/providers/league_providers.dart';
 import '../../../data/providers/ligainsider_photo_provider.dart';
@@ -97,12 +98,9 @@ class LineupScreen extends ConsumerWidget {
                           (a, b) => a.lineupOrder.compareTo(b.lineupOrder),
                         );
 
-                  final bench =
-                      players
-                          .where(
-                            (p) => !LineupRecommendationService.isStarter(p),
-                          )
-                          .toList();
+                  final bench = players
+                      .where((p) => !LineupRecommendationService.isStarter(p))
+                      .toList();
 
                   // Group starters by position
                   final goalkeepers = starters
