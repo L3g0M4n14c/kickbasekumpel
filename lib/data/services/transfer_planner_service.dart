@@ -9,8 +9,10 @@ enum _ScenarioRejection {
   /// Budget + Verkäufe decken den Kaufpreis nicht.
   unaffordable,
 
-  /// Die resultierende Startelf wäre nicht mehr legal (nur bei aktuell
-  /// legaler Startelf).
+  /// Nach dem Transfer wäre keine legale Startelf mehr aufstellbar – z. B.
+  /// weniger als 11 Spieler im Kader oder zu wenige Spieler je Position.
+  /// Eine geänderte Formation ist ausdrücklich erlaubt; abgelehnt wird nur,
+  /// wenn gar keine Formation mehr aufstellbar ist.
   illegalLineup,
 
   /// Der Marktspieler schafft nach dem Transfer nicht die Startelf.
@@ -20,7 +22,9 @@ enum _ScenarioRejection {
   noGain,
 }
 
-/// Erstellt deterministische Transfer-Szenarien mit legaler Formation.
+/// Erstellt deterministische Transfer-Szenarien mit legaler Startelf.
+/// Die Formation darf sich durch Transfers ändern – es zählt nur, dass am
+/// Ende eine legale Startelf aufgestellt werden kann.
 class TransferPlannerService {
   final Logger _logger = Logger();
 
@@ -208,7 +212,9 @@ class TransferPlannerService {
       );
     }
     if (illegalLineup > 0) {
-      parts.add('$illegalLineup× würde die Startelf-Formation zerstören');
+      parts.add(
+        '$illegalLineup× hinterlässt zu wenige Spieler für eine legale Startelf',
+      );
     }
     if (notInXI > 0) {
       parts.add('$notInXI× schafft nicht die Startelf');
@@ -248,6 +254,40 @@ class TransferPlannerService {
       }
     }
     return 'TW=$tw ABW=$abw MF=$mf ST=$st sonst=$other';
+  }
+
+  /// true, wenn aus [players] noch eine legale Startelf aufgestellt werden
+  /// kann (genau ein Torwart und eine der [_plannerFormations]). Die
+  /// Formation darf sich dabei beliebig ändern – entscheidend ist nur, dass
+  /// eine der erlaubten Formationen aufstellbar bleibt.
+  bool _canFieldLegalLineup(List<Player> players) {
+    var goalkeepers = 0;
+    var defenders = 0;
+    var midfielders = 0;
+    var forwards = 0;
+    for (final player in players) {
+      switch (player.position) {
+        case 1:
+          goalkeepers++;
+        case 2:
+          defenders++;
+        case 3:
+          midfielders++;
+        case 4:
+          forwards++;
+      }
+    }
+    if (goalkeepers < 1) {
+      return false;
+    }
+    for (final formation in _plannerFormations) {
+      if (defenders >= formation.defenders &&
+          midfielders >= formation.midfielders &&
+          forwards >= formation.forwards) {
+        return true;
+      }
+    }
+    return false;
   }
 
   _LineupSelection? _selectBestLegalLineup(List<Player> squadPlayers) {
@@ -291,9 +331,8 @@ class TransferPlannerService {
       if (bestSelection == null ||
           score > bestSelection.score ||
           (score == bestSelection.score &&
-              _lineupSignature(
-                    starters,
-                  ).compareTo(_lineupSignature(bestSelection.starters)) <
+              _lineupSignature(starters)
+                      .compareTo(_lineupSignature(bestSelection.starters)) <
                   0)) {
         bestSelection = _LineupSelection(
           starters: starters,
@@ -346,6 +385,19 @@ class TransferPlannerService {
         squadPlayers: input.squadPlayers,
         excludedIds: {...sells.map((player) => player.id), marketPlayer.id},
         requiredAmount: -budgetAfter,
+        // Solange die aktuelle Startelf legal ist, muss nach dem
+        // budgetbedingten Kaderabbau noch eine legale Startelf aufstellbar
+        // sein. Die Formation darf sich dabei ändern – es zählt nur, ob
+        // eine legale Aufstellung möglich bleibt.
+        isChainViable: currentSelection.isLegal
+            ? (chain) => _canFieldLegalLineup(
+                _buildResultingSquad(
+                  squadPlayers: input.squadPlayers,
+                  soldPlayers: [...sells, ...chain],
+                  marketPlayer: marketPlayer,
+                ),
+              )
+            : null,
       );
       if (additionalSales == null) {
         onReject?.call(_ScenarioRejection.unaffordable);
@@ -434,10 +486,18 @@ class TransferPlannerService {
     );
   }
 
+  /// Findet Zusatzverkäufe zur Budget-Freimachung.
+  ///
+  /// Wenn [isChainViable] gesetzt ist, werden nur Ketten bevorzugt, nach
+  /// denen der Restkader noch eine legale Startelf erlaubt (die Formation
+  /// darf sich dabei ändern). Gibt es keine solche Kette, wird die beste
+  /// Kette ohne diese Einschränkung zurückgegeben – der Plan wird dann
+  /// später als "keine legale Startelf mehr" abgelehnt.
   List<Player>? _findAdditionalSales({
     required List<Player> squadPlayers,
     required Set<String> excludedIds,
     required int requiredAmount,
+    bool Function(List<Player> chain)? isChainViable,
   }) {
     final candidates = squadPlayers
         .where((player) => !excludedIds.contains(player.id))
@@ -445,6 +505,7 @@ class TransferPlannerService {
 
     candidates.sort(_compareSalesCandidate);
 
+    List<Player>? bestChainWithoutViability;
     for (var chainLength = 1; chainLength <= candidates.length; chainLength++) {
       List<Player>? bestChain;
       _searchSalesChains(
@@ -455,6 +516,14 @@ class TransferPlannerService {
         currentSelection: <Player>[],
         currentAmount: 0,
         onCandidate: (candidate) {
+          if (isChainViable != null && !isChainViable(candidate)) {
+            if (bestChainWithoutViability == null ||
+                _compareSalesChains(candidate, bestChainWithoutViability!) <
+                    0) {
+              bestChainWithoutViability = List<Player>.from(candidate);
+            }
+            return;
+          }
           if (bestChain == null ||
               _compareSalesChains(candidate, bestChain!) < 0) {
             bestChain = List<Player>.from(candidate);
@@ -467,7 +536,7 @@ class TransferPlannerService {
       }
     }
 
-    return null;
+    return bestChainWithoutViability;
   }
 
   void _searchSalesChains({

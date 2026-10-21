@@ -114,25 +114,22 @@ void main() {
       },
     );
 
-    test(
-      'finds cross-position starter sale when same-position swap fails but formation shift improves XI',
-      () {
-        final result = service.buildPlans(
-          _buildInputForCrossPositionFormationSwap(),
-        );
+    test('finds cross-position starter sale when same-position swap fails but formation shift improves XI', () {
+      final result = service.buildPlans(
+        _buildInputForCrossPositionFormationSwap(),
+      );
 
-        final scenario = result.scenarios.singleWhere(
-          (candidate) =>
-              candidate.buys.any((buy) => buy.player.id == 'market-def-flex'),
-        );
+      final scenario = result.scenarios.singleWhere(
+        (candidate) =>
+            candidate.buys.any((buy) => buy.player.id == 'market-def-flex'),
+      );
 
-        expect(
-          scenario.sells.any((sell) => sell.player.id == 'starter-fwd-weak'),
-          isTrue,
-        );
-        expect(scenario.score.startingElevenGain, 5.0);
-      },
-    );
+      expect(
+        scenario.sells.any((sell) => sell.player.id == 'starter-fwd-weak'),
+        isTrue,
+      );
+      expect(scenario.score.startingElevenGain, 5.0);
+    });
 
     test('keeps resulting starters in a legal 1-3-6-1 to 1-5-2-3 range', () {
       final result = service.buildPlans(_buildInputWithUpgrades());
@@ -180,24 +177,20 @@ void main() {
       },
     );
 
-    test(
-      'supports starter-funded multi-sell chains when bench sales are not enough',
-      () {
-        final result = service.buildPlans(_buildInputRequiringStarterFunding());
+    test('supports starter-funded multi-sell chains when bench sales are not enough', () {
+      final result = service.buildPlans(_buildInputRequiringStarterFunding());
 
-        final scenario = result.scenarios.singleWhere(
-          (candidate) => candidate.buys.any(
-            (buy) => buy.player.id == 'market-fwd-premium',
-          ),
-        );
+      final scenario = result.scenarios.singleWhere(
+        (candidate) =>
+            candidate.buys.any((buy) => buy.player.id == 'market-fwd-premium'),
+      );
 
-        expect(scenario.sells.length, 2);
-        expect(
-          scenario.sells.any((sell) => sell.player.id == 'starter-mid-4'),
-          isTrue,
-        );
-      },
-    );
+      expect(scenario.sells.length, 2);
+      expect(
+        scenario.sells.any((sell) => sell.player.id == 'starter-mid-4'),
+        isTrue,
+      );
+    });
 
     test(
       'drops scenarios where extra starter sales turn final XI into regression',
@@ -214,33 +207,27 @@ void main() {
       },
     );
 
-    test(
-      'uses deterministic tie-breakers for same-score same-position starter selection',
-      () {
-        final result = service.buildPlans(_buildTieBreakerInput());
-        final scenario = result.scenarios.single;
+    test('uses deterministic tie-breakers for same-score same-position starter selection', () {
+      final result = service.buildPlans(_buildTieBreakerInput());
+      final scenario = result.scenarios.single;
 
-        expect(scenario.id, 'add-market-def-tie-upgrade');
-        expect(scenario.sells, isEmpty);
-      },
-    );
+      expect(scenario.id, 'add-market-def-tie-upgrade');
+      expect(scenario.sells, isEmpty);
+    });
 
-    test(
-      'keeps candidate with negative direct swap delta when final XI gain is positive',
-      () {
-        final result = service.buildPlans(
-          _buildNegativeDirectDeltaButPositiveFinalGainInput(),
-        );
-        final scenario = result.scenarios.singleWhere(
-          (candidate) => candidate.buys.any(
-            (buy) => buy.player.id == 'market-def-weaker-but-useful',
-          ),
-        );
+    test('keeps candidate with negative direct swap delta when final XI gain is positive', () {
+      final result = service.buildPlans(
+        _buildNegativeDirectDeltaButPositiveFinalGainInput(),
+      );
+      final scenario = result.scenarios.singleWhere(
+        (candidate) => candidate.buys.any(
+          (buy) => buy.player.id == 'market-def-weaker-but-useful',
+        ),
+      );
 
-        expect(scenario.sells, isEmpty);
-        expect(scenario.score.startingElevenGain, 1.0);
-      },
-    );
+      expect(scenario.sells, isEmpty);
+      expect(scenario.score.startingElevenGain, 1.0);
+    });
 
     test('prefers minimal deterministic extra-sale chain', () {
       final result = service.buildPlans(_buildInputForMinimalExtraSales());
@@ -254,6 +241,49 @@ void main() {
         scenario.sells.map((sell) => sell.player.id),
         containsAll(['starter-fwd-3', 'bench-def-five', 'bench-def-six']),
       );
+    });
+
+    test('prefers a budget-sale chain that keeps a legal lineup instead of rejecting', () {
+      final result = service.buildPlans(
+        _buildInputForBudgetChainKeepingLegalLineup(),
+      );
+
+      final scenario = result.scenarios.single;
+
+      // Die schwächste Kette würde den einzigen Torwart verkaufen; gewählt
+      // werden muss die Kette, nach der noch eine legale Startelf steht.
+      expect(scenario.sells, hasLength(3));
+      expect(
+        scenario.sells.map((sell) => sell.player.id),
+        containsAll(['starter-fwd-3', 'bench-mid-weak', 'starter-fwd-1']),
+      );
+      expect(
+        scenario.sells.any((sell) => sell.player.id == 'starter-gk'),
+        isFalse,
+      );
+      expect(scenario.score.startingElevenGain, 2.0);
+      expect(scenario.budgetAfter, 0);
+
+      // Die Formation darf sich ändern (3-4-3 -> 3-5-2), solange die
+      // resultierende Startelf legal aufstellbar bleibt.
+      final gk = scenario.resultingStarters
+          .where((p) => p.position == 1)
+          .length;
+      final def = scenario.resultingStarters
+          .where((p) => p.position == 2)
+          .length;
+      final mid = scenario.resultingStarters
+          .where((p) => p.position == 3)
+          .length;
+      final fwd = scenario.resultingStarters
+          .where((p) => p.position == 4)
+          .length;
+
+      expect(gk, 1);
+      expect(def + mid + fwd, 10);
+      expect(def, 3);
+      expect(mid, 5);
+      expect(fwd, 2);
     });
 
     test(
@@ -1037,6 +1067,128 @@ TransferPlannerInput _buildInputForMinimalExtraSales() {
         position: 4,
         averagePoints: 9.0,
         marketValue: 16000000,
+      ),
+    ],
+    currentBudget: 0,
+  );
+}
+
+TransferPlannerInput _buildInputForBudgetChainKeepingLegalLineup() {
+  return TransferPlannerInput(
+    squadPlayers: [
+      _player(
+        id: 'starter-gk',
+        firstName: 'Starter',
+        lastName: 'Goalie',
+        position: 1,
+        averagePoints: 8.0,
+        marketValue: 10000000,
+      ),
+      _player(
+        id: 'starter-def-1',
+        firstName: 'Starter',
+        lastName: 'Def One',
+        position: 2,
+        averagePoints: 7.0,
+        marketValue: 8000000,
+      ),
+      _player(
+        id: 'starter-def-2',
+        firstName: 'Starter',
+        lastName: 'Def Two',
+        position: 2,
+        averagePoints: 6.0,
+        marketValue: 7000000,
+      ),
+      _player(
+        id: 'starter-def-3',
+        firstName: 'Starter',
+        lastName: 'Def Three',
+        position: 2,
+        averagePoints: 5.0,
+        marketValue: 6000000,
+      ),
+      _player(
+        id: 'starter-mid-1',
+        firstName: 'Starter',
+        lastName: 'Mid One',
+        position: 3,
+        averagePoints: 9.0,
+        marketValue: 9000000,
+      ),
+      _player(
+        id: 'starter-mid-2',
+        firstName: 'Starter',
+        lastName: 'Mid Two',
+        position: 3,
+        averagePoints: 8.0,
+        marketValue: 8000000,
+      ),
+      _player(
+        id: 'starter-mid-3',
+        firstName: 'Starter',
+        lastName: 'Mid Three',
+        position: 3,
+        averagePoints: 7.0,
+        marketValue: 7000000,
+      ),
+      _player(
+        id: 'starter-mid-4',
+        firstName: 'Starter',
+        lastName: 'Mid Four',
+        position: 3,
+        averagePoints: 6.0,
+        marketValue: 6000000,
+      ),
+      _player(
+        id: 'starter-mid-5',
+        firstName: 'Starter',
+        lastName: 'Mid Five',
+        position: 3,
+        averagePoints: 5.0,
+        marketValue: 5000000,
+      ),
+      _player(
+        id: 'starter-fwd-1',
+        firstName: 'Starter',
+        lastName: 'Fwd One',
+        position: 4,
+        averagePoints: 10.0,
+        marketValue: 10000000,
+      ),
+      _player(
+        id: 'starter-fwd-2',
+        firstName: 'Starter',
+        lastName: 'Fwd Two',
+        position: 4,
+        averagePoints: 9.0,
+        marketValue: 9000000,
+      ),
+      _player(
+        id: 'starter-fwd-3',
+        firstName: 'Starter',
+        lastName: 'Fwd Three',
+        position: 4,
+        averagePoints: 8.0,
+        marketValue: 8000000,
+      ),
+      _player(
+        id: 'bench-mid-weak',
+        firstName: 'Bench',
+        lastName: 'Mid Weak',
+        position: 3,
+        averagePoints: 1.0,
+        marketValue: 2000000,
+      ),
+    ],
+    marketPlayers: [
+      _player(
+        id: 'market-fwd-star',
+        firstName: 'Market',
+        lastName: 'Fwd Star',
+        position: 4,
+        averagePoints: 15.0,
+        marketValue: 20000000,
       ),
     ],
     currentBudget: 0,

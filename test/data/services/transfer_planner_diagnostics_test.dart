@@ -36,7 +36,8 @@ void main() {
   }
 
   /// Exakt 11 Spieler (4-4-2 ist die einzig legale Formation) – damit
-  /// Cross-Position-Fallbacks die Formation zerstören und verworfen werden.
+  /// Cross-Position-Fallbacks keine legale Startelf mehr übrig lassen und
+  /// verworfen werden.
   List<Player> legalSquad() => [
     p('gk-1', 1, 8.0, 8000000),
     p('def-1', 2, 7.0, 12000000),
@@ -133,6 +134,29 @@ void main() {
     expect(result.noPlanDetails, contains('ohne Punktegewinn'));
     expect(result.noPlanDetails, contains('Untersucht: 3 Marktspieler'));
   });
+
+  test(
+    'Ablehnungsgrund: keine legale Startelf mehr statt Formation-Zerstörung',
+    () {
+      final result = service.buildPlans(
+        TransferPlannerInput(
+          squadPlayers: legalSquad(),
+          // Nur durch Zusatzverkäufe finanzierbar – bei genau 11 Spielern
+          // bleibt dann keine legale Startelf mehr übrig.
+          marketPlayers: [p('m-expensive', 4, 15.0, 30000000)],
+          currentBudget: 0,
+        ),
+      );
+
+      expect(result.scenarios, isEmpty);
+      expect(result.noPlanDetails, isNotNull);
+      expect(
+        result.noPlanDetails,
+        contains('zu wenige Spieler für eine legale Startelf'),
+      );
+      expect(result.noPlanDetails, isNot(contains('zerstören')));
+    },
+  );
 
   test('Szenarien gefunden: noPlanDetails bleibt null', () {
     final result = service.buildPlans(
