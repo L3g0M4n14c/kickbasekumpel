@@ -11,6 +11,7 @@ import '../../data/providers/providers.dart';
 import '../../data/providers/ligainsider_photo_provider.dart';
 import '../../data/utils/parsing_utils.dart';
 import '../widgets/charts/stats_bar_chart.dart';
+import '../widgets/common/ligainsider_status_badge.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/error_widget.dart';
 
@@ -476,12 +477,22 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
                 ),
               ),
         title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(
-          matchDayPoints != null
-              ? 'Ø ${avgPoints.toStringAsFixed(1)} Pkt/Spieltag'
-              : 'Ø ${avgPoints.toStringAsFixed(1)} Pkt/Spieltag',
-          style: Theme.of(context).textTheme.bodySmall
-              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Ligainsider-Rolle: Stammspieler / 1. Option / 2. Option
+            LigainsiderStatusBadge(
+              firstName: firstName,
+              lastName: lastName,
+              fontSize: 9,
+            ),
+            Text(
+              'Ø ${avgPoints.toStringAsFixed(1)} Pkt/Spieltag',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
         trailing: matchDayPoints != null
             ? Column(

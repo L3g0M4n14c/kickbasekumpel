@@ -5,6 +5,7 @@ import 'package:kickbasekumpel/data/providers/ligainsider_photo_provider.dart';
 import 'package:kickbasekumpel/data/utils/parsing_utils.dart';
 import 'package:kickbasekumpel/presentation/utils/player_status_helper.dart';
 import 'package:kickbasekumpel/presentation/widgets/charts/position_badge.dart';
+import 'package:kickbasekumpel/presentation/widgets/common/ligainsider_status_badge.dart';
 
 /// Spieler-Reihe mit erweiterten Informationen und Verkaufs-Toggle
 ///
@@ -13,9 +14,10 @@ import 'package:kickbasekumpel/presentation/widgets/charts/position_badge.dart';
 /// - Zeile 1: Foto + Vor- + Nachname + Status-Emoji (💪 = Fit,
 ///   ❌ = Verletzt, 💊 = Angeschlagen, 🏋️‍♂️ = Aufbautraining,
 ///   🟨 = Gelbe Karte, ✈️ = Abwesend) + Verkaufs-Checkbox
-/// - Zeile 2: Position-Badge + Teamname + Durchschnittspunkte (groß) /
-///   Gesamtpunkte (klein) + Marktwert (groß) / Trend mit Pfeil (klein,
-///   ↑ grün oder ↓ rot)
+/// - Zeile 2: Position-Badge + Ligainsider-Rolle (Stammspieler / 1. Option /
+///   2. Option, siehe [LigainsiderStatusBadge]) + Teamname +
+///   Durchschnittspunkte (groß) / Gesamtpunkte (klein) + Marktwert (groß) /
+///   Trend mit Pfeil (klein, ↑ grün oder ↓ rot)
 class PlayerRowWithSale extends ConsumerWidget {
   final Player player;
   final bool isSelectedForSale;
@@ -104,12 +106,19 @@ class PlayerRowWithSale extends ConsumerWidget {
               ),
               const SizedBox(height: 6),
 
-              // Zeile 2: Position + Team + Punkte + Marktwert
+              // Zeile 2: Position + Ligainsider-Rolle + Team + Punkte + Marktwert
               Row(
                 children: [
                   PositionBadge(
                     position: player.position,
                     size: PositionBadgeSize.small,
+                  ),
+                  const SizedBox(width: 8),
+                  // Ligainsider-Rolle: Stammspieler / 1. Option / 2. Option
+                  LigainsiderStatusBadge(
+                    firstName: player.firstName,
+                    lastName: player.lastName,
+                    fontSize: 9,
                   ),
                   const SizedBox(width: 8),
                   Expanded(

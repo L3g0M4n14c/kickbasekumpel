@@ -12,6 +12,7 @@ import '../../../data/utils/parsing_utils.dart';
 import '../../providers/lineup_providers.dart';
 import '../../widgets/responsive_layout.dart';
 import '../../widgets/loading_widget.dart';
+import '../../widgets/common/ligainsider_status_badge.dart';
 import '../../widgets/error_widget.dart';
 
 class LineupPage extends ConsumerWidget {
@@ -709,9 +710,26 @@ class _FieldPlayerBadge extends ConsumerWidget {
               textAlign: TextAlign.center,
             ),
           ),
-          exclusionLabel != null
-              ? Tooltip(message: exclusionLabel, child: scoreText)
-              : scoreText,
+          // Ligainsider-Rolle (Stamm / 1. Opt. / 2. Opt.) + Score in einer
+          // Zeile – die Plakette hat auf dem Platz wenig Höhe.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LigainsiderStatusBadge(
+                  firstName: '',
+                  lastName: player.name,
+                  showIcon: false,
+                  fontSize: 7,
+                ),
+                const SizedBox(width: 3),
+                exclusionLabel != null
+                    ? Tooltip(message: exclusionLabel, child: scoreText)
+                    : scoreText,
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -887,14 +905,28 @@ class _BenchPlayerTile extends ConsumerWidget {
         player.name,
         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
       ),
-      subtitle: playerScore?.availabilityLabel != null
-          ? Text(
-              playerScore!.availabilityLabel!,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.error,
+      subtitle: Row(
+        children: [
+          // Ligainsider-Rolle: Stammspieler / 1. Option / 2. Option
+          LigainsiderStatusBadge(
+            firstName: '',
+            lastName: player.name,
+            fontSize: 9,
+          ),
+          if (playerScore?.availabilityLabel != null) ...[
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                playerScore!.availabilityLabel!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
-            )
-          : null,
+            ),
+          ],
+        ],
+      ),
       trailing: Text(
         playerScore != null
             ? 'Score ${playerScore!.score.toStringAsFixed(0)}'

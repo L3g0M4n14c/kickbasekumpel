@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:kickbasekumpel/data/models/ligainsider_model.dart';
 import 'package:kickbasekumpel/data/models/player_model.dart';
+import 'package:kickbasekumpel/data/providers/service_providers.dart';
+import 'package:kickbasekumpel/data/services/ligainsider_service.dart';
 import 'package:kickbasekumpel/presentation/widgets/team/player_row_with_sale.dart';
+
+class _MockLigainsiderService extends Mock implements LigainsiderService {}
 
 void main() {
   group('PlayerRowWithSale Widget', () {
@@ -415,6 +421,85 @@ void main() {
 
       // Widget should render without overflow
       expect(find.byType(PlayerRowWithSale), findsOneWidget);
+    });
+  });
+
+  group('Ligainsider-Rolle im Kader', () {
+    late _MockLigainsiderService service;
+    late Player mockPlayer;
+
+    setUp(() {
+      mockPlayer = const Player(
+        id: 'player123',
+        firstName: 'Max',
+        lastName: 'Mustermann',
+        profileBigUrl: '',
+        teamName: 'FC Bayern',
+        teamId: 'team123',
+        position: 2,
+        number: 5,
+        averagePoints: 7.5,
+        totalPoints: 150,
+        marketValue: 8500000,
+        marketValueTrend: 0,
+        tfhmvt: 250000,
+        prlo: 0,
+        stl: 0,
+        status: 0,
+        userOwnsPlayer: true,
+      );
+      service = _MockLigainsiderService();
+      when(() => service.isReady).thenReturn(true);
+    });
+
+    Widget wrap(Widget child) => ProviderScope(
+      overrides: [
+        ligainsiderServiceFutureProvider.overrideWith((ref) async => service),
+      ],
+      child: MaterialApp(home: Scaffold(body: child)),
+    );
+
+    testWidgets('zeigt Stammspieler-Rolle (Stamm) in der Spielerzeile', (
+      WidgetTester tester,
+    ) async {
+      when(
+        () => service.getPlayerStatus('Max', 'Mustermann'),
+      ).thenReturn(LigainsiderPlayerStatus.likelyStart);
+
+      await tester.pumpWidget(
+        wrap(
+          PlayerRowWithSale(
+            player: mockPlayer,
+            isSelectedForSale: false,
+            onToggleSale: (_) {},
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Stamm'), findsOneWidget);
+    });
+
+    testWidgets('zeigt erste und zweite Option in der Spielerzeile', (
+      WidgetTester tester,
+    ) async {
+      when(
+        () => service.getPlayerStatus('Max', 'Mustermann'),
+      ).thenReturn(LigainsiderPlayerStatus.startWithAlternative);
+
+      await tester.pumpWidget(
+        wrap(
+          PlayerRowWithSale(
+            player: mockPlayer,
+            isSelectedForSale: false,
+            onToggleSale: (_) {},
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('1. Opt.'), findsOneWidget);
+      expect(find.text('Stamm'), findsNothing);
     });
   });
 }

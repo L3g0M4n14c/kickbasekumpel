@@ -7,7 +7,15 @@ import '../../../data/providers/service_providers.dart';
 /// Extension für Farbe/Icon/Label pro Ligainsider-Status.
 ///
 /// Zentrale Darstellungslogik für alle Ligainsider-Status-Badges
-/// (Markt-Card, Aufstellungs-Screen etc.).
+/// (Markt-Card, Kader, Aufstellungs-Screen etc.).
+///
+/// Die drei Kern-Rollen laut Ligainsider-Vorschau sind:
+/// - **Stammspieler** ([LigainsiderPlayerStatus.likelyStart]) – S11 ohne
+///   Alternative
+/// - **Erste Option** ([LigainsiderPlayerStatus.startWithAlternative]) – S11
+///   mit Alternative (1. Option)
+/// - **Zweite Option** ([LigainsiderPlayerStatus.isAlternative]) – ist die
+///   Alternative (2. Option)
 extension LigainsiderPlayerStatusUI on LigainsiderPlayerStatus {
   /// Farbe des Badges.
   Color get color {
@@ -26,14 +34,17 @@ extension LigainsiderPlayerStatusUI on LigainsiderPlayerStatus {
   }
 
   /// Füllendes Material-Icon des Badges.
+  ///
+  /// Für die Optionen zeigen [Icons.looks_one]/[Icons.looks_two] die
+  /// Reihenfolge (erste/zweite Option) direkt an.
   IconData get iconData {
     switch (this) {
       case LigainsiderPlayerStatus.likelyStart:
         return Icons.check_circle;
       case LigainsiderPlayerStatus.startWithAlternative:
-        return Icons.help;
+        return Icons.looks_one;
       case LigainsiderPlayerStatus.isAlternative:
-        return Icons.swap_horiz;
+        return Icons.looks_two;
       case LigainsiderPlayerStatus.bench:
         return Icons.airline_seat_recline_normal;
       case LigainsiderPlayerStatus.out:
@@ -41,19 +52,35 @@ extension LigainsiderPlayerStatusUI on LigainsiderPlayerStatus {
     }
   }
 
-  /// Kurzes Label (Badge-Text).
+  /// Kompaktes Label (Badge-Text).
   String get shortLabel {
     switch (this) {
       case LigainsiderPlayerStatus.likelyStart:
-        return 'S11';
+        return 'Stamm';
       case LigainsiderPlayerStatus.startWithAlternative:
-        return 'S11?';
+        return '1. Opt.';
       case LigainsiderPlayerStatus.isAlternative:
-        return 'Alt.';
+        return '2. Opt.';
       case LigainsiderPlayerStatus.bench:
         return 'Bank';
       case LigainsiderPlayerStatus.out:
         return 'Fehlt';
+    }
+  }
+
+  /// Ausformulierte Rollen-Bezeichnung (Tooltip/Legende).
+  String get roleLabel {
+    switch (this) {
+      case LigainsiderPlayerStatus.likelyStart:
+        return 'Stammspieler';
+      case LigainsiderPlayerStatus.startWithAlternative:
+        return 'Erste Option';
+      case LigainsiderPlayerStatus.isAlternative:
+        return 'Zweite Option';
+      case LigainsiderPlayerStatus.bench:
+        return 'Bank';
+      case LigainsiderPlayerStatus.out:
+        return 'Nicht im Kader';
     }
   }
 
@@ -89,9 +116,9 @@ extension LigainsiderPlayerStatusUI on LigainsiderPlayerStatus {
 
 /// Ligainsider-Status-Badge
 ///
-/// Zeigt den tagesaktuellen Ligainsider-Status eines Spielers als kleines
-/// Badge: Startelf (✓ S11), Startelf mit Alternative (S11?), Alternative
-/// (Alt.), Bank (Bank) oder nicht im Kader (Fehlt).
+/// Zeigt die Ligainsider-Rolle eines Spielers als kleines Badge:
+/// Stammspieler (✓ Stamm), erste Option (1. Opt.), zweite Option (2. Opt.),
+/// Bank (Bank) oder nicht im Kader (Fehlt).
 ///
 /// Der Status wird über den gecachten [LigainsiderService] per Namens-Lookup
 /// ermittelt – kein zusätzlicher Netzwerk-Request pro Card.
@@ -112,6 +139,10 @@ class LigainsiderStatusBadge extends ConsumerWidget {
   /// Kurzes Label neben dem Icon anzeigen (default: ja).
   final bool showLabel;
 
+  /// Icon vor dem Label anzeigen (default: ja). Auf schmalen Flächen
+  /// (z.B. Formations-Spieler-Plakette) kann das Icon entfallen.
+  final bool showIcon;
+
   /// Optische Größe des Badges.
   final double fontSize;
 
@@ -120,6 +151,7 @@ class LigainsiderStatusBadge extends ConsumerWidget {
     required this.firstName,
     required this.lastName,
     this.showLabel = true,
+    this.showIcon = true,
     this.fontSize = 10,
   });
 
@@ -135,19 +167,16 @@ class LigainsiderStatusBadge extends ConsumerWidget {
 
     final status = service.getPlayerStatus(firstName, lastName);
     final color = status.color;
-    final description = status.description;
+    final tooltip = 'Ligainsider: ${status.roleLabel} – ${status.description}';
 
     final icon = Icon(status.iconData, size: fontSize + 3, color: color);
 
     if (!showLabel) {
-      return Tooltip(
-        message: 'Ligainsider: $description',
-        child: icon,
-      );
+      return Tooltip(message: tooltip, child: icon);
     }
 
     return Tooltip(
-      message: 'Ligainsider: $description',
+      message: tooltip,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
         decoration: BoxDecoration(
@@ -157,8 +186,10 @@ class LigainsiderStatusBadge extends ConsumerWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            icon,
-            const SizedBox(width: 2),
+            if (showIcon) ...[
+              icon,
+              const SizedBox(width: 2),
+            ],
             Text(
               status.shortLabel,
               style: TextStyle(
