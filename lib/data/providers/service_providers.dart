@@ -69,11 +69,18 @@ final httpClientWrapperProvider = Provider<HttpClientWrapper>((ref) {
   );
 });
 
-/// Ligainsider Service Provider (Lazy Loading)
+/// Ligainsider Service Provider (Eager Loading)
 ///
 /// Scraped ligainsider.de für Spieler Verletzungen und Aufstellungen.
 /// Bietet Caching und Offline-Support.
 /// Nutzt shared preferences für Basis-Services.
+///
+/// Der Service wird direkt nach der Erzeugung mit Daten befüllt
+/// (cache-first, siehe [LigainsiderService.ensureLoaded]). Dadurch:
+/// - ist der persistente Cache sofort verfügbar (kein Warten auf den Scrape),
+/// - bauen alle Watcher (z. B. Status-Badges) automatisch neu, sobald die
+///   Daten geladen sind, und
+/// - wird ein laufender Scrape von allen Aufrufern geteilt.
 ///
 /// Verwendung:
 /// ```dart
@@ -94,7 +101,13 @@ final ligainsiderServiceFutureProvider = FutureProvider<LigainsiderService>((
     httpClient.close();
   });
 
-  return LigainsiderService(httpClient: httpClient, prefs: prefs);
+  final service = LigainsiderService(httpClient: httpClient, prefs: prefs);
+
+  // Cache-first vorladen: sofortige Daten aus SharedPreferences, Netzwerk nur
+  // bei Bedarf (kein Cache oder abgelaufen).
+  await service.ensureLoaded();
+
+  return service;
 });
 
 // ============================================================================

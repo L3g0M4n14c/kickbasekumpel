@@ -11,6 +11,7 @@ import 'repository_providers.dart';
 import 'league_providers.dart';
 import 'recommendation_providers.dart';
 import 'service_providers.dart';
+import 'ligainsider_provider.dart';
 
 // ============================================================================
 // PLAYER STREAM PROVIDERS
@@ -776,20 +777,33 @@ final lineupRecommendationProvider =
 /// als Ausschluss-Kriterium weitergereicht. Ohne Daten (kein Cache, offline)
 /// bleibt die Map leer – die Empfehlung funktioniert dann ohne dieses
 /// Kriterium weiter.
+///
+/// Lädt cache-first (`LigainsiderService.ensureLoaded()`) und wartet – wenn
+/// vorhanden – auf den App-Start-Preload, damit hier kein zweiter Scrape
+/// startet und die Aufstellung nicht minutenlang lädt.
 Future<Map<String, LigainsiderPlayerStatus>> _loadLigainsiderStatus(
   Ref ref,
   List<LineupPlayer> players,
 ) async {
+  // App-Start-Preload abwarten (geteilter Ladevorgang, idempotent).
+  try {
+    await ref.read(ligainsiderPreloadProvider.future);
+  } catch (_) {
+    // Preload-Fehler sind hier unkritisch – unten wird erneut geprüft.
+  }
+
   try {
     final service = await ref.watch(ligainsiderServiceFutureProvider.future);
     if (!service.isReady) {
-      await service.fetchLineups();
+      await service.ensureLoaded();
     }
     final statusByPlayerId = <String, LigainsiderPlayerStatus>{};
-    // Pinned: Ligainsider liefert nur S11 + Alternativen. Nur wenn Daten
-    // vorliegen, gilt "nicht gefunden (out) = nicht in der Startelf" als
-    // Ausschlusskriterium – ohne Daten bleibt es neutral.
-    final dataAvailable = service.playerCacheCount > 0;
+    // Pinned: Ligainsider liefert nur S11 + Alternativen. Nur wenn die Daten
+    // den Großteil der Liga abdecken, gilt "nicht gefunden (out) = nicht in
+    // der Startelf" als Ausschlusskriterium. Bei unvollständigen Daten
+    // (Aufstellungen noch nicht veröffentlicht) bleibt es neutral – sonst
+    // stünde in der Aufstellung überall "Fehlt".
+    final dataAvailable = service.hasLineupCoverage;
     for (final player in players) {
       final parts = player.name.trim().split(RegExp(r'\s+'));
       final lastName = parts.length > 1 ? parts.last : player.name.trim();

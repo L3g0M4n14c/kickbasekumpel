@@ -60,6 +60,8 @@ void main() {
     setUp(() {
       service = _MockLigainsiderService();
       when(() => service.isReady).thenReturn(true);
+      // Volle Abdeckung: 'out' heißt 'kein S11-Platz' (nicht 'Daten fehlen').
+      when(() => service.hasLineupCoverage).thenReturn(true);
     });
 
     testWidgets('zeigt Stammspieler-Rolle als Label', (tester) async {

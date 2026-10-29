@@ -450,6 +450,8 @@ void main() {
       );
       service = _MockLigainsiderService();
       when(() => service.isReady).thenReturn(true);
+      // Volle Abdeckung: 'out' heißt 'kein S11-Platz' (nicht 'Daten fehlen').
+      when(() => service.hasLineupCoverage).thenReturn(true);
     });
 
     Widget wrap(Widget child) => ProviderScope(
