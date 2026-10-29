@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:html/dom.dart' show Document;
 import 'package:html/parser.dart' as html_parser;
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
@@ -9,7 +10,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/ligainsider_model.dart';
-import '../models/ligainsider_match_model.dart';
 import '../../domain/exceptions/kickbase_exceptions.dart';
 
 /// Ligainsider Service
@@ -31,10 +31,40 @@ class LigainsiderService {
   );
   static const String _cacheTimestampKey = 'ligainsider_cache_timestamp';
 
-  // Matches-specific cache keys
-  static const String _matchesCacheKey = 'ligainsider_cache_matches';
-  static const String _matchesCacheTimestampKey =
-      'ligainsider_cache_timestamp_matches';
+  /// Slugs der S11 (Startelf) – persistiert neben den Spielern, damit der
+  /// Status nach einem Neustart sofort korrekt ist.
+  static const String _s11CacheKey = 'ligainsider_cache_s11';
+
+  /// Normalisierte Namen der Alternativen (2. Option) – persistiert.
+  static const String _alternativeCacheKey = 'ligainsider_cache_alternatives';
+
+  /// Frische-Fenster: Ist der persistente Aufstellungs-Cache jünger, wird
+  /// gar kein Netzwerk-Request ausgelöst. Das macht App-Starts (und jeden
+  /// erneuten Einstieg in die Aufstellung) sofort schnell.
+  static const Duration _freshCacheTtl = Duration(minutes: 10);
+
+  /// Maximal parallele Requests auf die Team-Aufstellungsseiten.
+  /// Bewusst klein: schont Netzwerk/Akku und bleibt unter dem Limit, ab dem
+  /// ligainsider.de drosselt.
+  static const int _lineupFetchConcurrency = 6;
+
+  /// Timeout für eine einzelne Team-Aufstellungsseite.
+  static const Duration _lineupPageTimeout = Duration(seconds: 15);
+
+  /// Timeout für die Spieltags-Übersicht (Haupt-Scrape).
+  static const Duration _overviewTimeout = Duration(seconds: 20);
+
+  /// Ligainsider-Slug eines Spielers: `{name-in-kebab-case}_{id}`.
+  static final RegExp _slugPattern = RegExp(r'^[a-z0-9-]+_\d+$');
+
+  /// Mindestanzahl an Startelf-Spielern im Cache, ab der die Abdeckung als
+  /// vollständig gilt (Bundesliga: 18 Teams × 11 = 198).
+  ///
+  /// 170 ≈ 16 von 18 Teams: Ligainsider veröffentlicht die voraussichtlichen
+  /// Aufstellungen Spiel für Spiel. Fehlen noch mehrere Teams, ist "Spieler
+  /// nicht gefunden" eine Datenlücke und darf NICHT als "Fehlt" angezeigt
+  /// werden – siehe [hasLineupCoverage].
+  static const int minPlayersForFullCoverage = 170;
 
   final http.Client _httpClient;
   final SharedPreferences _prefs;
@@ -46,11 +76,11 @@ class LigainsiderService {
   final Set<String> _alternativeNames = {};
   final Set<String> _startingLineupIds = {};
 
-  // Matches cache (match-based lineups)
-  final List<LigainsiderMatch> _matches = [];
-
   // Track last fetch to avoid noisy repeated requests (esp. on web reloads)
   DateTime? _lastFetch;
+
+  // Single-flight: parallele Aufrufe teilen sich einen laufenden Scrape.
+  Future<void>? _inFlightFetch;
 
   bool _isReady = false;
 
@@ -68,27 +98,123 @@ class LigainsiderService {
   /// Get player cache size for debugging
   int get playerCacheCount => _playerCache.length;
 
+  /// true, wenn die gecachten Daten den Großteil der Bundesliga-S11 abdecken.
+  ///
+  /// Nur dann ist "Spieler nicht gefunden" gleichbedeutend mit "kein
+  /// S11-Platz" (Status [LigainsiderPlayerStatus.out] = "Fehlt"). Bei
+  /// unvollständigen Daten (Aufstellungen noch nicht veröffentlicht) ist
+  /// "nicht gefunden" dagegen eine Datenlücke und darf nicht als Ausfall
+  /// dargestellt werden.
+  bool get hasLineupCoverage =>
+      _startingLineupIds.length >= minPlayersForFullCoverage;
+
+  /// Alter des persistenten Aufstellungs-Caches (null = kein Cache).
+  Duration? get _persistedCacheAge {
+    final timestamp = _prefs.getInt(_cacheTimestampKey);
+    if (timestamp == null) return null;
+    return Duration(
+      milliseconds: DateTime.now().millisecondsSinceEpoch - timestamp,
+    );
+  }
+
+  /// true, wenn der persistente Cache jünger als [_freshCacheTtl] ist.
+  bool get isCacheFresh {
+    final age = _persistedCacheAge;
+    return age != null && age <= _freshCacheTtl;
+  }
+
   // MARK: - Public API
 
+  /// Lädt die Aufstellungsdaten so früh und so günstig wie möglich.
+  ///
+  /// Reihenfolge (schnell → langsam):
+  /// 1. In-Memory-Cache (schon geladen) → sofort fertig.
+  /// 2. Persistenter Cache → sofort nutzbare Daten. Ist er älter als
+  ///    [_freshCacheTtl], läuft die Aktualisierung im Hintergrund weiter,
+  ///    ohne die UI zu blockieren.
+  /// 3. Nur wenn gar keine Daten vorliegen: Netzwerk-Scrape (awaited).
+  ///
+  /// Wird beim App-Start (Hintergrund-Preload) und von der Aufstellungs-
+  /// Empfehlung genutzt, damit dort nie auf einen kompletten Scrape gewartet
+  /// werden muss.
+  Future<void> ensureLoaded({bool forceRefresh = false}) async {
+    if (forceRefresh) {
+      await fetchLineups(force: true);
+      return;
+    }
+    if (_isReady) return;
+
+    final age = _persistedCacheAge;
+    if (age != null && age <= _freshCacheTtl) {
+      // Frischer Cache: kein Netzwerk-Request nötig.
+      if (await _loadFromCache()) return;
+    } else if (age != null) {
+      // Veralteter Cache: sofort nutzbare Daten ausliefern und im Hintergrund
+      // aktualisieren – die Aufstellung ist damit direkt gefüllt.
+      final loaded = await _loadFromCache(allowStale: true);
+      if (loaded) {
+        unawaited(fetchLineups(force: true));
+        return;
+      }
+    }
+
+    await fetchLineups(force: forceRefresh);
+  }
+
   /// Fetch lineups and populate cache
-  Future<void> fetchLineups() async {
+  ///
+  /// [force] erzwingt einen Netzwerk-Scrape, auch wenn der persistente Cache
+  /// noch frisch ist (z. B. Pull-to-Refresh).
+  Future<void> fetchLineups({bool force = false}) async {
+    // Single-flight: App-Start-Preload und Aufstellungs-Screen teilen sich
+    // einen laufenden Request, statt doppelt zu scrapen.
+    final inFlight = _inFlightFetch;
+    if (inFlight != null) {
+      _logger.d('ℹ️ Ligainsider: Fetch already running – awaiting result');
+      return inFlight;
+    }
+
+    final future = _fetchLineups(force: force);
+    _inFlightFetch = future;
+    try {
+      await future;
+    } finally {
+      _inFlightFetch = null;
+    }
+  }
+
+  Future<void> _fetchLineups({required bool force}) async {
     _logger.d('🔄 Ligainsider: Starting lineup fetch...');
 
     // Avoid noisy repeated fetches
-    if (_lastFetch != null &&
+    if (_isReady &&
+        _lastFetch != null &&
         DateTime.now().difference(_lastFetch!) < const Duration(seconds: 15)) {
       _logger.w(
         '⚠️ Ligainsider: Recent fetch in last 15s detected, skipping redundant fetch',
       );
       return;
     }
+
+    // Frischer persistenter Cache → Netzwerk sparen (App-Start!).
+    if (!force && isCacheFresh) {
+      if (_playerCache.isNotEmpty) {
+        _logger.d('⚡ Ligainsider: Fresh cache in memory – skipping network');
+        return;
+      }
+      if (await _loadFromCache()) {
+        _logger.d('⚡ Ligainsider: Fresh cache loaded – skipping network');
+        return;
+      }
+    }
+
     _lastFetch = DateTime.now();
 
     // Check connectivity
     final connectivityResult = await _connectivity.checkConnectivity();
     if (connectivityResult.contains(ConnectivityResult.none)) {
       _logger.w('⚠️ Ligainsider: No internet connection, loading from cache');
-      await _loadFromCache();
+      await _loadFromCache(allowStale: true);
       return;
     }
 
@@ -128,7 +254,13 @@ class LigainsiderService {
               '✅ Ligainsider: Loaded ${_playerCache.length} players from proxy',
             );
             _isReady = true;
-            await _saveToCache(players);
+            await _saveToCache(
+              _ScrapeResult(
+                players: players,
+                startingIds: _startingLineupIds.toList(growable: false),
+                alternativeNames: _alternativeNames.toList(growable: false),
+              ),
+            );
             return;
           } else {
             _logger.w(
@@ -152,24 +284,25 @@ class LigainsiderService {
     }
 
     try {
-      // Scrape ligainsider.de
-      final players = await _scrapeLigainsider();
+      // Voraussichtliche Aufstellungen scrapen (Übersicht + Team-Seiten)
+      final result = await _scrapeLigainsider();
 
       // Build cache
       _playerCache.clear();
       _alternativeNames.clear();
       _startingLineupIds.clear();
 
-      for (final player in players) {
-        if (player.ligainsiderId != null) {
-          _playerCache[player.ligainsiderId!] = player;
-          _startingLineupIds.add(player.ligainsiderId!);
+      for (final player in result.players) {
+        final id = player.ligainsiderId;
+        if (id != null) _playerCache[id] = player;
+      }
+      _startingLineupIds.addAll(result.startingIds);
+      _alternativeNames.addAll(result.alternativeNames);
 
-          // Track alternatives
-          if (player.alternative != null) {
-            _alternativeNames.add(_normalize(player.alternative!));
-          }
-        }
+      if (_startingLineupIds.isEmpty) {
+        _logger.w(
+          '⚠️ Ligainsider: Keine Startelf gefunden – Cache bleibt leer',
+        );
       }
 
       _logger.d(
@@ -178,22 +311,14 @@ class LigainsiderService {
       _logger.d('   - Starting lineup IDs: ${_startingLineupIds.length}');
       _logger.d('   - Alternative names: ${_alternativeNames.length}');
 
-      // Debug: Dump cached players with image URLs
-      for (final entry in _playerCache.entries) {
-        final p = entry.value;
-        _logger.d(
-          '🔎 Ligainsider: CacheEntry - id=${entry.key}, name=${p.name}, imageUrl=${p.imageUrl ?? 'null'}',
-        );
-      }
-
-      _isReady = true;
+      _isReady = _startingLineupIds.isNotEmpty;
 
       // Save to persistent cache
-      await _saveToCache(players);
+      await _saveToCache(result);
     } catch (e) {
       _logger.e('❌ Ligainsider: Error fetching lineups: $e');
-      // Try loading from cache
-      await _loadFromCache();
+      // Try loading from cache (auch ein älterer Cache ist besser als keiner)
+      await _loadFromCache(allowStale: true);
     }
   }
 
@@ -343,166 +468,6 @@ class LigainsiderService {
     return null;
   }
 
-  /// Public access to parsed matches (may be empty until `fetchMatchLineups` is called)
-  List<LigainsiderMatch> get matches => List.unmodifiable(_matches);
-
-  /// Fetch match-based lineups and populate matches cache
-  ///
-  /// This uses the same overview page as player scraping and attempts to
-  /// parse match pages for home/away lineups. If parsing fails it will leave
-  /// the `_matches` list empty and fall back to player-based logic elsewhere.
-  Future<void> fetchMatchLineups() async {
-    _logger.d(
-      '🔄 Ligainsider: Fetching match lineups (overview + detail pages)...',
-    );
-
-    try {
-      // Try to fetch overview and parse basic match list
-      final response = await _httpClient.get(Uri.parse(_overviewUrl));
-      if (response.statusCode != 200) {
-        _logger.w('⚠️ Ligainsider: Failed to fetch overview for matches');
-        return;
-      }
-
-      final document = html_parser.parse(response.body);
-
-      // Simple heuristic: find match containers or links that look like matches
-      final matchLinks = <String>{};
-
-      // Common patterns: links that contain 'spiel' or '/spiel/' or '/spiele/'
-      final anchors = document.querySelectorAll('a[href]');
-      for (final a in anchors) {
-        final href = a.attributes['href'] ?? '';
-        if (href.contains('/spiel') || href.contains('/spiele')) {
-          var absolute = href;
-          if (!href.startsWith('http')) {
-            absolute = _baseUrl + (href.startsWith('/') ? href : '/$href');
-          }
-          matchLinks.add(absolute);
-        }
-      }
-
-      // If no links found, keep matches empty and return
-      if (matchLinks.isEmpty) {
-        _logger.i('ℹ️ Ligainsider: No match links found in overview');
-        return;
-      }
-
-      final parsedMatches = <LigainsiderMatch>[];
-
-      for (final link in matchLinks) {
-        try {
-          final detailResp = await _httpClient.get(Uri.parse(link));
-          if (detailResp.statusCode != 200) continue;
-
-          final detailDoc = html_parser.parse(detailResp.body);
-
-          // Heuristics to extract team names
-          String home =
-              detailDoc.querySelector('.team-home')?.text.trim() ??
-              detailDoc.querySelector('.home-team')?.text.trim() ??
-              detailDoc.querySelector('h1')?.text.trim() ??
-              'Heim';
-          String away =
-              detailDoc.querySelector('.team-away')?.text.trim() ??
-              detailDoc.querySelector('.away-team')?.text.trim() ??
-              'Gast';
-
-          // Logos (if present)
-          String? homeLogo = detailDoc
-              .querySelector('.team-home img')
-              ?.attributes['src'];
-          String? awayLogo = detailDoc
-              .querySelector('.team-away img')
-              ?.attributes['src'];
-
-          // Parse simple lineup rows: look for elements with class containing "aufstellung" or "lineup"
-          List<LineupRow> parseRows(String selectorRoot) {
-            final rows = <LineupRow>[];
-            final container = detailDoc.querySelector(selectorRoot);
-            if (container == null) return rows;
-
-            final rowElements = container.querySelectorAll(
-              '.row, .lineup-row, li',
-            );
-            if (rowElements.isEmpty) return rows;
-
-            for (final r in rowElements) {
-              final playerAnchors = r.querySelectorAll('a[href*="_"]');
-              if (playerAnchors.isEmpty) continue;
-              final players = <LineupPlayer>[];
-              for (final pa in playerAnchors) {
-                final name = pa.text.trim();
-                if (name.isEmpty) continue;
-                final img = pa.querySelector('img')?.attributes['src'];
-                String? alternative;
-                // detect alternative naming nearby
-                final siblings = pa.parent?.querySelectorAll('a[href*="_"]');
-                if (siblings != null && siblings.length > 1) {
-                  final idx = siblings.indexOf(pa);
-                  if (idx == 0 && siblings.length > 1) {
-                    alternative = siblings[1].text.trim();
-                  }
-                }
-                players.add(
-                  LineupPlayer(
-                    name: name,
-                    imageUrl: img,
-                    alternative: alternative,
-                  ),
-                );
-              }
-
-              if (players.isNotEmpty) {
-                rows.add(LineupRow(rowName: 'Row', players: players));
-              }
-            }
-            return rows;
-          }
-
-          // Try several selectors
-          final homeRows = parseRows('.aufstellung.home').isNotEmpty
-              ? parseRows('.aufstellung.home')
-              : parseRows('.lineup.home');
-          final awayRows = parseRows('.aufstellung.away').isNotEmpty
-              ? parseRows('.aufstellung.away')
-              : parseRows('.lineup.away');
-
-          // If still empty, try generic selectors per side
-          final genericHome = homeRows.isEmpty ? parseRows('.home') : homeRows;
-          final genericAway = awayRows.isEmpty ? parseRows('.away') : awayRows;
-
-          final matchId = link;
-
-          parsedMatches.add(
-            LigainsiderMatch(
-              id: matchId,
-              homeTeam: home,
-              awayTeam: away,
-              homeLogo: homeLogo,
-              awayLogo: awayLogo,
-              homeLineup: genericHome.isEmpty ? [] : genericHome,
-              awayLineup: genericAway.isEmpty ? [] : genericAway,
-            ),
-          );
-        } catch (e) {
-          // skip failures per match
-          continue;
-        }
-      }
-
-      _matches.clear();
-      _matches.addAll(parsedMatches);
-
-      // Save to cache
-      await _saveMatchesToCache(parsedMatches);
-
-      _logger.d('✅ Ligainsider: Parsed ${_matches.length} matches from HTML');
-    } catch (e) {
-      _logger.w('⚠️ Ligainsider: Failed to fetch match lineups: $e');
-    }
-  }
-
   /// Get player status (starting XI, bench, alternative, out)
   LigainsiderPlayerStatus getPlayerStatus(String firstName, String lastName) {
     final lastNameSegments = _nameSegments(_normalize(lastName));
@@ -582,10 +547,26 @@ class LigainsiderService {
 
   // MARK: - HTML Scraping
 
-  Future<List<LigainsiderPlayer>> _scrapeLigainsider() async {
-    _logger.d('🌐 Ligainsider: Fetching overview from $_overviewUrl');
+  /// Scraped die voraussichtlichen Aufstellungen des aktuellen Spieltags.
+  ///
+  /// Ablauf:
+  /// 1. Spieltags-Übersicht laden (1 Request).
+  /// 2. Daraus die Team-Aufstellungsseiten extrahieren (2 Links pro Spiel,
+  ///    also 18 Seiten) – dort steht die „VORAUSSICHTLICHE AUFSTELLUNG“
+  ///    inklusive Spielerfotos und Alternativen.
+  /// 3. Die Seiten **parallel** (max. [_lineupFetchConcurrency]) laden und die
+  ///    Startelf-Slots parsen.
+  ///
+  /// Vorher wurde nur die Übersichtsseite geparst – die enthält allerdings
+  /// keine Spieler-Links, sondern lediglich News. Ergebnis war ein Cache mit
+  /// wenigen Pseudo-Spielern, wodurch jeder echte Spieler als „nicht in der
+  /// Startelf“ („Fehlt“) galt.
+  Future<_ScrapeResult> _scrapeLigainsider() async {
+    _logger.d('🌐 Ligainsider: Fetching matchday overview from $_overviewUrl');
 
-    final response = await _httpClient.get(Uri.parse(_overviewUrl));
+    final response = await _httpClient
+        .get(Uri.parse(_overviewUrl))
+        .timeout(_overviewTimeout);
 
     if (response.statusCode != 200) {
       throw ServerException(
@@ -595,137 +576,196 @@ class LigainsiderService {
     }
 
     final document = html_parser.parse(response.body);
+    final teamUrls = _extractTeamLineupUrls(document);
+
+    if (teamUrls.isEmpty) {
+      _logger.w(
+        '⚠️ Ligainsider: Keine Team-Aufstellungs-Links auf der Übersicht gefunden',
+      );
+      return const _ScrapeResult.empty();
+    }
+
+    _logger.d(
+      'ℹ️ Ligainsider: ${teamUrls.length} Team-Aufstellungsseiten gefunden',
+    );
+
+    final slots = await _fetchLineupSlots(teamUrls);
+    _logger.d('✅ Ligainsider: ${slots.length} Startelf-Slots geparst');
+
     final players = <LigainsiderPlayer>[];
+    final startingIds = <String>[];
+    final alternativeNames = <String>[];
+    final seenSlugs = <String>{};
 
-    // Parse player links from lineup sections
-    // Target: <a href="/player-name_id/">Player Name</a>
-    final links = document.querySelectorAll('a[href*="_"]');
+    for (final slot in slots) {
+      final starter = slot.starter;
+      if (!seenSlugs.add(starter.slug)) continue;
 
-    for (final link in links) {
-      final href = link.attributes['href'];
-      if (href == null || !href.contains('_')) continue;
-
-      // Extract slug (e.g., "player-name_12345")
-      final slug = href.replaceAll('/', '').trim();
-      if (slug.isEmpty || !RegExp(r'\d$').hasMatch(slug)) continue;
-
-      // Extract name
-      final name = link.text.trim();
-      if (name.isEmpty || name.length > 50) continue;
-
-      // Extract image URL if available
-      final img = link.querySelector('img');
-      String? imageUrl = img?.attributes['src'];
-
-      // Discard accidental overview URLs being used as images
-      if (imageUrl != null && imageUrl.contains('spieltage')) {
-        _logger.w(
-          '⚠️ Ligainsider: Ignoring non-image URL found in anchor for $name: $imageUrl',
-        );
-        imageUrl = null;
+      // Bereits bekannter Spieler (z. B. als Starter gelistet) wird nicht
+      // doppelt geführt.
+      var alternative = slot.alternative;
+      if (alternative != null && !seenSlugs.add(alternative.slug)) {
+        alternative = null;
       }
 
-      // If no image found in the anchor, try the player detail page as fallback
-      if (imageUrl == null) {
-        try {
-          final detailHref = href.startsWith('http')
-              ? href
-              : (_baseUrl + (href.startsWith('/') ? href : '/$href'));
-          final detailResp = await _httpClient.get(Uri.parse(detailHref));
-          if (detailResp.statusCode == 200) {
-            final detailDoc = html_parser.parse(detailResp.body);
+      startingIds.add(starter.slug);
+      players.add(_toPlayer(starter, alternative: alternative?.name));
 
-            // Try several selectors in order of preference
-            final metaOg = detailDoc
-                .querySelector('meta[property="og:image"]')
-                ?.attributes['content'];
-            final playerImg = detailDoc
-                .querySelector('img[class*="player"]')
-                ?.attributes['src'];
-            final spielerImg = detailDoc
-                .querySelector('img[class*="spieler"]')
-                ?.attributes['src'];
-            final genericImg =
-                detailDoc.querySelector('.player img')?.attributes['src'] ??
-                detailDoc.querySelector('.person img')?.attributes['src'] ??
-                detailDoc
-                    .querySelector('img[src*="/player/"]')
-                    ?.attributes['src'];
+      if (alternative != null) {
+        alternativeNames.add(_normalize(alternative.name));
+        players.add(_toPlayer(alternative));
+      }
+    }
 
-            final candidate = metaOg ?? playerImg ?? spielerImg ?? genericImg;
-            if (candidate != null && candidate.isNotEmpty) {
-              if (candidate.contains('spieltage')) {
-                _logger.w(
-                  '⚠️ Ligainsider: Ignoring non-image URL from detail page for $name: $candidate',
-                );
-              } else {
-                imageUrl = candidate;
-                _logger.i(
-                  'ℹ️ Ligainsider: Found detail image for $name -> $imageUrl',
-                );
-              }
-            }
+    return _ScrapeResult(
+      players: players,
+      startingIds: startingIds,
+      alternativeNames: alternativeNames,
+    );
+  }
+
+  LigainsiderPlayer _toPlayer(_SlotPlayer player, {String? alternative}) {
+    return LigainsiderPlayer(
+      id: player.slug,
+      name: player.name,
+      shortName: player.name,
+      teamName: 'Unknown',
+      teamId: 'unknown',
+      position: 0,
+      injuryStatus: InjuryStatus.fit,
+      injuryDescription: null,
+      formRating: null,
+      lastUpdate: DateTime.now(),
+      statusText: null,
+      expectedReturn: null,
+      ligainsiderId: player.slug, // Cache-Key
+      alternative: alternative,
+      imageUrl: player.imageUrl,
+    );
+  }
+
+  /// Sammelt die Team-Aufstellungs-Links der Spieltags-Übersicht.
+  ///
+  /// Muster: `/bundesliga/team/{team-slug}/{team-id}/saison-{jahr}/{spiel-id}`
+  /// – pro Spiel zwei Links (Heim- und Gastmannschaft).
+  static List<String> _extractTeamLineupUrls(Document document) {
+    final urls = <String>[];
+    for (final anchor in document.querySelectorAll('a[href*="/bundesliga/team/"]')) {
+      final href = anchor.attributes['href'];
+      if (href == null || !href.contains('/saison-')) continue;
+      final absolute = href.startsWith('http') ? href : '$_baseUrl$href';
+      final normalized = absolute.endsWith('/') ? absolute : '$absolute/';
+      if (!urls.contains(normalized)) urls.add(normalized);
+    }
+    return urls;
+  }
+
+  /// Lädt die Team-Seiten in Blöcken parallel und parst die Startelf-Slots.
+  Future<List<_LineupSlot>> _fetchLineupSlots(List<String> urls) async {
+    final slots = <_LineupSlot>[];
+    for (var i = 0; i < urls.length; i += _lineupFetchConcurrency) {
+      final chunk = urls
+          .skip(i)
+          .take(_lineupFetchConcurrency)
+          .toList(growable: false);
+      final results = await Future.wait(
+        chunk.map(_fetchTeamLineupSlots),
+      );
+      for (final teamSlots in results) {
+        slots.addAll(teamSlots);
+      }
+    }
+    return slots;
+  }
+
+  /// Parst die „VORAUSSICHTLICHE AUFSTELLUNG“ einer Team-Seite.
+  ///
+  /// Pro Feldspieler-Position gibt es eine `player_position_column`; die erste
+  /// Verlinkung ist der Startelf-Spieler, eine zweite (falls vorhanden) die
+  /// Alternative (2. Option).
+  Future<List<_LineupSlot>> _fetchTeamLineupSlots(String url) async {
+    try {
+      final response = await _httpClient
+          .get(Uri.parse(url))
+          .timeout(_lineupPageTimeout);
+      if (response.statusCode != 200) {
+        _logger.w('⚠️ Ligainsider: HTTP ${response.statusCode} für $url');
+        return const [];
+      }
+
+      final document = html_parser.parse(response.body);
+      final slots = <_LineupSlot>[];
+
+      for (final row in document.querySelectorAll('.player_position_row')) {
+        for (final column in row.querySelectorAll('.player_position_column')) {
+          final players = <_SlotPlayer>[];
+          final seen = <String>{};
+
+          for (final anchor in column.querySelectorAll('a[href*="_"]')) {
+            final href = anchor.attributes['href'];
+            if (href == null || !href.contains('_')) continue;
+            final slug = href.replaceAll('/', '').trim();
+            if (slug.isEmpty || !_slugPattern.hasMatch(slug)) continue;
+            if (!seen.add(slug)) continue;
+
+            final name = _nameFromSlug(slug);
+            if (name == null || name.isEmpty) continue;
+
+            players.add(
+              _SlotPlayer(
+                slug: slug,
+                name: name,
+                imageUrl: _absoluteImageUrl(
+                  anchor.querySelector('img')?.attributes['src'],
+                ),
+              ),
+            );
           }
-        } catch (e) {
-          _logger.w(
-            '⚠️ Ligainsider: Failed to fetch detail page for $href: $e',
+
+          if (players.isEmpty) continue;
+          slots.add(
+            _LineupSlot(
+              starter: players.first,
+              alternative: players.length > 1 ? players[1] : null,
+            ),
           );
         }
       }
 
-      // Check for alternative player
-      String? alternative;
-      final parent = link.parent;
-      if (parent != null) {
-        final altLinks = parent.querySelectorAll('a[href*="_"]');
-        if (altLinks.length > 1 && altLinks.indexOf(link) == 0) {
-          alternative = altLinks[1].text.trim();
-        }
-      }
-
-      // Normalize image URL (make absolute if needed)
-      if (imageUrl != null && imageUrl.isNotEmpty) {
-        if (imageUrl.startsWith('//')) {
-          imageUrl = 'https:$imageUrl';
-        } else if (imageUrl.startsWith('/')) {
-          imageUrl = '$_baseUrl$imageUrl';
-        }
-      }
-
-      // Skip duplicates
-      if (players.any((p) => p.ligainsiderId == slug)) continue;
-
-      // Debug log for each parsed player
-      _logger.d(
-        '🔍 Ligainsider: Parsed player -> name: $name, id: $slug, imageUrl: ${imageUrl ?? 'null'}',
-      );
-
-      players.add(
-        LigainsiderPlayer(
-          id: slug,
-          name: name,
-          shortName: name,
-          teamName: 'Unknown',
-          teamId: 'unknown',
-          position: 0,
-          injuryStatus: InjuryStatus.fit,
-          injuryDescription: null,
-          formRating: null,
-          lastUpdate: DateTime.now(),
-          statusText: null,
-          expectedReturn: null,
-          ligainsiderId: slug, // Set ligainsiderId for cache key
-          alternative: alternative,
-          imageUrl: imageUrl,
-        ),
-      );
+      return slots;
+    } catch (e) {
+      _logger.w('⚠️ Ligainsider: Aufstellungsseite fehlgeschlagen ($url): $e');
+      return const [];
     }
+  }
 
-    _logger.d('✅ Ligainsider: Parsed ${players.length} players from HTML');
-    return players;
+  /// Leitet aus einem Ligainsider-Slug den vollen Spielernamen ab
+  /// (`manuel-neuer_114` → `Manuel Neuer`).
+  static String? _nameFromSlug(String slug) {
+    final separator = slug.lastIndexOf('_');
+    final namePart = separator > 0 ? slug.substring(0, separator) : slug;
+    final words = namePart
+        .split('-')
+        .where((word) => word.isNotEmpty)
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .toList(growable: false);
+    return words.isEmpty ? null : words.join(' ');
+  }
+
+  /// Macht eine relative Bild-URL absolut und filtert Nicht-Bilder
+  /// (z. B. verlinkte Spieltags-Seiten) heraus.
+  String? _absoluteImageUrl(String? raw) {
+    if (raw == null) return null;
+    final value = raw.trim();
+    if (value.isEmpty) return null;
+    if (value.contains('spieltage')) return null;
+    if (value.startsWith('//')) return 'https:$value';
+    if (value.startsWith('/')) return '$_baseUrl$value';
+    return value;
   }
 
   // MARK: - Name Normalization
+
 
   /// Namen-Segmente eines normalisierten Texts (z. B. "kevin bauer_123" →
   /// {kevin, bauer, 123}). Basis für exakten Segment-Match statt Contains –
@@ -754,37 +794,54 @@ class LigainsiderService {
 
   // MARK: - Caching
 
-  Future<void> _saveToCache(List<LigainsiderPlayer> players) async {
+  Future<void> _saveToCache(_ScrapeResult result) async {
     try {
-      final data = players.map((p) => p.toJson()).toList();
+      final data = result.players.map((p) => p.toJson()).toList();
       await _prefs.setString(_cacheKey, jsonEncode(data));
       await _prefs.setInt(
         _cacheTimestampKey,
         DateTime.now().millisecondsSinceEpoch,
       );
-      _logger.d('💾 Ligainsider: Saved ${players.length} players to cache');
+      // Startelf + Alternativen separat ablegen: nur damit lässt sich der
+      // Status nach einem Neustart ohne erneuten Scrape korrekt zuordnen.
+      await _prefs.setString(_s11CacheKey, jsonEncode(result.startingIds));
+      await _prefs.setString(
+        _alternativeCacheKey,
+        jsonEncode(result.alternativeNames),
+      );
+      _logger.d(
+        '💾 Ligainsider: Saved ${result.players.length} players to cache '
+        '(${result.startingIds.length} S11)',
+      );
     } catch (e) {
       _logger.w('⚠️ Ligainsider: Failed to save cache: $e');
     }
   }
 
-  Future<void> _loadFromCache() async {
+  /// Lädt den persistenten Aufstellungs-Cache in den Speicher.
+  ///
+  /// [allowStale] erlaubt auch einen abgelaufenen Cache (> [_cacheTimeout]).
+  /// Das ist beim App-Start gewünscht: lieber sofort (leicht veraltete) Daten
+  /// anzeigen und im Hintergrund aktualisieren, als einen leeren Screen.
+  ///
+  /// Returns: true, wenn Daten geladen wurden.
+  Future<bool> _loadFromCache({bool allowStale = false}) async {
     try {
       final cachedData = _prefs.getString(_cacheKey);
       final timestamp = _prefs.getInt(_cacheTimestampKey);
 
       if (cachedData == null || timestamp == null) {
         _logger.i('ℹ️ Ligainsider: No cache available');
-        return;
+        return false;
       }
 
       // Check cache age
       final cacheAge = DateTime.now().millisecondsSinceEpoch - timestamp;
-      if (cacheAge > _cacheTimeout.inMilliseconds) {
+      if (!allowStale && cacheAge > _cacheTimeout.inMilliseconds) {
         _logger.w(
           '⏰ Ligainsider: Cache expired (${Duration(milliseconds: cacheAge).inMinutes} min old)',
         );
-        return;
+        return false;
       }
 
       final List<dynamic> data = jsonDecode(cachedData);
@@ -792,75 +849,44 @@ class LigainsiderService {
           .map((json) => LigainsiderPlayer.fromJson(json))
           .toList();
 
+      final s11 = _decodeStringList(_prefs.getString(_s11CacheKey));
+      final alternatives = _decodeStringList(
+        _prefs.getString(_alternativeCacheKey),
+      );
+
       // Populate cache
       _playerCache.clear();
       _alternativeNames.clear();
       _startingLineupIds.clear();
 
       for (final player in players) {
-        if (player.ligainsiderId != null) {
-          _playerCache[player.ligainsiderId!] = player;
-          _startingLineupIds.add(player.ligainsiderId!);
-
-          if (player.alternative != null) {
-            _alternativeNames.add(_normalize(player.alternative!));
-          }
-        }
+        final id = player.ligainsiderId;
+        if (id != null) _playerCache[id] = player;
       }
+      _startingLineupIds.addAll(s11);
+      _alternativeNames.addAll(alternatives);
 
-      _isReady = true;
+      _isReady = _playerCache.isNotEmpty;
       _logger.d(
-        '✅ Ligainsider: Loaded ${_playerCache.length} players from cache',
+        '✅ Ligainsider: Loaded ${_playerCache.length} players from cache '
+        '(${_startingLineupIds.length} S11)',
       );
 
-      // Debug: Dump cache entries loaded from persistent cache
-      for (final entry in _playerCache.entries) {
-        final p = entry.value;
-        _logger.d(
-          '🔎 Ligainsider (cache load): id=${entry.key}, name=${p.name}, imageUrl=${p.imageUrl ?? 'null'}',
-        );
-      }
-
-      // Also try to load matches from cache
-      await _loadMatchesFromCache();
+      return _isReady;
     } catch (e) {
       _logger.e('⚠️ Ligainsider: Failed to load cache: $e');
+      return false;
     }
   }
 
-  // Matches caching
-  Future<void> _saveMatchesToCache(List<LigainsiderMatch> matches) async {
+  static List<String> _decodeStringList(String? raw) {
+    if (raw == null || raw.isEmpty) return const [];
     try {
-      final data = matches.map((m) => m.toJson()).toList();
-      await _prefs.setString(_matchesCacheKey, jsonEncode(data));
-      await _prefs.setInt(
-        _matchesCacheTimestampKey,
-        DateTime.now().millisecondsSinceEpoch,
-      );
-      _logger.d('💾 Ligainsider: Saved ${matches.length} matches to cache');
-    } catch (e) {
-      _logger.w('⚠️ Ligainsider: Failed to save matches cache: $e');
-    }
-  }
-
-  Future<void> _loadMatchesFromCache() async {
-    try {
-      final cached = _prefs.getString(_matchesCacheKey);
-      final ts = _prefs.getInt(_matchesCacheTimestampKey);
-      if (cached == null || ts == null) return;
-      final age = DateTime.now().millisecondsSinceEpoch - ts;
-      if (age > _cacheTimeout.inMilliseconds) {
-        _logger.w('⏰ Ligainsider: Matches cache expired');
-        return;
-      }
-
-      final List<dynamic> data = jsonDecode(cached);
-      final matches = data.map((j) => LigainsiderMatch.fromJson(j)).toList();
-      _matches.clear();
-      _matches.addAll(matches);
-      _logger.d('✅ Ligainsider: Loaded ${_matches.length} matches from cache');
-    } catch (e) {
-      _logger.w('⚠️ Ligainsider: Failed to load matches cache: $e');
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return const [];
+      return decoded.whereType<String>().toList(growable: false);
+    } catch (_) {
+      return const [];
     }
   }
 
@@ -868,12 +894,63 @@ class LigainsiderService {
   Future<void> clearCache() async {
     await _prefs.remove(_cacheKey);
     await _prefs.remove(_cacheTimestampKey);
+    await _prefs.remove(_s11CacheKey);
+    await _prefs.remove(_alternativeCacheKey);
     _playerCache.clear();
     _alternativeNames.clear();
     _startingLineupIds.clear();
     _isReady = false;
     _logger.d('🗑️ Ligainsider: Cache cleared');
   }
+}
+
+/// Ergebnis eines Scraping-Laufs: Spieler, Startelf-Slugs und Alternativen.
+class _ScrapeResult {
+  const _ScrapeResult({
+    required this.players,
+    required this.startingIds,
+    required this.alternativeNames,
+  });
+
+  const _ScrapeResult.empty()
+    : players = const [],
+      startingIds = const [],
+      alternativeNames = const [];
+
+  /// Alle erfassten Spieler (Startelf + Alternativen) inkl. Foto-URL.
+  final List<LigainsiderPlayer> players;
+
+  /// Slugs der Startelf-Spieler (S11).
+  final List<String> startingIds;
+
+  /// Normalisierte Namen der Alternativen (2. Option).
+  final List<String> alternativeNames;
+}
+
+/// Eine Position der voraussichtlichen Aufstellung: Startelf + ggf. Alternative.
+class _LineupSlot {
+  const _LineupSlot({required this.starter, this.alternative});
+
+  final _SlotPlayer starter;
+  final _SlotPlayer? alternative;
+}
+
+/// Ein einzelner Spieler-Slot aus der Ligainsider-Aufstellung.
+class _SlotPlayer {
+  const _SlotPlayer({
+    required this.slug,
+    required this.name,
+    required this.imageUrl,
+  });
+
+  /// Ligainsider-Slug inkl. ID (z. B. `max-mustermann_12345`) – Cache-Key.
+  final String slug;
+
+  /// Voller Name aus dem Slug (`Max Mustermann`) – Basis für das Matching.
+  final String name;
+
+  /// Foto-URL von cdn.ligainsider.de (kommt direkt mit der Aufstellungsseite).
+  final String? imageUrl;
 }
 
 /// Helper for unawaited futures

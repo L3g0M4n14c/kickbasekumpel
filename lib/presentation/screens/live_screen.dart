@@ -179,7 +179,7 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
                     ),
                     trailing: IconButton(
                       icon: const Icon(Icons.refresh),
-                      onPressed: () => ref.refresh(ligainsiderInitProvider),
+                      onPressed: () => ref.refresh(ligainsiderReloadProvider),
                     ),
                   ),
                 ),

@@ -7,10 +7,69 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:kickbasekumpel/data/services/ligainsider_service.dart';
 import 'package:kickbasekumpel/data/models/ligainsider_model.dart';
+import 'package:kickbasekumpel/data/services/ligainsider_service.dart';
 
 import 'ligainsider_service_test.mocks.dart';
+
+/// Baut eine Team-Aufstellungsseite im Ligainsider-Markup.
+///
+/// Pro Slot (Starter + optionale Alternative) entsteht eine
+/// `player_position_column` mit den entsprechenden `sub_child`-Blöcken – so
+/// wie auf ligainsider.de/bundesliga/team/.../saison-.../.
+String _teamPageHtml(List<(String, String?)> slots) {
+  final columns = StringBuffer();
+
+  void writePlayer(String slug, String displayStyle) {
+    columns.write('''
+      <div class="sub_child" style="$displayStyle">
+        <div class="player_position_photo">
+          <div class="sub_pic">
+            <a href="/$slug/"><img src="https://cdn.ligainsider.de/images/player/$slug.jpg" alt=""></a>
+          </div>
+        </div>
+        <div class="player_name"><a href="/$slug/" itemprop="athlete">Kurzname</a></div>
+      </div>
+    ''');
+  }
+
+  for (final (starter, alternative) in slots) {
+    columns.write('<div class="player_position_column">');
+    writePlayer(starter, 'display: block;');
+    if (alternative != null) {
+      writePlayer(alternative, 'display: none;');
+    }
+    columns.write('</div>');
+  }
+
+  return '''<html><body>
+    <div class="player_position_row text-center">$columns</div>
+  </body></html>''';
+}
+
+/// Baut die Spieltags-Übersicht mit den Team-Links (2 pro Spiel).
+String _overviewHtml(List<String> teamPaths) {
+  final links = teamPaths
+      .map((path) => '<a href="$path">Team</a>')
+      .join('\n');
+  return '<html><body>$links</body></html>';
+}
+
+const _bayernPath =
+    '/bundesliga/team/fc-bayern-muenchen/1/saison-2026-2027/111';
+const _dortmundPath =
+    '/bundesliga/team/borussia-dortmund/14/saison-2026-2027/112';
+
+/// 11 Startelf-Slots; der erste zusätzlich mit Alternative.
+List<(String, String?)> _slots(String prefix, {bool withAlternative = true}) {
+  return [
+    for (var i = 0; i < 11; i++)
+      (
+        '$prefix-spieler$i_${1000 + i}',
+        withAlternative && i == 0 ? '$prefix-ersatz$i_${2000 + i}' : null,
+      ),
+  ];
+}
 
 @GenerateMocks([http.Client, SharedPreferences, Connectivity])
 void main() {
@@ -38,526 +97,255 @@ void main() {
     );
   });
 
+  /// Standard-Routing: Übersicht + zwei Team-Seiten.
+  void stubOverviewsAndTeamPages() {
+    when(mockConnectivity.checkConnectivity())
+        .thenAnswer((_) async => [ConnectivityResult.wifi]);
+
+    final overview = _overviewHtml([_bayernPath, _dortmundPath]);
+    final bayern = _teamPageHtml(_slots('bayern'));
+    final dortmund = _teamPageHtml(_slots('dortmund', withAlternative: false));
+
+    when(mockHttpClient.get(any)).thenAnswer((invocation) async {
+      final uri = invocation.positionalArguments[0] as Uri;
+      if (uri.path.contains('/team/')) {
+        if (uri.path.contains('bayern')) return http.Response(bayern, 200);
+        if (uri.path.contains('dortmund')) return http.Response(dortmund, 200);
+        return http.Response('', 404);
+      }
+      if (uri.path.contains('spieltage')) {
+        return http.Response(overview, 200);
+      }
+      return http.Response('', 404);
+    });
+  }
+
   group('Initialization', () {
     test('should start with empty cache and not ready', () {
       expect(service.isReady, false);
       expect(service.playerCacheCount, 0);
-    });
-  });
-
-  group('Name Normalization', () {
-    test('should normalize German umlauts', () {
-      // Mock successful fetch
-      when(mockConnectivity.checkConnectivity())
-          .thenAnswer((_) async => [ConnectivityResult.wifi]);
-
-      final mockHtml = '''
-        <html>
-          <body>
-            <a href="/mueller_123/">Müller</a>
-          </body>
-        </html>
-      ''';
-
-      when(mockHttpClient.get(any))
-          .thenAnswer((_) async => http.Response(mockHtml, 200));
-
-      // The service should find player using normalized name
-      // This is tested implicitly through matching logic
+      expect(service.hasLineupCoverage, false);
     });
   });
 
   group('HTML Parsing', () {
-    test('should parse player links from HTML', () async {
-      when(mockConnectivity.checkConnectivity())
-          .thenAnswer((_) async => [ConnectivityResult.wifi]);
-
-      // Mock overview page with player links
-      final mockOverviewHtml = '''
-        <html>
-          <body>
-            <a href="/max-mustermann_12345/">Max Mustermann</a>
-            <a href="/john-doe_67890/">John Doe</a>
-          </body>
-        </html>
-      ''';
-
-      // Mock individual player pages with details
-      final mockPlayerHtml1 = '''
-        <html>
-          <body>
-            <h1>Max Mustermann</h1>
-            <div class="player-info">Position: Mittelfeld</div>
-          </body>
-        </html>
-      ''';
-
-      final mockPlayerHtml2 = '''
-        <html>
-          <body>
-            <h1>John Doe</h1>
-            <div class="player-info">Position: Sturm</div>
-          </body>
-        </html>
-      ''';
-
-      when(mockHttpClient.get(any)).thenAnswer((invocation) async {
-        final uri = invocation.positionalArguments[0] as Uri;
-        if (uri.path.contains('spieltage')) {
-          return http.Response(mockOverviewHtml, 200);
-        } else if (uri.path.contains('12345')) {
-          return http.Response(mockPlayerHtml1, 200);
-        } else if (uri.path.contains('67890')) {
-          return http.Response(mockPlayerHtml2, 200);
-        }
-        return http.Response('', 404);
-      });
+    test('parst Startelf-Slots von den Team-Seiten', () async {
+      stubOverviewsAndTeamPages();
 
       await service.fetchLineups();
 
       expect(service.isReady, true);
-      expect(service.playerCacheCount, 2);
+      // 22 Startelf-Spieler + 1 Alternative
+      expect(service.playerCacheCount, 23);
     });
 
-    test('should handle empty HTML', () async {
+    test('ohne Team-Links auf der Übersicht bleibt der Cache leer', () async {
       when(mockConnectivity.checkConnectivity())
           .thenAnswer((_) async => [ConnectivityResult.wifi]);
-
       when(mockHttpClient.get(any))
           .thenAnswer((_) async => http.Response('<html></html>', 200));
 
       await service.fetchLineups();
 
       expect(service.playerCacheCount, 0);
+      expect(service.isReady, false);
     });
 
-    test('should skip invalid player links', () async {
+    test('ignoriert Links ohne Spieler-ID', () async {
       when(mockConnectivity.checkConnectivity())
           .thenAnswer((_) async => [ConnectivityResult.wifi]);
 
-      final mockOverviewHtml = '''
-        <html>
-          <body>
+      final overview = _overviewHtml([_bayernPath]);
+      final page = '''<html><body>
+        <div class="player_position_row">
+          <div class="player_position_column">
             <a href="/no-id/">Invalid</a>
-            <a href="/valid-player_123/">Valid Player</a>
-            <a href="/also_invalid_abc/">Also Invalid</a>
-          </body>
-        </html>
-      ''';
-
-      final mockPlayerHtml = '''
-        <html>
-          <body>
-            <h1>Valid Player</h1>
-            <div class="player-info">Position: Torwart</div>
-          </body>
-        </html>
-      ''';
+          </div>
+        </div>
+      </body></html>''';
 
       when(mockHttpClient.get(any)).thenAnswer((invocation) async {
         final uri = invocation.positionalArguments[0] as Uri;
-        if (uri.path.contains('spieltage')) {
-          return http.Response(mockOverviewHtml, 200);
-        } else if (uri.path.contains('123')) {
-          return http.Response(mockPlayerHtml, 200);
-        }
-        return http.Response('', 404);
+        if (uri.path.contains('/team/')) return http.Response(page, 200);
+        return http.Response(overview, 200);
       });
 
       await service.fetchLineups();
 
-      expect(service.playerCacheCount, 1);
+      expect(service.playerCacheCount, 0);
     });
 
-    test(
-      'should fetch image from player detail page when missing in overview',
-      () async {
-        when(mockConnectivity.checkConnectivity())
-            .thenAnswer((_) async => [ConnectivityResult.wifi]);
-
-        final mockOverviewHtml = '''
-        <html>
-          <body>
-            <a href="/max-mustermann_12345/">Max Mustermann</a>
-          </body>
-        </html>
-      ''';
-
-        final mockPlayerDetail = '''
-        <html>
-          <head>
-            <meta property="og:image" content="/images/max.jpg">
-          </head>
-          <body>
-            <h1>Max Mustermann</h1>
-            <img class="player-photo" src="/images/max.jpg" />
-          </body>
-        </html>
-      ''';
-
-        when(mockHttpClient.get(any)).thenAnswer((invocation) async {
-          final uri = invocation.positionalArguments[0] as Uri;
-          if (uri.path.contains('spieltage')) {
-            return http.Response(mockOverviewHtml, 200);
-          } else if (uri.path.contains('12345')) {
-            return http.Response(mockPlayerDetail, 200);
-          }
-          return http.Response('', 404);
-        });
-
-        await service.fetchLineups();
-
-        final player = service.getLigainsiderPlayer('Max', 'Mustermann');
-        expect(player, isNotNull);
-        expect(player!.imageUrl, 'https://www.ligainsider.de/images/max.jpg');
-      },
-    );
-  });
-
-  group('Player Matching', () {
-    setUp(() async {
-      when(mockConnectivity.checkConnectivity())
-          .thenAnswer((_) async => [ConnectivityResult.wifi]);
-
-      final mockOverviewHtml = '''
-        <html>
-          <body>
-            <a href="/max-mustermann_12345/">Max Mustermann</a>
-            <a href="/thomas-mueller_67890/">Thomas Müller</a>
-            <a href="/john-doe_99999/">John Doe</a>
-          </body>
-        </html>
-      ''';
-
-      final mockPlayerHtml1 = '''
-        <html>
-          <body>
-            <h1>Max Mustermann</h1>
-            <div class="player-info">Position: Mittelfeld</div>
-          </body>
-        </html>
-      ''';
-
-      final mockPlayerHtml2 = '''
-        <html>
-          <body>
-            <h1>Thomas Müller</h1>
-            <div class="player-info">Position: Sturm</div>
-          </body>
-        </html>
-      ''';
-
-      final mockPlayerHtml3 = '''
-        <html>
-          <body>
-            <h1>John Doe</h1>
-            <div class="player-info">Position: Abwehr</div>
-          </body>
-        </html>
-      ''';
-
-      when(mockHttpClient.get(any)).thenAnswer((invocation) async {
-        final uri = invocation.positionalArguments[0] as Uri;
-        if (uri.path.contains('spieltage')) {
-          return http.Response(mockOverviewHtml, 200);
-        } else if (uri.path.contains('12345')) {
-          return http.Response(mockPlayerHtml1, 200);
-        } else if (uri.path.contains('67890')) {
-          return http.Response(mockPlayerHtml2, 200);
-        } else if (uri.path.contains('99999')) {
-          return http.Response(mockPlayerHtml3, 200);
-        }
-        return http.Response('', 404);
-      });
+    test('übernimmt das Spielerfoto aus der Aufstellungsseite', () async {
+      stubOverviewsAndTeamPages();
 
       await service.fetchLineups();
-    });
 
-    test('should find player by exact name match', () {
-      final player = service.getLigainsiderPlayer('Max', 'Mustermann');
-
+      final player = service.getLigainsiderPlayer('', 'Spieler0');
       expect(player, isNotNull);
-      expect(player!.name, 'Max Mustermann');
-      expect(player.ligainsiderId, 'max-mustermann_12345');
-    });
-
-    test('should find player with normalized umlauts', () {
-      final player = service.getLigainsiderPlayer('Thomas', 'Müller');
-
-      expect(player, isNotNull);
-      expect(player!.name, 'Thomas Müller');
-    });
-
-    test('should return null for non-existent player', () {
-      final player = service.getLigainsiderPlayer('Unknown', 'Player');
-
-      expect(player, isNull);
-    });
-
-    test('should find player by last name only', () {
-      final player = service.getLigainsiderPlayer('', 'Doe');
-
-      expect(player, isNotNull);
-      expect(player!.name, 'John Doe');
+      expect(
+        player!.imageUrl,
+        contains('cdn.ligainsider.de/images/player/'),
+      );
     });
   });
 
   group('Player Status', () {
     setUp(() async {
-      when(mockConnectivity.checkConnectivity())
-          .thenAnswer((_) async => [ConnectivityResult.wifi]);
-
-      final mockOverviewHtml = '''
-        <html>
-          <body>
-            <a href="/starter-player_99999/">Starter Player</a>
-          </body>
-        </html>
-      ''';
-
-      final mockPlayerHtml = '''
-        <html>
-          <body>
-            <h1>Starter Player</h1>
-            <div class="player-info">Position: Mittelfeld</div>
-          </body>
-        </html>
-      ''';
-
-      when(mockHttpClient.get(any)).thenAnswer((invocation) async {
-        final uri = invocation.positionalArguments[0] as Uri;
-        if (uri.path.contains('spieltage')) {
-          return http.Response(mockOverviewHtml, 200);
-        } else if (uri.path.contains('99999')) {
-          return http.Response(mockPlayerHtml, 200);
-        }
-        return http.Response('', 404);
-      });
-
+      stubOverviewsAndTeamPages();
       await service.fetchLineups();
     });
 
-    test('should return likelyStart for player in cache', () {
-      final status = service.getPlayerStatus('Starter', 'Player');
-
-      expect(status, LigainsiderPlayerStatus.likelyStart);
-    });
-
-    test('leerer Name matched nie (kein contains-False-Positive)', () {
-      // Cache enthält "Starter Player" – ein leerer Suchname darf trotzdem
-      // keinen beliebigen Spieler als S11/Alternative ausweisen.
-      expect(service.getPlayerStatus('', ''), LigainsiderPlayerStatus.out);
-    });
-
-    test('Namens-Substring matched nicht (Contains → Segment-Match)', () {
-      // Cache: "starter-player_99999". Teilstücke wie "Sta"/"ayer" dürfen den
-      // Spieler nicht finden (dasselbe Problem wie "Lang" ⊂ "Langkamp").
-      expect(service.getPlayerStatus('', 'Sta'), LigainsiderPlayerStatus.out);
-      expect(service.getPlayerStatus('', 'ayer'), LigainsiderPlayerStatus.out);
-      // Echter Segment-Treffer bleibt ein Treffer.
+    test('Startelf-Spieler ohne Alternative ist likelyStart', () {
       expect(
-        service.getPlayerStatus('', 'Starter'),
+        service.getPlayerStatus('', 'Spieler3'),
         LigainsiderPlayerStatus.likelyStart,
       );
     });
 
-    test('should return out for unknown player', () async {
-      // Clear cache and add only one specific player
-      when(mockConnectivity.checkConnectivity())
-          .thenAnswer((_) async => [ConnectivityResult.wifi]);
+    test('Startelf-Spieler mit Alternative ist startWithAlternative', () {
+      expect(
+        service.getPlayerStatus('', 'Spieler0'),
+        LigainsiderPlayerStatus.startWithAlternative,
+      );
+    });
 
-      final mockOverviewHtml = '''
-        <html>
-          <body>
-            <a href="/different-person_88888/">Different Person</a>
-          </body>
-        </html>
-      ''';
+    test('Alternative ist isAlternative', () {
+      expect(
+        service.getPlayerStatus('', 'Ersatz0'),
+        LigainsiderPlayerStatus.isAlternative,
+      );
+    });
 
-      final mockPlayerHtml = '''
-        <html>
-          <body>
-            <h1>Different Person</h1>
-            <div class="player-info">Position: Tor</div>
-          </body>
-        </html>
-      ''';
+    test('unbekannter Spieler ist out', () {
+      expect(
+        service.getPlayerStatus('Unbekannt', 'Unbekannt'),
+        LigainsiderPlayerStatus.out,
+      );
+    });
 
-      when(mockHttpClient.get(any)).thenAnswer((invocation) async {
-        final uri = invocation.positionalArguments[0] as Uri;
-        if (uri.path.contains('spieltage')) {
-          return http.Response(mockOverviewHtml, 200);
-        } else if (uri.path.contains('88888')) {
-          return http.Response(mockPlayerHtml, 200);
-        }
-        return http.Response('', 404);
-      });
+    test('leerer Name matched nie (kein contains-False-Positive)', () {
+      expect(service.getPlayerStatus('', ''), LigainsiderPlayerStatus.out);
+    });
 
+    test('Namens-Substring matched nicht (Contains → Segment-Match)', () {
+      expect(service.getPlayerStatus('', 'Spie'), LigainsiderPlayerStatus.out);
+      expect(
+        service.getPlayerStatus('', 'Spieler3'),
+        LigainsiderPlayerStatus.likelyStart,
+      );
+    });
+
+    test('hasLineupCoverage erst ab voller S11-Abdeckung', () {
+      // Nur 22 S11-Spieler → noch keine volle Abdeckung.
+      expect(service.hasLineupCoverage, false);
+    });
+  });
+
+  group('Player Matching', () {
+    setUp(() async {
+      stubOverviewsAndTeamPages();
       await service.fetchLineups();
+    });
 
-      // Query for a completely unknown player
-      final status = service.getPlayerStatus('Unknown', 'Stranger');
+    test('findet Spieler über den vollen Namen', () {
+      final player = service.getLigainsiderPlayer('', 'Spieler3');
 
-      expect(status, LigainsiderPlayerStatus.out);
+      expect(player, isNotNull);
+      expect(player!.ligainsiderId, 'bayern-spieler3_1003');
+      expect(player.name, 'Bayern Spieler3');
+    });
+
+    test('liefert null für unbekannte Spieler', () {
+      expect(service.getLigainsiderPlayer('Unknown', 'Player'), isNull);
     });
   });
 
   group('Caching', () {
-    test('should save players to cache after fetch', () async {
-      when(mockConnectivity.checkConnectivity())
-          .thenAnswer((_) async => [ConnectivityResult.wifi]);
-
-      final mockOverviewHtml = '''
-        <html>
-          <body>
-            <a href="/test-player_123/">Test Player</a>
-          </body>
-        </html>
-      ''';
-
-      final mockPlayerHtml = '''
-        <html>
-          <body>
-            <h1>Test Player</h1>
-            <div class="player-info">Position: Mittelfeld</div>
-          </body>
-        </html>
-      ''';
-
-      when(mockHttpClient.get(any)).thenAnswer((invocation) async {
-        final uri = invocation.positionalArguments[0] as Uri;
-        if (uri.path.contains('spieltage')) {
-          return http.Response(mockOverviewHtml, 200);
-        } else if (uri.path.contains('123')) {
-          return http.Response(mockPlayerHtml, 200);
-        }
-        return http.Response('', 404);
-      });
+    test('speichert Spieler, Startelf und Timestamp', () async {
+      stubOverviewsAndTeamPages();
 
       await service.fetchLineups();
 
       verify(mockPrefs.setString('ligainsider_cache', any)).called(1);
       verify(mockPrefs.setInt('ligainsider_cache_timestamp', any)).called(1);
+      verify(mockPrefs.setString('ligainsider_cache_s11', any)).called(1);
+      verify(
+        mockPrefs.setString('ligainsider_cache_alternatives', any),
+      ).called(1);
     });
 
-    test('should load from cache when offline', () async {
-      when(mockConnectivity.checkConnectivity())
-          .thenAnswer((_) async => [ConnectivityResult.none]);
-
+    test('lädt Startelf-Status aus dem Cache (offline)', () async {
       final cachedPlayer = LigainsiderPlayer(
-        id: 'cached',
+        id: 'cached-player_999',
         name: 'Cached Player',
-        shortName: 'Cached',
-        teamName: 'Test',
-        teamId: 'test',
+        shortName: 'Cached Player',
+        teamName: 'Unknown',
+        teamId: 'unknown',
         position: 0,
         injuryStatus: InjuryStatus.fit,
         lastUpdate: DateTime.now(),
-        ligainsiderId: 'cached_999',
+        ligainsiderId: 'cached-player_999',
       );
 
-      final cachedData = jsonEncode([cachedPlayer.toJson()]);
-      when(mockPrefs.getString('ligainsider_cache')).thenReturn(cachedData);
-      when(mockPrefs.getInt('ligainsider_cache_timestamp'))
-          .thenReturn(DateTime.now().millisecondsSinceEpoch);
+      when(
+        mockPrefs.getString('ligainsider_cache'),
+      ).thenReturn(jsonEncode([cachedPlayer.toJson()]));
+      when(
+        mockPrefs.getString('ligainsider_cache_s11'),
+      ).thenReturn(jsonEncode(['cached-player_999']));
+      when(
+        mockPrefs.getInt('ligainsider_cache_timestamp'),
+      ).thenReturn(DateTime.now().millisecondsSinceEpoch);
 
       await service.fetchLineups();
 
       expect(service.isReady, true);
       expect(service.playerCacheCount, 1);
-
-      final player = service.getLigainsiderPlayer('Cached', 'Player');
-      expect(player, isNotNull);
-      expect(player!.name, 'Cached Player');
+      expect(
+        service.getPlayerStatus('Cached', 'Player'),
+        LigainsiderPlayerStatus.likelyStart,
+      );
     });
 
-    test('should ignore expired cache', () async {
+    test('ignoriert abgelaufenen Cache', () async {
       when(mockConnectivity.checkConnectivity())
           .thenAnswer((_) async => [ConnectivityResult.wifi]);
 
-      final cachedData = jsonEncode([
-        {
-          'id': 'old',
-          'name': 'Old Player',
-          'shortName': 'Old',
-          'teamName': 'Test',
-          'teamId': 'test',
-          'position': 0,
-          'injury_status': 'fit',
-          'last_update': DateTime.now().toIso8601String(),
-          'ligainsiderId': 'old_111',
-        },
-      ]);
-
-      // Cache from 2 hours ago (expired)
-      final expiredTimestamp = DateTime.now()
-          .subtract(const Duration(hours: 2))
-          .millisecondsSinceEpoch;
-
-      when(mockPrefs.getString('ligainsider_cache')).thenReturn(cachedData);
-      when(mockPrefs.getInt('ligainsider_cache_timestamp'))
-          .thenReturn(expiredTimestamp);
+      when(
+        mockPrefs.getString('ligainsider_cache'),
+      ).thenReturn(jsonEncode([]));
+      when(mockPrefs.getInt('ligainsider_cache_timestamp')).thenReturn(
+        DateTime.now()
+            .subtract(const Duration(hours: 2))
+            .millisecondsSinceEpoch,
+      );
 
       when(mockHttpClient.get(any))
           .thenAnswer((_) async => http.Response('<html></html>', 200));
 
       await service.fetchLineups();
 
-      // Should not load expired cache, will fetch fresh (empty in this test)
       expect(service.playerCacheCount, 0);
     });
 
-    test('should clear cache', () async {
-      // Populate cache first
-      when(mockConnectivity.checkConnectivity())
-          .thenAnswer((_) async => [ConnectivityResult.wifi]);
-
-      final mockOverviewHtml = '''
-        <html>
-          <body>
-            <a href="/test-player_1/">Test Player</a>
-          </body>
-        </html>
-      ''';
-
-      final mockPlayerHtml = '''
-        <html>
-          <body>
-            <h1>Test Player</h1>
-            <div class="player-info">Position: Mittelfeld</div>
-          </body>
-        </html>
-      ''';
-
-      when(mockHttpClient.get(any)).thenAnswer((invocation) async {
-        final uri = invocation.positionalArguments[0] as Uri;
-        if (uri.path.contains('spieltage')) {
-          return http.Response(mockOverviewHtml, 200);
-        } else if (uri.path.contains('1')) {
-          return http.Response(mockPlayerHtml, 200);
-        }
-        return http.Response('', 404);
-      });
-
+    test('löscht den Cache vollständig', () async {
+      stubOverviewsAndTeamPages();
       await service.fetchLineups();
       expect(service.playerCacheCount, greaterThan(0));
 
-      // Clear cache
       await service.clearCache();
 
       expect(service.playerCacheCount, 0);
       expect(service.isReady, false);
-
       verify(mockPrefs.remove('ligainsider_cache')).called(1);
       verify(mockPrefs.remove('ligainsider_cache_timestamp')).called(1);
     });
   });
 
   group('Error Handling', () {
-    test('should handle HTTP errors gracefully', () async {
+    test('behandelt HTTP-Fehler ohne Exception', () async {
       when(mockConnectivity.checkConnectivity())
           .thenAnswer((_) async => [ConnectivityResult.wifi]);
-
       when(mockHttpClient.get(any))
           .thenAnswer((_) async => http.Response('Error', 500));
 
@@ -567,15 +355,49 @@ void main() {
       expect(service.playerCacheCount, 0);
     });
 
-    test('should handle network errors gracefully', () async {
+    test('behandelt Netzwerkfehler ohne Exception', () async {
       when(mockConnectivity.checkConnectivity())
           .thenAnswer((_) async => [ConnectivityResult.wifi]);
-
       when(mockHttpClient.get(any)).thenThrow(Exception('Network error'));
 
       await service.fetchLineups();
 
       expect(service.isReady, false);
+    });
+
+    test('lädt bei fehlender Verbindung aus dem Cache', () async {
+      when(mockConnectivity.checkConnectivity())
+          .thenAnswer((_) async => [ConnectivityResult.none]);
+
+      final cachedPlayer = LigainsiderPlayer(
+        id: 'offline-player_1',
+        name: 'Offline Player',
+        shortName: 'Offline Player',
+        teamName: 'Unknown',
+        teamId: 'unknown',
+        position: 0,
+        injuryStatus: InjuryStatus.fit,
+        lastUpdate: DateTime.now(),
+        ligainsiderId: 'offline-player_1',
+      );
+
+      when(
+        mockPrefs.getString('ligainsider_cache'),
+      ).thenReturn(jsonEncode([cachedPlayer.toJson()]));
+      when(
+        mockPrefs.getString('ligainsider_cache_s11'),
+      ).thenReturn(jsonEncode(['offline-player_1']));
+      when(
+        mockPrefs.getInt('ligainsider_cache_timestamp'),
+      ).thenReturn(DateTime.now().millisecondsSinceEpoch);
+
+      await service.fetchLineups();
+
+      expect(service.isReady, true);
+      expect(
+        service.getPlayerStatus('Offline', 'Player'),
+        LigainsiderPlayerStatus.likelyStart,
+      );
     });
   });
 

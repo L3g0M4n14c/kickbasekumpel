@@ -6,6 +6,7 @@ import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'config/router.dart';
 import 'config/theme.dart';
+import 'data/providers/ligainsider_provider.dart';
 import 'firebase_options.dart';
 
 final _logger = Logger();
@@ -105,11 +106,38 @@ class FirebaseErrorApp extends StatelessWidget {
   }
 }
 
-class KickbaseKumpelApp extends ConsumerWidget {
+class KickbaseKumpelApp extends ConsumerStatefulWidget {
   const KickbaseKumpelApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<KickbaseKumpelApp> createState() => _KickbaseKumpelAppState();
+}
+
+class _KickbaseKumpelAppState extends ConsumerState<KickbaseKumpelApp> {
+  @override
+  void initState() {
+    super.initState();
+    _preloadLigainsiderLineups();
+  }
+
+  /// Lädt die voraussichtlichen Aufstellungen (Ligainsider) direkt beim
+  /// App-Start im Hintergrund vor.
+  ///
+  /// Ohne diesen Preload wurden die Daten erst beim Öffnen der Aufstellung
+  /// geladen. Der Scrape dauert einige Sekunden – bis dahin fehlten die
+  /// Ligainsider-Rollen überall („Fehlt“). Der Preload blockiert den Start
+  /// nicht und schluckt Fehler (siehe `ligainsiderPreloadProvider`).
+  void _preloadLigainsiderLineups() {
+    try {
+      // Bewusst ohne await: der App-Start wartet nicht auf den Scrape.
+      ref.read(ligainsiderPreloadProvider);
+    } catch (e) {
+      _logger.w('⚠️ Ligainsider-Preload konnte nicht gestartet werden: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(goRouterProvider);
 
     return MaterialApp.router(

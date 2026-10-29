@@ -166,6 +166,14 @@ class LigainsiderStatusBadge extends ConsumerWidget {
     if (lastName.trim().isEmpty) return const SizedBox.shrink();
 
     final status = service.getPlayerStatus(firstName, lastName);
+
+    // Unvollständige Daten (z. B. Aufstellungen noch nicht veröffentlicht)
+    // sind kein Ausfall: "nicht gefunden" ist dann eine Datenlücke und darf
+    // nicht als "Fehlt" angezeigt werden.
+    if (status == LigainsiderPlayerStatus.out && !service.hasLineupCoverage) {
+      return const SizedBox.shrink();
+    }
+
     final color = status.color;
     final tooltip = 'Ligainsider: ${status.roleLabel} – ${status.description}';
 

@@ -13,7 +13,16 @@ import 'package:kickbasekumpel/main.dart';
 void main() {
   testWidgets('KickbaseKumpel app smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const ProviderScope(child: KickbaseKumpelApp()));
+    //
+    // Kein Auto-Retry (wie in `main.dart`): im Test sind Firebase/Plugins
+    // nicht verfügbar, der Riverpod-Default würde sonst Retry-Timer
+    // hinterlassen (u. a. für den Ligainsider-Preload beim App-Start).
+    await tester.pumpWidget(
+      ProviderScope(
+        retry: (retryCount, error) => null,
+        child: const KickbaseKumpelApp(),
+      ),
+    );
 
     // Verify that the app starts without errors
     expect(find.byType(KickbaseKumpelApp), findsOneWidget);

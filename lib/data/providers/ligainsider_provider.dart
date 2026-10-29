@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/ligainsider_service.dart';
@@ -64,19 +67,71 @@ final ligainsiderCacheCountProvider = FutureProvider<int>((ref) async {
 
 /// FutureProvider to fetch and initialize Ligainsider data
 ///
-/// This will automatically fetch lineups when first accessed.
+/// Lädt die Aufstellungsdaten cache-first (siehe
+/// `LigainsiderService.ensureLoaded`).
 ///
 /// Verwendung:
 /// ```dart
 /// ref.watch(ligainsiderInitProvider); // Triggers fetch
 /// ```
 final ligainsiderInitProvider = FutureProvider<void>((ref) async {
-  // Use the async provider that initializes SharedPreferences internally
   final service = await ref.watch(ligainsiderServiceFutureProvider.future);
-  await service.fetchLineups();
-  // Also try to fetch match lineups in background
-  service.fetchMatchLineups();
+  await service.ensureLoaded();
 });
+
+/// Lädt die Ligainsider-Daten beim App-Start im Hintergrund vor.
+///
+/// Wird in `main.dart` direkt beim App-Start gelesen. Damit liegen die
+/// voraussichtlichen Aufstellungen bereits vor, wenn der Nutzer die
+/// Aufstellungs-Empfehlung öffnet – vorher fehlten die Daten dort komplett
+/// („Fehlt“ bei allen Spielern), weil erst beim Öffnen des Screens gescraped
+/// wurde.
+///
+/// Läuft bewusst nicht blockierend und schluckt Fehler: der Preload ist ein
+/// Komfort-Feature und darf den App-Start nie stören.
+final ligainsiderPreloadProvider = FutureProvider<void>((ref) async {
+  // Service-Future einmalig auflösen – kein `ref` mehr nach einem möglichen
+  // Dispose des Providers verwenden.
+  final serviceFuture = ref.watch(ligainsiderServiceFutureProvider.future);
+
+  try {
+    final service = await serviceFuture;
+    await service.ensureLoaded();
+  } catch (e) {
+    debugPrint('⚠️ Ligainsider-Preload (Aufstellungen) fehlgeschlagen: $e');
+  }
+
+  // Cloud-Function-Aufstellungen (Firestore-Cache, 2 h) im Hintergrund wärmen.
+  try {
+    unawaited(
+      _prefetchCloudLineups(ref.read(ligainsiderMatchesProvider.future)),
+    );
+  } catch (e) {
+    debugPrint('⚠️ Ligainsider: Cloud-Aufstellungen nicht verfügbar: $e');
+  }
+});
+
+/// Erzwingt ein Neuladen der Ligainsider-Aufstellungen.
+///
+/// Für manuelle Refresh-Buttons (z. B. Live-Screen). Im Unterschied zu
+/// [ligainsiderPreloadProvider] wird der Cache-Frischecheck übersprungen und
+/// die Cloud-Function-Aufstellungen werden neu geladen.
+final ligainsiderReloadProvider = FutureProvider<void>((ref) async {
+  final service = await ref.watch(ligainsiderServiceFutureProvider.future);
+  await service.ensureLoaded(forceRefresh: true);
+  ref.invalidate(ligainsiderMatchesProvider);
+});
+
+/// Wärmt die Cloud-Function-Aufstellungen (Fehler werden geschluckt).
+Future<void> _prefetchCloudLineups(
+  Future<List<LigainsiderMatch>> matchesFuture,
+) async {
+  try {
+    await matchesFuture;
+  } catch (e) {
+    debugPrint('⚠️ Ligainsider: Cloud-Aufstellungen fehlgeschlagen: $e');
+  }
+}
 
 /// Provider exposing parsed match lineups
 ///

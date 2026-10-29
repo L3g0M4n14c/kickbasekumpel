@@ -102,6 +102,41 @@ Der `LigainsiderScraperService` ist ein spezialisierter Service, der automatisch
 
 ---
 
+## Voraussichtliche Aufstellungen — Lade-Strategie (App-Start-Preload)
+
+Die Ligainsider-Rollen (Stammspieler / 1. Option / 2. Option / Bank) kommen aus
+`lib/data/services/ligainsider_service.dart`.
+
+**Datenquelle (wichtig):** Die Spieltags-Übersicht
+(`https://www.ligainsider.de/bundesliga/spieltage/`) enthält **keine**
+Spieler-Links, sondern den Spielplan mit zwei Team-Links pro Spiel
+(`/bundesliga/team/{slug}/{id}/saison-{jahr}/{spiel-id}`). Dort steht die
+„VORAUSSICHTLICHE AUFSTELLUNG“ (11 Slots pro Team, je Slot der Starter und –
+falls vorhanden – die Alternative) inklusive Spielerfotos. Ein Parsen der
+Übersicht selbst lieferte nur News-Links → wenige Pseudo-Spieler im Cache →
+jeder echte Spieler galt als „nicht in der Startelf“ („Fehlt“).
+
+**Problem vorher:** Geladen wurde erst beim Öffnen der Aufstellung,
+sequenziell und mit dem falschen Ziel.
+
+**Jetzt:**
+
+| Ebene | Verhalten |
+|---|---|
+| App-Start | `KickbaseKumpelApp` (`lib/main.dart`) liest `ligainsiderPreloadProvider` direkt beim Start → Laden läuft im Hintergrund, der Start blockiert nicht. |
+| Service-Provider | `ligainsiderServiceFutureProvider` befüllt den Service cache-first (`ensureLoaded()`), Watcher (Status-Badges) bauen automatisch neu, sobald die Daten da sind. |
+| Scrape | 1 Übersichts-Request + 18 Team-Seiten, **parallel** (max. 6 gleichzeitig, ~4–5 s statt >30 s sequenziell). Ergebnis: 198 S11-Slots + ~50 Alternativen. |
+| Cache (persistent) | `ligainsider_cache` + `ligainsider_cache_timestamp` (Spieler) sowie `ligainsider_cache_s11` + `ligainsider_cache_alternatives` (Rollen). Frischer Cache (< 10 min) → **kein** Netzwerk-Request. Älterer Cache (< 1 h) → sofort nutzbare Daten + Hintergrund-Refresh. Abgelaufener Cache → erst nach dem Netzwerk-Fehler als Fallback. |
+| Netzwerk | Ein Scrape gleichzeitig (`_inFlightFetch`, Single-Flight); Übersicht 20 s Timeout, Team-Seiten 15 s. |
+| Spielerfotos | Kommen direkt mit der Aufstellungsseite (`cdn.ligainsider.de`) – keine zusätzlichen Detailseiten-Requests mehr. |
+| Cloud Function | `ligainsiderMatchesProvider` (2 h Firestore-Cache, `getLigainsiderLineups`) wird beim Start ebenfalls gewärmt. |
+| Datenlücke ≠ Ausfall | `LigainsiderService.hasLineupCoverage` (≥ 170 von 198 S11-Spielern). Darunter ist „nicht gefunden“ eine Datenlücke: Das Status-Badge zeigt dann **nicht** „Fehlt“, und die Aufstellungs-Empfehlung lässt `out` neutral (siehe `LineupRecommendationService.minS11Coverage`). |
+
+Manuelles Neuladen (überspringt den Frische-Check): `ligainsiderReloadProvider`
+(z. B. Refresh-Button im Live-Screen).
+
+---
+
 ## Neue Architektur (Cloud Functions Backend)
 
 ```
