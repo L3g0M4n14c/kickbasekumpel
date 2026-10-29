@@ -63,6 +63,23 @@ String normalizeForLigainsider(String name) {
   return s;
 }
 
+/// Leitet aus einem Ligainsider-Slug den vollen Spielernamen ab.
+///
+/// `manuel-neuer_114` → `Manuel Neuer`; das Namens-Suffix nach dem letzten
+/// Unterstrich ist die Ligainsider-ID und wird abgeschnitten.
+String? playerNameFromLigainsiderSlug(String slug) {
+  final cleaned = slug.trim();
+  if (cleaned.isEmpty) return null;
+  final separator = cleaned.lastIndexOf('_');
+  final namePart = separator > 0 ? cleaned.substring(0, separator) : cleaned;
+  final words = namePart
+      .split(RegExp(r'[-_]'))
+      .where((word) => word.isNotEmpty)
+      .map((word) => word[0].toUpperCase() + word.substring(1))
+      .toList(growable: false);
+  return words.isEmpty ? null : words.join(' ');
+}
+
 /// Sucht eine Foto-URL in der Ligainsider-Foto-Map.
 /// Versucht zuerst den vollständigen Namen, dann Fallback auf Nachname-Endung.
 String? lookupLigainsiderPhoto(

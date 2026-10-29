@@ -5,6 +5,7 @@ import '../models/lineup_model.dart';
 import '../models/ligainsider_model.dart';
 import '../services/deterministic_recommendation_service.dart';
 import '../services/lineup_recommendation_service.dart';
+import '../services/ligainsider_lineup_index.dart';
 import '../../domain/repositories/repository_interfaces.dart';
 import 'kickbase_api_provider.dart';
 import 'repository_providers.dart';
@@ -742,6 +743,11 @@ final myLineupProvider = FutureProvider.family<List<LineupPlayer>, String>((
 /// formation-legale Startelf (siehe [LineupRecommendationService]).
 final lineupRecommendationProvider =
     FutureProvider.family<LineupRecommendation, String>((ref, leagueId) async {
+      // Ligainsider-Index überwachen: Trifft er (z. B. nach dem App-Start-Preload)
+      // erst später ein, wird die Empfehlung automatisch neu berechnet. So
+      // blockiert der Screen nie auf einen langsamen Scrape.
+      final ligainsiderIndexAsync = ref.watch(ligainsiderLineupIndexProvider);
+
       final players = await ref.watch(myLineupProvider(leagueId).future);
       final apiClient = ref.watch(kickbaseApiClientProvider);
       final context = await loadRecommendationAnalysisContext(
@@ -761,7 +767,10 @@ final lineupRecommendationProvider =
         );
       }
 
-      final ligainsiderStatus = await _loadLigainsiderStatus(ref, players);
+      final ligainsiderStatus = _ligainsiderStatusFor(
+        ligainsiderIndexAsync.asData?.value,
+        players,
+      );
 
       return const LineupRecommendationService().recommend(
         squad: players,
@@ -770,53 +779,27 @@ final lineupRecommendationProvider =
       );
     });
 
-/// Liest den Ligainsider-Startelf-Status je Spieler.
+/// Bildet den Ligainsider-Startelf-Status je Spieler-ID ab.
 ///
-/// Pinned: Ligainsider liefert nur S11 + Alternativen. Liegen Daten vor,
-/// ist "nicht gefunden (out)" gleichbedeutend mit "kein S11-Platz" und wird
-/// als Ausschluss-Kriterium weitergereicht. Ohne Daten (kein Cache, offline)
-/// bleibt die Map leer – die Empfehlung funktioniert dann ohne dieses
-/// Kriterium weiter.
-///
-/// Lädt cache-first (`LigainsiderService.ensureLoaded()`) und wartet – wenn
-/// vorhanden – auf den App-Start-Preload, damit hier kein zweiter Scrape
-/// startet und die Aufstellung nicht minutenlang lädt.
-Future<Map<String, LigainsiderPlayerStatus>> _loadLigainsiderStatus(
-  Ref ref,
+/// Quelle ist der [ligainsiderLineupIndexProvider] (primär Cloud Function,
+/// sonst lokaler Scrape). Ohne verlässliche Abdeckung bleibt die Map leer –
+/// die Empfehlung rechnet dann ohne Ligainsider-Kriterium weiter, statt
+/// Spieler fälschlich auszuschließen („Fehlt“).
+Map<String, LigainsiderPlayerStatus> _ligainsiderStatusFor(
+  LigainsiderLineupIndex? index,
   List<LineupPlayer> players,
-) async {
-  // App-Start-Preload abwarten (geteilter Ladevorgang, idempotent).
-  try {
-    await ref.read(ligainsiderPreloadProvider.future);
-  } catch (_) {
-    // Preload-Fehler sind hier unkritisch – unten wird erneut geprüft.
-  }
+) {
+  if (index == null || !index.hasCoverage) return const {};
 
-  try {
-    final service = await ref.watch(ligainsiderServiceFutureProvider.future);
-    if (!service.isReady) {
-      await service.ensureLoaded();
-    }
-    final statusByPlayerId = <String, LigainsiderPlayerStatus>{};
-    // Pinned: Ligainsider liefert nur S11 + Alternativen. Nur wenn die Daten
-    // den Großteil der Liga abdecken, gilt "nicht gefunden (out) = nicht in
-    // der Startelf" als Ausschlusskriterium. Bei unvollständigen Daten
-    // (Aufstellungen noch nicht veröffentlicht) bleibt es neutral – sonst
-    // stünde in der Aufstellung überall "Fehlt".
-    final dataAvailable = service.hasLineupCoverage;
-    for (final player in players) {
-      final parts = player.name.trim().split(RegExp(r'\s+'));
-      final lastName = parts.length > 1 ? parts.last : player.name.trim();
-      final firstName = parts.length > 1
-          ? parts.sublist(0, parts.length - 1).join(' ')
-          : '';
-      final status = service.getPlayerStatus(firstName, lastName);
-      if (dataAvailable) {
-        statusByPlayerId[player.id] = status;
-      }
-    }
-    return statusByPlayerId;
-  } catch (_) {
-    return const {};
+  final statusByPlayerId = <String, LigainsiderPlayerStatus>{};
+  for (final player in players) {
+    final parts = player.name.trim().split(RegExp(r'\s+'));
+    final lastName = parts.length > 1 ? parts.last : player.name.trim();
+    final firstName = parts.length > 1
+        ? parts.sublist(0, parts.length - 1).join(' ')
+        : '';
+    final status = index.statusFor(firstName, lastName);
+    if (status != null) statusByPlayerId[player.id] = status;
   }
+  return statusByPlayerId;
 }

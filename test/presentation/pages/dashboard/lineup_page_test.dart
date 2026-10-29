@@ -7,7 +7,8 @@ import 'package:kickbasekumpel/data/models/league_model.dart';
 import 'package:kickbasekumpel/data/models/lineup_model.dart';
 import 'package:kickbasekumpel/data/providers/league_providers.dart';
 import 'package:kickbasekumpel/data/providers/player_providers.dart';
-import 'package:kickbasekumpel/data/providers/service_providers.dart';
+import 'package:kickbasekumpel/data/providers/ligainsider_provider.dart';
+import 'package:kickbasekumpel/data/services/ligainsider_lineup_index.dart';
 import 'package:kickbasekumpel/data/services/ligainsider_service.dart';
 import 'package:kickbasekumpel/data/models/ligainsider_model.dart';
 import 'package:kickbasekumpel/presentation/pages/dashboard/lineup_page.dart';
@@ -49,7 +50,9 @@ void main() {
       final container = ProviderContainer(
         retry: (failureCount, error) => null,
         overrides: [
-          ligainsiderServiceFutureProvider.overrideWith((ref) async => service),
+          ligainsiderLineupIndexProvider.overrideWith(
+            (ref) async => LigainsiderLineupIndex.fromService(service),
+          ),
           myLineupProvider.overrideWith(
             (ref, leagueId) async => [
               _player(id: 's11', name: 'Stammspieler', lo: 1),

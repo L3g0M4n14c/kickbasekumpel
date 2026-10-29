@@ -103,9 +103,10 @@ final ligainsiderServiceFutureProvider = FutureProvider<LigainsiderService>((
 
   final service = LigainsiderService(httpClient: httpClient, prefs: prefs);
 
-  // Cache-first vorladen: sofortige Daten aus SharedPreferences, Netzwerk nur
-  // bei Bedarf (kein Cache oder abgelaufen).
-  await service.ensureLoaded();
+  // Nur den persistenten Cache laden – kein Datenverbrauch beim App-Start.
+  // Der Netzwerk-Scrape läuft ausschließlich als Fallback über
+  // `ligainsiderLineupIndexProvider` (ensureLoaded).
+  await service.loadCached();
 
   return service;
 });
