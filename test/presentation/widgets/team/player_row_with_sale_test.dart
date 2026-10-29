@@ -4,7 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:kickbasekumpel/data/models/ligainsider_model.dart';
 import 'package:kickbasekumpel/data/models/player_model.dart';
-import 'package:kickbasekumpel/data/providers/service_providers.dart';
+import 'package:kickbasekumpel/data/providers/ligainsider_provider.dart';
+import 'package:kickbasekumpel/data/services/ligainsider_lineup_index.dart';
 import 'package:kickbasekumpel/data/services/ligainsider_service.dart';
 import 'package:kickbasekumpel/presentation/widgets/team/player_row_with_sale.dart';
 
@@ -456,7 +457,9 @@ void main() {
 
     Widget wrap(Widget child) => ProviderScope(
       overrides: [
-        ligainsiderServiceFutureProvider.overrideWith((ref) async => service),
+        ligainsiderLineupIndexProvider.overrideWith(
+            (ref) async => LigainsiderLineupIndex.fromService(service),
+          ),
       ],
       child: MaterialApp(home: Scaffold(body: child)),
     );

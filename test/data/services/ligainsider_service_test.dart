@@ -401,7 +401,33 @@ void main() {
     });
   });
 
+  group('Namens-Matching', () {
+    test('voller Name als Nachname matcht über den Nachnamen', () async {
+      // Widgets übergeben `lastName: player.name` – also den vollen Namen.
+      // Der Slug kann anders geschrieben sein ("minjae" vs. "Min-jae").
+      when(mockConnectivity.checkConnectivity())
+          .thenAnswer((_) async => [ConnectivityResult.wifi]);
+
+      final overview = _overviewHtml([_bayernPath]);
+      final bayern = _teamPageHtml([('minjae-kim_27022', null)]);
+
+      when(mockHttpClient.get(any)).thenAnswer((invocation) async {
+        final uri = invocation.positionalArguments[0] as Uri;
+        if (uri.path.contains('/team/')) return http.Response(bayern, 200);
+        return http.Response(overview, 200);
+      });
+
+      await service.fetchLineups();
+
+      expect(
+        service.getPlayerStatus('', 'Min-jae Kim'),
+        LigainsiderPlayerStatus.likelyStart,
+      );
+    });
+  });
+
   group('Status Extension', () {
+
     test('should provide correct icon for each status', () {
       expect(LigainsiderPlayerStatus.likelyStart.icon, '✓');
       expect(LigainsiderPlayerStatus.startWithAlternative.icon, '1');

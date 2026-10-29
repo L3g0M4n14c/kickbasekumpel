@@ -123,14 +123,12 @@ sequenziell und mit dem falschen Ziel.
 
 | Ebene | Verhalten |
 |---|---|
-| App-Start | `KickbaseKumpelApp` (`lib/main.dart`) liest `ligainsiderPreloadProvider` direkt beim Start → Laden läuft im Hintergrund, der Start blockiert nicht. |
-| Service-Provider | `ligainsiderServiceFutureProvider` befüllt den Service cache-first (`ensureLoaded()`), Watcher (Status-Badges) bauen automatisch neu, sobald die Daten da sind. |
-| Scrape | 1 Übersichts-Request + 18 Team-Seiten, **parallel** (max. 6 gleichzeitig, ~4–5 s statt >30 s sequenziell). Ergebnis: 198 S11-Slots + ~50 Alternativen. |
-| Cache (persistent) | `ligainsider_cache` + `ligainsider_cache_timestamp` (Spieler) sowie `ligainsider_cache_s11` + `ligainsider_cache_alternatives` (Rollen). Frischer Cache (< 10 min) → **kein** Netzwerk-Request. Älterer Cache (< 1 h) → sofort nutzbare Daten + Hintergrund-Refresh. Abgelaufener Cache → erst nach dem Netzwerk-Fehler als Fallback. |
-| Netzwerk | Ein Scrape gleichzeitig (`_inFlightFetch`, Single-Flight); Übersicht 20 s Timeout, Team-Seiten 15 s. |
-| Spielerfotos | Kommen direkt mit der Aufstellungsseite (`cdn.ligainsider.de`) – keine zusätzlichen Detailseiten-Requests mehr. |
-| Cloud Function | `ligainsiderMatchesProvider` (2 h Firestore-Cache, `getLigainsiderLineups`) wird beim Start ebenfalls gewärmt. |
-| Datenlücke ≠ Ausfall | `LigainsiderService.hasLineupCoverage` (≥ 170 von 198 S11-Spielern). Darunter ist „nicht gefunden“ eine Datenlücke: Das Status-Badge zeigt dann **nicht** „Fehlt“, und die Aufstellungs-Empfehlung lässt `out` neutral (siehe `LineupRecommendationService.minS11Coverage`). |
+| Statusquelle | `ligainsiderLineupIndexProvider` – primär die Cloud Function `getLigainsiderLineups` (Firestore-Cache 2 h, scraped serverseitig, funktioniert auch im Web), nur bei unvollständigen Daten der lokale Scrape. |
+| App-Start | `KickbaseKumpelApp` (`lib/main.dart`) liest `ligainsiderPreloadProvider` direkt beim Start → Index wird im Hintergrund gebaut, der Start blockiert nicht; Badges bauen sich neu, sobald die Daten da sind. |
+| Namens-Matching | `LigainsiderLineupIndex` matcht über die Slugs (voller Name) statt nur über Anzeigenamen: kompletter Name → Nachname (letztes Segment) → Kurznamen-Fuzzy für Alternativen. Widgets übergeben `lastName: player.name` (voller Name) – das wird korrekt aufgelöst (z. B. „Min-jae Kim“). |
+| Lokaler Scrape (Fallback) | `ligainsiderServiceFutureProvider` lädt cache-first (`ensureLoaded()`): 1 Übersichts-Request + 18 Team-Seiten parallel (max. 6, ~4–5 s). Übersicht 20 s Timeout, Team-Seiten 15 s. Spielerfotos kommen direkt mit der Aufstellungsseite. |
+| Cache (persistent) | `ligainsider_cache` + `…_timestamp` (Spieler), `ligainsider_cache_s11` + `ligainsider_cache_alternatives` (Rollen). Frischer Cache (< 10 min) → **kein** Netzwerk-Request. Älterer Cache (< 1 h) → sofort nutzbare Daten + Hintergrund-Refresh. |
+| Datenlücke ≠ Ausfall | `hasCoverage` (≥ 170 von 198 S11-Spielern). Darunter liefert der Index `null` statt `out`: Badge zeigt nichts, die Aufstellungs-Empfehlung bleibt neutral. |
 
 Manuelles Neuladen (überspringt den Frische-Check): `ligainsiderReloadProvider`
 (z. B. Refresh-Button im Live-Screen).

@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 
 import '../models/ligainsider_model.dart';
+import '../utils/parsing_utils.dart';
 import '../../domain/exceptions/kickbase_exceptions.dart';
 
 /// Ligainsider Service
@@ -161,9 +162,20 @@ class LigainsiderService {
     await fetchLineups(force: forceRefresh);
   }
 
+  /// Lädt ausschließlich den persistenten Cache (kein Netzwerk-Request).
+  ///
+  /// Der reguläre Weg zu den Aufstellungen ist der Status-Index (Cloud
+  /// Function). Der lokale Scrape läuft nur als Fallback – dieser Aufruf
+  /// macht die gecachten Daten ohne Datenverbrauch verfügbar (z. B. für den
+  /// Live-Screen oder sofort nach dem App-Start).
+  Future<void> loadCached({bool allowStale = true}) async {
+    if (_isReady) return;
+    await _loadFromCache(allowStale: allowStale);
+  }
+
   /// Fetch lineups and populate cache
   ///
-  /// [force] erzwingt einen Netzwerk-Scrape, auch wenn der persistente Cache
+  /// [force] erzwingt einen Netzwerk-Scrape, wenn der persistente Cache
   /// noch frisch ist (z. B. Pull-to-Refresh).
   Future<void> fetchLineups({bool force = false}) async {
     // Single-flight: App-Start-Preload und Aufstellungs-Screen teilen sich
@@ -469,6 +481,13 @@ class LigainsiderService {
   }
 
   /// Get player status (starting XI, bench, alternative, out)
+  ///
+  /// Widgets übergeben teilweise den **vollen Namen als Nachnamen**
+  /// (`lastName: player.name`, z. B. "Jamal Musiala"). Deshalb wird zuerst mit
+  /// allen Namensteilen gesucht und danach nur mit dem Nachnamen (letztes
+  /// Segment) – sonst würde z. B. "Min-jae Kim" nie auf den Slug
+  /// `minjae-kim_...` matchen und fälschlich als [LigainsiderPlayerStatus.out]
+  /// ("Fehlt") gelten.
   LigainsiderPlayerStatus getPlayerStatus(String firstName, String lastName) {
     final lastNameSegments = _nameSegments(_normalize(lastName));
     final firstNameSegments = _nameSegments(_normalize(firstName));
@@ -477,9 +496,27 @@ class LigainsiderService {
     if (lastNameSegments.isEmpty && firstNameSegments.isEmpty) {
       return LigainsiderPlayerStatus.out;
     }
-    final querySegments = lastNameSegments.isNotEmpty
-        ? lastNameSegments
-        : firstNameSegments;
+
+    final queries = <Set<String>>[
+      if (lastNameSegments.isNotEmpty) lastNameSegments,
+      if (lastNameSegments.length > 1) {lastNameSegments.last},
+      if (lastNameSegments.isEmpty) firstNameSegments,
+    ];
+
+    for (final querySegments in queries) {
+      final status = _statusForSegments(querySegments, firstNameSegments);
+      if (status != null) return status;
+    }
+
+    return LigainsiderPlayerStatus.out;
+  }
+
+  /// Status für eine Segment-Menge – null, wenn kein Spieler gefunden wurde.
+  LigainsiderPlayerStatus? _statusForSegments(
+    Set<String> querySegments,
+    Set<String> firstNameSegments,
+  ) {
+    if (querySegments.isEmpty) return null;
 
     // Check if player is an alternative. Segment-Match statt Contains:
     // 'Lang' darf nicht an 'Langkamp' matchen.
@@ -496,53 +533,38 @@ class LigainsiderService {
       return _nameSegments(_normalize(entry.key)).containsAll(querySegments);
     }).toList();
 
-    // Fallback to first name
-    if (candidates.isEmpty &&
-        lastNameSegments.isNotEmpty &&
-        firstNameSegments.isNotEmpty) {
-      candidates = _playerCache.entries.where((entry) {
-        return _nameSegments(_normalize(entry.key))
-            .containsAll(firstNameSegments);
-      }).toList();
-    }
-
     MapEntry<String, LigainsiderPlayer>? foundEntry;
 
     if (candidates.length == 1) {
       foundEntry = candidates.first;
     } else if (candidates.length > 1) {
       // Prefer both names present
-      foundEntry = candidates.where((entry) {
-        final parts = _nameSegments(_normalize(entry.key));
-        return parts.containsAll(lastNameSegments) &&
-            parts.containsAll(firstNameSegments);
-      }).firstOrNull;
-
-      foundEntry ??= candidates.where((entry) {
-        return _nameSegments(_normalize(entry.key))
-            .containsAll(firstNameSegments);
-      }).firstOrNull;
+      if (firstNameSegments.isNotEmpty) {
+        foundEntry = candidates.where((entry) {
+          final parts = _nameSegments(_normalize(entry.key));
+          return parts.containsAll(querySegments) &&
+              parts.containsAll(firstNameSegments);
+        }).firstOrNull;
+      }
 
       foundEntry ??= candidates.firstOrNull;
     }
 
-    if (foundEntry != null) {
-      final player = foundEntry.value;
-      final id = foundEntry.key;
+    if (foundEntry == null) return null;
 
-      // Check if in starting lineup
-      if (_startingLineupIds.contains(id)) {
-        if (player.alternative != null) {
-          return LigainsiderPlayerStatus.startWithAlternative;
-        }
-        return LigainsiderPlayerStatus.likelyStart;
-      } else {
-        // In squad but not starting
-        return LigainsiderPlayerStatus.bench;
+    final player = foundEntry.value;
+    final id = foundEntry.key;
+
+    // Check if in starting lineup
+    if (_startingLineupIds.contains(id)) {
+      if (player.alternative != null) {
+        return LigainsiderPlayerStatus.startWithAlternative;
       }
+      return LigainsiderPlayerStatus.likelyStart;
     }
 
-    return LigainsiderPlayerStatus.out;
+    // In squad but not starting
+    return LigainsiderPlayerStatus.bench;
   }
 
   // MARK: - HTML Scraping
@@ -741,16 +763,8 @@ class LigainsiderService {
 
   /// Leitet aus einem Ligainsider-Slug den vollen Spielernamen ab
   /// (`manuel-neuer_114` → `Manuel Neuer`).
-  static String? _nameFromSlug(String slug) {
-    final separator = slug.lastIndexOf('_');
-    final namePart = separator > 0 ? slug.substring(0, separator) : slug;
-    final words = namePart
-        .split('-')
-        .where((word) => word.isNotEmpty)
-        .map((word) => word[0].toUpperCase() + word.substring(1))
-        .toList(growable: false);
-    return words.isEmpty ? null : words.join(' ');
-  }
+  static String? _nameFromSlug(String slug) =>
+      playerNameFromLigainsiderSlug(slug);
 
   /// Macht eine relative Bild-URL absolut und filtert Nicht-Bilder
   /// (z. B. verlinkte Spieltags-Seiten) heraus.

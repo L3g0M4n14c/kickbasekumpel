@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/models/ligainsider_model.dart';
-import '../../../data/providers/service_providers.dart';
+import '../../../data/providers/ligainsider_provider.dart';
 
 /// Extension für Farbe/Icon/Label pro Ligainsider-Status.
 ///
@@ -157,22 +157,21 @@ class LigainsiderStatusBadge extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final serviceAsync = ref.watch(ligainsiderServiceFutureProvider);
-    final service = serviceAsync.asData?.value;
+    // Status-Index: Cloud-Function-Aufstellungen (primär) bzw. lokaler Scrape.
+    // Wird beim App-Start vorgewärmt und rebuildet dieses Widget, sobald die
+    // Daten da sind.
+    final index = ref.watch(ligainsiderLineupIndexProvider).asData?.value;
 
-    // Service noch nicht initialisiert (z.B. offline) → gar nichts anzeigen.
-    if (service == null || !service.isReady) return const SizedBox.shrink();
+    // (Noch) keine Daten (z. B. offline) → gar nichts anzeigen.
+    if (index == null) return const SizedBox.shrink();
 
     if (lastName.trim().isEmpty) return const SizedBox.shrink();
 
-    final status = service.getPlayerStatus(firstName, lastName);
-
-    // Unvollständige Daten (z. B. Aufstellungen noch nicht veröffentlicht)
-    // sind kein Ausfall: "nicht gefunden" ist dann eine Datenlücke und darf
-    // nicht als "Fehlt" angezeigt werden.
-    if (status == LigainsiderPlayerStatus.out && !service.hasLineupCoverage) {
-      return const SizedBox.shrink();
-    }
+    // null = keine verlässliche Aussage (Datenlücke) → nichts anzeigen.
+    // Unvollständige Daten (Aufstellungen noch nicht veröffentlicht) sind kein
+    // Ausfall und dürfen nicht als "Fehlt" erscheinen.
+    final status = index.statusFor(firstName, lastName);
+    if (status == null) return const SizedBox.shrink();
 
     final color = status.color;
     final tooltip = 'Ligainsider: ${status.roleLabel} – ${status.description}';
