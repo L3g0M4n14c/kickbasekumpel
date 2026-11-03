@@ -1,0 +1,55 @@
+default_platform(:ios)
+
+platform :ios do
+  # Lane 1: Signing vorbereiten (match + xcodeproj + ExportOptions.plist)
+  desc "Set up code signing via Match"
+  lane :setup_signing do
+    api_key = app_store_connect_api_key(
+      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
+      issuer_id: ENV["APP_STORE_CONNECT_API_KEY_ISSUER_ID"],
+      key_content: ENV["APP_STORE_CONNECT_API_KEY_CONTENT"],
+      is_key_content_base64: false,
+    )
+
+    match(
+      type: "adhoc",
+      readonly: true,
+      api_key: api_key,
+    )
+
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "ios/Runner.xcodeproj",
+      team_id: ENV["APPLE_TEAM_ID"],
+      bundle_identifier: "__BUNDLE_ID__",
+      profile_name: "match AdHoc __BUNDLE_ID__",
+      code_sign_identity: "iPhone Distribution",
+    )
+
+    # ExportOptions.plist für flutter build ipa generieren
+    File.write(File.expand_path("../ios/ExportOptions.plist"), <<~PLIST)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+      <plist version="1.0">
+      <dict>
+          <key>method</key>
+          <string>release-testing</string>
+          <key>teamID</key>
+          <string>#{ENV["APPLE_TEAM_ID"]}</string>
+          <key>provisioningProfiles</key>
+          <dict>
+              <key>__BUNDLE_ID__</key>
+              <string>match AdHoc __BUNDLE_ID__</string>
+          </dict>
+          <key>signingStyle</key>
+          <string>manual</string>
+          <key>signingCertificate</key>
+          <string>iPhone Distribution</string>
+          <key>stripSwiftSymbols</key>
+          <true/>
+      </dict>
+      </plist>
+    PLIST
+  end
+
+end

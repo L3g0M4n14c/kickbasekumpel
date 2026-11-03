@@ -1,0 +1,4 @@
+app_identifier("__BUNDLE_ID__")
+apple_id(ENV["APPLE_ID"])
+itc_team_id(ENV["ITC_TEAM_ID"]) if ENV["ITC_TEAM_ID"]
+team_id("__TEAM_ID__")

@@ -1,0 +1,26 @@
+// In android/app/build.gradle.kts, innerhalb von `android { ... }` einfügen.
+// Keystore kommt im CI als Datei android/app/keystore.jks (aus Base64-Secret),
+// Passwörter/Alias als Umgebungsvariablen. Lokal: keystore.jks ablegen (NICHT committen).
+    signingConfigs {
+        create("release") {
+            val keystoreFile = file("keystore.jks")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+            } else if (System.getenv("ANDROID_KEYSTORE_PATH") != null) {
+                storeFile = file(System.getenv("ANDROID_KEYSTORE_PATH")!!)
+            }
+            storePassword = System.getenv("ANDROID_STORE_PASSWORD") ?: ""
+            keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: ""
+            keyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: ""
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
+
+// .gitignore ergänzen:
+//   android/app/keystore.jks
+//   *.jks
+//   ios/ExportOptions.plist

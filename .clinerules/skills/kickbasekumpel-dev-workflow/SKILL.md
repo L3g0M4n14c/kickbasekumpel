@@ -56,7 +56,9 @@ Alternativ `./deploy-functions.sh` im Projektwurzelverzeichnis.
 
 ## Fastlane (iOS)
 
-`fastlane/Fastfile`: Lanes `setup_signing`, `upload` (Optionen via `fastlane <lane> key:value`). Siehe auch docs/CI_CD_SETUP.md.
+`fastlane/Fastfile`: Lane `setup_signing` (Match Ad Hoc + ExportOptions.plist; aufgerufen von `ios/ci_scripts/ci_post_xcodebuild.sh`). Die Lane `upload` ist ungenutzt (Upload per Firebase CLI im Skript). Siehe docs/CI_CD_SETUP.md.
+
+CI/CD für neue Flutter-Projekte nach diesem Muster: Skill `flutter-cicd-scaffold` (Templates + iOS-Tester-Optionen).
 
 ## Wichtige Abhängigkeiten (pubspec.yaml)
 
