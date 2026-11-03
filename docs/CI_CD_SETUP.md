@@ -254,7 +254,7 @@ Nach jedem Push auf `main`:
 
 1. **Firebase Deploy Job** (ca. 3–5 Min.): Functions, Firestore Rules, Storage Rules, Web App
 2. **Android Build & Distribute Job** (ca. 8–12 Min.): APK gebaut und an `internal-testers` verteilt
-3. **iOS** (Xcode Cloud, ca. 10–20 Min., *nicht* in `deploy.yml`): `ios/ci_scripts/` bauen, signieren (Ad Hoc) und per Firebase CLI an `internal-testers` verteilen. Neue Tester-Geräte brauchen weiterhin eine manuelle UDID-Registrierung, siehe `.clinerules/skills/flutter-cicd-scaffold/references/ios-tester-distribution.md`
+3. **iOS** (Xcode Cloud, ca. 10–20 Min., *nicht* in `deploy.yml`): Build und Verteilung an TestFlight laufen im Xcode-Cloud-Workflow (App Store Connect). Der Firebase-Ad-Hoc-Pfad (`ci_post_xcodebuild.sh`, Fastlane Match, Schritte 5–8 sowie der Abschnitt „Xcode Cloud: iOS-Deploy konfigurieren“) ist eine **Altlast** und greift nur, wenn dort die Signing-Variablen gesetzt sind. Siehe `.clinerules/skills/flutter-cicd-scaffold/references/ios-tester-distribution.md`
 
 Tester erhalten automatisch eine E-Mail mit Download-Anweisungen.
 
