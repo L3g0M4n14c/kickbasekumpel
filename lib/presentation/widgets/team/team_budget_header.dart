@@ -66,18 +66,7 @@ class TeamBudgetHeader extends StatelessWidget {
   }
 
   String _formatValue(int value) {
-    if (value >= 1000000) {
-      final mValue = value / 1000000;
-      return '${mValue.toStringAsFixed(1)}M';
-    } else if (value >= 1000) {
-      final kValue = value / 1000;
-      if (kValue < 10) {
-        return '${kValue.toStringAsFixed(1)}k';
-      } else {
-        return '${kValue.toStringAsFixed(0)}k';
-      }
-    }
-    // Formatiere mit Tausendertrennzeichen für kleinere Werte
+    // Ungerundete Ganzzahl mit Tausendertrennzeichen
     final formatter = NumberFormat.decimalPattern('de_DE');
     return formatter.format(value);
   }
