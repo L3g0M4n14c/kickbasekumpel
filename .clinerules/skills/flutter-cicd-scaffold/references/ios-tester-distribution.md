@@ -14,9 +14,9 @@ vor Umsetzung gegen aktuelle Docs verifizieren; Host firebase.google.com war ges
   ist aber schlecht dokumentiert → nicht empfohlen.
 - Neue Tester: Einladung/Annahme (E-Mail) bleibt ein menschlicher Schritt.
 
-## Option A – Firebase App Distribution mit Ad-Hoc-IPA (Ist-Zustand im Kickbase-Projekt)
+## Option A – Firebase App Distribution mit Ad-Hoc-IPA (im Kickbase-Projekt Altlast, ersetzt durch B)
 
-Ablauf: Push auf main → Xcode Cloud → `ci_post_clone.sh` → Archive → `ci_post_xcodebuild.sh`
+Ablauf (nur aktiv, wenn im Xcode-Cloud-Workflow die Signing-Variablen gesetzt sind; sonst beendet sich das Skript mit `exit 0`): Push auf main → Xcode Cloud → `ci_post_clone.sh` → Archive → `ci_post_xcodebuild.sh`
 (Ad-Hoc-Export, Fastlane Match) → `firebase appdistribution:distribute`.
 Build + Upload sind damit vollautomatisch.
 
@@ -55,7 +55,7 @@ Zu klären/Grenzen:
 - Tester müssen das Firebase-Tester-Profil auf dem Gerät installieren, damit die UDID
   überhaupt in Firebase erscheint – der Erst-Schritt bleibt manuell.
 
-## Option B – TestFlight über Xcode-Cloud-Post-Action (empfohlen, wenn UDID-Pflege nervt)
+## Option B – TestFlight über Xcode-Cloud-Post-Action (Standard; Ist-Zustand im Kickbase-Projekt laut Nutzer)
 
 Xcode Cloud kann nach dem Archive automatisch an TestFlight verteilen
 (Post-Action "TestFlight Internal Testing", ggf. auch External Testing).
@@ -73,6 +73,7 @@ Xcode Cloud kann nach dem Archive automatisch an TestFlight verteilen
 
 | Situation | Empfehlung |
 |---|---|
+| Neues Projekt, keine besonderen Gründe | B (intern oder extern) |
 | Wenige, feste Tester, Firebase soll Android+iOS bündeln | A + `sync_devices`-Job |
 | Wechselnde/viele Tester, geringe Wartung | B (extern, öffentlicher Link) |
 | Nur Entwickler/Team (≤100, ASC-Nutzer) | B (intern) |

@@ -50,13 +50,13 @@ Alternativ `./deploy-functions.sh` im Projektwurzelverzeichnis.
 | Workflow | Trigger | Inhalt |
 |---|---|---|
 | `flutter_tests.yml` | push, PR | pub get → **build_runner build** → `flutter test --coverage` → Codecov-Upload |
-| `deploy.yml` | push auf `main`, workflow_dispatch | 3 Jobs: (1) Flutter Web → Firebase Hosting, (2) `firebase deploy --only functions,firestore,storage,hosting` (Projekt `kickbasekumpel`; räumt vorher 2 Functions weg), (3) Android APK → Firebase App Distribution; iOS-Variant mit Pod-Install |
+| `deploy.yml` | push auf `main`, workflow_dispatch | 3 Jobs: (1) Flutter Web → Firebase Hosting, (2) `firebase deploy --only functions,firestore,storage,hosting` (Projekt `kickbasekumpel`; räumt vorher 2 Functions weg), (3) Android APK → Firebase App Distribution. **iOS läuft nicht hier**, sondern in Xcode Cloud (`ios/ci_scripts/`, Verteilung via TestFlight; Ad-Hoc→Firebase ist Altlast) |
 
 ⚠️ CI nutzt **Flutter 3.47.x**, pubspec verlangt Dart SDK **^3.13.0** – bei Versionskonflikten beide Stellen prüfen.
 
 ## Fastlane (iOS)
 
-`fastlane/Fastfile`: Lane `setup_signing` (Match Ad Hoc + ExportOptions.plist; aufgerufen von `ios/ci_scripts/ci_post_xcodebuild.sh`). Die Lane `upload` ist ungenutzt (Upload per Firebase CLI im Skript). Siehe docs/CI_CD_SETUP.md.
+**Altlast (Ad-Hoc→Firebase; Ist-Weg ist TestFlight):** `fastlane/Fastfile`: Lane `setup_signing` (Match Ad Hoc + ExportOptions.plist; aufgerufen von `ios/ci_scripts/ci_post_xcodebuild.sh`). Die Lane `upload` ist ungenutzt. Siehe docs/CI_CD_SETUP.md.
 
 CI/CD für neue Flutter-Projekte nach diesem Muster: Skill `flutter-cicd-scaffold` (Templates + iOS-Tester-Optionen).
 

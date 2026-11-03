@@ -16,7 +16,7 @@ dessen laufender Pipeline; Unverifiziertes ist in `references/` ausdrücklich ma
 | Web | GitHub Actions → Artefakt | Firebase Hosting (im Job `firebase-deploy`) |
 | Backend (Functions/Firestore/Storage Rules) | GitHub Actions | `firebase deploy` |
 | Android | GitHub Actions (Ubuntu, Java 17) | Firebase App Distribution (APK) |
-| iOS | **Xcode Cloud** (nicht GitHub macOS-Runner: Apple Silicon, Signing, Preis) | Firebase App Distribution (Ad Hoc) **oder** TestFlight |
+| iOS | **Xcode Cloud** (nicht GitHub macOS-Runner: Apple Silicon, Signing, Preis) | **TestFlight (Standard, Option B)**; Firebase Ad Hoc (Option A) nur bei Bedarf – im Ursprungsprojekt Altlast |
 
 Warum Xcode Cloud: Apple-Silicon-Maschinen, 25 h/Monat kostenlos mit Developer-Account,
 integrierte Signing-Verwaltung, Trigger direkt aus dem Repo.
@@ -28,7 +28,7 @@ integrierte Signing-Verwaltung, Trigger direkt aus dem Repo.
    `firebase.json`/`.firebaserc`, vorhandene `.github/workflows`, `functions/`, `ios/Podfile`.
 2. **Offene Entscheidungen beim Nutzer klären** (Bundle-ID/Team-ID/Firebase-Projekt nie erfinden):
    Firebase-Projekt-ID, Apple Team-ID, Tester-Gruppenname, iOS-Option A (Firebase/Ad-Hoc)
-   oder B (TestFlight) – siehe `references/ios-tester-distribution.md`, Hat das Projekt Cloud Functions?
+   oder B (TestFlight, Standard) – siehe `references/ios-tester-distribution.md`. Hat das Projekt Cloud Functions?
 3. **Templates kopieren** und Platzhalter ersetzen:
 
    | Template | Ziel |
@@ -41,8 +41,9 @@ integrierte Signing-Verwaltung, Trigger direkt aus dem Repo.
    Platzhalter: `__FLUTTER_VERSION__` (z.B. `3.47.x`, zu `environment.sdk` passend),
    `__FIREBASE_PROJECT__`, `__TESTER_GROUP__`, `__BUNDLE_ID__`, `__TEAM_ID__`.
    Prüfen mit `grep -rn "__[A-Z_]*__" .github ios/ci_scripts fastlane`.
-   Nicht benötigte Jobs/Steps entfernen (kein Backend → `firebase-deploy` raus; Option B →
-   `ci_post_xcodebuild.sh` und `fastlane/` weglassen).
+   Nicht benötigte Jobs/Steps entfernen (kein Backend → `firebase-deploy` raus). Standard ist
+   Option B: nur `ci_post_clone.sh` übernehmen, `ci_post_xcodebuild.sh` und `fastlane/` weglassen
+   und im Xcode-Cloud-Workflow die TestFlight-Post-Action wählen.
 4. **Dokumentation** ins Projekt: `references/setup-checklist.md` als `docs/CI_CD_SETUP.md`
    anpassen (Secrets-Tabelle, einmalige Schritte). Die Schritte mit Konsole/Apple-Login kann
    nur der Nutzer ausführen – als Checkliste übergeben, `gh secret set`-Befehle vorbereiten,
@@ -84,6 +85,9 @@ integrierte Signing-Verwaltung, Trigger direkt aus dem Repo.
 - Xcode-Cloud-Variablen leben in App Store Connect, **nicht** in GitHub-Secrets.
 
 ## Grenzen
+
+Im Ursprungsprojekt wurde Option A zuerst gebaut und später durch TestFlight ersetzt; die
+A-Templates blieben als Altlast zurück. Neue Projekte also mit B starten.
 
 Nicht automatisierbar: Apple-/Firebase-Konto-Anlage, API-Key-Erzeugung, Xcode-Cloud-Workflow-
 Erstkonfiguration, Tester-Einladungs-Annahme. Alles andere (Build, Signing, Upload,
