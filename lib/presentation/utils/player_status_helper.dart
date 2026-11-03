@@ -74,10 +74,12 @@ class PlayerStatusHelper {
     }
   }
 
-  /// Formatiert die Marktwertsteigerung/-verlust als Zeichenkette
+  /// Formatiert einen Marktwert-Trend als Euro-Betrag
   ///
-  /// Eingabe: marketValueTrend als Integer (z.B. 5000 = €5k)
-  /// Rückgabe: Formatierter String mit Pfeil und Betrag (z.B. "↑ +€5k" oder "↓ -€3k")
+  /// Eingabe: Euro-Wert (z. B. 350000 = 350k), wie ihn Kickbase im Feld
+  /// `tfhmvt` (Tagestrend) liefert – NICHT `mvt`, das nur die Richtung angibt.
+  /// Rückgabe: Formatierter String mit Pfeil und Betrag
+  /// (z. B. "↑ +€350k", "↓ -€1.2M" oder "→ €0")
   static String formatMarketValueTrend(int trend) {
     if (trend == 0) {
       return '→ €0';
@@ -85,6 +87,8 @@ class PlayerStatusHelper {
 
     final isPositive = trend > 0;
     final absoluteTrend = trend.abs();
+    final arrow = isPositive ? '↑' : '↓';
+    final sign = isPositive ? '+' : '-';
 
     // Konvertiere zu M (Millionen), k (Tausende) oder direkte Zahl
     String formattedValue;
@@ -107,9 +111,6 @@ class PlayerStatusHelper {
     } else {
       formattedValue = '€$absoluteTrend';
     }
-
-    final arrow = isPositive ? '↑' : '↓';
-    final sign = isPositive ? '+' : '-';
 
     return '$arrow $sign$formattedValue';
   }

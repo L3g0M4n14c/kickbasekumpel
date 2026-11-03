@@ -19,7 +19,7 @@ description: KickbaseKumpel Datei- und Ordnerkarte - welche Datei wofür zustän
 
 ## Models (`lib/data/models/` – alle Freezed, Barrel: `models_barrel.dart`)
 
-`user_model`, `league_model`, `player_model`, `transfer_model`, `market_model`, `market_value_model`, `lineup_model`, `optimal_lineup_model`, `match_model`, `leaderboard_model`, `performance_model`, `achievement_model`, `budget_calculation_model`, `sales_recommendation_model`, `squad_benchmark_model`, `manager_comparison_model`, `team_player_counts_model`, `transfer_planner_model`, `ligainsider_model`, `ligainsider_match_model`, `common_models`, `achievement_model`. Generiert: `*.freezed.dart`, `*.g.dart`. Plain-Dart (ohne Freezed, Toolchain inkompatibel): `squad_benchmark_model`, `manager_comparison_model`.
+`user_model`, `league_model`, `player_model`, `transfer_model`, `market_model`, `market_value_model`, `lineup_model`, `optimal_lineup_model`, `match_model`, `leaderboard_model`, `performance_model`, `achievement_model`, `budget_calculation_model`, `daily_bonus_model`, `team_player_counts_model`, `transfer_planner_model`, `ligainsider_model`, `ligainsider_match_model`, `common_models`. Generiert: `*.freezed.dart`, `*.g.dart`. Plain-Dart (ohne Freezed/Codegen): `squad_benchmark_model`, `manager_comparison_model`, `achievement_model`. Viele Services definieren ihre Ergebnis-Klassen zusätzlich plain im Service selbst (z. B. `LineupRecommendation`, `SalesGoalOutcome`).
 
 ## Services (`lib/data/services/`)
 
@@ -32,10 +32,14 @@ description: KickbaseKumpel Datei- und Ordnerkarte - welche Datei wofür zustän
 | `bid_recommendation_service.dart` | Gebots-Empfehlungen |
 | `budget_calculation_service.dart`, `achievement_budget_service.dart`, `achievement_derivation_service.dart`, `auto_sale_budget_service.dart` | Budget-Logik, Erfolgs-Ableitung |
 | `deterministic_recommendation_service.dart` | Verkaufsempfehlungen |
+| `sales_goal_service.dart` | Verkaufsziele (Ranking der Verkäufe je Ziel → `SalesGoalOutcome`) |
+| `lineup_recommendation_service.dart` | Aufstellungsempfehlung (formations-legale Startelf + Bank, Swaps) |
+| `daily_bonus_service.dart` | Tagesbonus-Status/-Einsammeln |
 | `squad_benchmark_service.dart`, `transfer_planner_service.dart` | Kader-Benchmark, Transferplanung |
 | `manager_transfer_history_service.dart` | Transferhistorie |
 | `manager_comparison_service.dart` | Manager-Direktvergleich (Du vs. Rivale) |
 | `ligainsider_service.dart`, `ligainsider_scraper_service.dart` | LigaInsider-Daten/Scraping |
+| `ligainsider_lineup_index.dart` | Name → Ligainsider-Rolle (Quelle primär: Cloud Function `getLigainsiderLineups`) |
 
 ## Repositories
 
@@ -43,8 +47,8 @@ description: KickbaseKumpel Datei- und Ordnerkarte - welche Datei wofür zustän
 
 ## Provider
 
-- **Data** (`lib/data/providers/`): `auth_provider`, `kickbase_api_provider`, `kickbase_auth_provider`, `repository_providers`, `service_providers`, `providers.dart` (Barrel), `league_providers`, `league_detail_providers`, `player_providers`, `player_detail_providers`, `market…` → `presentation/providers/market_providers`, `transfer_providers`, `recommendation_providers`, `bid_recommendation_providers`, `budget_calculation_providers`, `scouted_players_providers`, `squad_benchmark_providers`, `manager_transfer_history_providers`, `manager_comparison_providers`, `achievement_providers`, `competition_providers`, `live_providers`, `ligainsider_provider`, `ligainsider_photo_provider`, `user_providers`, `demo_mode_provider`, `http_client_wrapper_provider`
-- **UI** (`lib/presentation/providers/`): `dashboard_providers`, `market_providers`, `transfer_planner_provider`, `manager_comparison_providers` (Auswahl-State Direktvergleich)
+- **Data** (`lib/data/providers/`): `auth_provider`, `kickbase_api_provider`, `kickbase_auth_provider`, `repository_providers`, `service_providers`, `providers.dart` (Barrel), `league_providers`, `league_detail_providers`, `player_providers`, `player_detail_providers`, `manager_providers`, `daily_bonus_providers`, `transfer_providers`, `recommendation_providers`, `bid_recommendation_providers`, `budget_calculation_providers`, `scouted_players_providers`, `squad_benchmark_providers`, `manager_transfer_history_providers`, `manager_comparison_providers`, `achievement_providers`, `competition_providers`, `live_providers`, `ligainsider_provider`, `ligainsider_photo_provider`, `user_providers`, `demo_mode_provider`, `http_client_wrapper_provider`
+- **UI** (`lib/presentation/providers/`): `dashboard_providers` (inkl. `saleAdvicesProvider`), `market_providers` (`marketPlayersProvider`), `lineup_providers` (`lineupViewProvider`), `transfer_planner_provider`, `manager_comparison_providers` (Auswahl-State Direktvergleich)
 
 ## Screens/Pages (Auswahl)
 
@@ -58,7 +62,7 @@ description: KickbaseKumpel Datei- und Ordnerkarte - welche Datei wofür zustän
 ## Tests & Docs
 
 - `test/` spiegelt lib/; `test/README.md`
-- `docs/`: RIVERPOD_PROVIDERS, ROUTER_SETUP/QUICKSTART, FIRESTORE_REPOSITORIES, REPOSITORY_USAGE_EXAMPLES, AUTH_USAGE_EXAMPLES, HTTP_CLIENT_WRAPPER_USAGE, MARKET_VIEW_DOCUMENTATION, RESPONSIVE_DESIGN, LIGAINSIDER_SCRAPER, CLOUD_FUNCTIONS_SETUP, CI_CD_SETUP, UI_MIGRATION
+- `docs/`: RIVERPOD_PROVIDERS, ROUTER_SETUP/QUICKSTART, FIRESTORE_REPOSITORIES, REPOSITORY_USAGE_EXAMPLES, AUTH_USAGE_EXAMPLES, HTTP_CLIENT_WRAPPER_USAGE, MARKET_VIEW_DOCUMENTATION, RESPONSIVE_DESIGN, LIGAINSIDER_SCRAPER, CLOUD_FUNCTIONS_SETUP, CI_CD_SETUP, UI_MIGRATION, EXPORT_COMPLIANCE, FLUTTER_DOCS_SKILL
 - `docs/api-endpoints.json` – Swagger-Spezifikation Kickbase v4 (siehe kickbasekumpel-api)
-- `docs/superpowers/plans/` + `specs/` – Feature-Pläne/Designs (z. B. Transfer-Planner)
+- `docs/superpowers/plans/` + `specs/` – Feature-Pläne/Designs (Transfer-Planner, Sales-Goals)
 - Root: `ARCHITECTURE.md` (Haupt-Doku), `.github/copilot-instructions.md`, `DOCUMENTATION_GUIDELINES.md`, `Ideen.md` (Roadmap)

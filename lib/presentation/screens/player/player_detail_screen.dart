@@ -7,6 +7,7 @@ import '../../../data/providers/ligainsider_photo_provider.dart';
 import '../../../data/models/player_model.dart';
 import '../../../data/models/performance_model.dart';
 import '../../../data/utils/parsing_utils.dart';
+import '../../utils/player_status_helper.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/error_widget.dart';
 import '../../widgets/charts/performance_line_chart.dart';
@@ -240,35 +241,13 @@ class _OverviewTab extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                // Trend (tägliche Änderung)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      player.marketValueTrend > 0
-                          ? Icons.trending_up
-                          : player.marketValueTrend < 0
-                          ? Icons.trending_down
-                          : Icons.remove,
-                      color: player.marketValueTrend > 0
-                          ? Colors.green
-                          : player.marketValueTrend < 0
-                          ? Colors.red
-                          : Colors.grey,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${player.marketValueTrend > 0 ? '+' : ''}${(player.marketValueTrend / 1000).toStringAsFixed(0)}k',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: player.marketValueTrend > 0
-                            ? Colors.green
-                            : player.marketValueTrend < 0
-                            ? Colors.red
-                            : Colors.grey,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                // Trend (tägliche Änderung in Euro)
+                Text(
+                  PlayerStatusHelper.formatMarketValueTrend(player.tfhmvt),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: PlayerStatusHelper.getTrendColor(player.tfhmvt),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 // Gewinn/Verlust seit Kauf
                 if (marketValueGainLoss != null)
@@ -601,9 +580,8 @@ class _PerformanceTab extends ConsumerWidget {
             if (chartPoints.isNotEmpty) ...[
               Text(
                 'Leistungsverlauf',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
               PerformanceLineChart(

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../../data/models/market_model.dart';
 import '../../../data/providers/ligainsider_photo_provider.dart';
 import '../../../data/utils/parsing_utils.dart';
+import '../../providers/market_providers.dart';
+import '../../utils/player_status_helper.dart';
 import '../common/ligainsider_status_badge.dart' show LigainsiderStatusBadge;
-
 
 /// Player Market Card Widget
 ///
@@ -43,6 +45,9 @@ class PlayerMarketCard extends ConsumerWidget {
 
     // Ligainsider-Foto-Lookup (gecacht, kein Extra-Request)
     final photoMap = ref.watch(ligainsiderPhotoMapProvider).asData?.value;
+    // Euro-Tagestrend (tfhmvt) – `player.marketValueTrend` ist nur die Richtung
+    final dailyTrend =
+        ref.watch(marketDailyTrendsProvider).asData?.value[player.id] ?? 0;
     final ligaPhoto = lookupLigainsiderPhoto(
       photoMap,
       player.firstName,
@@ -126,10 +131,7 @@ class PlayerMarketCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       // Market Value
-                      _PriceDisplay(
-                        price: player.price,
-                        trend: player.marketValueTrend,
-                      ),
+                      _PriceDisplay(price: player.price, trend: dailyTrend),
                     ],
                   ),
                 ],
@@ -405,32 +407,15 @@ class _PriceDisplay extends StatelessWidget {
 
         // Trend
         if (trend != 0)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                trend > 0 ? Icons.trending_up : Icons.trending_down,
-                size: 14,
-                color: _getTrendColor(trend),
-              ),
-              const SizedBox(width: 2),
-              Text(
-                '${trend > 0 ? '+' : ''}${(trend / 1000).toStringAsFixed(0)}k',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: _getTrendColor(trend),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
+          Text(
+            PlayerStatusHelper.formatMarketValueTrend(trend),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: PlayerStatusHelper.getTrendColor(trend),
+              fontWeight: FontWeight.bold,
+            ),
           ),
       ],
     );
-  }
-
-  Color _getTrendColor(int trend) {
-    if (trend > 0) return Colors.green;
-    if (trend < 0) return Colors.red;
-    return Colors.grey;
   }
 }
 

@@ -52,7 +52,7 @@ Alternativ `./deploy-functions.sh` im Projektwurzelverzeichnis.
 | `flutter_tests.yml` | push, PR | pub get → **build_runner build** → `flutter test --coverage` → Codecov-Upload |
 | `deploy.yml` | push auf `main`, workflow_dispatch | 3 Jobs: (1) Flutter Web → Firebase Hosting, (2) `firebase deploy --only functions,firestore,storage,hosting` (Projekt `kickbasekumpel`; räumt vorher 2 Functions weg), (3) Android APK → Firebase App Distribution; iOS-Variant mit Pod-Install |
 
-⚠️ CI nutzt **Flutter 3.38.x**, pubspec/README nennen Dart SDK ^3.9.2 – bei Versionskonflikten beide Stellen prüfen.
+⚠️ CI nutzt **Flutter 3.47.x**, pubspec verlangt Dart SDK **^3.13.0** – bei Versionskonflikten beide Stellen prüfen.
 
 ## Fastlane (iOS)
 
@@ -60,11 +60,11 @@ Alternativ `./deploy-functions.sh` im Projektwurzelverzeichnis.
 
 ## Wichtige Abhängigkeiten (pubspec.yaml)
 
-- riverpod/flutter_riverpod **3.2.1**, go_router **17.1.0**, freezed_annotation 2.4.4 + json_annotation 4.9.0
+- riverpod/flutter_riverpod **^3.2.1**, go_router **^18.0.2**, freezed_annotation **^3.1.0** + json_annotation
 - firebase_core 4.4.0, firebase_auth 6.1.4, cloud_firestore 6.1.2, firebase_vertexai 2.1.1
 - fl_chart (Charts), cached_network_image, connectivity_plus, shared_preferences, flutter_secure_storage, logger, html (Scraping), intl
-- Dev: build_runner 2.4.0, freezed 2.5.7, json_serializable 6.8.0, mockito, mocktail, fake_cloud_firestore, flutter_lints 6
-- SDK: Dart ^3.9.2
+- Dev: build_runner ^2.4.0, freezed **^4.0.2** (Syntax: `abstract class X with _$X`), json_serializable ^6.8.0, mockito, mocktail, fake_cloud_firestore ^4, flutter_lints ^6
+- SDK: Dart ^3.13.0
 
 ## Teststruktur (`test/`)
 

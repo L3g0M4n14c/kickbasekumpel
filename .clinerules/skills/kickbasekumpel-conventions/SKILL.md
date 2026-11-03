@@ -28,7 +28,7 @@ class MyNotifier extends Notifier<MyState> {
 
 ```dart
 @freezed
-class MyModel with _$MyModel {
+abstract class MyModel with _$MyModel {  // Freezed 4: `abstract` (bzw. `sealed` bei Unions) ist Pflicht
   const factory MyModel({required String id, @Default(0) int count}) = _MyModel;
   factory MyModel.fromJson(Map<String, dynamic> json) => _$MyModelFromJson(json);
 }

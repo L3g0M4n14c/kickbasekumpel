@@ -53,10 +53,29 @@ class _MarketPageState extends ConsumerState<MarketPage> {
       );
     }
 
+    final filter = ref.watch(marketFilterProvider);
+    final isTrendSort =
+        filter.sortOption == MarketSortOption.marketValueTrendDesc;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Transfermarkt'),
         actions: [
+          // Marktwert-Trend: Spieler mit dem stärksten Marktwert-Anstieg zuerst
+          IconButton(
+            icon: const Icon(Icons.trending_up),
+            color: isTrendSort ? Theme.of(context).colorScheme.primary : null,
+            tooltip: isTrendSort
+                ? 'Trend-Sortierung aus'
+                : 'Nach Marktwert-Trend sortieren',
+            onPressed: () => ref
+                .read(marketFilterProvider.notifier)
+                .setSortOption(
+                  isTrendSort
+                      ? MarketSortOption.expiry
+                      : MarketSortOption.marketValueTrendDesc,
+                ),
+          ),
           IconButton(
             icon: const Icon(Icons.filter_list),
             onPressed: () => _showFilterBottomSheet(context),

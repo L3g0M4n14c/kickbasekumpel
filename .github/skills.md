@@ -6,9 +6,11 @@ can use when interacting with the project.
 
 ## Projekt-Skills (`.clinerules/skills/`)
 
-Acht Projekt-Skills (Format: `SKILL.md` mit YAML-Frontmatter `name`/`description`)
+Neun Projekt-Skills (Format: `SKILL.md` mit YAML-Frontmatter `name`/`description`)
 bündeln die wichtigsten Code-Fakten, damit Agents den Code nicht mehr erst
-explorieren müssen. Sie werden von Cline automatisch geladen:
+explorieren müssen. Sie werden von Cline automatisch geladen; Claude Code
+lädt dieselben Dateien über den Symlink `.claude/skills → ../.clinerules/skills`
+(eine Quelle – Änderungen nur in `.clinerules/skills/`):
 
 | Skill | Inhalt |
 |---|---|
@@ -20,6 +22,7 @@ explorieren müssen. Sie werden von Cline automatisch geladen:
 | `kickbasekumpel-dev-workflow` | Build/Test/Lint/Codegen-Befehle, CI/CD-Workflows, Abhängigkeiten, Fastlane, Teststruktur |
 | `kickbasekumpel-testing` | test/helpers (ResultMatcher, MockFirebaseSetup, TestData), Mocktail/Mockito-Codegen, fake_cloud_firestore |
 | `kickbasekumpel-features` | Feature → Service/Provider/Screen-Map, Business-Logik der Empfehlungs-/Budget-Services, Roadmap (Ideen.md) |
+| `kickbasekumpel-data-map` | Daten-Landkarte: Endpunkt → Client-Methode → JSON-Kurzkeys → Modell → Provider → UI, Firestore/Storage (`reference/*.md`) |
 
 Die Skills konsolidieren die bisherigen Dokus (ARCHITECTURE.md,
 .github/copilot-instructions.md, README.md, docs/). Diese Originaldokos

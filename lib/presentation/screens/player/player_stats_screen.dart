@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/providers/player_providers.dart';
+import '../../utils/player_status_helper.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/error_widget.dart';
 
@@ -85,7 +86,7 @@ class PlayerStatsScreen extends ConsumerWidget {
                     const Divider(),
                     _StatRow(
                       'Trend',
-                      '${player.marketValueTrend > 0 ? '+' : ''}${(player.marketValueTrend / 1000).toStringAsFixed(0)}k',
+                      PlayerStatusHelper.formatMarketValueTrend(player.tfhmvt),
                     ),
                   ],
                 ),

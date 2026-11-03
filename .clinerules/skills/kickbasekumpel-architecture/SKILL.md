@@ -5,7 +5,7 @@ description: KickbaseKumpel Clean Architecture - Schichten, Datenfluss, Result-T
 
 # KickbaseKumpel – Architektur
 
-Flutter-App (SDK ^3.9.2) für Kickbase Fantasy Football. **Modifizierte Clean Architecture**, drei Schichten mit Dependency-Rule (Abhängigkeiten zeigen nach innen):
+Flutter-App (Dart SDK ^3.13.0, CI: Flutter 3.47.x) für Kickbase Fantasy Football. **Modifizierte Clean Architecture**, drei Schichten mit Dependency-Rule (Abhängigkeiten zeigen nach innen):
 
 ```
 Presentation (lib/presentation) → Data (lib/data) → Domain (lib/domain)
@@ -24,7 +24,7 @@ Presentation (lib/presentation) → Data (lib/data) → Domain (lib/domain)
 - `lib/config/` – `router.dart` (GoRouter-Provider), `theme.dart`/`app_theme.dart` (AppTheme.lightTheme/darkTheme), `screen_size.dart`, `firebase_config.dart`
 - `lib/domain/` – `repositories/repository_interfaces.dart` (**sealed class Result<T>**), `repositories/auth_repository_interface.dart`, `exceptions/kickbase_exceptions.dart`
 - `lib/data/` – `models/` (Freezed, Barrel: models_barrel.dart), `repositories/` (base_repository.dart, firestore_repositories.dart, auth_repository.dart), `services/` (KickbaseAPIClient etc.), `providers/` (Data-Provider), `sources/auth_source.dart`, `utils/parsing_utils.dart`
-- `lib/presentation/` – `pages/` (auth, dashboard, league, loading, error), `screens/` (Feature-Screens: league_table, live, squad, ligainsider, player...), `widgets/` (app_bars, buttons, cards, charts, common, forms, market, team, transfers, responsive_layout), `providers/` (UI-Provider: dashboard, market, transfer_planner), `utils/player_status_helper.dart`
+- `lib/presentation/` – `pages/` (auth, dashboard, league, loading, error), `screens/` (Feature-Screens: league_table, live, squad, ligainsider, player...), `widgets/` (app_bars, buttons, cards, charts, common, forms, market, team, transfers, responsive_layout), `providers/` (UI-Provider: dashboard, market, lineup, manager_comparison, transfer_planner), `utils/player_status_helper.dart`
 - `lib/firebase_options.dart` – generiert von FlutterFire
 
 ## Datenfluss
@@ -46,7 +46,7 @@ Verwendung: `switch (result) { Success(:final data) => ..., Failure(:final messa
 
 ## Routing
 
-GoRouter 17 in `lib/config/router.dart` (`goRouterProvider`): `/loading`, `/`, `/auth/signin`, StatefulShellRoute mit `/dashboard[/market|sales|lineup|transfers|ligainsider|table|live|settings]`, `/league/:leagueId`, `/ligainsider/lineups`, `/manager/:leagueId/compare`, `/manager/:leagueId/:userId`.
+GoRouter 18 in `lib/config/router.dart` (`goRouterProvider`): `/loading`, `/`, `/auth[/signin|signup|forgot-password|verify]`, StatefulShellRoute mit `/dashboard[/market|sales|lineup|transfers|ligainsider|table|live|settings]`, `/league/:leagueId[/overview|players|standings]`, `/player/:playerId[/stats|history]`, `/table/:competitionId`, `/ligainsider/lineups`, `/manager/:leagueId/compare`, `/manager/:leagueId/:userId`.
 
 ## Neues Feature (Reihenfolge)
 

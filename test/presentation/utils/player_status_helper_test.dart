@@ -117,9 +117,9 @@ void main() {
         expect(result, '→ €0');
       });
 
-      test('formats small positive values without k', () {
-        final result = PlayerStatusHelper.formatMarketValueTrend(500);
-        expect(result, '↑ +€500');
+      test('formats 350k as amount', () {
+        final result = PlayerStatusHelper.formatMarketValueTrend(350000);
+        expect(result, '↑ +€350k');
       });
 
       test('formats large positive values with M', () {

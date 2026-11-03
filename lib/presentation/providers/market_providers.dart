@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../data/models/market_model.dart';
 import '../../data/models/transfer_model.dart';
 import '../../data/providers/kickbase_api_provider.dart';
@@ -56,6 +57,7 @@ enum MarketSortOption {
   expiry,
   marketValue,
   marketValueDesc,
+  marketValueTrendDesc,
   points,
   pointsDesc,
   position,
@@ -142,15 +144,24 @@ final marketPlayersProvider = StreamProvider.autoDispose<List<MarketPlayer>>((
   try {
     final players = await apiClient.getMarketAvailable(leagueId);
 
+    // Tagestrends nur laden, wenn danach sortiert wird
+    final trends = filter.sortOption == MarketSortOption.marketValueTrendDesc
+        ? await ref.watch(marketDailyTrendsProvider.future)
+        : const <String, int>{};
+
     // Apply filters and sorting
-    final filtered = _applyFiltersAndSort(players, filter);
+    final filtered = _applyFiltersAndSort(players, filter, trends);
     yield filtered;
 
     // Poll for updates every 30 seconds
     await for (final _ in Stream.periodic(const Duration(seconds: 30))) {
       try {
         final updatedPlayers = await apiClient.getMarketAvailable(leagueId);
-        final filteredUpdated = _applyFiltersAndSort(updatedPlayers, filter);
+        final filteredUpdated = _applyFiltersAndSort(
+          updatedPlayers,
+          filter,
+          trends,
+        );
         yield filteredUpdated;
       } catch (e) {
         // Continue with previous data on polling error
@@ -176,11 +187,52 @@ final marketPlayersProvider = StreamProvider.autoDispose<List<MarketPlayer>>((
   }
 });
 
+/// Anzahl paralleler Spielerdetail-Requests beim Laden der Tagestrends
+const _dailyTrendBatchSize = 5;
+
+/// Echter Marktwert-Tagestrend in Euro (Kickbase `tfhmvt`) je Spieler-ID der
+/// aktuellen Marktspieler.
+///
+/// Der Markt-Endpunkt liefert nur `mvt` – einen Richtungs-Code (steigend/
+/// fallend), keinen Betrag. Den Euro-Trend der letzten 24 h gibt es nur über
+/// `GET /leagues/{id}/players/{playerId}`. Spieler, deren Details nicht geladen
+/// werden konnten, fehlen in der Map.
+final marketDailyTrendsProvider = FutureProvider.autoDispose<Map<String, int>>((
+  ref,
+) async {
+  final leagueId = ref.watch(selectedLeagueIdProvider);
+  if (leagueId == null) return {};
+
+  final apiClient = ref.watch(kickbaseApiClientProvider);
+  final players = await apiClient.getMarketAvailable(leagueId);
+
+  final trends = <String, int>{};
+  for (var i = 0; i < players.length; i += _dailyTrendBatchSize) {
+    final batch = players.skip(i).take(_dailyTrendBatchSize);
+    await Future.wait(
+      batch.map((player) async {
+        try {
+          final details = await apiClient.getPlayerDetails(leagueId, player.id);
+          final trend = details['tfhmvt'];
+          if (trend is num) trends[player.id] = trend.toInt();
+        } catch (_) {
+          // Einzelne fehlende Details blockieren die übrigen Trends nicht
+        }
+      }),
+    );
+  }
+  return trends;
+});
+
 /// Apply filters and sorting to market players
+///
+/// [dailyTrends]: Euro-Tagestrend je Spieler-ID (siehe
+/// [marketDailyTrendsProvider]), nur für die Trend-Sortierung nötig.
 List<MarketPlayer> _applyFiltersAndSort(
   List<MarketPlayer> players,
-  MarketFilterState filter,
-) {
+  MarketFilterState filter, [
+  Map<String, int> dailyTrends = const {},
+]) {
   var filtered = players;
 
   // Position filter
@@ -226,6 +278,17 @@ List<MarketPlayer> _applyFiltersAndSort(
       break;
     case MarketSortOption.marketValueDesc:
       filtered.sort((a, b) => b.marketValue.compareTo(a.marketValue));
+      break;
+    case MarketSortOption.marketValueTrendDesc:
+      // Spieler ohne geladenen Trend landen am Ende
+      filtered.sort((a, b) {
+        final trendA = dailyTrends[a.id];
+        final trendB = dailyTrends[b.id];
+        if (trendA == null || trendB == null) {
+          return (trendA == null ? 1 : 0) - (trendB == null ? 1 : 0);
+        }
+        return trendB.compareTo(trendA);
+      });
       break;
     case MarketSortOption.points:
       filtered.sort((a, b) => b.totalPoints.compareTo(a.totalPoints));
