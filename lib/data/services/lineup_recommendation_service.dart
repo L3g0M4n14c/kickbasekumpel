@@ -561,6 +561,35 @@ class LineupRecommendationService {
   static bool isStarter(LineupPlayer player) =>
       player.lineupOrder >= 1 && player.lineupOrder <= 11;
 
+  /// IDs der Startelf eines Kaders.
+  ///
+  /// Feldspieler folgen [isStarter] (`lo` 1..11). Für den Torwart-Slot vergibt
+  /// Kickbase kein `lo` (0), der gesetzte Keeper ist also nur am Kader
+  /// erkennbar: Steht kein Torwart mit lo=1..11 in der Aufstellung, rückt der
+  /// erste Torwart mit lo=0 in die Startelf. Kickbase stellt genau einen
+  /// Torwart auf, deshalb bleibt es bei maximal 11 Startern.
+  static Set<String> starterIds(List<LineupPlayer> squad) {
+    final ids = squad.where(isStarter).map((p) => p.id).toSet();
+    if (ids.length >= 11) return ids;
+    final keepers = squad.where((p) => p.position == 1);
+    if (keepers.any((p) => ids.contains(p.id))) return ids;
+    final keeper = keepers.where((p) => p.lineupOrder == 0);
+    if (keeper.isNotEmpty) ids.add(keeper.first.id);
+    return ids;
+  }
+
+  /// Teilt den Kader in Startelf (nach `lo` sortiert) und Bank.
+  static ({List<LineupPlayer> starters, List<LineupPlayer> bench}) splitLineup(
+    List<LineupPlayer> squad,
+  ) {
+    final ids = starterIds(squad);
+    return (
+      starters: squad.where((p) => ids.contains(p.id)).toList()
+        ..sort((a, b) => a.lineupOrder.compareTo(b.lineupOrder)),
+      bench: squad.where((p) => !ids.contains(p.id)).toList(),
+    );
+  }
+
   /// Reihenfolge-Liste für `POST /lineup`, in der genau [swap] umgesetzt ist
   /// (Tap-to-Swap, Story #13): Die aktuelle Ordnung bleibt erhalten, nur die
   /// beiden beteiligten Spieler tauschen ihren Platz.
@@ -568,11 +597,12 @@ class LineupRecommendationService {
     List<LineupPlayer> current,
     LineupSwap swap,
   ) {
-    final starters = current.where(isStarter).toList()
+    final starterSet = starterIds(current);
+    final starters = current.where((p) => starterSet.contains(p.id)).toList()
       ..sort((a, b) => a.lineupOrder.compareTo(b.lineupOrder));
     // Ohne feste Ordnung (lo == 0/≤11) am Ende der Bank, sonst Reihenfolge.
     int benchOrder(LineupPlayer p) => p.lineupOrder > 11 ? p.lineupOrder : 999;
-    final bench = current.where((p) => !isStarter(p)).toList()
+    final bench = current.where((p) => !starterSet.contains(p.id)).toList()
       ..sort((a, b) {
         final byOrder = benchOrder(a).compareTo(benchOrder(b));
         return byOrder != 0 ? byOrder : a.id.compareTo(b.id);
@@ -598,14 +628,16 @@ class LineupRecommendationService {
   }) {
     int byScoreAsc(LineupPlayer a, LineupPlayer b) => byScoreDesc(b, a);
 
-    final current = squad.where(isStarter).toList();
+    final currentSet = starterIds(squad);
+    final current = squad.where((p) => currentSet.contains(p.id)).toList();
     final currentIds = current.map((p) => p.id).toSet();
-    final starterIds = starters.map((p) => p.id).toSet();
+    final recommendedIds = starters.map((p) => p.id).toSet();
 
     final incoming = starters.where((p) => !currentIds.contains(p.id)).toList()
       ..sort(byScoreDesc);
-    final outgoing = current.where((p) => !starterIds.contains(p.id)).toList()
-      ..sort(byScoreAsc);
+    final outgoing =
+        current.where((p) => !recommendedIds.contains(p.id)).toList()
+          ..sort(byScoreAsc);
 
     final swaps = <LineupSwap>[];
     final usedOutIds = <String>{};

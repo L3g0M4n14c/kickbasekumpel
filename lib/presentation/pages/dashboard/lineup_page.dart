@@ -79,26 +79,12 @@ class LineupPage extends ConsumerWidget {
                                 ref.invalidate(myLineupProvider(leagueId!)),
                           ),
                           data: (players) {
-                            // Kickbase-Konvention: lo ist die Lineup-Reihenfolge –
-                            // Starter lo=1..11, Bank lo=0 oder >11
-                            // (siehe LineupRecommendationService.isStarter).
-                            final starters =
-                                players
-                                    .where(
-                                      LineupRecommendationService.isStarter,
-                                    )
-                                    .toList()
-                                  ..sort(
-                                    (a, b) =>
-                                        a.lineupOrder.compareTo(b.lineupOrder),
-                                  );
-
-                            final bench = players
-                                .where(
-                                  (p) =>
-                                      !LineupRecommendationService.isStarter(p),
-                                )
-                                .toList();
+                            final (
+                              starters: starters,
+                              bench: bench,
+                            ) = LineupRecommendationService.splitLineup(
+                              players,
+                            );
 
                             return ResponsiveLayout(
                               mobile: _buildMobileLayout(

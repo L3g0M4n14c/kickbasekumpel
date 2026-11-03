@@ -858,5 +858,52 @@ void main() {
       expect(keepers.single.id, 'gk1');
       expect(result.isLegalFormation, isFalse);
     });
+
+    test('gesetzter Torwart mit lo=0 steht in der Startelf', () {
+      // Kickbase liefert für den gesetzten Torwart lo=0 (kein Slot in der
+      // Reihenfolge); der Ersatzmann steht auf der Bank (lo>11).
+      final squad = [
+        buildPlayer(
+          id: 'gk1',
+          name: 'Torwart Eins',
+          position: 1,
+          lineupOrder: 0,
+        ),
+        buildPlayer(
+          id: 'gk2',
+          name: 'Torwart Bank',
+          position: 1,
+          lineupOrder: 12,
+        ),
+        buildPlayer(id: 'def', name: 'Abwehr', position: 2, lineupOrder: 1),
+      ];
+
+      final split = LineupRecommendationService.splitLineup(squad);
+
+      expect(split.starters.map((p) => p.id), contains('gk1'));
+      expect(split.bench.map((p) => p.id), contains('gk2'));
+    });
+
+    test('Torwart wird nie doppelt in die S11 gehoben', () {
+      final squad = [
+        buildPlayer(
+          id: 'gk1',
+          name: 'Torwart Eins',
+          position: 1,
+          lineupOrder: 0,
+        ),
+        buildPlayer(
+          id: 'gk2',
+          name: 'Torwart Zwei',
+          position: 1,
+          lineupOrder: 0,
+        ),
+        buildPlayer(id: 'def', name: 'Abwehr', position: 2, lineupOrder: 1),
+      ];
+
+      final split = LineupRecommendationService.splitLineup(squad);
+
+      expect(split.starters.where((p) => p.position == 1), hasLength(1));
+    });
   });
 }

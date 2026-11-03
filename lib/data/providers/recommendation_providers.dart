@@ -8,6 +8,7 @@ import '../models/performance_model.dart';
 import '../models/ligainsider_model.dart';
 import '../models/lineup_model.dart';
 import '../services/deterministic_recommendation_service.dart';
+import '../services/lineup_recommendation_service.dart';
 import '../../domain/repositories/repository_interfaces.dart';
 import 'repository_providers.dart';
 import 'league_providers.dart';
@@ -816,8 +817,11 @@ Future<RecommendationAnalysisContext> loadRecommendationAnalysisContext(
   String? lineupSummary;
   if (lineupData != null) {
     final positionCounts = <int, int>{1: 0, 2: 0, 3: 0, 4: 0};
+    final starterIds = LineupRecommendationService.starterIds(
+      lineupData.players,
+    );
     for (final lp in lineupData.players) {
-      if (lp.lineupOrder > 0 && lp.position > 0) {
+      if (starterIds.contains(lp.id) && lp.position > 0) {
         positionCounts[lp.position] = (positionCounts[lp.position] ?? 0) + 1;
       }
     }
