@@ -125,6 +125,12 @@ Map<String, dynamic> _$BidResponseToJson(_BidResponse instance) =>
       'status': instance.status,
     };
 
+_OfferResponse _$OfferResponseFromJson(Map<String, dynamic> json) =>
+    _OfferResponse(offerId: json['ofi'] as String?);
+
+Map<String, dynamic> _$OfferResponseToJson(_OfferResponse instance) =>
+    <String, dynamic>{'ofi': instance.offerId};
+
 _TransferRequest _$TransferRequestFromJson(Map<String, dynamic> json) =>
     _TransferRequest(
       playerId: json['playerId'] as String,

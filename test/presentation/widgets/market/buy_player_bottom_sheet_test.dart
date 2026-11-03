@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kickbasekumpel/data/models/common_models.dart';
 import 'package:kickbasekumpel/data/models/market_model.dart';
+import 'package:kickbasekumpel/data/providers/bid_limit_providers.dart';
 import 'package:kickbasekumpel/data/providers/bid_recommendation_providers.dart';
 import 'package:kickbasekumpel/data/providers/league_providers.dart';
 import 'package:kickbasekumpel/data/providers/user_providers.dart';
+import 'package:kickbasekumpel/data/services/bid_limit_service.dart';
 import 'package:kickbasekumpel/data/services/bid_recommendation_service.dart';
 import 'package:kickbasekumpel/data/services/budget_calculation_service.dart';
 import 'package:kickbasekumpel/presentation/widgets/market/buy_player_bottom_sheet.dart';
@@ -50,15 +52,26 @@ BidRecommendation _recommendation() {
 void main() {
   Future<void> pumpSheet(
     WidgetTester tester, {
-    required CompetitorBudgetHint hint,
+    CompetitorBudgetHint hint = const CompetitorBudgetHint(
+      managersWithHigherBudget: 0,
+      maxCompetitorBudget: 0,
+    ),
     List<int>? observedBids,
+    BidLimit? bidLimit,
   }) async {
+    final limit =
+        bidLimit ??
+        const BidLimitService().calculate(
+          budget: 25000000,
+          teamValue: 90000000,
+        );
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           selectedLeagueIdProvider.overrideWithValue('league-1'),
           currentAuthUserIdProvider.overrideWithValue('manager-me'),
           currentUserProvider.overrideWith((ref) async => null),
+          bidLimitProvider.overrideWith((ref, params) async => limit),
           recommendedBidProvider.overrideWith(
             (ref, params) async => _recommendation(),
           ),
@@ -147,6 +160,54 @@ void main() {
       );
 
       expect(find.textContaining('1 Manager hat mehr Budget'), findsOneWidget);
+    });
+  });
+
+  group('BuyPlayerBottomSheet Budget & 33 %-Regel', () {
+    testWidgets('zeigt echtes Budget, Minus-Rahmen und max. Gebot', (
+      tester,
+    ) async {
+      await pumpSheet(
+        tester,
+        bidLimit: const BidLimitService().calculate(
+          budget: 25000000,
+          teamValue: 90000000,
+          pendingOffers: 5000000,
+        ),
+      );
+
+      expect(find.text('25.00M €'), findsOneWidget); // Budget
+      expect(find.text('−5.00M €'), findsOneWidget); // offene Gebote
+      expect(find.text('90.00M €'), findsOneWidget); // Teamwert
+      expect(find.text('−30.00M €'), findsOneWidget); // max. Minus
+      expect(find.text('50.00M €'), findsOneWidget); // max. Gebot
+    });
+
+    testWidgets('Gebot ins Minus innerhalb der Grenze ist erlaubt', (
+      tester,
+    ) async {
+      await pumpSheet(tester);
+
+      await tester.enterText(find.byType(TextFormField), '40.00');
+      await tester.pump();
+
+      expect(find.text('-15.00M €'), findsOneWidget); // Kontostand danach
+      expect(
+        find.textContaining('bis zum Spieltag wieder ausgeglichen'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('Gebot über der Grenze wird abgelehnt', (tester) async {
+      await pumpSheet(tester);
+
+      await tester.enterText(find.byType(TextFormField), '60.00');
+      await tester.pump();
+      await tester.ensureVisible(find.text('Gebot abgeben'));
+      await tester.tap(find.text('Gebot abgeben'));
+      await tester.pump();
+
+      expect(find.textContaining('Max. Gebot: 55.00M €'), findsOneWidget);
     });
   });
 }

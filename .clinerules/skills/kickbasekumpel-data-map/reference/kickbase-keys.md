@@ -54,7 +54,8 @@ Achtung: `st` ist je Kontext **Status** (Player/Market) oder **Punkte** (Lineup)
 | `exs` | **Sekunden bis Ablauf** (relativ zu jetzt!) → `expiry` wird berechnet | Market |
 | `prc` | Startpreis am Markt (`price` in anderen Kontexten) | Market |
 | `ofc` | Anzahl Gebote (`offers`) | Market |
-| `uoid` | User-Offer-ID = Verkäufer-ID → `seller` | Market |
+| `uoid` | User-Offer-ID – laut gegen die echte API verifiziertem Fremd-Client (kickflow) die ID des **eigenen** Gebots (= eigene User-ID), NICHT die Verkäufer-ID; wird hier aktuell (fälschlich) auf `seller` gemappt | Market |
+| `uop` | User-Offer-Price: eigenes offenes Gebot in € (fehlt ohne Gebot) → `ownOfferPrice` | Market |
 | `sl` | self-listed → `userOwnsPlayer` | Player-Detail |
 
 ## League (`/leagues/selection`, `/overview`)

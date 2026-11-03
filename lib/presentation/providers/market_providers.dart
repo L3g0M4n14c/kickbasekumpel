@@ -2,8 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/market_model.dart';
 import '../../data/models/transfer_model.dart';
+import '../../data/providers/bid_limit_providers.dart';
 import '../../data/providers/kickbase_api_provider.dart';
 import '../../data/providers/kickbase_auth_provider.dart';
+import '../../data/providers/league_detail_providers.dart';
 import '../../data/providers/league_providers.dart';
 import '../../data/providers/user_providers.dart';
 import '../../domain/exceptions/kickbase_exceptions.dart';
@@ -349,10 +351,15 @@ final selectedPlayerProvider =
 // BUY PLAYER PROVIDER (WITH ERROR HANDLING)
 // ============================================================================
 
-class BuyPlayerNotifier extends Notifier<AsyncValue<BidResponse?>> {
+class BuyPlayerNotifier extends Notifier<AsyncValue<OfferResponse?>> {
   @override
-  AsyncValue<BidResponse?> build() => const AsyncValue.data(null);
+  AsyncValue<OfferResponse?> build() => const AsyncValue.data(null);
 
+  /// Gibt ein Gebot über [price] € auf [playerId] ab.
+  ///
+  /// Kickbase versteigert Marktspieler: das Gebot wird erst bei Ablauf des
+  /// Angebots entschieden. Der Kontostand ändert sich daher nicht sofort,
+  /// das Gebot zählt aber ab jetzt zu den offenen Geboten (33 %-Regel).
   Future<void> buyPlayer({
     required String leagueId,
     required String playerId,
@@ -366,25 +373,15 @@ class BuyPlayerNotifier extends Notifier<AsyncValue<BidResponse?>> {
 
       state = AsyncValue.data(response);
 
-      // Refresh market players after successful purchase
+      // Markt (eigene Gebote) und Budget-Grenzen neu laden
       ref.invalidate(marketPlayersProvider);
+      ref.invalidate(myBudgetProvider(leagueId));
+      ref.invalidate(bidLimitProvider);
 
       // Clear selected player
       ref.read(selectedPlayerProvider.notifier).state = null;
     } catch (e, stack) {
-      // Handle errors
-      String userMessage;
-      final errorMsg = e.toString().toLowerCase();
-      if (errorMsg.contains('insufficient')) {
-        userMessage = 'Nicht genügend Budget verfügbar';
-      } else if (errorMsg.contains('already')) {
-        userMessage = 'Spieler bereits im Kader';
-      } else if (errorMsg.contains('expired')) {
-        userMessage = 'Angebot ist abgelaufen';
-      } else {
-        userMessage = 'Fehler beim Kauf: $e';
-      }
-      state = AsyncValue.error(userMessage, stack);
+      state = AsyncValue.error(buyErrorMessage(e), stack);
     }
   }
 
@@ -393,9 +390,31 @@ class BuyPlayerNotifier extends Notifier<AsyncValue<BidResponse?>> {
   }
 }
 
+/// Nutzerfreundliche Fehlermeldung für ein fehlgeschlagenes Gebot.
+String buyErrorMessage(Object error) {
+  if (error is AuthenticationException) {
+    return 'Sitzung abgelaufen – bitte erneut anmelden';
+  }
+  if (error is NetworkException || error is TimeoutException) {
+    return 'Keine Verbindung zu Kickbase – bitte später erneut versuchen';
+  }
+  if (error is RateLimitException) {
+    return 'Zu viele Anfragen – bitte kurz warten';
+  }
+  final message = error is KickbaseException ? error.message : '$error';
+  final lower = message.toLowerCase();
+  if (lower.contains('insufficient') || lower.contains('budget')) {
+    return 'Nicht genügend Budget verfügbar ($message)';
+  }
+  if (lower.contains('expired')) {
+    return 'Angebot ist abgelaufen';
+  }
+  return message;
+}
+
 /// Buy player state
 final buyPlayerProvider =
-    NotifierProvider<BuyPlayerNotifier, AsyncValue<BidResponse?>>(
+    NotifierProvider<BuyPlayerNotifier, AsyncValue<OfferResponse?>>(
       () => BuyPlayerNotifier(),
     );
 

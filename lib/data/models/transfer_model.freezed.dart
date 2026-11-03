@@ -1214,6 +1214,276 @@ as String,
 
 
 /// @nodoc
+mixin _$OfferResponse {
+
+@JsonKey(name: 'ofi') String? get offerId;
+/// Create a copy of OfferResponse
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$OfferResponseCopyWith<OfferResponse> get copyWith => _$OfferResponseCopyWithImpl<OfferResponse>(this as OfferResponse, _$identity);
+
+  /// Serializes this OfferResponse to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  final _this = this as OfferResponse;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OfferResponse&&(identical(other.offerId, _this.offerId) || other.offerId == _this.offerId));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+  final _this = this as OfferResponse;
+  return Object.hash(runtimeType,_this.offerId);
+}
+
+@override
+String toString() {
+  final _this = this as OfferResponse;
+  return 'OfferResponse(offerId: ${_this.offerId})';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $OfferResponseCopyWith<$Res>  {
+  factory $OfferResponseCopyWith(OfferResponse value, $Res Function(OfferResponse) _then) = _$OfferResponseCopyWithImpl;
+@useResult
+$Res call({
+@JsonKey(name: 'ofi') String? offerId
+});
+
+
+
+
+}
+/// @nodoc
+class _$OfferResponseCopyWithImpl<$Res>
+    implements $OfferResponseCopyWith<$Res> {
+  _$OfferResponseCopyWithImpl(this._self, this._then);
+
+  final OfferResponse _self;
+  final $Res Function(OfferResponse) _then;
+
+/// Create a copy of OfferResponse
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? offerId = freezed,}) {
+  return _then(OfferResponse(
+offerId: freezed == offerId ? _self.offerId : offerId // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [OfferResponse].
+extension OfferResponsePatterns on OfferResponse {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _OfferResponse value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _OfferResponse() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _OfferResponse value)  $default,){
+final _that = this;
+switch (_that) {
+case _OfferResponse():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _OfferResponse value)?  $default,){
+final _that = this;
+switch (_that) {
+case _OfferResponse() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'ofi')  String? offerId)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _OfferResponse() when $default != null:
+return $default(_that.offerId);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'ofi')  String? offerId)  $default,) {final _that = this;
+switch (_that) {
+case _OfferResponse():
+return $default(_that.offerId);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'ofi')  String? offerId)?  $default,) {final _that = this;
+switch (_that) {
+case _OfferResponse() when $default != null:
+return $default(_that.offerId);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _OfferResponse implements OfferResponse {
+  const _OfferResponse({@JsonKey(name: 'ofi') this.offerId});
+  factory _OfferResponse.fromJson(Map<String, dynamic> json) => _$OfferResponseFromJson(json);
+
+@override@JsonKey(name: 'ofi') final  String? offerId;
+
+/// Create a copy of OfferResponse
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$OfferResponseCopyWith<_OfferResponse> get copyWith => __$OfferResponseCopyWithImpl<_OfferResponse>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$OfferResponseToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _OfferResponse&&(identical(other.offerId, offerId) || other.offerId == offerId));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+    return Object.hash(runtimeType,offerId);
+}
+
+@override
+String toString() {
+    return 'OfferResponse(offerId: $offerId)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$OfferResponseCopyWith<$Res> implements $OfferResponseCopyWith<$Res> {
+  factory _$OfferResponseCopyWith(_OfferResponse value, $Res Function(_OfferResponse) _then) = __$OfferResponseCopyWithImpl;
+@override @useResult
+$Res call({
+@JsonKey(name: 'ofi') String? offerId
+});
+
+
+
+
+}
+/// @nodoc
+class __$OfferResponseCopyWithImpl<$Res>
+    implements _$OfferResponseCopyWith<$Res> {
+  __$OfferResponseCopyWithImpl(this._self, this._then);
+
+  final _OfferResponse _self;
+  final $Res Function(_OfferResponse) _then;
+
+/// Create a copy of OfferResponse
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? offerId = freezed,}) {
+  return _then(_OfferResponse(
+offerId: freezed == offerId ? _self.offerId : offerId // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
 mixin _$TransferRequest {
 
  String get playerId; String get toUserId; int get price;

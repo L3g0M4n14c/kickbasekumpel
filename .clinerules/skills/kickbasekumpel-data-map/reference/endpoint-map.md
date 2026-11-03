@@ -19,7 +19,7 @@ Parsing** → **Provider** → **UI-Konsument**. Spezifikation: `docs/api-endpoi
 | `GET /v4/leagues/selection` | `getLeagues()` | `List<League>` via `normalizeLeagueJson` | `league_providers`, `kickbase_auth_provider` | Liga-Auswahl |
 | `GET /v4/leagues/{id}/overview` | `getLeague()`, `getLeagueOverview()` | `League` / Map (`dt` = Saisonstart) | `leagueSeasonStartDateProvider` (budget_calculation) | – |
 | `GET /v4/leagues/{id}/me` | `getLeagueMe()` | Map | `leagueMeProvider` | `team_page` (Squad-Benchmark) |
-| `GET /v4/leagues/{id}/me/budget` | `getMyBudget()` | Map (`b` = echtes Budget) | `myBudgetProvider`, `teamBudgetProvider`, `budget_calculation_providers` (Kalibrierung/Sync) | `team_page` (Budget-Header), `squad_screen` |
+| `GET /v4/leagues/{id}/me/budget` | `getMyBudget()` | Map (`b` = echtes Budget) | `myBudgetProvider`, `myLeagueBudgetProvider`/`bidLimitProvider` (bid_limit), `teamBudgetProvider`, `budget_calculation_providers` (Kalibrierung/Sync) | `team_page` (Budget-Header), `squad_screen` |
 | `GET /v4/leagues/{id}/ranking` | `getLeagueRanking()` | Map (Spieltags-Ranking `mdp`) | `leagueRankingProvider`, `currentLeagueRankingProvider`, `leagueMatchdayDataProvider`, `bid_recommendation_providers` | `league_standings_page` |
 | `GET /v4/leagues/{id}/activitiesFeed` | `getLeagueActivitiesFeed()` | Map (`af`: `t` = Typ – 15 Transfer, 22 Anmeldebonus `data.bn`, 26 Erfolg; nur eigene Einträge) | `leagueActivitiesFeedProvider` (budget_calculation: Anmeldebonus) | – |
 | `GET /v4/leagues/{id}/settings` | – | – (Roadmap: echte Liga-Regeln) | – | – |
@@ -38,8 +38,8 @@ Parsing** → **Provider** → **UI-Konsument**. Spezifikation: `docs/api-endpoi
 | Endpunkt | Methode | Parsing | Provider | UI |
 |---|---|---|---|---|
 | `GET /v4/leagues/{id}/market` | `getMarketAvailable()` | `List<MarketPlayer>` via `normalizeMarketPlayerJson` | `market_providers` (`marketPlayersProvider`), `transfer_planner_provider` | `market_page`, `market_screen` |
-| `POST /v4/leagues/{id}/market` | `sellPlayer()` | `BidResponse` (ungenutzt) | – | – |
-| `POST .../market/{playerId}/offers` | `buyPlayer()` | `BidResponse` | `buyPlayerProvider` | `buy_player_bottom_sheet` |
+| `POST /v4/leagues/{id}/market` | `sellPlayer()` | – (Body `pi`/`prc` + Langform; Antwort leer; ungenutzt) | – | – |
+| `POST .../market/{playerId}/offers` | `buyPlayer()` | Body `{price}` → `OfferResponse` (`ofi`); Fehler als `err`/`errMsg` (auch bei 200) | `buyPlayerProvider`, Grenze: `bidLimitProvider` | `buy_player_bottom_sheet` |
 | `DELETE .../market/{playerId}` | `removePlayerFromMarket()` | Map | direkt im Screen | `market_screen` |
 | `DELETE .../market/{playerId}/sell` | `acceptKickbaseOffer()` | – | direkt im Screen | `market_screen` |
 | `DELETE .../offers/{offerId}(/accept|/decline)` | `withdrawOffer()`, `acceptOffer()`, `declineOffer()` | – (ungenutzt) | – | – |

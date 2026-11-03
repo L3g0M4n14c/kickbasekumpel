@@ -4,10 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../data/models/market_model.dart';
+import '../../../data/providers/bid_limit_providers.dart';
 import '../../../data/providers/league_providers.dart';
-import '../../../data/providers/user_providers.dart';
 import '../../../data/providers/kickbase_api_provider.dart';
 import '../../../data/providers/bid_recommendation_providers.dart';
+import '../../../data/services/bid_limit_service.dart';
 import '../../../data/services/bid_recommendation_service.dart';
 import '../../../data/services/budget_calculation_service.dart';
 import '../../providers/market_providers.dart';
@@ -56,9 +57,16 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
 
     final buyState = ref.watch(buyPlayerProvider);
-    final currentUser = ref.watch(currentUserProvider).value;
-    final budget = currentUser?.b ?? 0;
     final leagueId = ref.watch(selectedLeagueIdProvider);
+    // Echter Kontostand + 33 %-Regel (Teamwert, offene Gebote) aus der API.
+    // Vorher wurde `currentUser.b` gelesen – das Feld ist im Firestore-User
+    // nie gesetzt, daher stand dort immer 0,00M €.
+    final bidLimitAsync = leagueId == null
+        ? null
+        : ref.watch(
+            bidLimitProvider((leagueId: leagueId, playerId: widget.player.id)),
+          );
+    final bidLimit = bidLimitAsync?.asData?.value;
     final bidAmount = _selectedPrice ?? widget.player.price;
     final recommendedBid = leagueId == null
         ? null
@@ -126,7 +134,13 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
                 const SizedBox(height: 24),
 
                 // Budget Display
-                _BudgetDisplay(budget: budget, selectedPrice: _selectedPrice),
+                _BudgetDisplay(
+                  limitAsync: bidLimitAsync,
+                  selectedPrice: _selectedPrice,
+                  onRetry: leagueId == null
+                      ? null
+                      : () => ref.invalidate(bidLimitProvider),
+                ),
                 const SizedBox(height: 24),
 
                 // Price Input
@@ -162,12 +176,13 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
                     if (price == null) {
                       return 'Ungültiger Preis';
                     }
-                    final priceInCents = (price * 1000000).toInt();
+                    final priceInCents = (price * 1000000).round();
                     if (priceInCents < widget.player.price) {
                       return 'Mindestpreis: ${(widget.player.price / 1000000).toStringAsFixed(2)}M €';
                     }
-                    if (priceInCents > budget) {
-                      return 'Nicht genügend Budget';
+                    if (bidLimit != null && !bidLimit.allows(priceInCents)) {
+                      return 'Max. Gebot: ${(bidLimit.maxBid / 1000000).toStringAsFixed(2)}M € '
+                          '(Kontostand + 33 % Minus-Rahmen)';
                     }
                     return null;
                   },
@@ -175,7 +190,7 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
                     final price = double.tryParse(value);
                     if (price != null) {
                       setState(() {
-                        _selectedPrice = (price * 1000000).toInt();
+                        _selectedPrice = (price * 1000000).round();
                       });
                     }
                   },
@@ -229,9 +244,11 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
 
                     // Normal buy button
                     return FilledButton.icon(
-                      onPressed: _handleBuy,
-                      icon: const Icon(Icons.shopping_cart),
-                      label: const Text('Kaufen'),
+                      // Erst bieten, wenn die Gebotsgrenze geladen ist –
+                      // sonst könnte ein ungültiges Gebot rausgehen.
+                      onPressed: bidLimit == null ? null : _handleBuy,
+                      icon: const Icon(Icons.gavel),
+                      label: const Text('Gebot abgeben'),
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(56),
                       ),
@@ -249,7 +266,7 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
                           color: Colors.white,
                         ),
                       ),
-                      label: const Text('Kaufe...'),
+                      label: const Text('Biete...'),
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(56),
                       ),
@@ -365,7 +382,8 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                '${widget.player.firstName} ${widget.player.lastName} erfolgreich gekauft!',
+                'Gebot über ${((_selectedPrice ?? widget.player.price) / 1000000).toStringAsFixed(2)}M € '
+                'für ${widget.player.firstName} ${widget.player.lastName} abgegeben!',
               ),
             ),
           ],
@@ -531,82 +549,147 @@ class _PlayerMiniView extends StatelessWidget {
 // ============================================================================
 
 class _BudgetDisplay extends StatelessWidget {
-  final int budget;
+  final AsyncValue<BidLimit>? limitAsync;
   final int? selectedPrice;
+  final VoidCallback? onRetry;
 
-  const _BudgetDisplay({required this.budget, this.selectedPrice});
+  const _BudgetDisplay({
+    required this.limitAsync,
+    this.selectedPrice,
+    this.onRetry,
+  });
+
+  String _m(int value) => '${(value / 1000000).toStringAsFixed(2)}M €';
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final remaining = selectedPrice != null ? budget - selectedPrice! : budget;
-    final isInsufficient = remaining < 0;
+    final async = limitAsync;
+    if (async == null) {
+      return const SizedBox.shrink();
+    }
+    return async.when(
+      loading: () => const LinearProgressIndicator(),
+      error: (error, _) => Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.errorContainer,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.error_outline, color: theme.colorScheme.error),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Budget konnte nicht geladen werden',
+                style: TextStyle(color: theme.colorScheme.onErrorContainer),
+              ),
+            ),
+            if (onRetry != null)
+              IconButton(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh),
+                tooltip: 'Erneut laden',
+              ),
+          ],
+        ),
+      ),
+      data: (limit) => _buildLimit(theme, limit),
+    );
+  }
+
+  Widget _buildLimit(ThemeData theme, BidLimit limit) {
+    final price = selectedPrice;
+    final exceedsLimit = price != null && !limit.allows(price);
+    final remaining = price != null
+        ? limit.balanceAfterBid(price)
+        : limit.balanceAfterPendingOffers;
+    final onColor = exceedsLimit
+        ? theme.colorScheme.onErrorContainer
+        : theme.colorScheme.onPrimaryContainer;
+    final remainingColor = exceedsLimit
+        ? theme.colorScheme.error
+        : remaining < 0
+        ? Colors.orange.shade800
+        : Colors.green;
+
+    Widget row(String label, String value, {Color? color, bool bold = false}) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: onColor,
+                  fontWeight: bold ? FontWeight.bold : null,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Text(
+              value,
+              style:
+                  (bold
+                          ? theme.textTheme.titleMedium
+                          : theme.textTheme.bodyMedium)
+                      ?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: color ?? onColor,
+                      ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isInsufficient
+        color: exceedsLimit
             ? theme.colorScheme.errorContainer
             : theme.colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  'Aktuelles Budget',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: isInsufficient
-                        ? theme.colorScheme.onErrorContainer
-                        : theme.colorScheme.onPrimaryContainer,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Text(
-                '${(budget / 1000000).toStringAsFixed(2)}M €',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: isInsufficient
-                      ? theme.colorScheme.error
-                      : theme.colorScheme.primary,
-                ),
-              ),
-            ],
+          row(
+            'Aktuelles Budget',
+            _m(limit.budget),
+            color: limit.budget < 0
+                ? theme.colorScheme.error
+                : theme.colorScheme.primary,
+            bold: true,
           ),
-          if (selectedPrice != null) ...[
-            const SizedBox(height: 8),
+          if (limit.pendingOffers > 0)
+            row('Offene Gebote', '−${_m(limit.pendingOffers)}'),
+          row('Teamwert', _m(limit.teamValue)),
+          row('Max. Minus (33 %)', '−${_m(limit.overdraftAllowance)}'),
+          row(
+            'Max. Gebot',
+            _m(limit.maxBid),
+            color: theme.colorScheme.primary,
+            bold: true,
+          ),
+          if (price != null) ...[
             const Divider(),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    'Nach Kauf',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isInsufficient
-                          ? theme.colorScheme.onErrorContainer
-                          : theme.colorScheme.onPrimaryContainer,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Text(
-                  '${(remaining / 1000000).toStringAsFixed(2)}M €',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isInsufficient
-                        ? theme.colorScheme.error
-                        : Colors.green,
-                  ),
-                ),
-              ],
+            row(
+              'Kontostand nach Zuschlag',
+              _m(remaining),
+              color: remainingColor,
+              bold: true,
             ),
+            if (!exceedsLimit && remaining < 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Das Konto muss bis zum Spieltag wieder ausgeglichen sein.',
+                  style: theme.textTheme.bodySmall?.copyWith(color: onColor),
+                ),
+              ),
           ],
         ],
       ),

@@ -31,6 +31,7 @@ _MarketPlayer _$MarketPlayerFromJson(Map<String, dynamic> json) =>
           ? null
           : PlayerOwner.fromJson(json['owner'] as Map<String, dynamic>),
       exs: (json['exs'] as num).toInt(),
+      ownOfferPrice: (json['ownOfferPrice'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$MarketPlayerToJson(_MarketPlayer instance) =>
@@ -56,6 +57,7 @@ Map<String, dynamic> _$MarketPlayerToJson(_MarketPlayer instance) =>
       'prlo': instance.prlo,
       'owner': instance.owner,
       'exs': instance.exs,
+      'ownOfferPrice': instance.ownOfferPrice,
     };
 
 _MarketResponse _$MarketResponseFromJson(Map<String, dynamic> json) =>

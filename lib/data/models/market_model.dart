@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+
 import 'common_models.dart';
 
 part 'market_model.freezed.dart';
@@ -29,6 +30,9 @@ abstract class MarketPlayer with _$MarketPlayer {
     int? prlo,
     PlayerOwner? owner,
     required int exs,
+
+    /// Eigenes offenes Gebot auf diesen Spieler (`uop`), null = kein Gebot.
+    int? ownOfferPrice,
   }) = _MarketPlayer;
 
   factory MarketPlayer.fromJson(Map<String, dynamic> json) =>

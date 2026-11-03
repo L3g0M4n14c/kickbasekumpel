@@ -459,10 +459,9 @@ void main() {
     });
 
     test('wirft KickbaseException bei fehlgeschlagenem Update', () async {
-      when(
-        mockHttpClient.send(any),
-      ).thenAnswer(
-        (_) async => http.StreamedResponse(Stream.value(utf8.encode('{}')), 400),
+      when(mockHttpClient.send(any)).thenAnswer(
+        (_) async =>
+            http.StreamedResponse(Stream.value(utf8.encode('{}')), 400),
       );
 
       expect(
@@ -470,6 +469,78 @@ void main() {
           'league-1',
           const LineupUpdateRequest(playerIds: ['p1']),
         ),
+        throwsA(isA<KickbaseException>()),
+      );
+    });
+  });
+
+  group('buyPlayer (Gebot abgeben)', () {
+    const testToken = 'test_token';
+
+    setUp(() async {
+      when(mockTokenStorage.getToken()).thenAnswer((_) async => testToken);
+      await apiClient.setAuthToken(testToken);
+    });
+
+    test('sendet {price} an .../offers und parst ofi', () async {
+      final requests = <http.BaseRequest>[];
+      when(mockHttpClient.send(any)).thenAnswer((invocation) async {
+        requests.add(invocation.positionalArguments.first as http.BaseRequest);
+        return http.StreamedResponse(
+          Stream.value(utf8.encode('{"ofi":"user-1"}')),
+          200,
+        );
+      });
+
+      final response = await apiClient.buyPlayer('league-1', 'p1', 12500000);
+
+      final request = requests.single as http.Request;
+      expect(request.method, 'POST');
+      expect(request.url.path, '/v4/leagues/league-1/market/p1/offers');
+      expect(jsonDecode(request.body), {'price': 12500000});
+      expect(response.offerId, 'user-1');
+    });
+
+    test('leere 200-Antwort gilt als Erfolg', () async {
+      when(mockHttpClient.send(any)).thenAnswer(
+        (_) async => http.StreamedResponse(Stream.value(utf8.encode('')), 200),
+      );
+
+      final response = await apiClient.buyPlayer('league-1', 'p1', 1);
+
+      expect(response.offerId, isNull);
+    });
+
+    test('wirft KickbaseException mit errMsg bei HTTP 400', () async {
+      when(mockHttpClient.send(any)).thenAnswer(
+        (_) async => http.StreamedResponse(
+          Stream.value(utf8.encode('{"err":5,"errMsg":"NotEnoughBudget"}')),
+          400,
+        ),
+      );
+
+      expect(
+        () => apiClient.buyPlayer('league-1', 'p1', 1),
+        throwsA(
+          isA<KickbaseException>().having(
+            (e) => e.message,
+            'message',
+            contains('NotEnoughBudget'),
+          ),
+        ),
+      );
+    });
+
+    test('wirft auch bei HTTP 200 mit errMsg', () async {
+      when(mockHttpClient.send(any)).thenAnswer(
+        (_) async => http.StreamedResponse(
+          Stream.value(utf8.encode('{"err":3,"errMsg":"NotFound"}')),
+          200,
+        ),
+      );
+
+      expect(
+        () => apiClient.buyPlayer('league-1', 'p1', 1),
         throwsA(isA<KickbaseException>()),
       );
     });

@@ -703,36 +703,88 @@ class KickbaseAPIClient {
         .toList();
   }
 
-  /// Buy player from market
+  /// Gebot auf einen Transfermarkt-Spieler abgeben (oder ändern)
   /// POST /v4/leagues/{leagueId}/market/{playerId}/offers
-  Future<BidResponse> buyPlayer(
+  ///
+  /// Body `{"price": <€>}`, Antwort `{"ofi": "<offerId>"}`. Ein erneuter POST
+  /// auf denselben Spieler überschreibt das bestehende eigene Gebot.
+  Future<OfferResponse> buyPlayer(
     String leagueId,
     String playerId,
     int price,
   ) async {
+    _logger.i('🛒 Placing offer of €$price for player $playerId...');
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/market/$playerId/offers',
       method: 'POST',
       body: {'price': price},
     );
 
-    return _processResponse(response, BidResponse.fromJson);
+    _throwOnMarketError(response, 'Gebot fehlgeschlagen');
+    final json = _parseJson(response.body);
+    _logger.i('✅ Offer placed (ofi: ${json['ofi']})');
+    return OfferResponse.fromJson(json);
   }
 
-  /// Sell player to market
+  /// Eigenen Spieler auf den Transfermarkt stellen (bzw. Preis ändern)
   /// POST /v4/leagues/{leagueId}/market
-  Future<BidResponse> sellPlayer(
-    String leagueId,
-    String playerId,
-    int price,
-  ) async {
+  ///
+  /// Die API erwartet die Kurzkeys `pi`/`prc`; die Langform wird zusätzlich
+  /// mitgeschickt (unbekannte Felder werden ignoriert). Antwort ist leer.
+  Future<void> sellPlayer(String leagueId, String playerId, int price) async {
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/market',
       method: 'POST',
-      body: {'playerId': playerId, 'price': price},
+      body: {
+        'pi': playerId,
+        'prc': price,
+        'playerId': playerId,
+        'price': price,
+      },
     );
 
-    return _processResponse(response, BidResponse.fromJson);
+    _throwOnMarketError(response, 'Verkauf fehlgeschlagen');
+  }
+
+  /// Wirft eine [KickbaseException], wenn ein Markt-Request fehlschlägt.
+  ///
+  /// Kickbase meldet fachliche Fehler (zu wenig Budget, Kader voll, …) als
+  /// JSON `{"err": <code>, "errMsg": "<Text>"}` – teils mit HTTP 4xx, teils
+  /// mit 200. Beide Fälle werden hier erkannt, damit die UI den echten Grund
+  /// anzeigen kann statt eines Parsing-Fehlers.
+  void _throwOnMarketError(http.Response response, String context) {
+    final json = _parseJson(response.body);
+    final errMsg = json['errMsg']?.toString();
+    final err = json['err'];
+    final hasApiError =
+        (errMsg != null && errMsg.isNotEmpty) || (err != null && err != 0);
+    final isSuccess = response.statusCode >= 200 && response.statusCode < 300;
+    if (isSuccess && !hasApiError) return;
+
+    if (response.statusCode == 404 && !hasApiError) {
+      throw NotFoundException(
+        '$context: Spieler nicht (mehr) auf dem Markt',
+        originalError: response.body,
+      );
+    }
+    if (response.statusCode == 429) {
+      throw const RateLimitException('Rate limit exceeded');
+    }
+    if (response.statusCode >= 500) {
+      throw ServerException(
+        '$context: Serverfehler',
+        statusCode: response.statusCode,
+        originalError: response.body,
+      );
+    }
+    final detail = errMsg ?? (err != null ? 'Fehlercode $err' : null);
+    throw KickbaseException(
+      detail != null
+          ? '$context: $detail'
+          : '$context: HTTP ${response.statusCode}',
+      code: err?.toString() ?? response.statusCode.toString(),
+      originalError: response.body,
+    );
   }
 
   /// Get player statistics/performance
