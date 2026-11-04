@@ -102,6 +102,9 @@ void main() {
           maxCompetitorBudget: 6800000,
         ),
       );
+      await tester.ensureVisible(find.text('Konkurrenz-Budgets prüfen'));
+      await tester.tap(find.text('Konkurrenz-Budgets prüfen'));
+      await tester.pump();
 
       expect(find.byType(CachedNetworkImage), findsOneWidget);
       expect(
@@ -139,6 +142,9 @@ void main() {
         ),
         observedBids: observedBids,
       );
+      await tester.ensureVisible(find.text('Konkurrenz-Budgets prüfen'));
+      await tester.tap(find.text('Konkurrenz-Budgets prüfen'));
+      await tester.pump();
 
       expect(observedBids, contains(4200000)); // Startgebot = Angebotspreis
 
@@ -158,6 +164,9 @@ void main() {
           maxCompetitorBudget: 6800000,
         ),
       );
+      await tester.ensureVisible(find.text('Konkurrenz-Budgets prüfen'));
+      await tester.tap(find.text('Konkurrenz-Budgets prüfen'));
+      await tester.pump();
 
       expect(find.textContaining('1 Manager hat mehr Budget'), findsOneWidget);
     });

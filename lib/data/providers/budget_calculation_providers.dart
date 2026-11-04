@@ -35,6 +35,11 @@ final _logger = Logger(printer: PrettyPrinter(methodCount: 0));
 /// Maximale Anzahl paralleler Spieler-Requests (Performance/Marktwert)
 const _maxConcurrentFetches = 8;
 
+/// Manager, deren Budget parallel berechnet wird. Jede Berechnung feuert
+/// intern selbst bis zu [_maxConcurrentFetches] Requests – ein eigenes,
+/// niedriges Limit verhindert Dutzende gleichzeitige Calls (Rate-Limit).
+const _maxConcurrentManagers = 2;
+
 /// Zeitrahmen der Marktwert-Historie in Tagen (wie im Spieler-Dialog)
 const _marketValueTimeframeDays = 365;
 
@@ -700,9 +705,9 @@ final managersBudgetCalculationProvider =
       for (
         var i = 0;
         i < params.managerIds.length;
-        i += _maxConcurrentFetches
+        i += _maxConcurrentManagers
       ) {
-        final batch = params.managerIds.skip(i).take(_maxConcurrentFetches);
+        final batch = params.managerIds.skip(i).take(_maxConcurrentManagers);
         final batchResults =
             await Future.wait<MapEntry<String, BudgetCalculationResult>?>(
               batch.map((managerId) async {

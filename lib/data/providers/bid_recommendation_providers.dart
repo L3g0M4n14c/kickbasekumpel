@@ -53,20 +53,29 @@ final leagueCompetitorPurchasesProvider =
         leagueCompetitorIdsProvider(leagueId).future,
       );
 
-      final histories = await Future.wait(
-        managerIds.map((managerId) async {
-          try {
-            return await ref.read(
-              managerTransferHistoryProvider((
-                leagueId: leagueId,
-                managerId: managerId,
-              )).future,
-            );
-          } catch (_) {
-            return <ManagerTransferHistoryEntry>[];
-          }
-        }),
-      );
+      // Begrenzte Parallelität: Jede Historie feuert intern selbst bis zu
+      // 8 Marktwert-Requests – ungebremst löst das Kickbase-Rate-Limits aus.
+      const maxConcurrentManagers = 2;
+      final histories = <List<ManagerTransferHistoryEntry>>[];
+      for (var i = 0; i < managerIds.length; i += maxConcurrentManagers) {
+        final batch = managerIds.skip(i).take(maxConcurrentManagers);
+        histories.addAll(
+          await Future.wait(
+            batch.map((managerId) async {
+              try {
+                return await ref.read(
+                  managerTransferHistoryProvider((
+                    leagueId: leagueId,
+                    managerId: managerId,
+                  )).future,
+                );
+              } catch (_) {
+                return <ManagerTransferHistoryEntry>[];
+              }
+            }),
+          ),
+        );
+      }
       return histories.expand((history) => history).toList();
     });
 
