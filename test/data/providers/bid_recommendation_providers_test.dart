@@ -18,6 +18,8 @@ void main() {
     setUp(() {
       mockApiClient = MockKickbaseAPIClient();
       container = ProviderContainer(
+        // Wie in main.dart: kein Riverpod-Auto-Retry
+        retry: (retryCount, error) => null,
         overrides: [
           kickbaseApiClientProvider.overrideWithValue(mockApiClient),
           currentAuthUserIdProvider.overrideWithValue('manager-me'),
