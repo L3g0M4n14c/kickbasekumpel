@@ -132,6 +132,8 @@ class LigainsiderLineupIndex {
     return LigainsiderLineupIndex._(
       hasCoverage: service.hasLineupCoverage,
       statusResolver: (firstName, lastName) {
+        // Service (noch) nicht geladen → keine verlässliche Aussage.
+        if (!service.isReady) return null;
         final hasCoverage = service.hasLineupCoverage;
         final status = service.getPlayerStatus(firstName, lastName);
         if (status == LigainsiderPlayerStatus.out && !hasCoverage) {

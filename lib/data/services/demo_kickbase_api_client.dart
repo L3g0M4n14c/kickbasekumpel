@@ -761,6 +761,19 @@ class DemoKickbaseAPIClient extends KickbaseAPIClient {
   Future<void> addScoutedPlayer(String leagueId, String playerId) async {}
 
   @override
+  Future<OfferResponse> buyPlayer(
+    String leagueId,
+    String playerId,
+    int price,
+  ) async {
+    // Demo-Modus: Gebot wird nur simuliert (Antwort wie die echte API).
+    return OfferResponse(offerId: _currentUid);
+  }
+
+  @override
+  Future<void> sellPlayer(String leagueId, String playerId, int price) async {}
+
+  @override
   Future<void> removeScoutedPlayer(String leagueId, String playerId) async {}
 
   @override

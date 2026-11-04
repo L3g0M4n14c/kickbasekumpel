@@ -337,6 +337,9 @@ Map<String, dynamic> normalizeMarketPlayerJson(Map<String, dynamic> json) {
   copy['status'] = _toIntSafe(copy['status'] ?? copy['st']);
   copy['stl'] = _toIntSafe(copy['stl']);
   copy['prlo'] = copy['prlo'] != null ? _toIntSafe(copy['prlo']) : null;
+  // uop = User-Offer-Price: eigenes offenes Gebot (fehlt ohne Gebot)
+  final ownOffer = copy['ownOfferPrice'] ?? copy['uop'];
+  copy['ownOfferPrice'] = ownOffer != null ? _toIntSafe(ownOffer) : null;
 
   // seller: construct from 'uoid' (user-offer-id = seller's user id) when absent
   if (copy['seller'] == null) {

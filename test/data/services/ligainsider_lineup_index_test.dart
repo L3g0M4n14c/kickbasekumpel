@@ -14,7 +14,7 @@ List<LineupPlayer> _dummies(int count, {int start = 0}) {
     for (var i = start; i < start + count; i++)
       LineupPlayer(
         name: 'Spieler$i',
-        ligainsiderId: 'dummy-spieler$i_${9000 + i}',
+        ligainsiderId: 'dummy-spieler${i}_${9000 + i}',
       ),
   ];
 }
@@ -172,6 +172,7 @@ void main() {
   group('LigainsiderLineupIndex.fromService', () {
     test('delegiert an den lokalen Service', () {
       final service = _MockLigainsiderService();
+      when(() => service.isReady).thenReturn(true);
       when(() => service.hasLineupCoverage).thenReturn(true);
       when(() => service.getPlayerStatus('Max', 'Mustermann')).thenReturn(
         LigainsiderPlayerStatus.likelyStart,
@@ -188,6 +189,7 @@ void main() {
 
     test('ohne Abdeckung wird out zu "keine Aussage"', () {
       final service = _MockLigainsiderService();
+      when(() => service.isReady).thenReturn(true);
       when(() => service.hasLineupCoverage).thenReturn(false);
       when(() => service.getPlayerStatus(any(), any())).thenReturn(
         LigainsiderPlayerStatus.out,
@@ -197,6 +199,17 @@ void main() {
 
       expect(index.hasCoverage, false);
       expect(index.statusFor('Max', 'Mustermann'), isNull);
+    });
+
+    test('ungeladener Service liefert keine Aussage', () {
+      final service = _MockLigainsiderService();
+      when(() => service.isReady).thenReturn(false);
+      when(() => service.hasLineupCoverage).thenReturn(true);
+
+      final index = LigainsiderLineupIndex.fromService(service);
+
+      expect(index.statusFor('Max', 'Mustermann'), isNull);
+      verifyNever(() => service.getPlayerStatus(any(), any()));
     });
   });
 }

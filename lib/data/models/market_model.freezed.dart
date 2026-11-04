@@ -16,7 +16,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$MarketPlayer {
 
- String get id; String get firstName; String get lastName; String get profileBigUrl; String get teamName; String get teamId; int get position; int get number; double get averagePoints; int get totalPoints; int get marketValue; int get marketValueTrend; int get price; String get expiry; int get offers; MarketSeller get seller; int get stl; int get status; int? get prlo; PlayerOwner? get owner; int get exs;
+ String get id; String get firstName; String get lastName; String get profileBigUrl; String get teamName; String get teamId; int get position; int get number; double get averagePoints; int get totalPoints; int get marketValue; int get marketValueTrend; int get price; String get expiry; int get offers; MarketSeller get seller; int get stl; int get status; int? get prlo; PlayerOwner? get owner; int get exs;/// Eigenes offenes Gebot auf diesen Spieler (`uop`), null = kein Gebot.
+ int? get ownOfferPrice;
 /// Create a copy of MarketPlayer
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -30,20 +31,20 @@ $MarketPlayerCopyWith<MarketPlayer> get copyWith => _$MarketPlayerCopyWithImpl<M
 @override
 bool operator ==(Object other) {
   final _this = this as MarketPlayer;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MarketPlayer&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.firstName, _this.firstName) || other.firstName == _this.firstName)&&(identical(other.lastName, _this.lastName) || other.lastName == _this.lastName)&&(identical(other.profileBigUrl, _this.profileBigUrl) || other.profileBigUrl == _this.profileBigUrl)&&(identical(other.teamName, _this.teamName) || other.teamName == _this.teamName)&&(identical(other.teamId, _this.teamId) || other.teamId == _this.teamId)&&(identical(other.position, _this.position) || other.position == _this.position)&&(identical(other.number, _this.number) || other.number == _this.number)&&(identical(other.averagePoints, _this.averagePoints) || other.averagePoints == _this.averagePoints)&&(identical(other.totalPoints, _this.totalPoints) || other.totalPoints == _this.totalPoints)&&(identical(other.marketValue, _this.marketValue) || other.marketValue == _this.marketValue)&&(identical(other.marketValueTrend, _this.marketValueTrend) || other.marketValueTrend == _this.marketValueTrend)&&(identical(other.price, _this.price) || other.price == _this.price)&&(identical(other.expiry, _this.expiry) || other.expiry == _this.expiry)&&(identical(other.offers, _this.offers) || other.offers == _this.offers)&&(identical(other.seller, _this.seller) || other.seller == _this.seller)&&(identical(other.stl, _this.stl) || other.stl == _this.stl)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.prlo, _this.prlo) || other.prlo == _this.prlo)&&(identical(other.owner, _this.owner) || other.owner == _this.owner)&&(identical(other.exs, _this.exs) || other.exs == _this.exs));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MarketPlayer&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.firstName, _this.firstName) || other.firstName == _this.firstName)&&(identical(other.lastName, _this.lastName) || other.lastName == _this.lastName)&&(identical(other.profileBigUrl, _this.profileBigUrl) || other.profileBigUrl == _this.profileBigUrl)&&(identical(other.teamName, _this.teamName) || other.teamName == _this.teamName)&&(identical(other.teamId, _this.teamId) || other.teamId == _this.teamId)&&(identical(other.position, _this.position) || other.position == _this.position)&&(identical(other.number, _this.number) || other.number == _this.number)&&(identical(other.averagePoints, _this.averagePoints) || other.averagePoints == _this.averagePoints)&&(identical(other.totalPoints, _this.totalPoints) || other.totalPoints == _this.totalPoints)&&(identical(other.marketValue, _this.marketValue) || other.marketValue == _this.marketValue)&&(identical(other.marketValueTrend, _this.marketValueTrend) || other.marketValueTrend == _this.marketValueTrend)&&(identical(other.price, _this.price) || other.price == _this.price)&&(identical(other.expiry, _this.expiry) || other.expiry == _this.expiry)&&(identical(other.offers, _this.offers) || other.offers == _this.offers)&&(identical(other.seller, _this.seller) || other.seller == _this.seller)&&(identical(other.stl, _this.stl) || other.stl == _this.stl)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.prlo, _this.prlo) || other.prlo == _this.prlo)&&(identical(other.owner, _this.owner) || other.owner == _this.owner)&&(identical(other.exs, _this.exs) || other.exs == _this.exs)&&(identical(other.ownOfferPrice, _this.ownOfferPrice) || other.ownOfferPrice == _this.ownOfferPrice));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as MarketPlayer;
-  return Object.hashAll([runtimeType,_this.id,_this.firstName,_this.lastName,_this.profileBigUrl,_this.teamName,_this.teamId,_this.position,_this.number,_this.averagePoints,_this.totalPoints,_this.marketValue,_this.marketValueTrend,_this.price,_this.expiry,_this.offers,_this.seller,_this.stl,_this.status,_this.prlo,_this.owner,_this.exs]);
+  return Object.hashAll([runtimeType,_this.id,_this.firstName,_this.lastName,_this.profileBigUrl,_this.teamName,_this.teamId,_this.position,_this.number,_this.averagePoints,_this.totalPoints,_this.marketValue,_this.marketValueTrend,_this.price,_this.expiry,_this.offers,_this.seller,_this.stl,_this.status,_this.prlo,_this.owner,_this.exs,_this.ownOfferPrice]);
 }
 
 @override
 String toString() {
   final _this = this as MarketPlayer;
-  return 'MarketPlayer(id: ${_this.id}, firstName: ${_this.firstName}, lastName: ${_this.lastName}, profileBigUrl: ${_this.profileBigUrl}, teamName: ${_this.teamName}, teamId: ${_this.teamId}, position: ${_this.position}, number: ${_this.number}, averagePoints: ${_this.averagePoints}, totalPoints: ${_this.totalPoints}, marketValue: ${_this.marketValue}, marketValueTrend: ${_this.marketValueTrend}, price: ${_this.price}, expiry: ${_this.expiry}, offers: ${_this.offers}, seller: ${_this.seller}, stl: ${_this.stl}, status: ${_this.status}, prlo: ${_this.prlo}, owner: ${_this.owner}, exs: ${_this.exs})';
+  return 'MarketPlayer(id: ${_this.id}, firstName: ${_this.firstName}, lastName: ${_this.lastName}, profileBigUrl: ${_this.profileBigUrl}, teamName: ${_this.teamName}, teamId: ${_this.teamId}, position: ${_this.position}, number: ${_this.number}, averagePoints: ${_this.averagePoints}, totalPoints: ${_this.totalPoints}, marketValue: ${_this.marketValue}, marketValueTrend: ${_this.marketValueTrend}, price: ${_this.price}, expiry: ${_this.expiry}, offers: ${_this.offers}, seller: ${_this.seller}, stl: ${_this.stl}, status: ${_this.status}, prlo: ${_this.prlo}, owner: ${_this.owner}, exs: ${_this.exs}, ownOfferPrice: ${_this.ownOfferPrice})';
 }
 
 
@@ -54,7 +55,7 @@ abstract mixin class $MarketPlayerCopyWith<$Res>  {
   factory $MarketPlayerCopyWith(MarketPlayer value, $Res Function(MarketPlayer) _then) = _$MarketPlayerCopyWithImpl;
 @useResult
 $Res call({
- String id, String firstName, String lastName, String profileBigUrl, String teamName, String teamId, int position, int number, double averagePoints, int totalPoints, int marketValue, int marketValueTrend, int price, String expiry, int offers, MarketSeller seller, int stl, int status, int? prlo, PlayerOwner? owner, int exs
+ String id, String firstName, String lastName, String profileBigUrl, String teamName, String teamId, int position, int number, double averagePoints, int totalPoints, int marketValue, int marketValueTrend, int price, String expiry, int offers, MarketSeller seller, int stl, int status, int? prlo, PlayerOwner? owner, int exs, int? ownOfferPrice
 });
 
 
@@ -71,7 +72,7 @@ class _$MarketPlayerCopyWithImpl<$Res>
 
 /// Create a copy of MarketPlayer
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? firstName = null,Object? lastName = null,Object? profileBigUrl = null,Object? teamName = null,Object? teamId = null,Object? position = null,Object? number = null,Object? averagePoints = null,Object? totalPoints = null,Object? marketValue = null,Object? marketValueTrend = null,Object? price = null,Object? expiry = null,Object? offers = null,Object? seller = null,Object? stl = null,Object? status = null,Object? prlo = freezed,Object? owner = freezed,Object? exs = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? firstName = null,Object? lastName = null,Object? profileBigUrl = null,Object? teamName = null,Object? teamId = null,Object? position = null,Object? number = null,Object? averagePoints = null,Object? totalPoints = null,Object? marketValue = null,Object? marketValueTrend = null,Object? price = null,Object? expiry = null,Object? offers = null,Object? seller = null,Object? stl = null,Object? status = null,Object? prlo = freezed,Object? owner = freezed,Object? exs = null,Object? ownOfferPrice = freezed,}) {
   return _then(MarketPlayer(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,firstName: null == firstName ? _self.firstName : firstName // ignore: cast_nullable_to_non_nullable
@@ -94,7 +95,8 @@ as int,status: null == status ? _self.status : status // ignore: cast_nullable_t
 as int,prlo: freezed == prlo ? _self.prlo : prlo // ignore: cast_nullable_to_non_nullable
 as int?,owner: freezed == owner ? _self.owner : owner // ignore: cast_nullable_to_non_nullable
 as PlayerOwner?,exs: null == exs ? _self.exs : exs // ignore: cast_nullable_to_non_nullable
-as int,
+as int,ownOfferPrice: freezed == ownOfferPrice ? _self.ownOfferPrice : ownOfferPrice // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 /// Create a copy of MarketPlayer
@@ -200,10 +202,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String firstName,  String lastName,  String profileBigUrl,  String teamName,  String teamId,  int position,  int number,  double averagePoints,  int totalPoints,  int marketValue,  int marketValueTrend,  int price,  String expiry,  int offers,  MarketSeller seller,  int stl,  int status,  int? prlo,  PlayerOwner? owner,  int exs)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String firstName,  String lastName,  String profileBigUrl,  String teamName,  String teamId,  int position,  int number,  double averagePoints,  int totalPoints,  int marketValue,  int marketValueTrend,  int price,  String expiry,  int offers,  MarketSeller seller,  int stl,  int status,  int? prlo,  PlayerOwner? owner,  int exs,  int? ownOfferPrice)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MarketPlayer() when $default != null:
-return $default(_that.id,_that.firstName,_that.lastName,_that.profileBigUrl,_that.teamName,_that.teamId,_that.position,_that.number,_that.averagePoints,_that.totalPoints,_that.marketValue,_that.marketValueTrend,_that.price,_that.expiry,_that.offers,_that.seller,_that.stl,_that.status,_that.prlo,_that.owner,_that.exs);case _:
+return $default(_that.id,_that.firstName,_that.lastName,_that.profileBigUrl,_that.teamName,_that.teamId,_that.position,_that.number,_that.averagePoints,_that.totalPoints,_that.marketValue,_that.marketValueTrend,_that.price,_that.expiry,_that.offers,_that.seller,_that.stl,_that.status,_that.prlo,_that.owner,_that.exs,_that.ownOfferPrice);case _:
   return orElse();
 
 }
@@ -221,10 +223,10 @@ return $default(_that.id,_that.firstName,_that.lastName,_that.profileBigUrl,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String firstName,  String lastName,  String profileBigUrl,  String teamName,  String teamId,  int position,  int number,  double averagePoints,  int totalPoints,  int marketValue,  int marketValueTrend,  int price,  String expiry,  int offers,  MarketSeller seller,  int stl,  int status,  int? prlo,  PlayerOwner? owner,  int exs)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String firstName,  String lastName,  String profileBigUrl,  String teamName,  String teamId,  int position,  int number,  double averagePoints,  int totalPoints,  int marketValue,  int marketValueTrend,  int price,  String expiry,  int offers,  MarketSeller seller,  int stl,  int status,  int? prlo,  PlayerOwner? owner,  int exs,  int? ownOfferPrice)  $default,) {final _that = this;
 switch (_that) {
 case _MarketPlayer():
-return $default(_that.id,_that.firstName,_that.lastName,_that.profileBigUrl,_that.teamName,_that.teamId,_that.position,_that.number,_that.averagePoints,_that.totalPoints,_that.marketValue,_that.marketValueTrend,_that.price,_that.expiry,_that.offers,_that.seller,_that.stl,_that.status,_that.prlo,_that.owner,_that.exs);case _:
+return $default(_that.id,_that.firstName,_that.lastName,_that.profileBigUrl,_that.teamName,_that.teamId,_that.position,_that.number,_that.averagePoints,_that.totalPoints,_that.marketValue,_that.marketValueTrend,_that.price,_that.expiry,_that.offers,_that.seller,_that.stl,_that.status,_that.prlo,_that.owner,_that.exs,_that.ownOfferPrice);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -241,10 +243,10 @@ return $default(_that.id,_that.firstName,_that.lastName,_that.profileBigUrl,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String firstName,  String lastName,  String profileBigUrl,  String teamName,  String teamId,  int position,  int number,  double averagePoints,  int totalPoints,  int marketValue,  int marketValueTrend,  int price,  String expiry,  int offers,  MarketSeller seller,  int stl,  int status,  int? prlo,  PlayerOwner? owner,  int exs)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String firstName,  String lastName,  String profileBigUrl,  String teamName,  String teamId,  int position,  int number,  double averagePoints,  int totalPoints,  int marketValue,  int marketValueTrend,  int price,  String expiry,  int offers,  MarketSeller seller,  int stl,  int status,  int? prlo,  PlayerOwner? owner,  int exs,  int? ownOfferPrice)?  $default,) {final _that = this;
 switch (_that) {
 case _MarketPlayer() when $default != null:
-return $default(_that.id,_that.firstName,_that.lastName,_that.profileBigUrl,_that.teamName,_that.teamId,_that.position,_that.number,_that.averagePoints,_that.totalPoints,_that.marketValue,_that.marketValueTrend,_that.price,_that.expiry,_that.offers,_that.seller,_that.stl,_that.status,_that.prlo,_that.owner,_that.exs);case _:
+return $default(_that.id,_that.firstName,_that.lastName,_that.profileBigUrl,_that.teamName,_that.teamId,_that.position,_that.number,_that.averagePoints,_that.totalPoints,_that.marketValue,_that.marketValueTrend,_that.price,_that.expiry,_that.offers,_that.seller,_that.stl,_that.status,_that.prlo,_that.owner,_that.exs,_that.ownOfferPrice);case _:
   return null;
 
 }
@@ -256,7 +258,7 @@ return $default(_that.id,_that.firstName,_that.lastName,_that.profileBigUrl,_tha
 @JsonSerializable()
 
 class _MarketPlayer implements MarketPlayer {
-  const _MarketPlayer({required this.id, required this.firstName, required this.lastName, required this.profileBigUrl, required this.teamName, required this.teamId, required this.position, required this.number, required this.averagePoints, required this.totalPoints, required this.marketValue, required this.marketValueTrend, required this.price, required this.expiry, required this.offers, required this.seller, required this.stl, required this.status, this.prlo, this.owner, required this.exs});
+  const _MarketPlayer({required this.id, required this.firstName, required this.lastName, required this.profileBigUrl, required this.teamName, required this.teamId, required this.position, required this.number, required this.averagePoints, required this.totalPoints, required this.marketValue, required this.marketValueTrend, required this.price, required this.expiry, required this.offers, required this.seller, required this.stl, required this.status, this.prlo, this.owner, required this.exs, this.ownOfferPrice});
   factory _MarketPlayer.fromJson(Map<String, dynamic> json) => _$MarketPlayerFromJson(json);
 
 @override final  String id;
@@ -280,6 +282,8 @@ class _MarketPlayer implements MarketPlayer {
 @override final  int? prlo;
 @override final  PlayerOwner? owner;
 @override final  int exs;
+/// Eigenes offenes Gebot auf diesen Spieler (`uop`), null = kein Gebot.
+@override final  int? ownOfferPrice;
 
 /// Create a copy of MarketPlayer
 /// with the given fields replaced by the non-null parameter values.
@@ -294,18 +298,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MarketPlayer&&(identical(other.id, id) || other.id == id)&&(identical(other.firstName, firstName) || other.firstName == firstName)&&(identical(other.lastName, lastName) || other.lastName == lastName)&&(identical(other.profileBigUrl, profileBigUrl) || other.profileBigUrl == profileBigUrl)&&(identical(other.teamName, teamName) || other.teamName == teamName)&&(identical(other.teamId, teamId) || other.teamId == teamId)&&(identical(other.position, position) || other.position == position)&&(identical(other.number, number) || other.number == number)&&(identical(other.averagePoints, averagePoints) || other.averagePoints == averagePoints)&&(identical(other.totalPoints, totalPoints) || other.totalPoints == totalPoints)&&(identical(other.marketValue, marketValue) || other.marketValue == marketValue)&&(identical(other.marketValueTrend, marketValueTrend) || other.marketValueTrend == marketValueTrend)&&(identical(other.price, price) || other.price == price)&&(identical(other.expiry, expiry) || other.expiry == expiry)&&(identical(other.offers, offers) || other.offers == offers)&&(identical(other.seller, seller) || other.seller == seller)&&(identical(other.stl, stl) || other.stl == stl)&&(identical(other.status, status) || other.status == status)&&(identical(other.prlo, prlo) || other.prlo == prlo)&&(identical(other.owner, owner) || other.owner == owner)&&(identical(other.exs, exs) || other.exs == exs));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MarketPlayer&&(identical(other.id, id) || other.id == id)&&(identical(other.firstName, firstName) || other.firstName == firstName)&&(identical(other.lastName, lastName) || other.lastName == lastName)&&(identical(other.profileBigUrl, profileBigUrl) || other.profileBigUrl == profileBigUrl)&&(identical(other.teamName, teamName) || other.teamName == teamName)&&(identical(other.teamId, teamId) || other.teamId == teamId)&&(identical(other.position, position) || other.position == position)&&(identical(other.number, number) || other.number == number)&&(identical(other.averagePoints, averagePoints) || other.averagePoints == averagePoints)&&(identical(other.totalPoints, totalPoints) || other.totalPoints == totalPoints)&&(identical(other.marketValue, marketValue) || other.marketValue == marketValue)&&(identical(other.marketValueTrend, marketValueTrend) || other.marketValueTrend == marketValueTrend)&&(identical(other.price, price) || other.price == price)&&(identical(other.expiry, expiry) || other.expiry == expiry)&&(identical(other.offers, offers) || other.offers == offers)&&(identical(other.seller, seller) || other.seller == seller)&&(identical(other.stl, stl) || other.stl == stl)&&(identical(other.status, status) || other.status == status)&&(identical(other.prlo, prlo) || other.prlo == prlo)&&(identical(other.owner, owner) || other.owner == owner)&&(identical(other.exs, exs) || other.exs == exs)&&(identical(other.ownOfferPrice, ownOfferPrice) || other.ownOfferPrice == ownOfferPrice));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hashAll([runtimeType,id,firstName,lastName,profileBigUrl,teamName,teamId,position,number,averagePoints,totalPoints,marketValue,marketValueTrend,price,expiry,offers,seller,stl,status,prlo,owner,exs]);
+    return Object.hashAll([runtimeType,id,firstName,lastName,profileBigUrl,teamName,teamId,position,number,averagePoints,totalPoints,marketValue,marketValueTrend,price,expiry,offers,seller,stl,status,prlo,owner,exs,ownOfferPrice]);
 }
 
 @override
 String toString() {
-    return 'MarketPlayer(id: $id, firstName: $firstName, lastName: $lastName, profileBigUrl: $profileBigUrl, teamName: $teamName, teamId: $teamId, position: $position, number: $number, averagePoints: $averagePoints, totalPoints: $totalPoints, marketValue: $marketValue, marketValueTrend: $marketValueTrend, price: $price, expiry: $expiry, offers: $offers, seller: $seller, stl: $stl, status: $status, prlo: $prlo, owner: $owner, exs: $exs)';
+    return 'MarketPlayer(id: $id, firstName: $firstName, lastName: $lastName, profileBigUrl: $profileBigUrl, teamName: $teamName, teamId: $teamId, position: $position, number: $number, averagePoints: $averagePoints, totalPoints: $totalPoints, marketValue: $marketValue, marketValueTrend: $marketValueTrend, price: $price, expiry: $expiry, offers: $offers, seller: $seller, stl: $stl, status: $status, prlo: $prlo, owner: $owner, exs: $exs, ownOfferPrice: $ownOfferPrice)';
 }
 
 
@@ -316,7 +320,7 @@ abstract mixin class _$MarketPlayerCopyWith<$Res> implements $MarketPlayerCopyWi
   factory _$MarketPlayerCopyWith(_MarketPlayer value, $Res Function(_MarketPlayer) _then) = __$MarketPlayerCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String firstName, String lastName, String profileBigUrl, String teamName, String teamId, int position, int number, double averagePoints, int totalPoints, int marketValue, int marketValueTrend, int price, String expiry, int offers, MarketSeller seller, int stl, int status, int? prlo, PlayerOwner? owner, int exs
+ String id, String firstName, String lastName, String profileBigUrl, String teamName, String teamId, int position, int number, double averagePoints, int totalPoints, int marketValue, int marketValueTrend, int price, String expiry, int offers, MarketSeller seller, int stl, int status, int? prlo, PlayerOwner? owner, int exs, int? ownOfferPrice
 });
 
 
@@ -333,7 +337,7 @@ class __$MarketPlayerCopyWithImpl<$Res>
 
 /// Create a copy of MarketPlayer
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? firstName = null,Object? lastName = null,Object? profileBigUrl = null,Object? teamName = null,Object? teamId = null,Object? position = null,Object? number = null,Object? averagePoints = null,Object? totalPoints = null,Object? marketValue = null,Object? marketValueTrend = null,Object? price = null,Object? expiry = null,Object? offers = null,Object? seller = null,Object? stl = null,Object? status = null,Object? prlo = freezed,Object? owner = freezed,Object? exs = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? firstName = null,Object? lastName = null,Object? profileBigUrl = null,Object? teamName = null,Object? teamId = null,Object? position = null,Object? number = null,Object? averagePoints = null,Object? totalPoints = null,Object? marketValue = null,Object? marketValueTrend = null,Object? price = null,Object? expiry = null,Object? offers = null,Object? seller = null,Object? stl = null,Object? status = null,Object? prlo = freezed,Object? owner = freezed,Object? exs = null,Object? ownOfferPrice = freezed,}) {
   return _then(_MarketPlayer(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,firstName: null == firstName ? _self.firstName : firstName // ignore: cast_nullable_to_non_nullable
@@ -356,7 +360,8 @@ as int,status: null == status ? _self.status : status // ignore: cast_nullable_t
 as int,prlo: freezed == prlo ? _self.prlo : prlo // ignore: cast_nullable_to_non_nullable
 as int?,owner: freezed == owner ? _self.owner : owner // ignore: cast_nullable_to_non_nullable
 as PlayerOwner?,exs: null == exs ? _self.exs : exs // ignore: cast_nullable_to_non_nullable
-as int,
+as int,ownOfferPrice: freezed == ownOfferPrice ? _self.ownOfferPrice : ownOfferPrice // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 

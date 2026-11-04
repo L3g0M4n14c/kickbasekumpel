@@ -87,6 +87,19 @@ abstract class BidResponse with _$BidResponse {
       _$BidResponseFromJson(json);
 }
 
+/// Offer Response - Antwort von `POST /v4/leagues/{id}/market/{playerId}/offers`.
+///
+/// Die API liefert nur `{"ofi": "<offerId>"}` (laut Probe die eigene
+/// User-ID). Ein erneutes Gebot auf denselben Spieler ersetzt das alte.
+@freezed
+abstract class OfferResponse with _$OfferResponse {
+  const factory OfferResponse({@JsonKey(name: 'ofi') String? offerId}) =
+      _OfferResponse;
+
+  factory OfferResponse.fromJson(Map<String, dynamic> json) =>
+      _$OfferResponseFromJson(json);
+}
+
 /// Transfer Request - Für neue Transfer erstellen
 @freezed
 abstract class TransferRequest with _$TransferRequest {
