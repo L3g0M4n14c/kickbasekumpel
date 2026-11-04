@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../config/app_theme.dart';
+
 class ForgotPasswordPage extends ConsumerStatefulWidget {
   const ForgotPasswordPage({super.key});
 
@@ -32,7 +34,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.lock_reset, size: 80, color: Colors.blue),
+                const Icon(Icons.lock_reset, size: 80, color: AppColors.grass),
                 const SizedBox(height: 32),
                 const Text(
                   'Passwort vergessen?',
@@ -52,7 +54,6 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                   controller: _emailController,
                   decoration: const InputDecoration(
                     labelText: 'Email',
-                    border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.email),
                   ),
                   keyboardType: TextInputType.emailAddress,

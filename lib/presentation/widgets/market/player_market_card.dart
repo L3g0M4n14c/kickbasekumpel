@@ -8,6 +8,7 @@ import '../../../data/utils/parsing_utils.dart';
 import '../../providers/market_providers.dart';
 import '../../utils/player_status_helper.dart';
 import '../common/ligainsider_status_badge.dart' show LigainsiderStatusBadge;
+import '../../../config/app_theme.dart';
 
 /// Player Market Card Widget
 ///
@@ -303,20 +304,7 @@ class _PositionBadge extends StatelessWidget {
     );
   }
 
-  Color _getPositionColor(int position) {
-    switch (position) {
-      case 1:
-        return Colors.orange;
-      case 2:
-        return Colors.blue;
-      case 3:
-        return Colors.green;
-      case 4:
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
+  Color _getPositionColor(int position) => AppColors.position(position);
 
   String _getPositionName(int position) {
     switch (position) {

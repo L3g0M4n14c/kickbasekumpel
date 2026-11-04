@@ -14,6 +14,7 @@ import '../../widgets/responsive_layout.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/common/ligainsider_status_badge.dart';
 import '../../widgets/error_widget.dart';
+import '../../../config/app_theme.dart';
 
 class LineupPage extends ConsumerWidget {
   const LineupPage({super.key});
@@ -476,12 +477,12 @@ class _FormationField extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  const Color(0xFF2E7D32),
-                  const Color(0xFF388E3C),
-                  const Color(0xFF2E7D32),
-                  const Color(0xFF388E3C),
-                  const Color(0xFF2E7D32),
+                colors: const [
+                  AppColors.pitchDark,
+                  AppColors.pitchLight,
+                  AppColors.pitchDark,
+                  AppColors.pitchLight,
+                  AppColors.pitchDark,
                 ],
                 stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
               ),
@@ -646,7 +647,7 @@ class _FieldPlayerBadge extends ConsumerWidget {
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1B5E20),
+                          color: AppColors.pitchLine,
                         ),
                       )
                     : null,

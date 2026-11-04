@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../config/app_theme.dart';
+
 /// Position Badge für KickbaseKumpel
 ///
 /// Zeigt die Position eines Spielers als Badge.
@@ -64,31 +66,31 @@ class PositionBadge extends StatelessWidget {
         return _PositionConfig(
           label: 'TW',
           icon: Icons.sports,
-          color: Colors.blue,
+          color: AppColors.goalkeeper,
         );
       case 2:
         return _PositionConfig(
           label: 'ABW',
           icon: Icons.shield,
-          color: Colors.green,
+          color: AppColors.defender,
         );
       case 3:
         return _PositionConfig(
           label: 'MF',
           icon: Icons.person,
-          color: Colors.orange,
+          color: AppColors.midfielder,
         );
       case 4:
         return _PositionConfig(
           label: 'ST',
           icon: Icons.flash_on,
-          color: Colors.red,
+          color: AppColors.forward,
         );
       default:
         return _PositionConfig(
           label: '?',
           icon: Icons.help,
-          color: Colors.grey,
+          color: AppColors.unknownPosition,
         );
     }
   }

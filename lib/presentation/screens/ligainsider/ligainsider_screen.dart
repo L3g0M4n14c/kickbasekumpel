@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../data/providers/ligainsider_provider.dart';
 import '../../../data/models/ligainsider_match_model.dart';
+import '../../../config/app_theme.dart';
 
 class LigainsiderScreen extends ConsumerStatefulWidget {
   const LigainsiderScreen({super.key});
@@ -202,9 +203,8 @@ class _PitchView extends StatelessWidget {
       children: [
         Text(
           label,
-          style: Theme.of(
-            context,
-          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleSmall
+              ?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Container(
@@ -213,9 +213,9 @@ class _PitchView extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Colors.green.shade700, Colors.green.shade500],
+              colors: [AppColors.pitchDark, AppColors.pitchLight],
             ),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           child: Column(

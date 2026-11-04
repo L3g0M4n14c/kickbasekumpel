@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../data/providers/player_detail_providers.dart';
 import '../../../data/providers/competition_providers.dart';
 import '../../../data/providers/league_detail_providers.dart';
@@ -12,6 +13,7 @@ import '../../widgets/loading_widget.dart';
 import '../../widgets/error_widget.dart';
 import '../../widgets/charts/performance_line_chart.dart';
 import '../../widgets/charts/price_chart.dart';
+import '../../../config/app_theme.dart';
 
 /// Player Detail Screen
 ///
@@ -370,20 +372,7 @@ class _OverviewTab extends ConsumerWidget {
     ];
   }
 
-  Color _getPositionColor(int position) {
-    switch (position) {
-      case 1:
-        return Colors.yellow.shade700;
-      case 2:
-        return Colors.blue;
-      case 3:
-        return Colors.green;
-      case 4:
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
+  Color _getPositionColor(int position) => AppColors.position(position);
 
   String _getPositionName(int position) {
     switch (position) {

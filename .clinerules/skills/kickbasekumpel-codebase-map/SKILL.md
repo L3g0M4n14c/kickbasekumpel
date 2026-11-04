@@ -14,7 +14,7 @@ description: KickbaseKumpel Datei- und Ordnerkarte - welche Datei wofür zustän
 | `lib/main.dart` | Startup, ProviderScope (Auto-Retry aus), Fallback-FirebaseErrorApp |
 | `lib/firebase_options.dart` | FlutterFire-Config |
 | `lib/config/router.dart` | Alle GoRouter-Routen + `goRouterProvider` |
-| `lib/config/theme.dart`, `app_theme.dart` | AppTheme.lightTheme/darkTheme |
+| `lib/config/app_theme.dart` | Design-System: AppTheme.lightTheme()/darkTheme(), AppColors (Palette, Positionsfarben `AppColors.position()`, Spielfeld, heroGradient), AppSpacing/AppRadius – keine hartkodierten Farben in Screens |
 | `lib/config/screen_size.dart` | Responsive-Breakpoints |
 
 ## Models (`lib/data/models/` – alle Freezed, Barrel: `models_barrel.dart`)
