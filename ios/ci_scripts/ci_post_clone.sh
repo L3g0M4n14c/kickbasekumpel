@@ -150,6 +150,21 @@ echo "AppFrameworkInfo.plist: $(plutil -p "$APP_FRAMEWORK_PLIST" | grep -i minim
 
 echo "=== Installing CocoaPods dependencies ==="
 cd ios
-pod install
+
+# Podfile.lock pins all pod versions. Updating the complete trunk specs repository
+# on every clean Xcode Cloud worker is unnecessary and can fail on GitHub CDN
+# timeouts. Only retry the locked installation for transient download failures.
+POD_INSTALL_ATTEMPT=1
+POD_INSTALL_MAX_ATTEMPTS=3
+until pod install --no-repo-update; do
+  if (( POD_INSTALL_ATTEMPT >= POD_INSTALL_MAX_ATTEMPTS )); then
+    echo "CocoaPods installation failed after ${POD_INSTALL_MAX_ATTEMPTS} attempts." >&2
+    exit 1
+  fi
+
+  POD_INSTALL_ATTEMPT=$((POD_INSTALL_ATTEMPT + 1))
+  echo "CocoaPods installation failed; retrying (${POD_INSTALL_ATTEMPT}/${POD_INSTALL_MAX_ATTEMPTS})..." >&2
+  sleep $((10 * (POD_INSTALL_ATTEMPT - 1)))
+done
 
 echo "=== ci_post_clone.sh complete ==="
