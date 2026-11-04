@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/exceptions/kickbase_exceptions.dart';
 import '../models/market_value_model.dart';
 import '../models/transfer_model.dart';
 import '../services/manager_transfer_history_service.dart';
@@ -74,6 +75,10 @@ final managerTransferHistoryProvider =
                   .whereType<MarketValueEntry>()
                   .toList();
               return MapEntry(playerId, values);
+            } on RateLimitException {
+              // Rate-Limit: abbrechen statt weitere Batches zu feuern und
+              // eine unvollständige Historie dauerhaft zu cachen.
+              rethrow;
             } catch (_) {
               // Einzelner fehlgeschlagener Spieler darf die gesamte
               // Budget-Berechnung nicht blockieren.

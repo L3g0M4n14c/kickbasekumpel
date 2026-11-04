@@ -9,6 +9,7 @@ import '../../../data/providers/league_providers.dart';
 import '../../../data/providers/kickbase_api_provider.dart';
 import '../../../data/providers/bid_recommendation_providers.dart';
 import '../../../data/services/bid_limit_service.dart';
+import '../../../domain/exceptions/kickbase_exceptions.dart';
 import '../../../data/services/bid_recommendation_service.dart';
 import '../../../data/services/budget_calculation_service.dart';
 import '../../providers/market_providers.dart';
@@ -41,6 +42,11 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
   /// Kickbase-Requests aus (Rate-Limit) und startet daher nicht automatisch.
   bool _checkCompetitorBudgets = false;
 
+  /// Gebotsempfehlung ebenfalls nur auf Wunsch: Sie lädt ligaweit alle
+  /// Konkurrenz-Käufe samt Marktwert-Verläufen (ein Request pro gekauftem
+  /// Spieler) und hat beim automatischen Start das Rate-Limit ausgelöst.
+  bool _loadRecommendation = false;
+
   @override
   void initState() {
     super.initState();
@@ -72,7 +78,7 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
           );
     final bidLimit = bidLimitAsync?.asData?.value;
     final bidAmount = _selectedPrice ?? widget.player.price;
-    final recommendedBid = leagueId == null
+    final recommendedBid = leagueId == null || !_loadRecommendation
         ? null
         : ref.watch(
             recommendedBidProvider((
@@ -211,6 +217,15 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
                     });
                   },
                 ),
+                if (leagueId != null && recommendedBid == null) ...[
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: () =>
+                        setState(() => _loadRecommendation = true),
+                    icon: const Icon(Icons.auto_awesome),
+                    label: const Text('Gebotsempfehlung berechnen'),
+                  ),
+                ],
                 if (recommendedBid != null) ...[
                   const SizedBox(height: 16),
                   recommendedBid.when(
@@ -235,7 +250,12 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
                       },
                     ),
                     loading: () => const LinearProgressIndicator(),
-                    error: (error, stackTrace) => const SizedBox.shrink(),
+                    error: (error, stackTrace) => _RecommendationError(
+                      error: error,
+                      onRetry: () => ref.invalidate(
+                        leagueCompetitorPurchasesProvider(leagueId!),
+                      ),
+                    ),
                   ),
                 ],
                 const SizedBox(height: 24),
@@ -823,6 +843,30 @@ class _RecommendedBid extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Fehlerhinweis der Gebotsempfehlung mit manuellem Neuversuch.
+class _RecommendationError extends StatelessWidget {
+  final Object error;
+  final VoidCallback onRetry;
+
+  const _RecommendationError({required this.error, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final message = error is RateLimitException
+        ? 'Kickbase-Limit erreicht – bitte gleich nochmal versuchen.'
+        : 'Gebotsempfehlung konnte nicht geladen werden.';
+    return Row(
+      children: [
+        Icon(Icons.info_outline, size: 18, color: theme.colorScheme.error),
+        const SizedBox(width: 8),
+        Expanded(child: Text(message, style: theme.textTheme.bodySmall)),
+        TextButton(onPressed: onRetry, child: const Text('Erneut')),
+      ],
     );
   }
 }

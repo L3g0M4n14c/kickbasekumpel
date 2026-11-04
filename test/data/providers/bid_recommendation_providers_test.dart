@@ -6,6 +6,7 @@ import 'package:kickbasekumpel/data/providers/budget_calculation_providers.dart'
 import 'package:kickbasekumpel/data/providers/kickbase_api_provider.dart';
 import 'package:kickbasekumpel/data/providers/user_providers.dart';
 import 'package:kickbasekumpel/data/services/budget_calculation_service.dart';
+import 'package:kickbasekumpel/domain/exceptions/kickbase_exceptions.dart';
 
 import '../../helpers/mock_firebase.dart';
 
@@ -17,6 +18,8 @@ void main() {
     setUp(() {
       mockApiClient = MockKickbaseAPIClient();
       container = ProviderContainer(
+        // Wie in main.dart: kein Riverpod-Auto-Retry
+        retry: (retryCount, error) => null,
         overrides: [
           kickbaseApiClientProvider.overrideWithValue(mockApiClient),
           currentAuthUserIdProvider.overrideWithValue('manager-me'),
@@ -153,6 +156,98 @@ void main() {
       ).called(1);
       expect(bidPlayerA.amount, 13000000);
       expect(bidPlayerB.amount, 32500000);
+    });
+
+    Map<String, dynamic> purchaseHistory(String managerId, String tid) => {
+      'u': managerId,
+      'unm': managerId,
+      'it': [
+        {
+          'dt': '2025-01-15T12:00:00.000Z',
+          'pi': 'shared-player',
+          'pn': 'Begehrter Spieler',
+          'tid': tid,
+          'trp': 13000000,
+          'tty': 1,
+        },
+      ],
+    };
+
+    test('lädt Marktwerte je Spieler nur einmal', () async {
+      when(() => mockApiClient.getLeagueRanking('league-1')).thenAnswer(
+        (_) async => {
+          'us': [
+            {'i': 'manager-me'},
+            {'i': 'manager-1'},
+            {'i': 'manager-2'},
+          ],
+        },
+      );
+      when(
+        () => mockApiClient.getManagerTransferHistory('league-1', 'manager-1'),
+      ).thenAnswer((_) async => purchaseHistory('manager-1', 't-1'));
+      when(
+        () => mockApiClient.getManagerTransferHistory('league-1', 'manager-2'),
+      ).thenAnswer((_) async => purchaseHistory('manager-2', 't-2'));
+      when(
+        () => mockApiClient.getPlayerMarketValue(
+          'league-1',
+          'shared-player',
+          timeframe: any(named: 'timeframe'),
+        ),
+      ).thenAnswer(
+        (_) async => {
+          'it': [
+            {'dt': 1736812800000, 'mv': 10000000},
+          ],
+        },
+      );
+
+      final purchases = await container.read(
+        leagueCompetitorPurchasesProvider('league-1').future,
+      );
+
+      expect(purchases, hasLength(2));
+      expect(
+        purchases.map((p) => p.marketValueAtTransfer),
+        everyElement(10000000),
+      );
+      verify(
+        () => mockApiClient.getPlayerMarketValue(
+          'league-1',
+          'shared-player',
+          timeframe: any(named: 'timeframe'),
+        ),
+      ).called(1);
+    });
+
+    test('bricht bei Rate-Limit sofort ab', () async {
+      when(() => mockApiClient.getLeagueRanking('league-1')).thenAnswer(
+        (_) async => {
+          'us': [
+            {'i': 'manager-1'},
+            {'i': 'manager-2'},
+          ],
+        },
+      );
+      when(
+        () => mockApiClient.getManagerTransferHistory('league-1', 'manager-1'),
+      ).thenThrow(const RateLimitException('Rate limit exceeded'));
+
+      await expectLater(
+        container.read(leagueCompetitorPurchasesProvider('league-1').future),
+        throwsA(isA<RateLimitException>()),
+      );
+      verifyNever(
+        () => mockApiClient.getManagerTransferHistory('league-1', 'manager-2'),
+      );
+      verifyNever(
+        () => mockApiClient.getPlayerMarketValue(
+          any(),
+          any(),
+          timeframe: any(named: 'timeframe'),
+        ),
+      );
     });
   });
 
