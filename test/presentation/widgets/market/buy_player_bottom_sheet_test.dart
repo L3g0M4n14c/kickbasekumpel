@@ -58,6 +58,8 @@ void main() {
     ),
     List<int>? observedBids,
     BidLimit? bidLimit,
+    bool loadRecommendation = true,
+    List<int>? recommendationRequests,
   }) async {
     final limit =
         bidLimit ??
@@ -73,7 +75,10 @@ void main() {
           currentUserProvider.overrideWith((ref) async => null),
           bidLimitProvider.overrideWith((ref, params) async => limit),
           recommendedBidProvider.overrideWith(
-            (ref, params) async => _recommendation(),
+            (ref, params) async {
+              recommendationRequests?.add(params.minimumBid);
+              return _recommendation();
+            },
           ),
           competitorBudgetHintProvider.overrideWith((ref, params) {
             observedBids?.add(params.bidAmount);
@@ -85,11 +90,41 @@ void main() {
         ),
       ),
     );
+    await tester.pump();
+    if (loadRecommendation) {
+      // Die Empfehlung lädt nur auf Knopfdruck (Rate-Limit)
+      await tester.ensureVisible(find.text('Gebotsempfehlung berechnen'));
+      await tester.tap(find.text('Gebotsempfehlung berechnen'));
+    }
     // Empfehlung und Hinweis sind async geladen
     await tester.pump();
     await tester.pump();
     await tester.pump();
   }
+
+  group('BuyPlayerBottomSheet Gebotsempfehlung', () {
+    testWidgets('lädt die Empfehlung erst auf Knopfdruck', (tester) async {
+      final requests = <int>[];
+      await pumpSheet(
+        tester,
+        loadRecommendation: false,
+        recommendationRequests: requests,
+      );
+
+      expect(requests, isEmpty);
+      expect(find.textContaining('Empfohlen:'), findsNothing);
+      expect(find.text('Gebotsempfehlung berechnen'), findsOneWidget);
+
+      await tester.ensureVisible(find.text('Gebotsempfehlung berechnen'));
+      await tester.tap(find.text('Gebotsempfehlung berechnen'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(requests, isNotEmpty);
+      expect(find.textContaining('Empfohlen:'), findsOneWidget);
+      expect(find.text('Gebotsempfehlung berechnen'), findsNothing);
+    });
+  });
 
   group('BuyPlayerBottomSheet Konkurrenz-Budget-Hinweis', () {
     testWidgets('Gebots-Card zeigt den Hinweis inkl. max. Budget', (
