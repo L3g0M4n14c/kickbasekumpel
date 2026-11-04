@@ -36,6 +36,10 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   int? _selectedPrice;
 
+  /// Konkurrenz-Budget-Prüfung nur auf Wunsch: Sie löst ligaweit hunderte
+  /// Kickbase-Requests aus (Rate-Limit) und startet daher nicht automatisch.
+  bool _checkCompetitorBudgets = false;
+
   @override
   void initState() {
     super.initState();
@@ -71,17 +75,15 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
           );
     // Konkurrenz-Budget-Hinweis folgt sofort jeder Gebots-Änderung; die
     // Budgets der Mitbieter werden pro Liga nur einmal geladen.
-    final competitorHint = leagueId == null
+    final competitorHintAsync = leagueId == null || !_checkCompetitorBudgets
         ? null
-        : ref
-              .watch(
-                competitorBudgetHintProvider((
-                  leagueId: leagueId,
-                  bidAmount: bidAmount,
-                )),
-              )
-              .asData
-              ?.value;
+        : ref.watch(
+            competitorBudgetHintProvider((
+              leagueId: leagueId,
+              bidAmount: bidAmount,
+            )),
+          );
+    final competitorHint = competitorHintAsync?.asData?.value;
 
     return Container(
       decoration: BoxDecoration(
@@ -201,6 +203,12 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
                       recommendation: recommendation,
                       bidAmount: bidAmount,
                       competitorHint: competitorHint,
+                      competitorLoading:
+                          competitorHintAsync?.isLoading ?? false,
+                      onCheckCompetitors: _checkCompetitorBudgets
+                          ? null
+                          : () =>
+                                setState(() => _checkCompetitorBudgets = true),
                       onApply: () {
                         setState(() {
                           _selectedPrice = recommendation.amount;
@@ -629,11 +637,19 @@ class _RecommendedBid extends StatelessWidget {
   /// Budgets der Mitbieter noch geladen werden).
   final CompetitorBudgetHint? competitorHint;
 
+  /// Läuft die (teure) Konkurrenz-Budget-Prüfung gerade?
+  final bool competitorLoading;
+
+  /// Startet die Prüfung; null, sobald sie angefordert wurde.
+  final VoidCallback? onCheckCompetitors;
+
   const _RecommendedBid({
     required this.recommendation,
     required this.onApply,
     required this.bidAmount,
     this.competitorHint,
+    this.competitorLoading = false,
+    this.onCheckCompetitors,
   });
 
   String _formatInMillions(int value) =>
@@ -685,6 +701,21 @@ class _RecommendedBid extends StatelessWidget {
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
+                if (onCheckCompetitors != null)
+                  TextButton(
+                    onPressed: onCheckCompetitors,
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 28),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Text('Konkurrenz-Budgets prüfen'),
+                  )
+                else if (competitorLoading)
+                  Text(
+                    'Konkurrenz-Budgets werden geladen …',
+                    style: theme.textTheme.bodySmall,
+                  ),
                 if (showCompetitorHint) ...[
                   const SizedBox(height: 4),
                   Text(
