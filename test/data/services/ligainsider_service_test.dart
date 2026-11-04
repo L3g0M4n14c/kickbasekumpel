@@ -65,8 +65,8 @@ List<(String, String?)> _slots(String prefix, {bool withAlternative = true}) {
   return [
     for (var i = 0; i < 11; i++)
       (
-        '$prefix-spieler$i_${1000 + i}',
-        withAlternative && i == 0 ? '$prefix-ersatz$i_${2000 + i}' : null,
+        '$prefix-spieler${i}_${1000 + i}',
+        withAlternative && i == 0 ? '$prefix-ersatz${i}_${2000 + i}' : null,
       ),
   ];
 }
