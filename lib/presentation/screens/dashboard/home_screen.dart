@@ -264,19 +264,19 @@ class _QuickActionsSection extends StatelessWidget {
       _QuickAction(
         icon: Icons.store,
         label: 'Markt',
-        color: AppColors.sky,
+        color: AppColors.blue,
         onTap: () => context.go('/dashboard/market'),
       ),
       _QuickAction(
         icon: Icons.group,
         label: 'Aufstellung',
-        color: AppColors.grassLight,
+        color: AppColors.violet,
         onTap: () => context.go('/dashboard/lineup'),
       ),
       _QuickAction(
         icon: Icons.swap_horiz,
         label: 'Transfers',
-        color: AppColors.coral,
+        color: AppColors.orange,
         onTap: () => context.go('/dashboard/transfers'),
       ),
       _QuickAction(

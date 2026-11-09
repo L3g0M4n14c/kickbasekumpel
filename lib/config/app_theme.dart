@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
 
-/// Zentrales Design-System „Sommerrasen“.
+/// Zentrales Design-System „Anstoß“.
 ///
-/// Leitidee: ein sonniger Samstagnachmittag im Stadion – frisches Rasengrün
-/// als Hauptfarbe, Sonnengelb als fröhlicher Akzent, Himmelblau für Infos und
-/// warme, cremige Flächen statt kühler Grau-Lila-Töne. Dazu die runde
-/// Hausschrift Nunito.
+/// Farbkonzept (Komplementär-Paar Blau/Orange nach der 60-30-10-Regel):
+/// - **60 % neutrale Flächen**: echte Grautöne mit nur minimalem Kühl-Stich
+///   (Chroma nahe null). Getönte Neutraltöne färben die ganze App ein – das
+///   war beim grünen Vorgänger „Sommerrasen“ der Hauptgrund für den Grünstich.
+/// - **30 % Primärfarbe Stadionblau**: Buttons, Fokus, Tabs, Fortschritt.
+///   Blau ist für das Auge am ruhigsten und kollidiert nicht mit den
+///   Bedeutungsfarben.
+/// - **10 % Akzent Apricot/Orange** (Komplementärfarbe zu Blau): Navigation,
+///   ausgewählte Chips, FAB – also nur dort, wo der Blick hin soll.
+/// - **Grün und Rot bleiben reserviert** für Bedeutung (Gewinn/Verlust,
+///   Marktwert steigt/fällt) sowie Spielfeld und Mittelfeld-Position. Wäre
+///   Grün zugleich Markenfarbe, ließe sich „positiv“ nicht mehr von „Knopf“
+///   unterscheiden.
 ///
-/// Die Farbschemata sind bewusst handverlesen (kein `ColorScheme.fromSeed`),
-/// damit keine generischen, lila eingefärbten Material-Flächen entstehen.
+/// Alle Text/Hintergrund-Paare erfüllen WCAG AA (≥ 4,5:1), Konturen ≥ 3:1.
+/// Die Farbschemata sind handverlesen (kein `ColorScheme.fromSeed`), dazu die
+/// runde Hausschrift Nunito.
 class AppTheme {
   AppTheme._();
 
@@ -23,109 +33,110 @@ class AppTheme {
 
   // ==================== Color Schemes ====================
 
-  /// Helles Farbschema: Rasengrün auf Creme.
+  /// Helles Farbschema: Stadionblau auf neutralem Hellgrau.
   static const ColorScheme lightColorScheme = ColorScheme(
     brightness: Brightness.light,
-    // Rasengrün
-    primary: Color(0xFF0B8A4B),
+    // Stadionblau
+    primary: Color(0xFF2B57D6),
     onPrimary: Color(0xFFFFFFFF),
-    primaryContainer: Color(0xFFBDF3CF),
-    onPrimaryContainer: Color(0xFF002111),
-    primaryFixed: Color(0xFFBDF3CF),
-    primaryFixedDim: Color(0xFF6EDB98),
-    onPrimaryFixed: Color(0xFF002111),
-    onPrimaryFixedVariant: Color(0xFF005230),
-    // Sonnengelb (Container) mit lesbarem Bernstein als Textfarbe
-    secondary: Color(0xFF855A00),
+    primaryContainer: Color(0xFFDCE4FF),
+    onPrimaryContainer: Color(0xFF0A1E5C),
+    primaryFixed: Color(0xFFDCE4FF),
+    primaryFixedDim: Color(0xFFB3C5FF),
+    onPrimaryFixed: Color(0xFF0A1E5C),
+    onPrimaryFixedVariant: Color(0xFF1D3FA6),
+    // Apricot-Akzent (Komplementär zu Blau), Text in lesbarem Rostorange
+    secondary: Color(0xFFA84A00),
     onSecondary: Color(0xFFFFFFFF),
-    secondaryContainer: Color(0xFFFFD45C),
-    onSecondaryContainer: Color(0xFF2B1D00),
-    secondaryFixed: Color(0xFFFFDF94),
-    secondaryFixedDim: Color(0xFFFFBA2E),
-    onSecondaryFixed: Color(0xFF2B1D00),
-    onSecondaryFixedVariant: Color(0xFF654400),
-    // Himmelblau
-    tertiary: Color(0xFF0A75B5),
+    secondaryContainer: Color(0xFFFFD7AE),
+    onSecondaryContainer: Color(0xFF331600),
+    secondaryFixed: Color(0xFFFFDCC0),
+    secondaryFixedDim: Color(0xFFFFB877),
+    onSecondaryFixed: Color(0xFF331600),
+    onSecondaryFixedVariant: Color(0xFF7A3600),
+    // Violett für Infos (analog zu Blau, beißt sich nicht mit Grün/Rot)
+    tertiary: Color(0xFF6A4FC4),
     onTertiary: Color(0xFFFFFFFF),
-    tertiaryContainer: Color(0xFFCDE9FF),
-    onTertiaryContainer: Color(0xFF001E30),
-    tertiaryFixed: Color(0xFFCDE9FF),
-    tertiaryFixedDim: Color(0xFF93CDFF),
-    onTertiaryFixed: Color(0xFF001E30),
-    onTertiaryFixedVariant: Color(0xFF004B74),
-    error: Color(0xFFC62828),
+    tertiaryContainer: Color(0xFFE9DDFF),
+    onTertiaryContainer: Color(0xFF22005D),
+    tertiaryFixed: Color(0xFFE9DDFF),
+    tertiaryFixedDim: Color(0xFFCFBCFF),
+    onTertiaryFixed: Color(0xFF22005D),
+    onTertiaryFixedVariant: Color(0xFF5136A8),
+    error: Color(0xFFB3261E),
     onError: Color(0xFFFFFFFF),
-    errorContainer: Color(0xFFFFDAD6),
-    onErrorContainer: Color(0xFF410002),
-    // Warme Creme-Flächen
-    surface: Color(0xFFFBF8F1),
-    onSurface: Color(0xFF1B1F1C),
-    onSurfaceVariant: Color(0xFF59605A),
-    surfaceDim: Color(0xFFDDD8CE),
-    surfaceBright: Color(0xFFFFFDF8),
+    errorContainer: Color(0xFFF9DEDC),
+    onErrorContainer: Color(0xFF410E0B),
+    // Neutrale Flächen (kein Grün-, kein Gelbstich)
+    surface: Color(0xFFF6F7F9),
+    onSurface: Color(0xFF1A1C21),
+    onSurfaceVariant: Color(0xFF545A66),
+    surfaceDim: Color(0xFFD8DAE0),
+    surfaceBright: Color(0xFFFFFFFF),
     surfaceContainerLowest: Color(0xFFFFFFFF),
-    surfaceContainerLow: Color(0xFFF6F2EA),
-    surfaceContainer: Color(0xFFF1ECE3),
-    surfaceContainerHigh: Color(0xFFEBE6DC),
-    surfaceContainerHighest: Color(0xFFE5DFD4),
-    outline: Color(0xFFA3A79E),
-    outlineVariant: Color(0xFFE2DDD2),
+    surfaceContainerLow: Color(0xFFF1F3F6),
+    surfaceContainer: Color(0xFFECEEF2),
+    surfaceContainerHigh: Color(0xFFE6E8ED),
+    surfaceContainerHighest: Color(0xFFE0E3E8),
+    outline: Color(0xFF7C828E),
+    outlineVariant: Color(0xFFDCDFE5),
     shadow: Color(0xFF000000),
     scrim: Color(0xFF000000),
-    inverseSurface: Color(0xFF2B302C),
-    onInverseSurface: Color(0xFFF2EFE7),
-    inversePrimary: Color(0xFF6EDB98),
+    inverseSurface: Color(0xFF2E3036),
+    onInverseSurface: Color(0xFFF0F1F5),
+    inversePrimary: Color(0xFFAFC4FF),
     surfaceTint: Color(0x00000000),
   );
 
-  /// Dunkles Farbschema: „Flutlicht“ – tiefes Tannengrün mit leuchtendem Mint.
+  /// Dunkles Farbschema: neutrales Anthrazit mit hellem Blau und Apricot.
   static const ColorScheme darkColorScheme = ColorScheme(
     brightness: Brightness.dark,
-    primary: Color(0xFF5EE08F),
-    onPrimary: Color(0xFF00391C),
-    primaryContainer: Color(0xFF0E5A33),
-    onPrimaryContainer: Color(0xFFB6F5CB),
-    primaryFixed: Color(0xFFBDF3CF),
-    primaryFixedDim: Color(0xFF6EDB98),
-    onPrimaryFixed: Color(0xFF002111),
-    onPrimaryFixedVariant: Color(0xFF005230),
-    secondary: Color(0xFFFFCB45),
-    onSecondary: Color(0xFF3D2B00),
-    secondaryContainer: Color(0xFFF5B800),
-    onSecondaryContainer: Color(0xFF2B1D00),
-    secondaryFixed: Color(0xFFFFDF94),
-    secondaryFixedDim: Color(0xFFFFBA2E),
-    onSecondaryFixed: Color(0xFF2B1D00),
-    onSecondaryFixedVariant: Color(0xFF654400),
-    tertiary: Color(0xFF7CC8FF),
-    onTertiary: Color(0xFF00344F),
-    tertiaryContainer: Color(0xFF004B70),
-    onTertiaryContainer: Color(0xFFCDE9FF),
-    tertiaryFixed: Color(0xFFCDE9FF),
-    tertiaryFixedDim: Color(0xFF93CDFF),
-    onTertiaryFixed: Color(0xFF001E30),
-    onTertiaryFixedVariant: Color(0xFF004B74),
+    primary: Color(0xFFAFC4FF),
+    onPrimary: Color(0xFF0B2A78),
+    primaryContainer: Color(0xFF24439E),
+    onPrimaryContainer: Color(0xFFDCE4FF),
+    primaryFixed: Color(0xFFDCE4FF),
+    primaryFixedDim: Color(0xFFB3C5FF),
+    onPrimaryFixed: Color(0xFF0A1E5C),
+    onPrimaryFixedVariant: Color(0xFF1D3FA6),
+    secondary: Color(0xFFFFB877),
+    onSecondary: Color(0xFF4A2200),
+    secondaryContainer: Color(0xFFFFB366),
+    onSecondaryContainer: Color(0xFF2E1400),
+    secondaryFixed: Color(0xFFFFDCC0),
+    secondaryFixedDim: Color(0xFFFFB877),
+    onSecondaryFixed: Color(0xFF331600),
+    onSecondaryFixedVariant: Color(0xFF7A3600),
+    tertiary: Color(0xFFCFBCFF),
+    onTertiary: Color(0xFF381E8C),
+    tertiaryContainer: Color(0xFF5136A8),
+    onTertiaryContainer: Color(0xFFE9DDFF),
+    tertiaryFixed: Color(0xFFE9DDFF),
+    tertiaryFixedDim: Color(0xFFCFBCFF),
+    onTertiaryFixed: Color(0xFF22005D),
+    onTertiaryFixedVariant: Color(0xFF5136A8),
     error: Color(0xFFFFB4AB),
     onError: Color(0xFF690005),
     errorContainer: Color(0xFF93000A),
     onErrorContainer: Color(0xFFFFDAD6),
-    surface: Color(0xFF0E1411),
-    onSurface: Color(0xFFE4EAE5),
-    onSurfaceVariant: Color(0xFFA9B4AC),
-    surfaceDim: Color(0xFF0E1411),
-    surfaceBright: Color(0xFF333D36),
-    surfaceContainerLowest: Color(0xFF0A0F0C),
-    surfaceContainerLow: Color(0xFF151C18),
-    surfaceContainer: Color(0xFF19211C),
-    surfaceContainerHigh: Color(0xFF212A24),
-    surfaceContainerHighest: Color(0xFF2A342D),
-    outline: Color(0xFF6A766E),
-    outlineVariant: Color(0xFF2C3630),
+    // Neutrales Anthrazit statt Tannengrün
+    surface: Color(0xFF111318),
+    onSurface: Color(0xFFE3E5EB),
+    onSurfaceVariant: Color(0xFFADB2BD),
+    surfaceDim: Color(0xFF111318),
+    surfaceBright: Color(0xFF37393F),
+    surfaceContainerLowest: Color(0xFF0C0E12),
+    surfaceContainerLow: Color(0xFF191C22),
+    surfaceContainer: Color(0xFF1D2026),
+    surfaceContainerHigh: Color(0xFF272A31),
+    surfaceContainerHighest: Color(0xFF32353C),
+    outline: Color(0xFF7A808B),
+    outlineVariant: Color(0xFF3A3E47),
     shadow: Color(0xFF000000),
     scrim: Color(0xFF000000),
-    inverseSurface: Color(0xFFE4EAE5),
-    onInverseSurface: Color(0xFF2B302C),
-    inversePrimary: Color(0xFF0B8A4B),
+    inverseSurface: Color(0xFFE3E5EB),
+    onInverseSurface: Color(0xFF2E3036),
+    inversePrimary: Color(0xFF2B57D6),
     surfaceTint: Color(0x00000000),
   );
 
@@ -277,7 +288,7 @@ class AppTheme {
         elevation: 0,
       );
 
-  /// Karten: flach, großzügig gerundet, mit feiner warmer Kontur.
+  /// Karten: flach, großzügig gerundet, mit feiner neutraler Kontur.
   static CardThemeData _cardTheme(ColorScheme c) => CardThemeData(
     elevation: 0,
     margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
@@ -352,7 +363,7 @@ class AppTheme {
         ),
       );
 
-  /// Eingabefelder: weich gefüllt, ohne harte Kontur, grüner Fokus.
+  /// Eingabefelder: weich gefüllt, ohne harte Kontur, blauer Fokus.
   static InputDecorationTheme _inputTheme(ColorScheme c) {
     OutlineInputBorder border(Color color, [double width = 1]) =>
         OutlineInputBorder(
@@ -414,7 +425,7 @@ class AppTheme {
         ),
       );
 
-  /// FAB im Sonnengelb – der fröhlichste Knopf der App.
+  /// FAB im Apricot-Akzent – der auffälligste Knopf der App.
   static FloatingActionButtonThemeData _fabTheme(ColorScheme c) =>
       FloatingActionButtonThemeData(
         backgroundColor: c.secondaryContainer,
@@ -593,20 +604,22 @@ class AppColors {
   AppColors._();
 
   // Kernpalette
-  static const Color grass = Color(0xFF0B8A4B);
-  static const Color grassLight = Color(0xFF16A35C);
-  static const Color mint = Color(0xFF5EE08F);
+  static const Color blue = Color(0xFF2B57D6);
+  static const Color blueLight = Color(0xFF4C7BEA);
+  static const Color orange = Color(0xFFF08A24);
+  static const Color violet = Color(0xFF7B61D9);
   static const Color sun = Color(0xFFFFC233);
-  static const Color sky = Color(0xFF2D9CDB);
   static const Color coral = Color(0xFFFF6B5B);
-  static const Color grape = Color(0xFF8E6CEF);
-  static const Color ink = Color(0xFF1B1F1C);
-  static const Color cream = Color(0xFFFBF8F1);
+  static const Color ink = Color(0xFF1A1C21);
 
-  // Semantik
-  static const Color successLight = Color(0xFF13A05A);
-  static const Color successDark = Color(0xFF5EE08F);
-  static const Color warningLight = Color(0xFFE89B00);
+  // Rasenfarben – nur noch für Spielfeld/Erfolg, nicht mehr als Markenfarbe
+  static const Color grass = Color(0xFF15803D);
+  static const Color mint = Color(0xFF4ADE80);
+
+  // Semantik (AA-Kontrast auf hellen bzw. dunklen Flächen)
+  static const Color successLight = Color(0xFF15803D);
+  static const Color successDark = Color(0xFF4ADE80);
+  static const Color warningLight = Color(0xFFB26B00);
   static const Color warningDark = Color(0xFFFFCB45);
 
   // Spielfeld (Rasenstreifen)
@@ -635,8 +648,8 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: c.brightness == Brightness.light
-        ? const [Color(0xFF0B8A4B), Color(0xFF16A35C), Color(0xFF7BCB4D)]
-        : const [Color(0xFF0B5E35), Color(0xFF0E7A45), Color(0xFF3F8F2E)],
+        ? const [Color(0xFF1E3FA8), Color(0xFF2B57D6), Color(0xFF4C7BEA)]
+        : const [Color(0xFF15255E), Color(0xFF1E3A8A), Color(0xFF2B4FB8)],
   );
 }
 

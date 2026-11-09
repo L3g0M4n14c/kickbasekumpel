@@ -21,7 +21,7 @@ class VerifyEmailPage extends ConsumerWidget {
               const Icon(
                 Icons.mark_email_unread,
                 size: 100,
-                color: AppColors.grass,
+                color: AppColors.blue,
               ),
               const SizedBox(height: 32),
               const Text(

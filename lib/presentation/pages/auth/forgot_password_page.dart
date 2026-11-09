@@ -34,7 +34,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.lock_reset, size: 80, color: AppColors.grass),
+                const Icon(Icons.lock_reset, size: 80, color: AppColors.blue),
                 const SizedBox(height: 32),
                 const Text(
                   'Passwort vergessen?',
