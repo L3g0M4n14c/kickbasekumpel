@@ -142,10 +142,11 @@ class BidRecommendationService {
       return _minimumFallback(minimumBid, currentMarketValue);
     }
 
-    final premiums = chosen.$2
-        .map((entry) => entry.price / entry.marketValueAtTransfer!)
-        .toList()
-      ..sort();
+    final premiums =
+        chosen.$2
+            .map((entry) => entry.price / entry.marketValueAtTransfer!)
+            .toList()
+          ..sort();
     final robust = _removeOutliers(premiums);
     final sampleSize = robust.length;
 

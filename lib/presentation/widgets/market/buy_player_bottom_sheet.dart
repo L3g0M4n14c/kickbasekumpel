@@ -220,8 +220,7 @@ class _BuyPlayerBottomSheetState extends ConsumerState<BuyPlayerBottomSheet> {
                 if (leagueId != null && recommendedBid == null) ...[
                   const SizedBox(height: 16),
                   OutlinedButton.icon(
-                    onPressed: () =>
-                        setState(() => _loadRecommendation = true),
+                    onPressed: () => setState(() => _loadRecommendation = true),
                     icon: const Icon(Icons.auto_awesome),
                     label: const Text('Gebotsempfehlung berechnen'),
                   ),

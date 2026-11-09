@@ -193,10 +193,7 @@ class LigainsiderStatusBadge extends ConsumerWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (showIcon) ...[
-              icon,
-              const SizedBox(width: 2),
-            ],
+            if (showIcon) ...[icon, const SizedBox(width: 2)],
             Text(
               status.shortLabel,
               style: TextStyle(

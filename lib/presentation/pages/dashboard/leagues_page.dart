@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../config/router.dart';
 
 class LeaguesPage extends ConsumerWidget {
@@ -43,9 +44,8 @@ class LeaguesPage extends ConsumerWidget {
             const SizedBox(height: 8),
             Text(
               'Tritt einer Liga bei oder erstelle eine neue',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: Colors.grey),
             ),
             const SizedBox(height: 24),
             FilledButton.icon(

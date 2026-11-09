@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../repositories/firestore_repositories.dart';
 import '../repositories/auth_repository.dart';
 import '../services/deterministic_recommendation_service.dart';
@@ -62,8 +63,8 @@ final transferRepositoryProvider = Provider<TransferRepository>((ref) {
 /// Rein lokale, deterministische Empfehlungsberechnung (kein KI-Service)
 final deterministicRecommendationServiceProvider =
     Provider<DeterministicRecommendationService>((ref) {
-  return const DeterministicRecommendationService();
-});
+      return const DeterministicRecommendationService();
+    });
 
 /// Recommendation Repository Provider
 /// Manages all recommendation-related operations
@@ -76,7 +77,7 @@ final recommendationRepositoryProvider = Provider<RecommendationRepository>((
   final recommendationService = ref.watch(
     deterministicRecommendationServiceProvider,
   );
-  
+
   return RecommendationRepository(
     firestore: firestore,
     recommendationService: recommendationService,

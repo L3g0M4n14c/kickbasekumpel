@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+
 import '../../domain/repositories/repository_interfaces.dart';
 import '../models/user_model.dart';
 import '../models/league_model.dart';
@@ -301,7 +303,11 @@ class LeagueRepository extends BaseRepository<League>
 
   @override
   Future<Result<List<League>>> getByUserId(String userId) async {
-    return await queryWhere(field: 'members', value: userId, arrayContains: true);
+    return await queryWhere(
+      field: 'members',
+      value: userId,
+      arrayContains: true,
+    );
   }
 
   @override

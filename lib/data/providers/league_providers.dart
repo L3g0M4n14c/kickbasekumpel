@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../models/league_model.dart';
 import '../../domain/exceptions/kickbase_exceptions.dart';
 import '../../domain/repositories/repository_interfaces.dart';

@@ -18,7 +18,10 @@ import 'ligainsider_service.dart';
 class LigainsiderLineupIndex {
   LigainsiderLineupIndex._({
     required this.hasCoverage,
-    required LigainsiderPlayerStatus? Function(String firstName, String lastName)
+    required LigainsiderPlayerStatus? Function(
+      String firstName,
+      String lastName,
+    )
     statusResolver,
   }) : _statusFor = statusResolver;
 

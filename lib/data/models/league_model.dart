@@ -32,7 +32,11 @@ abstract class League with _$League {
     int? gpm, // ?
     int? rnkm, // ?
     // Kickbase-Feld `dt`: Datum des Ligastarts
-    @JsonKey(name: 'dt', fromJson: _seasonStartDateFromJson, toJson: _seasonStartDateToJson)
+    @JsonKey(
+      name: 'dt',
+      fromJson: _seasonStartDateFromJson,
+      toJson: _seasonStartDateToJson,
+    )
     String? seasonStartDate,
   }) = _League;
 
@@ -61,8 +65,10 @@ String? _seasonStartDateFromJson(Object? value) {
       ms = value.toInt();
     }
     try {
-      return DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true)
-          .toIso8601String();
+      return DateTime.fromMillisecondsSinceEpoch(
+        ms,
+        isUtc: true,
+      ).toIso8601String();
     } catch (_) {
       return value.toString();
     }

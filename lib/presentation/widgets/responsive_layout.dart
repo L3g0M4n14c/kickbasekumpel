@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../config/screen_size.dart';
 
 /// Responsive layout widget that switches between mobile, tablet, and desktop layouts
