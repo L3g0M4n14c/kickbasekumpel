@@ -4,12 +4,27 @@ on:
   push:
     branches:
       - main
+    # Doku- und iOS-Änderungen brauchen keinen Android-/Firebase-Build
+    # (iOS baut Xcode Cloud).
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "ios/**"
+      - "macos/**"
+      - ".claude/**"
+      - ".clinerules/**"
   workflow_dispatch:
     inputs:
       release_notes:
         description: "Release Notes für Tester"
         required: false
         default: "Manuelles Deploy von main branch"
+
+# Schnell hintereinander gemergte Commits: nur der neueste wartende Lauf
+# startet, ein laufender Deploy wird nicht abgebrochen.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────────

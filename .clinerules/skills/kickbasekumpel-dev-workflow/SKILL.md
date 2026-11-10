@@ -49,8 +49,8 @@ Alternativ `./deploy-functions.sh` im Projektwurzelverzeichnis.
 
 | Workflow | Trigger | Inhalt |
 |---|---|---|
-| `flutter_tests.yml` | push, PR | pub get → **build_runner build** → `flutter test --coverage` → Codecov-Upload |
-| `deploy.yml` | push auf `main`, workflow_dispatch | 3 Jobs: (1) Flutter Web → Firebase Hosting, (2) `firebase deploy --only functions,firestore,storage,hosting` (Projekt `kickbasekumpel`; räumt vorher 2 Functions weg), (3) Android APK → Firebase App Distribution; iOS-Variant mit Pod-Install |
+| `flutter_tests.yml` | nur workflow_dispatch (Tests laufen lokal vor dem Merge, Minuten sparen) | pub get → **build_runner build** → `flutter test --coverage` → Codecov-Upload |
+| `deploy.yml` | push auf `main` (ohne `**.md`, `docs/`, `ios/`, `macos/`, `.claude/`, `.clinerules/`), workflow_dispatch; concurrency ohne Abbruch | 3 Jobs: (1) Flutter Web → Firebase Hosting, (2) `firebase deploy --only functions,firestore,storage,hosting` (Projekt `kickbasekumpel`; räumt vorher 2 Functions weg), (3) Android APK → Firebase App Distribution; iOS-Variant mit Pod-Install |
 
 ⚠️ CI nutzt **Flutter 3.47.x**, pubspec verlangt Dart SDK **^3.13.0** – bei Versionskonflikten beide Stellen prüfen.
 
