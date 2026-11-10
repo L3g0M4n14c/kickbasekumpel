@@ -1,13 +1,16 @@
 name: Flutter Tests
 
-on: [push, pull_request]
+# Nur noch manuell (Actions → Run workflow), um GitHub-Actions-Minuten zu sparen.
+# Format, Analyse und Tests laufen lokal vor dem Merge.
+on:
+  workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -24,6 +27,6 @@ jobs:
         run: flutter test --coverage
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           files: ./coverage/lcov.info
