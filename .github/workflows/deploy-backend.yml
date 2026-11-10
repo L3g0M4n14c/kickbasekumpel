@@ -1,0 +1,124 @@
+name: Deploy Backend (Functions, Firestore, Storage)
+
+# Deployt nur die Firebase-Teile, die sich im Push geändert haben:
+#   functions/**                         -> functions
+#   firestore.rules, firestore.indexes.json -> firestore
+#   storage.rules                        -> storage
+#   firebase.json / dieser Workflow / manueller Start -> alles
+# Web-Hosting und Android haben eigene Workflows.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "functions/**"
+      - "firestore.rules"
+      - "firestore.indexes.json"
+      - "storage.rules"
+      - "firebase.json"
+      - ".github/workflows/deploy-backend.yml"
+  workflow_dispatch:
+
+# Schnell hintereinander gemergte Commits: nur der neueste wartende Lauf
+# startet, ein laufender Deploy wird nicht abgebrochen.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  firebase-deploy:
+    name: "Deploy Firebase Backend"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Für den Vergleich mit dem Stand vor dem Push.
+          fetch-depth: 0
+
+      # Die Ziele werden im selben Job bestimmt (kein extra Job, der als
+      # volle Minute abgerechnet würde).
+      - name: Geänderte Ziele bestimmen
+        id: targets
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          ALL="functions,firestore,storage"
+          if [ "$GITHUB_EVENT_NAME" != "push" ] \
+            || [ -z "$BEFORE" ] \
+            || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] \
+            || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            echo "Kein Vergleichsstand – deploye alles."
+            echo "only=$ALL" >> "$GITHUB_OUTPUT"
+            echo "functions=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          CHANGED="$(git diff --name-only "$BEFORE" "$GITHUB_SHA")"
+          echo "Geänderte Dateien:"; echo "$CHANGED"
+
+          if echo "$CHANGED" | grep -qxE 'firebase\.json|\.github/workflows/deploy-backend\.yml'; then
+            TARGETS="$ALL"
+          else
+            TARGETS=""
+            echo "$CHANGED" | grep -q '^functions/' && TARGETS="$TARGETS,functions"
+            echo "$CHANGED" | grep -qxE 'firestore\.rules|firestore\.indexes\.json' && TARGETS="$TARGETS,firestore"
+            echo "$CHANGED" | grep -qx 'storage\.rules' && TARGETS="$TARGETS,storage"
+            TARGETS="${TARGETS#,}"
+          fi
+
+          if [ -z "$TARGETS" ]; then
+            echo "Nichts zu deployen."
+          else
+            echo "Ziele: $TARGETS"
+          fi
+          echo "only=$TARGETS" >> "$GITHUB_OUTPUT"
+          case ",$TARGETS," in
+            *,functions,*) echo "functions=true" >> "$GITHUB_OUTPUT" ;;
+            *) echo "functions=false" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Setup Node.js
+        if: steps.targets.outputs.functions == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Install Functions dependencies
+        if: steps.targets.outputs.functions == 'true'
+        working-directory: functions
+        run: npm ci
+
+      - name: Build Functions (TypeScript)
+        if: steps.targets.outputs.functions == 'true'
+        working-directory: functions
+        run: npm run build
+
+      - name: Authenticate to Google Cloud
+        if: steps.targets.outputs.only != ''
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+
+      - name: Install Firebase CLI
+        if: steps.targets.outputs.only != ''
+        run: npm install -g firebase-tools
+
+      # Löscht Gen-1-Funktionen vor dem Deploy, falls sie noch als Gen 1 in Firebase registriert sind.
+      # Notwendig, weil ein direktes In-Place-Upgrade Gen 1 → Gen 2 von Firebase nicht unterstützt wird.
+      # "|| true" macht den Schritt idempotent – nach dem ersten erfolgreichen Deploy ist die Gen-1-Instanz
+      # nicht mehr vorhanden und der Befehl schlägt harmlos fehl.
+      - name: Delete Gen-1 functions (pre-migration, idempotent)
+        if: steps.targets.outputs.functions == 'true'
+        run: |
+          firebase functions:delete getLigainsiderScraperStatus --region us-central1 --project kickbasekumpel --force || true
+          firebase functions:delete initializeLigainsiderScraperMetadata --region us-central1 --project kickbasekumpel --force || true
+          firebase functions:delete initializeLigainsiderScraperMetadata --region europe-west3 --project kickbasekumpel --force || true
+
+      - name: Deploy to Firebase
+        if: steps.targets.outputs.only != ''
+        env:
+          ONLY: ${{ steps.targets.outputs.only }}
+        run: firebase deploy --only "$ONLY" --project kickbasekumpel --non-interactive --force
