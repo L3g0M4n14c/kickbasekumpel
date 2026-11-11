@@ -11,7 +11,7 @@ Feature → Einstiegspunkte (Logik in `lib/data/services/`, State in Provider, U
 
 | Feature | Kern-Dateien |
 |---|---|
-| Gebots-Empfehlung | `bid_recommendation_service.dart` (Methoden: minimum/median/quartile, confidence, premium, sampleSize) + `bid_recommendation_providers.dart` |
+| Gebots-Empfehlung | `bid_recommendation_service.dart` (Methoden: minimum/median/quartile, confidence, premium, sampleSize; Stichprobe nur Käufe ≥ Marktwert, Ausreißer oben erst ab Q3 + 3×IQR bzw. Q3 × 1,5) + `bid_recommendation_providers.dart` |
 | Gebotsgrenze (33 %-Regel) | `bid_limit_service.dart` (Untergrenze Konto = −⅓ × (Teamwert + min(Konto, 0)), minus alle offenen eigenen Gebote `uop`) + `bid_limit_providers.dart` (`bidLimitProvider`, Teamwert = Σ `mv` aus `/squad`) → `buy_player_bottom_sheet` |
 | Verkaufsempfehlungen | `deterministic_recommendation_service.dart` + `recommendation_providers.dart` (Ziele: Budgetausgleich, Gewinnmaximierung) |
 | Verkaufsziele | `sales_goal_service.dart` (`rankForGoal` → `SalesGoalOutcome`/`SaleAdvice`) + `saleAdvicesProvider` in `presentation/providers/dashboard_providers.dart` → `sales_recommendation_page`; Plan: docs/superpowers/plans/2026-10-07-sales-goals.md |

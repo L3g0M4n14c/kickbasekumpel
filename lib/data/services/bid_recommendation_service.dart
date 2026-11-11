@@ -45,7 +45,8 @@ class BidRecommendation {
 /// 3. alle Käufe + gleiche Preisklasse
 /// 4. alle Käufe
 ///
-/// Ziel-Perzentil ist fix das obere Quartil (P75): Das Gebot überbietet so
+/// Ausgewertet werden nur Käufe ab Marktwert (gewonnene Auktionen). Ziel-
+/// Perzentil ist fix das obere Quartil (P75): Das Gebot überbietet so
 /// die historischen Aufschläge von 75 % aller Konkurrenz-Käufe. Die
 /// tatsächliche Konkurrenz auf dem Markt ist über die API nicht beobachtbar
 /// (Anzahl Gebote zeigt nur das eigene Gebot), daher gibt es keine
@@ -63,8 +64,23 @@ class BidRecommendationService {
   /// Ziel-Perzentil der Aufschlagsverteilung (oberes Quartil).
   static const double targetQuantile = 0.75;
 
-  /// Standard-Boxplot-Faktor (1.5 x IQR) fuer die Ausreisserkappung.
+  /// Standard-Boxplot-Faktor (1.5 x IQR) fuer die Ausreisserkappung nach
+  /// unten.
   static const double iqrOutlierFactor = 1.5;
+
+  /// Faktor der oberen Ausreissergrenze (3 x IQR, "far out" nach Tukey).
+  ///
+  /// Nach oben wird bewusst grosszuegiger gekappt: Aufschlaege sind stark
+  /// rechtsschief (viele Kaeufe knapp ueber Marktwert, wenige umkaempfte
+  /// deutlich darueber). Mit 1.5 x IQR fielen genau die umkaempften Kaeufe
+  /// als "Ausreisser" heraus und die Empfehlung wurde systematisch zu
+  /// niedrig.
+  static const double upperIqrOutlierFactor = 3.0;
+
+  /// Mindestabstand der oberen Ausreissergrenze relativ zu Q3. Schuetzt
+  /// umkaempfte Kaeufe, wenn das IQR fast null ist (viele Kaeufe exakt zum
+  /// Marktwert).
+  static const double minUpperFenceFactor = 1.5;
 
   /// Zeitfenster in Tagen, innerhalb dessen Kaeufe als aktuell gelten.
   /// Aeltere Kaeufe werden nur genutzt, wenn das aktuelle Fenster zu
@@ -213,11 +229,15 @@ class BidRecommendationService {
 
   int _ceilTo100k(int value) => ((value + 99999) ~/ 100000) * 100000;
 
-  /// Alle verwertbaren Kaeufe (Kaeufe mit positivem Preis und Marktwert).
+  /// Alle verwertbaren Kaeufe (Kaeufe mit positivem Marktwert und einem
+  /// Preis ab Marktwert).
   ///
   /// Ein Kaufpreis oder Marktwert <= 0 ist ein Datendefekt (der
-  /// Parsing-Fallback liefert 0) und wuerde das Perzentil kuenstlich
-  /// nach unten ziehen, daher wird er gefiltert.
+  /// Parsing-Fallback liefert 0). Kaeufe UNTER Marktwert sind keine
+  /// gewonnenen Auktionen (Kickbase verkauft nicht unter Marktwert), sondern
+  /// Deals zwischen Managern oder Kaeufe, bei denen der Marktwert waehrend
+  /// der Auktion gestiegen ist. Beides sagt nichts darueber aus, wie hoch man
+  /// bieten muss, und wuerde das Perzentil kuenstlich nach unten ziehen.
   List<ManagerTransferHistoryEntry> _collectUsable(
     List<ManagerTransferHistoryEntry> transfers,
   ) => transfers
@@ -226,24 +246,28 @@ class BidRecommendationService {
             transfer.transferType == purchaseTransferType &&
             transfer.price > 0 &&
             transfer.marketValueAtTransfer != null &&
-            transfer.marketValueAtTransfer! > 0,
+            transfer.marketValueAtTransfer! > 0 &&
+            transfer.price >= transfer.marketValueAtTransfer!,
       )
       .toList();
 
   /// Entfernt Ausreisser aus der sortierten Aufschlagsliste (IQR-Regel).
   ///
-  /// Werte ausserhalb von [Q1 - 1.5*IQR, Q3 + 1.5*IQR] stammen
-  /// typischerweise aus Sonderfaellen (z.B. Freundschaftskaeufe) und
-  /// wuerden das Perzentil sonst stark uebertreiben. Bei weniger als
-  /// vier Werten ist das IQR zu instabil, dann bleibt die Liste
-  /// unveraendert.
+  /// Untere Grenze: Q1 - 1.5*IQR. Obere Grenze: Q3 + 3*IQR, mindestens
+  /// aber Q3 * 1.5 – so bleiben umkaempfte Kaeufe in der Stichprobe und nur
+  /// echte Sonderfaelle (z.B. Freundschaftskaeufe zum Vielfachen des
+  /// Marktwerts) fallen heraus. Bei weniger als vier Werten ist das IQR zu
+  /// instabil, dann bleibt die Liste unveraendert.
   List<double> _removeOutliers(List<double> sortedPremiums) {
     if (sortedPremiums.length < 4) return sortedPremiums;
     final q1 = _percentile(sortedPremiums, 0.25);
     final q3 = _percentile(sortedPremiums, 0.75);
     final iqr = q3 - q1;
     final lowerBound = q1 - iqrOutlierFactor * iqr;
-    final upperBound = q3 + iqrOutlierFactor * iqr;
+    final upperBound = max(
+      q3 + upperIqrOutlierFactor * iqr,
+      q3 * minUpperFenceFactor,
+    );
     return sortedPremiums
         .where((premium) => premium >= lowerBound && premium <= upperBound)
         .toList();

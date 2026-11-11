@@ -161,6 +161,60 @@ void main() {
       expect(recommendation.sampleSize, 4);
     });
 
+    test('umkaempfte Kaeufe bleiben trotz engem IQR in der Stichprobe', () {
+      // Typisch rechtsschiefe Verteilung: viele Kaeufe knapp ueber
+      // Marktwert, wenige umkaempfte deutlich darueber. Die alte
+      // 1.5-x-IQR-Kappung warf 1.25 und 1.40 heraus (Empfehlung 10,5 Mio.).
+      final transfers = [
+        for (final premium in [
+          1.0, 1.0, 1.01, 1.02, 1.03, 1.05, 1.08, 1.15, 1.25, 1.4, //
+        ])
+          _transfer(
+            price: (premium * 10000000).round(),
+            marketValue: 10000000,
+            timestamp: recent,
+          ),
+      ];
+
+      final recommendation = service.recommend(
+        currentMarketValue: currentMarketValue,
+        minimumBid: 10000000,
+        transfers: transfers,
+        now: now,
+      );
+
+      expect(recommendation.sampleSize, 10);
+      expect(recommendation.amount, 11500000);
+    });
+
+    test('Kaeufe unter Marktwert ziehen die Empfehlung nicht nach unten', () {
+      final transfers = [
+        // Manager-Deals / gestiegener Marktwert: keine gewonnenen Auktionen.
+        for (final premium in [0.8, 0.9, 0.95, 0.98])
+          _transfer(
+            price: (premium * 10000000).round(),
+            marketValue: 10000000,
+            timestamp: recent,
+          ),
+        for (final premium in [1.1, 1.2, 1.3, 1.4])
+          _transfer(
+            price: (premium * 10000000).round(),
+            marketValue: 10000000,
+            timestamp: recent,
+          ),
+      ];
+
+      final recommendation = service.recommend(
+        currentMarketValue: currentMarketValue,
+        minimumBid: minimumBid,
+        transfers: transfers,
+        now: now,
+      );
+
+      expect(recommendation.sampleSize, 4);
+      expect(recommendation.amount, 13000000);
+    });
+
     test('empfiehlt nie mehr als noetig: Mindestgebot bleibt exakt erhalten',
         () {
       final transfers = [
