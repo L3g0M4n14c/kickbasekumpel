@@ -215,5 +215,3 @@ class _BenchmarkRow extends StatelessWidget {
     );
   }
 }
-
-

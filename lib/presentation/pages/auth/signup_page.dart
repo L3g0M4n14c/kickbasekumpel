@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../widgets/common/app_logo.dart';
+import '../../../config/app_theme.dart';
 
 class SignUpPage extends ConsumerStatefulWidget {
   const SignUpPage({super.key});
@@ -38,7 +40,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Logo
-                AppLogo(size: 80, backgroundColor: Colors.blue),
+                AppLogo(size: 80, backgroundColor: AppColors.sun),
                 const SizedBox(height: 32),
                 const Text(
                   'Registrierung',
@@ -52,7 +54,6 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                   controller: _emailController,
                   decoration: const InputDecoration(
                     labelText: 'Email',
-                    border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.email),
                   ),
                   keyboardType: TextInputType.emailAddress,
@@ -70,7 +71,6 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                   controller: _passwordController,
                   decoration: const InputDecoration(
                     labelText: 'Password',
-                    border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.lock),
                   ),
                   obscureText: true,
@@ -91,7 +91,6 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                   controller: _confirmPasswordController,
                   decoration: const InputDecoration(
                     labelText: 'Password bestätigen',
-                    border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.lock_outline),
                   ),
                   obscureText: true,

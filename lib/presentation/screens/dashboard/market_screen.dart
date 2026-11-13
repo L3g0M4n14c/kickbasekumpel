@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../data/models/market_model.dart';
 import '../../../data/models/transfer_model.dart';
 import '../../../data/providers/kickbase_api_provider.dart';
@@ -407,8 +408,7 @@ class _WatchlistTab extends ConsumerWidget {
             return _EmptyState(
               icon: Icons.bookmark_outline,
               message: 'Keine Spieler beobachtet',
-              subtitle:
-                  'Füge Spieler zur Beobachtungsliste hinzu, um sie hier zu sehen',
+              subtitle: 'Füge Spieler zur Beobachtungsliste hinzu, um sie hier zu sehen',
             );
           }
 
@@ -516,9 +516,8 @@ class _PlayerList extends ConsumerWidget {
       ref.invalidate(marketPlayersProvider);
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Fehler: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Fehler: $e')));
       }
     }
   }
@@ -556,9 +555,8 @@ class _PlayerList extends ConsumerWidget {
       ref.invalidate(marketPlayersProvider);
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Fehler: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Fehler: $e')));
       }
     }
   }
@@ -584,9 +582,8 @@ class _PlayerList extends ConsumerWidget {
       ref.invalidate(watchlistPlayersProvider);
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Fehler: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Fehler: $e')));
       }
     }
   }

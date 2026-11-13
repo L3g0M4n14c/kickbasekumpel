@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../widgets/responsive_layout.dart';
 
 class LeaguePlayersPage extends ConsumerWidget {
@@ -56,9 +57,8 @@ class LeaguePlayersPage extends ConsumerWidget {
                 ),
                 Text(
                   '${5000000 - (index * 100000)}€',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: Colors.grey),
                 ),
               ],
             ),
@@ -104,9 +104,8 @@ class LeaguePlayersPage extends ConsumerWidget {
                   children: [
                     Text(
                       'Spieler ${index + 1}',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     Text(
                       'Verein ${(index % 3) + 1}',

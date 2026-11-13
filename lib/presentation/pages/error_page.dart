@@ -20,17 +20,15 @@ class ErrorPage extends StatelessWidget {
               const SizedBox(height: 24),
               Text(
                 'Ups! Etwas ist schief gelaufen',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).textTheme.headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               Text(
                 'Die angeforderte Seite konnte nicht gefunden werden.',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
               if (error != null) ...[

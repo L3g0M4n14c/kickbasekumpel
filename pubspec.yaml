@@ -119,6 +119,22 @@ flutter:
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package
 
+  # Nunito (SIL Open Font License, siehe assets/fonts/nunito/OFL.txt) –
+  # runde, freundliche Hausschrift der App.
+  fonts:
+    - family: Nunito
+      fonts:
+        - asset: assets/fonts/nunito/Nunito_400Regular.ttf
+          weight: 400
+        - asset: assets/fonts/nunito/Nunito_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/nunito/Nunito_700Bold.ttf
+          weight: 700
+        - asset: assets/fonts/nunito/Nunito_800ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/nunito/Nunito_900Black.ttf
+          weight: 900
+
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a
   # "family" key with the font family name, and a "fonts" key with a

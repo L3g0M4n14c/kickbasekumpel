@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../config/app_theme.dart';
+
 /// Position Badge - Zeigt die Position des Spielers farbig an
 class PositionBadge extends StatelessWidget {
   final int position;
@@ -21,20 +23,7 @@ class PositionBadge extends StatelessWidget {
     }
   }
 
-  Color get positionColor {
-    switch (position) {
-      case 1:
-        return Colors.yellow;
-      case 2:
-        return Colors.green;
-      case 3:
-        return Colors.blue;
-      case 4:
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
+  Color get positionColor => AppColors.position(position);
 
   @override
   Widget build(BuildContext context) {
@@ -45,10 +34,8 @@ class PositionBadge extends StatelessWidget {
       child: Center(
         child: Text(
           positionLabel,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(context).textTheme.labelSmall
+              ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
     );

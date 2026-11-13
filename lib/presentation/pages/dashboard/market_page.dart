@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../data/models/market_model.dart';
 import '../../../data/providers/league_providers.dart';
 import '../../widgets/responsive_layout.dart';
@@ -268,7 +269,6 @@ class _MarketPageState extends ConsumerState<MarketPage> {
                   },
                 )
               : null,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           filled: true,
         ),
       ),

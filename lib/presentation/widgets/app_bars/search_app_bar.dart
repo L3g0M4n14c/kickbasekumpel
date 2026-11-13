@@ -92,9 +92,8 @@ class _SearchAppBarState extends State<SearchAppBar> {
                 hintText: widget.hintText,
                 border: InputBorder.none,
                 hintStyle: TextStyle(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.6),
+                  color: Theme.of(context).colorScheme.onSurface
+                      .withValues(alpha: 0.6),
                 ),
               ),
               style: TextStyle(
@@ -105,9 +104,8 @@ class _SearchAppBarState extends State<SearchAppBar> {
             )
           : Text(
               widget.title,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.bold),
             ),
       leading: _isSearching
           ? IconButton(

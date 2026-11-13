@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'kickbase_api_provider.dart';
 import 'league_detail_providers.dart';
 

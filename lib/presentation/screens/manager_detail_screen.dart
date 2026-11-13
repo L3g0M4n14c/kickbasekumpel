@@ -14,6 +14,7 @@ import '../widgets/charts/stats_bar_chart.dart';
 import '../widgets/common/ligainsider_status_badge.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/error_widget.dart';
+import '../../config/app_theme.dart';
 
 class ManagerDetailScreen extends ConsumerStatefulWidget {
   final String leagueId;
@@ -540,18 +541,8 @@ class _ManagerDetailScreenState extends ConsumerState<ManagerDetailScreen>
 
   Color _positionColor(BuildContext context, dynamic rawPos) {
     final pos = int.tryParse(rawPos.toString()) ?? 0;
-    switch (pos) {
-      case 1:
-        return Colors.yellow.shade800; // TW
-      case 2:
-        return Colors.blue.shade600; // ABW
-      case 3:
-        return Colors.green.shade600; // MF
-      case 4:
-        return Colors.red.shade600; // ST
-      default:
-        return Theme.of(context).colorScheme.secondary;
-    }
+    if (pos < 1 || pos > 4) return Theme.of(context).colorScheme.secondary;
+    return AppColors.position(pos);
   }
 
   Widget _buildPerformanceTab(BuildContext context) {

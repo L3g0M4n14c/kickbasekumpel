@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../widgets/common/app_logo.dart';
 
 /// Dashboard Screen
@@ -95,18 +96,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       children: [
                         AppLogo(
                           size: 48,
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.onPrimaryContainer,
+                          backgroundColor: Theme.of(context)
+                              .colorScheme
+                              .onPrimaryContainer,
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'KickbaseKumpel',
                           style: Theme.of(context).textTheme.headlineSmall
                               ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onPrimaryContainer,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onPrimaryContainer,
                                 fontWeight: FontWeight.bold,
                               ),
                         ),

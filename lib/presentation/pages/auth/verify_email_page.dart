@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../config/app_theme.dart';
+
 class VerifyEmailPage extends ConsumerWidget {
   const VerifyEmailPage({super.key});
 
@@ -19,7 +21,7 @@ class VerifyEmailPage extends ConsumerWidget {
               const Icon(
                 Icons.mark_email_unread,
                 size: 100,
-                color: Colors.blue,
+                color: AppColors.blue,
               ),
               const SizedBox(height: 32),
               const Text(

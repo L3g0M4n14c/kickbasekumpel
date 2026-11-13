@@ -9,6 +9,7 @@ import '../../../data/providers/player_providers.dart';
 import '../../../data/services/lineup_recommendation_service.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/error_widget.dart';
+import '../../../config/app_theme.dart';
 
 /// Home Screen
 ///
@@ -263,25 +264,25 @@ class _QuickActionsSection extends StatelessWidget {
       _QuickAction(
         icon: Icons.store,
         label: 'Markt',
-        color: Colors.blue,
+        color: AppColors.blue,
         onTap: () => context.go('/dashboard/market'),
       ),
       _QuickAction(
         icon: Icons.group,
         label: 'Aufstellung',
-        color: Colors.green,
+        color: AppColors.violet,
         onTap: () => context.go('/dashboard/lineup'),
       ),
       _QuickAction(
         icon: Icons.swap_horiz,
         label: 'Transfers',
-        color: Colors.orange,
+        color: AppColors.orange,
         onTap: () => context.go('/dashboard/transfers'),
       ),
       _QuickAction(
         icon: Icons.emoji_events,
         label: 'Ligen',
-        color: Colors.purple,
+        color: AppColors.goalkeeper,
         onTap: () => context.go('/dashboard/leagues'),
       ),
     ];
@@ -496,20 +497,7 @@ class _KaderSection extends ConsumerWidget {
     }
   }
 
-  Color _getPositionColor(int position) {
-    switch (position) {
-      case 1:
-        return Colors.yellow;
-      case 2:
-        return Colors.blue;
-      case 3:
-        return Colors.green;
-      case 4:
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
+  Color _getPositionColor(int position) => AppColors.position(position);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
