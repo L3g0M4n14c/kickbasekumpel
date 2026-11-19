@@ -79,14 +79,21 @@ class LigainsiderLineupIndex {
           if (query.length > 1) {query.last},
         ];
 
+        // Ein Treffer muss die Suche enthalten UND darf dem vollen Namen
+        // nicht widersprechen: Beim Nachnamen-Fallback würde sonst z. B.
+        // „Malek El Mala“ (Bank) auf „Said El Mala“ (S11) matchen.
+        bool matches(_LineupEntry entry, Set<String> candidateQuery) =>
+            entry.segments.containsAll(candidateQuery) &&
+            ligainsiderNamesCompatible(query, entry.segments);
+
         for (final candidateQuery in queries) {
           final isAlternative = alternatives.any(
-            (entry) => entry.segments.containsAll(candidateQuery),
+            (entry) => matches(entry, candidateQuery),
           );
           if (isAlternative) return LigainsiderPlayerStatus.isAlternative;
 
           final hits = starters
-              .where((entry) => entry.segments.containsAll(candidateQuery))
+              .where((entry) => matches(entry, candidateQuery))
               .toList(growable: false);
 
           if (hits.length == 1) {
@@ -114,7 +121,8 @@ class LigainsiderLineupIndex {
             (entry) =>
                 entry.concat.length >= 5 &&
                 (queryConcat.contains(entry.concat) ||
-                    entry.concat.contains(queryConcat)),
+                    entry.concat.contains(queryConcat)) &&
+                ligainsiderNamesCompatible(query, entry.segments),
           );
           if (matchedAlternative) {
             return LigainsiderPlayerStatus.isAlternative;

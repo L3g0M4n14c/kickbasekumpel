@@ -37,6 +37,7 @@ Neue Varianten DORT ergänzen, nicht inline parsen.
 
 Achtung: `st` ist je Kontext **Status** (Player/Market) oder **Punkte** (Lineup)!
 `n` ist je Kontext **Vollname** (Lineup) oder **Nachname** (Squad/Market).
+Für den Ligainsider-Abgleich reicht Lineup-`n` nicht (Geschwister wie Said/Malek El Mala): Vorname kommt aus `GET /squad` (`fn`) via `squadPlayerNamesProvider`/`lineupPlayerName` (`player_providers.dart`); Widerspruchsprüfung der Vornamen: `ligainsiderNamesCompatible` (`parsing_utils.dart`).
 `i` ist je Kontext **ID** (Lineup/Market) oder **Bild-URL** (Player-Detail).
 
 ## Spieler – einzelne Keys

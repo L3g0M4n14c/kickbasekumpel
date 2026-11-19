@@ -31,6 +31,49 @@ LigainsiderMatch _match(List<LineupPlayer> starters, {List<LineupRow>? away}) {
 
 void main() {
   group('LigainsiderLineupIndex.fromMatches', () {
+    test('gleicher Nachname: Bruder mit anderem Vornamen ist nicht S11', () {
+      final index = LigainsiderLineupIndex.fromMatches([
+        _match([
+          ..._dummies(170),
+          const LineupPlayer(
+            name: 'El Mala',
+            ligainsiderId: 'said-el-mala_31001',
+          ),
+        ]),
+      ]);
+
+      expect(
+        index.statusFor('Said', 'El Mala'),
+        LigainsiderPlayerStatus.likelyStart,
+      );
+      expect(index.statusFor('Malek', 'El Mala'), LigainsiderPlayerStatus.out);
+      expect(index.statusFor('', 'Malek El Mala'), LigainsiderPlayerStatus.out);
+      // Ohne Vornamen bleibt nur der Anzeigename – nicht unterscheidbar.
+      expect(
+        index.statusFor('', 'El Mala'),
+        LigainsiderPlayerStatus.likelyStart,
+      );
+    });
+
+    test('gleicher Nachname als Alternative: Vorname entscheidet', () {
+      final index = LigainsiderLineupIndex.fromMatches([
+        _match([
+          ..._dummies(170),
+          const LineupPlayer(
+            name: 'Kainz',
+            ligainsiderId: 'florian-kainz_1',
+            alternative: 'Said El Mala',
+          ),
+        ]),
+      ]);
+
+      expect(
+        index.statusFor('Said', 'El Mala'),
+        LigainsiderPlayerStatus.isAlternative,
+      );
+      expect(index.statusFor('Malek', 'El Mala'), LigainsiderPlayerStatus.out);
+    });
+
     test('ohne Daten: keine Abdeckung, keine Aussage', () {
       final index = LigainsiderLineupIndex.fromMatches(const []);
 
@@ -65,10 +108,7 @@ void main() {
         _match([
           ..._dummies(170),
           // Ligainsider-Slug ohne Bindestrich im Vornamen, Kickbase-Name mit
-          const LineupPlayer(
-            name: 'Minjae',
-            ligainsiderId: 'minjae-kim_27022',
-          ),
+          const LineupPlayer(name: 'Minjae', ligainsiderId: 'minjae-kim_27022'),
         ]),
       ]);
 
@@ -126,18 +166,11 @@ void main() {
     });
 
     test('mehrdeutige Nachnamen liefern keine Aussage', () {
-
       final index = LigainsiderLineupIndex.fromMatches([
         _match([
           ..._dummies(170),
-          const LineupPlayer(
-            name: 'Kim',
-            ligainsiderId: 'minjae-kim_27022',
-          ),
-          const LineupPlayer(
-            name: 'Kim',
-            ligainsiderId: 'seongsu-kim_27023',
-          ),
+          const LineupPlayer(name: 'Kim', ligainsiderId: 'minjae-kim_27022'),
+          const LineupPlayer(name: 'Kim', ligainsiderId: 'seongsu-kim_27023'),
         ]),
       ]);
 
@@ -174,9 +207,8 @@ void main() {
       final service = _MockLigainsiderService();
       when(() => service.isReady).thenReturn(true);
       when(() => service.hasLineupCoverage).thenReturn(true);
-      when(() => service.getPlayerStatus('Max', 'Mustermann')).thenReturn(
-        LigainsiderPlayerStatus.likelyStart,
-      );
+      when(() => service.getPlayerStatus('Max', 'Mustermann'))
+          .thenReturn(LigainsiderPlayerStatus.likelyStart);
 
       final index = LigainsiderLineupIndex.fromService(service);
 
@@ -191,9 +223,8 @@ void main() {
       final service = _MockLigainsiderService();
       when(() => service.isReady).thenReturn(true);
       when(() => service.hasLineupCoverage).thenReturn(false);
-      when(() => service.getPlayerStatus(any(), any())).thenReturn(
-        LigainsiderPlayerStatus.out,
-      );
+      when(() => service.getPlayerStatus(any(), any()))
+          .thenReturn(LigainsiderPlayerStatus.out);
 
       final index = LigainsiderLineupIndex.fromService(service);
 

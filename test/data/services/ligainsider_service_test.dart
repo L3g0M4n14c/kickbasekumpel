@@ -49,9 +49,7 @@ String _teamPageHtml(List<(String, String?)> slots) {
 
 /// Baut die Spieltags-Übersicht mit den Team-Links (2 pro Spiel).
 String _overviewHtml(List<String> teamPaths) {
-  final links = teamPaths
-      .map((path) => '<a href="$path">Team</a>')
-      .join('\n');
+  final links = teamPaths.map((path) => '<a href="$path">Team</a>').join('\n');
   return '<html><body>$links</body></html>';
 }
 
@@ -182,10 +180,7 @@ void main() {
 
       final player = service.getLigainsiderPlayer('', 'Spieler0');
       expect(player, isNotNull);
-      expect(
-        player!.imageUrl,
-        contains('cdn.ligainsider.de/images/player/'),
-      );
+      expect(player!.imageUrl, contains('cdn.ligainsider.de/images/player/'));
     });
   });
 
@@ -269,9 +264,8 @@ void main() {
       verify(mockPrefs.setString('ligainsider_cache', any)).called(1);
       verify(mockPrefs.setInt('ligainsider_cache_timestamp', any)).called(1);
       verify(mockPrefs.setString('ligainsider_cache_s11', any)).called(1);
-      verify(
-        mockPrefs.setString('ligainsider_cache_alternatives', any),
-      ).called(1);
+      verify(mockPrefs.setString('ligainsider_cache_alternatives', any))
+          .called(1);
     });
 
     test('lädt Startelf-Status aus dem Cache (offline)', () async {
@@ -287,15 +281,12 @@ void main() {
         ligainsiderId: 'cached-player_999',
       );
 
-      when(
-        mockPrefs.getString('ligainsider_cache'),
-      ).thenReturn(jsonEncode([cachedPlayer.toJson()]));
-      when(
-        mockPrefs.getString('ligainsider_cache_s11'),
-      ).thenReturn(jsonEncode(['cached-player_999']));
-      when(
-        mockPrefs.getInt('ligainsider_cache_timestamp'),
-      ).thenReturn(DateTime.now().millisecondsSinceEpoch);
+      when(mockPrefs.getString('ligainsider_cache'))
+          .thenReturn(jsonEncode([cachedPlayer.toJson()]));
+      when(mockPrefs.getString('ligainsider_cache_s11'))
+          .thenReturn(jsonEncode(['cached-player_999']));
+      when(mockPrefs.getInt('ligainsider_cache_timestamp'))
+          .thenReturn(DateTime.now().millisecondsSinceEpoch);
 
       await service.fetchLineups();
 
@@ -311,9 +302,7 @@ void main() {
       when(mockConnectivity.checkConnectivity())
           .thenAnswer((_) async => [ConnectivityResult.wifi]);
 
-      when(
-        mockPrefs.getString('ligainsider_cache'),
-      ).thenReturn(jsonEncode([]));
+      when(mockPrefs.getString('ligainsider_cache')).thenReturn(jsonEncode([]));
       when(mockPrefs.getInt('ligainsider_cache_timestamp')).thenReturn(
         DateTime.now()
             .subtract(const Duration(hours: 2))
@@ -381,15 +370,12 @@ void main() {
         ligainsiderId: 'offline-player_1',
       );
 
-      when(
-        mockPrefs.getString('ligainsider_cache'),
-      ).thenReturn(jsonEncode([cachedPlayer.toJson()]));
-      when(
-        mockPrefs.getString('ligainsider_cache_s11'),
-      ).thenReturn(jsonEncode(['offline-player_1']));
-      when(
-        mockPrefs.getInt('ligainsider_cache_timestamp'),
-      ).thenReturn(DateTime.now().millisecondsSinceEpoch);
+      when(mockPrefs.getString('ligainsider_cache'))
+          .thenReturn(jsonEncode([cachedPlayer.toJson()]));
+      when(mockPrefs.getString('ligainsider_cache_s11'))
+          .thenReturn(jsonEncode(['offline-player_1']));
+      when(mockPrefs.getInt('ligainsider_cache_timestamp'))
+          .thenReturn(DateTime.now().millisecondsSinceEpoch);
 
       await service.fetchLineups();
 
@@ -426,8 +412,43 @@ void main() {
     });
   });
 
-  group('Status Extension', () {
+  group('Gleicher Nachname (Geschwister)', () {
+    setUp(() async {
+      when(mockConnectivity.checkConnectivity())
+          .thenAnswer((_) async => [ConnectivityResult.wifi]);
 
+      final overview = _overviewHtml([_bayernPath]);
+      final koeln = _teamPageHtml([('said-el-mala_31001', null)]);
+
+      when(mockHttpClient.get(any)).thenAnswer((invocation) async {
+        final uri = invocation.positionalArguments[0] as Uri;
+        if (uri.path.contains('/team/')) return http.Response(koeln, 200);
+        return http.Response(overview, 200);
+      });
+
+      await service.fetchLineups();
+    });
+
+    test('der Bruder in der S11 wird erkannt', () {
+      expect(
+        service.getPlayerStatus('Said', 'El Mala'),
+        LigainsiderPlayerStatus.likelyStart,
+      );
+    });
+
+    test('Bruder mit anderem Vornamen erbt den S11-Status nicht', () {
+      expect(
+        service.getPlayerStatus('Malek', 'El Mala'),
+        LigainsiderPlayerStatus.out,
+      );
+      expect(
+        service.getPlayerStatus('', 'Malek El Mala'),
+        LigainsiderPlayerStatus.out,
+      );
+    });
+  });
+
+  group('Status Extension', () {
     test('should provide correct icon for each status', () {
       expect(LigainsiderPlayerStatus.likelyStart.icon, '✓');
       expect(LigainsiderPlayerStatus.startWithAlternative.icon, '1');

@@ -9,9 +9,10 @@ import '../services/ligainsider_lineup_index.dart';
 import '../../domain/repositories/repository_interfaces.dart';
 import 'kickbase_api_provider.dart';
 import 'repository_providers.dart';
+import 'league_detail_providers.dart';
 import 'league_providers.dart';
+import '../utils/parsing_utils.dart';
 import 'recommendation_providers.dart';
-import 'service_providers.dart';
 import 'ligainsider_provider.dart';
 
 // ============================================================================
@@ -767,9 +768,11 @@ final lineupRecommendationProvider =
         );
       }
 
+      final names = await ref.watch(squadPlayerNamesProvider(leagueId).future);
       final ligainsiderStatus = _ligainsiderStatusFor(
         ligainsiderIndexAsync.asData?.value,
         players,
+        names,
       );
 
       return const LineupRecommendationService().recommend(
@@ -788,18 +791,75 @@ final lineupRecommendationProvider =
 Map<String, LigainsiderPlayerStatus> _ligainsiderStatusFor(
   LigainsiderLineupIndex? index,
   List<LineupPlayer> players,
+  Map<String, PlayerName> names,
 ) {
   if (index == null || !index.hasCoverage) return const {};
 
   final statusByPlayerId = <String, LigainsiderPlayerStatus>{};
   for (final player in players) {
-    final parts = player.name.trim().split(RegExp(r'\s+'));
-    final lastName = parts.length > 1 ? parts.last : player.name.trim();
-    final firstName = parts.length > 1
-        ? parts.sublist(0, parts.length - 1).join(' ')
-        : '';
-    final status = index.statusFor(firstName, lastName);
+    final name = lineupPlayerName(player, names);
+    final status = index.statusFor(name.firstName, name.lastName);
     if (status != null) statusByPlayerId[player.id] = status;
   }
   return statusByPlayerId;
+}
+
+// ============================================================================
+// SPIELERNAMEN FÜR DEN LIGAINSIDER-ABGLEICH
+// ============================================================================
+
+/// Vor- und Nachname eines Spielers.
+typedef PlayerName = ({String firstName, String lastName});
+
+/// Vor- und Nachname je Spieler-ID aus `GET /squad` (`fn` + `n`).
+///
+/// `GET /lineup` liefert nur den Anzeigenamen (`n`, z. B. „El Mala“). Für
+/// Spieler mit gleichem Nachnamen (Geschwister wie Said und Malek El Mala)
+/// reicht das nicht, um sie den Ligainsider-Aufstellungen zuzuordnen – erst
+/// der Vorname unterscheidet sie. Best effort: Bei Fehlern leere Map, der
+/// Abgleich läuft dann wie bisher über den Anzeigenamen.
+final squadPlayerNamesProvider =
+    FutureProvider.family<Map<String, PlayerName>, String>((
+      ref,
+      leagueId,
+    ) async {
+      try {
+        final squad = await ref.watch(mySquadProvider(leagueId).future);
+        final raw = (squad['it'] as List?) ?? const [];
+        final names = <String, PlayerName>{};
+        for (final entry in raw) {
+          if (entry is! Map) continue;
+          final json = normalizePlayerJson(Map<String, dynamic>.from(entry));
+          final id = json['id']?.toString() ?? '';
+          final firstName = json['firstName']?.toString().trim() ?? '';
+          final lastName = json['lastName']?.toString().trim() ?? '';
+          if (id.isEmpty || lastName.isEmpty) continue;
+          names[id] = (firstName: firstName, lastName: lastName);
+        }
+        return names;
+      } catch (_) {
+        return const {};
+      }
+    });
+
+/// [squadPlayerNamesProvider] der ausgewählten Liga (leer, solange nicht
+/// geladen) – für Widgets, die nur einen [LineupPlayer] kennen.
+final selectedSquadPlayerNamesProvider = Provider<Map<String, PlayerName>>((
+  ref,
+) {
+  final leagueId = ref.watch(selectedLeagueProvider)?.i;
+  if (leagueId == null) return const {};
+  return ref.watch(squadPlayerNamesProvider(leagueId)).asData?.value ??
+      const {};
+});
+
+/// Name eines Aufstellungs-Spielers für den Ligainsider-Abgleich: Vor- und
+/// Nachname aus dem Kader, sonst der Anzeigename als Nachname.
+PlayerName lineupPlayerName(
+  LineupPlayer player,
+  Map<String, PlayerName> names,
+) {
+  final known = names[player.id];
+  if (known != null && known.firstName.isNotEmpty) return known;
+  return (firstName: '', lastName: player.name.trim());
 }

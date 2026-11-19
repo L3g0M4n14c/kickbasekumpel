@@ -503,8 +503,16 @@ class LigainsiderService {
       if (lastNameSegments.isEmpty) firstNameSegments,
     ];
 
+    // Voller Name für die Widerspruchsprüfung (Geschwister mit gleichem
+    // Nachnamen, z. B. „Said“ vs. „Malek El Mala“).
+    final fullNameSegments = {...firstNameSegments, ...lastNameSegments};
+
     for (final querySegments in queries) {
-      final status = _statusForSegments(querySegments, firstNameSegments);
+      final status = _statusForSegments(
+        querySegments,
+        firstNameSegments,
+        fullNameSegments,
+      );
       if (status != null) return status;
     }
 
@@ -515,13 +523,19 @@ class LigainsiderService {
   LigainsiderPlayerStatus? _statusForSegments(
     Set<String> querySegments,
     Set<String> firstNameSegments,
+    Set<String> fullNameSegments,
   ) {
     if (querySegments.isEmpty) return null;
+
+    // Treffer: enthält die Suche und widerspricht dem vollen Namen nicht.
+    bool matches(Set<String> parts) =>
+        parts.containsAll(querySegments) &&
+        ligainsiderNamesCompatible(fullNameSegments, parts);
 
     // Check if player is an alternative. Segment-Match statt Contains:
     // 'Lang' darf nicht an 'Langkamp' matchen.
     final isAlternative = _alternativeNames.any(
-      (altName) => _nameSegments(altName).containsAll(querySegments),
+      (altName) => matches(_nameSegments(altName)),
     );
 
     if (isAlternative) {
@@ -530,40 +544,40 @@ class LigainsiderService {
 
     // Search in cache (Segment-Match wie in getLigainsiderPlayer)
     var candidates = _playerCache.entries.where((entry) {
-      return _nameSegments(_normalize(entry.key)).containsAll(querySegments);
+      return matches(_nameSegments(_normalize(entry.key)));
     }).toList();
 
-    MapEntry<String, LigainsiderPlayer>? foundEntry;
-
-    if (candidates.length == 1) {
-      foundEntry = candidates.first;
-    } else if (candidates.length > 1) {
-      // Prefer both names present
-      if (firstNameSegments.isNotEmpty) {
-        foundEntry = candidates.where((entry) {
-          final parts = _nameSegments(_normalize(entry.key));
-          return parts.containsAll(querySegments) &&
-              parts.containsAll(firstNameSegments);
-        }).firstOrNull;
-      }
-
-      foundEntry ??= candidates.firstOrNull;
+    if (candidates.length > 1 && firstNameSegments.isNotEmpty) {
+      // Mehrdeutig: Kandidaten mit passendem Vornamen bevorzugen.
+      final withFirstName = candidates.where((entry) {
+        return _nameSegments(_normalize(entry.key))
+            .containsAll(firstNameSegments);
+      }).toList();
+      if (withFirstName.isNotEmpty) candidates = withFirstName;
     }
 
-    if (foundEntry == null) return null;
-
-    final player = foundEntry.value;
-    final id = foundEntry.key;
-
-    // Check if in starting lineup
-    if (_startingLineupIds.contains(id)) {
-      if (player.alternative != null) {
-        return LigainsiderPlayerStatus.startWithAlternative;
-      }
-      return LigainsiderPlayerStatus.likelyStart;
+    // Weiterhin mehrdeutig → keine Zufallswahl, sonst erbt z. B. ein
+    // Bank-Spieler den S11-Status seines gleichnamigen Bruders. Eine Aussage
+    // gibt es nur, wenn alle Kandidaten denselben Status haben – bzw. alle in
+    // der S11 stehen (dann die vorsichtigere Variante „mit Alternative“).
+    if (candidates.isEmpty) return null;
+    final statuses = candidates.map(_statusForEntry).toSet();
+    if (statuses.length == 1) return statuses.single;
+    if (!statuses.contains(LigainsiderPlayerStatus.bench)) {
+      return LigainsiderPlayerStatus.startWithAlternative;
     }
+    return null;
+  }
 
-    // In squad but not starting
+  /// Status eines Cache-Eintrags (Startelf mit/ohne Alternative oder Bank).
+  LigainsiderPlayerStatus _statusForEntry(
+    MapEntry<String, LigainsiderPlayer> entry,
+  ) {
+    if (_startingLineupIds.contains(entry.key)) {
+      return entry.value.alternative != null
+          ? LigainsiderPlayerStatus.startWithAlternative
+          : LigainsiderPlayerStatus.likelyStart;
+    }
     return LigainsiderPlayerStatus.bench;
   }
 
