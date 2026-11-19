@@ -29,4 +29,31 @@ void main() {
       expect(normalized['expiry'], isEmpty);
     });
   });
+
+  group('ligainsiderNamesCompatible', () {
+    test('Geschwister mit gleichem Nachnamen widersprechen sich', () {
+      expect(
+        ligainsiderNamesCompatible(
+          {'malek', 'el', 'mala'},
+          {'said', 'el', 'mala'},
+        ),
+        false,
+      );
+    });
+
+    test('fehlender Vorname, Schreibvarianten und Initialen passen', () {
+      expect(
+        ligainsiderNamesCompatible({'el', 'mala'}, {'said', 'el', 'mala'}),
+        true,
+      );
+      expect(
+        ligainsiderNamesCompatible({'min', 'jae', 'kim'}, {'minjae', 'kim'}),
+        true,
+      );
+      expect(
+        ligainsiderNamesCompatible({'j', 'musiala'}, {'jamal', 'musiala'}),
+        true,
+      );
+    });
+  });
 }

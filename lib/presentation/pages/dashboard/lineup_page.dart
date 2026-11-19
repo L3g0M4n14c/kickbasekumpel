@@ -348,13 +348,9 @@ class LineupPage extends ConsumerWidget {
     final messenger = ScaffoldMessenger.of(context);
     try {
       final apiClient = ref.read(kickbaseApiClientProvider);
-      final playerIds = [
-        ...recommendation.starters.map((p) => p.id),
-        ...recommendation.bench.map((p) => p.id),
-      ];
       await apiClient.updateLineup(
         leagueId,
-        LineupUpdateRequest(playerIds: playerIds),
+        LineupRecommendationService.buildUpdateRequest(recommendation.starters),
       );
       ref.invalidate(myLineupProvider(leagueId));
       ref.invalidate(lineupRecommendationProvider(leagueId));
@@ -403,13 +399,9 @@ class LineupPage extends ConsumerWidget {
     try {
       final apiClient = ref.read(kickbaseApiClientProvider);
       final current = await ref.read(myLineupProvider(leagueId).future);
-      final playerIds = LineupRecommendationService.swappedLineupIds(
-        current,
-        swap,
-      );
       await apiClient.updateLineup(
         leagueId,
-        LineupUpdateRequest(playerIds: playerIds),
+        LineupRecommendationService.swappedUpdateRequest(current, swap),
       );
       ref.invalidate(myLineupProvider(leagueId));
       ref.invalidate(lineupRecommendationProvider(leagueId));
@@ -623,9 +615,21 @@ class _FieldPlayerBadge extends ConsumerWidget {
       style: const TextStyle(color: Colors.white70, fontSize: 9),
     );
 
+    // Vor- + Nachname aus dem Kader (unterscheidet z. B. Geschwister).
+
+    final ligaName = lineupPlayerName(
+      player,
+
+      ref.watch(selectedSquadPlayerNamesProvider),
+    );
+
     final photoMap = ref.watch(ligainsiderPhotoMapProvider).asData?.value;
     // player.name ist der Anzeigename (meist Nachname)
-    final ligaPhoto = lookupLigainsiderPhoto(photoMap, '', player.name);
+    final ligaPhoto = lookupLigainsiderPhoto(
+      photoMap,
+      ligaName.firstName,
+      ligaName.lastName,
+    );
 
     return SizedBox(
       width: 64,
@@ -705,8 +709,8 @@ class _FieldPlayerBadge extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 LigainsiderStatusBadge(
-                  firstName: '',
-                  lastName: player.name,
+                  firstName: ligaName.firstName,
+                  lastName: ligaName.lastName,
                   showIcon: false,
                   fontSize: 7,
                 ),
@@ -867,8 +871,20 @@ class _BenchPlayerTile extends ConsumerWidget {
       _ => '?',
     };
 
+    // Vor- + Nachname aus dem Kader (unterscheidet z. B. Geschwister).
+
+    final ligaName = lineupPlayerName(
+      player,
+
+      ref.watch(selectedSquadPlayerNamesProvider),
+    );
+
     final photoMap = ref.watch(ligainsiderPhotoMapProvider).asData?.value;
-    final ligaPhoto = lookupLigainsiderPhoto(photoMap, '', player.name);
+    final ligaPhoto = lookupLigainsiderPhoto(
+      photoMap,
+      ligaName.firstName,
+      ligaName.lastName,
+    );
 
     return ListTile(
       dense: true,
@@ -896,8 +912,8 @@ class _BenchPlayerTile extends ConsumerWidget {
         children: [
           // Ligainsider-Rolle: Stammspieler / 1. Option / 2. Option
           LigainsiderStatusBadge(
-            firstName: '',
-            lastName: player.name,
+            firstName: ligaName.firstName,
+            lastName: ligaName.lastName,
             fontSize: 9,
           ),
           if (playerScore?.availabilityLabel != null) ...[

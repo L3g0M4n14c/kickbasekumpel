@@ -756,6 +756,56 @@ void main() {
     });
   });
 
+  group('POST /lineup Request-Body', () {
+    test(
+      'buildUpdateRequest sortiert nach Position und leitet Formation ab',
+      () {
+        final starters = [
+          buildPlayer(id: 'st', name: 'Sturm', position: 4),
+          buildPlayer(id: 'mf', name: 'Mittelfeld', position: 3),
+          buildPlayer(id: 'gk', name: 'Torwart', position: 1),
+          buildPlayer(id: 'd1', name: 'Abwehr 1', position: 2),
+          buildPlayer(id: 'd2', name: 'Abwehr 2', position: 2),
+        ];
+
+        final request = LineupRecommendationService.buildUpdateRequest(
+          starters,
+        );
+
+        expect(request.formation, '2-1-1');
+        expect(request.playerIds, ['gk', 'd1', 'd2', 'mf', 'st']);
+        expect(request.toJson(), {
+          'type': '2-1-1',
+          'players': ['gk', 'd1', 'd2', 'mf', 'st'],
+        });
+      },
+    );
+
+    test('swappedUpdateRequest enthält nur die neue Startelf', () {
+      final players = [
+        buildPlayer(id: 'gk', name: 'Torwart', position: 1, lineupOrder: 1),
+        buildPlayer(id: 'def', name: 'Abwehr', position: 2, lineupOrder: 2),
+        buildPlayer(id: 'mid', name: 'Mittelfeld', position: 3, lineupOrder: 3),
+        buildPlayer(id: 'bank', name: 'Bank', position: 4, lineupOrder: 12),
+      ];
+      final swap = LineupSwap(
+        inPlayer: players[3],
+        outPlayer: players[2],
+        gain: 1,
+        expectedGain: 3,
+        reason: 'Form',
+      );
+
+      final request = LineupRecommendationService.swappedUpdateRequest(
+        players,
+        swap,
+      );
+
+      expect(request.playerIds, ['gk', 'def', 'bank']);
+      expect(request.formation, '1-0-1');
+    });
+  });
+
   group('Startelf-Konvention (lo) & Torwart-Regel', () {
     test('Bank-Torwart (lo=0) ist kein Starter', () {
       final benchKeeper = buildPlayer(

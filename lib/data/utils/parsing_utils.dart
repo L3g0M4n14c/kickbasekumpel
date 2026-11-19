@@ -80,6 +80,28 @@ String? playerNameFromLigainsiderSlug(String slug) {
   return words.isEmpty ? null : words.join(' ');
 }
 
+/// Prüft, ob zwei Namen (als normalisierte Segment-Mengen) dieselbe Person
+/// meinen können – genauer: ob sie sich **widersprechen**.
+///
+/// Widerspruch = beide Namen haben Segmente, die im jeweils anderen fehlen,
+/// und diese Reste passen auch zusammengezogen bzw. als Abkürzung nicht
+/// zueinander. Beispiel Geschwister mit gleichem Nachnamen:
+/// `{malek, el, mala}` vs. `{said, el, mala}` → Rest `malek` ≠ `said` → false.
+///
+/// Kompatibel bleiben:
+/// - Teilmengen (`{el, mala}` ⊂ `{said, el, mala}` – Vorname unbekannt),
+/// - anders geschriebene Vornamen (`{min, jae, kim}` vs. `{minjae, kim}`),
+/// - Initialen (`{j, musiala}` vs. `{jamal, musiala}`).
+bool ligainsiderNamesCompatible(Set<String> query, Set<String> entry) {
+  final queryRest = query.difference(entry);
+  final entryRest = entry.difference(query);
+  if (queryRest.isEmpty || entryRest.isEmpty) return true;
+  final queryConcat = queryRest.join();
+  final entryConcat = entryRest.join();
+  return queryConcat.startsWith(entryConcat) ||
+      entryConcat.startsWith(queryConcat);
+}
+
 /// Sucht eine Foto-URL in der Ligainsider-Foto-Map.
 /// Versucht zuerst den vollständigen Namen, dann Fallback auf Nachname-Endung.
 String? lookupLigainsiderPhoto(

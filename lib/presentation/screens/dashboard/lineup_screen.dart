@@ -338,9 +338,21 @@ class _PlayerLineupCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
+    // Vor- + Nachname aus dem Kader (unterscheidet z. B. Geschwister).
+
+    final ligaName = lineupPlayerName(
+      player,
+
+      ref.watch(selectedSquadPlayerNamesProvider),
+    );
+
     final photoMap = ref.watch(ligainsiderPhotoMapProvider).asData?.value;
     // player.name ist meist nur der Nachname (z.B. "Baumgartner")
-    final ligaPhoto = lookupLigainsiderPhoto(photoMap, '', player.name);
+    final ligaPhoto = lookupLigainsiderPhoto(
+      photoMap,
+      ligaName.firstName,
+      ligaName.lastName,
+    );
 
     final positionLabel = switch (player.position) {
       1 => 'TW',
@@ -390,8 +402,8 @@ class _PlayerLineupCard extends ConsumerWidget {
           children: [
             // Ligainsider-Status (Startelf/Bank/verletzt)
             LigainsiderStatusBadge(
-              firstName: '',
-              lastName: player.name,
+              firstName: ligaName.firstName,
+              lastName: ligaName.lastName,
               showLabel: false,
             ),
             const SizedBox(width: 8),

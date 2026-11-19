@@ -905,8 +905,9 @@ as bool,
 /// @nodoc
 mixin _$LineupUpdateRequest {
 
-/// List of player IDs in lineup order (first 11 are starters, rest are bench)
- List<String> get playerIds;
+/// Formation, z. B. "4-4-2"
+@JsonKey(name: 'type') String get formation;/// Startelf-IDs in Positions-Reihenfolge (TW, ABW, MF, ST)
+@JsonKey(name: 'players') List<String> get playerIds;
 /// Create a copy of LineupUpdateRequest
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -920,20 +921,20 @@ $LineupUpdateRequestCopyWith<LineupUpdateRequest> get copyWith => _$LineupUpdate
 @override
 bool operator ==(Object other) {
   final _this = this as LineupUpdateRequest;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LineupUpdateRequest&&const DeepCollectionEquality().equals(other.playerIds, _this.playerIds));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LineupUpdateRequest&&(identical(other.formation, _this.formation) || other.formation == _this.formation)&&const DeepCollectionEquality().equals(other.playerIds, _this.playerIds));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as LineupUpdateRequest;
-  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.playerIds));
+  return Object.hash(runtimeType,_this.formation,const DeepCollectionEquality().hash(_this.playerIds));
 }
 
 @override
 String toString() {
   final _this = this as LineupUpdateRequest;
-  return 'LineupUpdateRequest(playerIds: ${_this.playerIds})';
+  return 'LineupUpdateRequest(formation: ${_this.formation}, playerIds: ${_this.playerIds})';
 }
 
 
@@ -944,7 +945,7 @@ abstract mixin class $LineupUpdateRequestCopyWith<$Res>  {
   factory $LineupUpdateRequestCopyWith(LineupUpdateRequest value, $Res Function(LineupUpdateRequest) _then) = _$LineupUpdateRequestCopyWithImpl;
 @useResult
 $Res call({
- List<String> playerIds
+@JsonKey(name: 'type') String formation,@JsonKey(name: 'players') List<String> playerIds
 });
 
 
@@ -961,9 +962,10 @@ class _$LineupUpdateRequestCopyWithImpl<$Res>
 
 /// Create a copy of LineupUpdateRequest
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? playerIds = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? formation = null,Object? playerIds = null,}) {
   return _then(LineupUpdateRequest(
-playerIds: null == playerIds ? _self.playerIds : playerIds // ignore: cast_nullable_to_non_nullable
+formation: null == formation ? _self.formation : formation // ignore: cast_nullable_to_non_nullable
+as String,playerIds: null == playerIds ? _self.playerIds : playerIds // ignore: cast_nullable_to_non_nullable
 as List<String>,
   ));
 }
@@ -1049,10 +1051,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<String> playerIds)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'type')  String formation, @JsonKey(name: 'players')  List<String> playerIds)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LineupUpdateRequest() when $default != null:
-return $default(_that.playerIds);case _:
+return $default(_that.formation,_that.playerIds);case _:
   return orElse();
 
 }
@@ -1070,10 +1072,10 @@ return $default(_that.playerIds);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<String> playerIds)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'type')  String formation, @JsonKey(name: 'players')  List<String> playerIds)  $default,) {final _that = this;
 switch (_that) {
 case _LineupUpdateRequest():
-return $default(_that.playerIds);case _:
+return $default(_that.formation,_that.playerIds);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1090,10 +1092,10 @@ return $default(_that.playerIds);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<String> playerIds)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'type')  String formation, @JsonKey(name: 'players')  List<String> playerIds)?  $default,) {final _that = this;
 switch (_that) {
 case _LineupUpdateRequest() when $default != null:
-return $default(_that.playerIds);case _:
+return $default(_that.formation,_that.playerIds);case _:
   return null;
 
 }
@@ -1105,13 +1107,15 @@ return $default(_that.playerIds);case _:
 @JsonSerializable()
 
 class _LineupUpdateRequest implements LineupUpdateRequest {
-  const _LineupUpdateRequest({required  List<String> playerIds}): _playerIds = playerIds;
+  const _LineupUpdateRequest({@JsonKey(name: 'type') required this.formation, @JsonKey(name: 'players') required  List<String> playerIds}): _playerIds = playerIds;
   factory _LineupUpdateRequest.fromJson(Map<String, dynamic> json) => _$LineupUpdateRequestFromJson(json);
 
-/// List of player IDs in lineup order (first 11 are starters, rest are bench)
+/// Formation, z. B. "4-4-2"
+@override@JsonKey(name: 'type') final  String formation;
+/// Startelf-IDs in Positions-Reihenfolge (TW, ABW, MF, ST)
  final  List<String> _playerIds;
-/// List of player IDs in lineup order (first 11 are starters, rest are bench)
-@override List<String> get playerIds {
+/// Startelf-IDs in Positions-Reihenfolge (TW, ABW, MF, ST)
+@override@JsonKey(name: 'players') List<String> get playerIds {
   if (_playerIds is EqualUnmodifiableListView) return _playerIds;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_playerIds);
@@ -1131,18 +1135,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _LineupUpdateRequest&&const DeepCollectionEquality().equals(other.playerIds, _playerIds));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _LineupUpdateRequest&&(identical(other.formation, formation) || other.formation == formation)&&const DeepCollectionEquality().equals(other.playerIds, _playerIds));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_playerIds));
+    return Object.hash(runtimeType,formation,const DeepCollectionEquality().hash(_playerIds));
 }
 
 @override
 String toString() {
-    return 'LineupUpdateRequest(playerIds: $playerIds)';
+    return 'LineupUpdateRequest(formation: $formation, playerIds: $playerIds)';
 }
 
 
@@ -1153,7 +1157,7 @@ abstract mixin class _$LineupUpdateRequestCopyWith<$Res> implements $LineupUpdat
   factory _$LineupUpdateRequestCopyWith(_LineupUpdateRequest value, $Res Function(_LineupUpdateRequest) _then) = __$LineupUpdateRequestCopyWithImpl;
 @override @useResult
 $Res call({
- List<String> playerIds
+@JsonKey(name: 'type') String formation,@JsonKey(name: 'players') List<String> playerIds
 });
 
 
@@ -1170,9 +1174,10 @@ class __$LineupUpdateRequestCopyWithImpl<$Res>
 
 /// Create a copy of LineupUpdateRequest
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? playerIds = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? formation = null,Object? playerIds = null,}) {
   return _then(_LineupUpdateRequest(
-playerIds: null == playerIds ? _self._playerIds : playerIds // ignore: cast_nullable_to_non_nullable
+formation: null == formation ? _self.formation : formation // ignore: cast_nullable_to_non_nullable
+as String,playerIds: null == playerIds ? _self._playerIds : playerIds // ignore: cast_nullable_to_non_nullable
 as List<String>,
   ));
 }
