@@ -438,7 +438,7 @@ void main() {
       await apiClient.setAuthToken(testToken);
     });
 
-    test('sendet Player-IDs als text/plain-Kommaliste', () async {
+    test('sendet Formation und Startelf als JSON (kein 415)', () async {
       final requests = <http.BaseRequest>[];
       when(mockHttpClient.send(any)).thenAnswer((invocation) async {
         requests.add(invocation.positionalArguments.first as http.BaseRequest);
@@ -447,15 +447,21 @@ void main() {
 
       await apiClient.updateLineup(
         'league-1',
-        const LineupUpdateRequest(playerIds: ['p1', 'p2', 'p3']),
+        const LineupUpdateRequest(
+          formation: '4-4-2',
+          playerIds: ['p1', 'p2', 'p3'],
+        ),
       );
 
       expect(requests, hasLength(1));
       final request = requests.single as http.Request;
       expect(request.method, 'POST');
       expect(request.url.path, '/v4/leagues/league-1/lineup');
-      expect(request.headers['Content-Type'], startsWith('text/plain'));
-      expect(request.body, 'p1,p2,p3');
+      expect(request.headers['Content-Type'], startsWith('application/json'));
+      expect(jsonDecode(request.body), {
+        'type': '4-4-2',
+        'players': ['p1', 'p2', 'p3'],
+      });
     });
 
     test('wirft KickbaseException bei fehlgeschlagenem Update', () async {
@@ -467,7 +473,7 @@ void main() {
       expect(
         () => apiClient.updateLineup(
           'league-1',
-          const LineupUpdateRequest(playerIds: ['p1']),
+          const LineupUpdateRequest(formation: '4-4-2', playerIds: ['p1']),
         ),
         throwsA(isA<KickbaseException>()),
       );

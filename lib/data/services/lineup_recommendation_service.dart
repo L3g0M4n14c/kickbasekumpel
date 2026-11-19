@@ -590,6 +590,36 @@ class LineupRecommendationService {
     );
   }
 
+  /// Baut den Body für `POST /lineup` aus einer Startelf: Spieler nach
+  /// Position sortiert (TW, ABW, MF, ST), Formation aus den Positionszahlen
+  /// abgeleitet (z. B. "4-4-2"). Bank-Spieler gehören nicht in den Request.
+  static LineupUpdateRequest buildUpdateRequest(List<LineupPlayer> starters) {
+    final sorted = [...starters]
+      ..sort((a, b) => a.position.compareTo(b.position));
+    int count(int position) =>
+        sorted.where((p) => p.position == position).length;
+    return LineupUpdateRequest(
+      formation: '${count(2)}-${count(3)}-${count(4)}',
+      playerIds: sorted.map((p) => p.id).toList(),
+    );
+  }
+
+  /// [LineupUpdateRequest] für die aktuelle Aufstellung mit genau [swap]
+  /// umgesetzt (Tap-to-Swap): [swappedLineupIds] liefert die neue Ordnung,
+  /// die ersten 11 davon sind die neue Startelf.
+  static LineupUpdateRequest swappedUpdateRequest(
+    List<LineupPlayer> current,
+    LineupSwap swap,
+  ) {
+    final byId = {for (final p in current) p.id: p};
+    final starters = swappedLineupIds(current, swap)
+        .take(starterIds(current).length)
+        .map((id) => byId[id])
+        .whereType<LineupPlayer>()
+        .toList();
+    return buildUpdateRequest(starters);
+  }
+
   /// Reihenfolge-Liste für `POST /lineup`, in der genau [swap] umgesetzt ist
   /// (Tap-to-Swap, Story #13): Die aktuelle Ordnung bleibt erhalten, nur die
   /// beiden beteiligten Spieler tauschen ihren Platz.

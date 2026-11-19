@@ -61,11 +61,15 @@ Map<String, dynamic> _$PerformanceHistoryToJson(_PerformanceHistory instance) =>
 
 _LineupUpdateRequest _$LineupUpdateRequestFromJson(Map<String, dynamic> json) =>
     _LineupUpdateRequest(
-      playerIds: (json['playerIds'] as List<dynamic>)
+      formation: json['type'] as String,
+      playerIds: (json['players'] as List<dynamic>)
           .map((e) => e as String)
           .toList(),
     );
 
 Map<String, dynamic> _$LineupUpdateRequestToJson(
   _LineupUpdateRequest instance,
-) => <String, dynamic>{'playerIds': instance.playerIds};
+) => <String, dynamic>{
+  'type': instance.formation,
+  'players': instance.playerIds,
+};

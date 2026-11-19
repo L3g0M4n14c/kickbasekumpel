@@ -169,7 +169,7 @@ void main() {
       await expectLater(
         client.updateLineup(
           'demo-liga-001',
-          const LineupUpdateRequest(playerIds: []),
+          const LineupUpdateRequest(formation: '4-4-2', playerIds: []),
         ),
         completes,
       );

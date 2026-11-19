@@ -637,15 +637,13 @@ class KickbaseAPIClient {
   /// Update lineup
   /// POST /v4/leagues/{leagueId}/lineup
   ///
-  /// Die Kickbase-API erwartet den Body als text/plain-Kommaseparated-Liste
-  /// der Spieler-IDs in Lineup-Reihenfolge (erste 11 = Startelf, Rest Bank) –
-  /// siehe [LineupUpdateRequestExtension.toRequestBody].
+  /// Die Kickbase-API erwartet einen JSON-Body `{"type", "players"}` – ein
+  /// text/plain-Body wird mit HTTP 415 abgelehnt. Siehe [LineupUpdateRequest].
   Future<void> updateLineup(String leagueId, LineupUpdateRequest lineup) async {
     final response = await _makeRequestWithRetry(
       endpoint: '/$_apiVersion/leagues/$leagueId/lineup',
       method: 'POST',
-      body: lineup.toRequestBody(),
-      headers: const {'Content-Type': 'text/plain'},
+      body: lineup.toJson(),
     );
 
     if (response.statusCode != 200) {

@@ -74,24 +74,22 @@ abstract class PerformanceHistory with _$PerformanceHistory {
       _$PerformanceHistoryFromJson(json);
 }
 
-/// Request body for POST /v4/leagues/{leagueId}/lineup
-/// Contains list of player IDs in the desired lineup order
+/// Request body für POST /v4/leagues/{leagueId}/lineup
+///
+/// Kickbase erwartet JSON (`application/json`, sonst HTTP 415):
+/// `{"type": "4-4-2", "players": ["<id>", ...]}` – `type` ist die Formation
+/// (Abwehr-Mittelfeld-Sturm), `players` die 11 Startelf-IDs sortiert nach
+/// Position (Torwart, Abwehr, Mittelfeld, Sturm).
 @freezed
 abstract class LineupUpdateRequest with _$LineupUpdateRequest {
   const factory LineupUpdateRequest({
-    /// List of player IDs in lineup order (first 11 are starters, rest are bench)
-    required List<String> playerIds,
+    /// Formation, z. B. "4-4-2"
+    @JsonKey(name: 'type') required String formation,
+
+    /// Startelf-IDs in Positions-Reihenfolge (TW, ABW, MF, ST)
+    @JsonKey(name: 'players') required List<String> playerIds,
   }) = _LineupUpdateRequest;
 
   factory LineupUpdateRequest.fromJson(Map<String, dynamic> json) =>
       _$LineupUpdateRequestFromJson(json);
-}
-
-/// Extension method for LineupUpdateRequest
-extension LineupUpdateRequestExtension on LineupUpdateRequest {
-  /// Convert to JSON string for API request body
-  /// API expects just an array of player IDs as text/plain
-  String toRequestBody() {
-    return playerIds.join(',');
-  }
 }

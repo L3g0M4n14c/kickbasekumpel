@@ -348,13 +348,9 @@ class LineupPage extends ConsumerWidget {
     final messenger = ScaffoldMessenger.of(context);
     try {
       final apiClient = ref.read(kickbaseApiClientProvider);
-      final playerIds = [
-        ...recommendation.starters.map((p) => p.id),
-        ...recommendation.bench.map((p) => p.id),
-      ];
       await apiClient.updateLineup(
         leagueId,
-        LineupUpdateRequest(playerIds: playerIds),
+        LineupRecommendationService.buildUpdateRequest(recommendation.starters),
       );
       ref.invalidate(myLineupProvider(leagueId));
       ref.invalidate(lineupRecommendationProvider(leagueId));
@@ -403,13 +399,9 @@ class LineupPage extends ConsumerWidget {
     try {
       final apiClient = ref.read(kickbaseApiClientProvider);
       final current = await ref.read(myLineupProvider(leagueId).future);
-      final playerIds = LineupRecommendationService.swappedLineupIds(
-        current,
-        swap,
-      );
       await apiClient.updateLineup(
         leagueId,
-        LineupUpdateRequest(playerIds: playerIds),
+        LineupRecommendationService.swappedUpdateRequest(current, swap),
       );
       ref.invalidate(myLineupProvider(leagueId));
       ref.invalidate(lineupRecommendationProvider(leagueId));

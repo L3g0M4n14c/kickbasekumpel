@@ -30,7 +30,7 @@ Parsing** → **Provider** → **UI-Konsument**. Spezifikation: `docs/api-endpoi
 |---|---|---|---|---|
 | `GET /v4/leagues/{id}/squad` | `getMySquad()`, `getLeaguePlayers()` (Squad→Market-Fallback) | Map / `List<Player>` via `normalizePlayerJson` | `mySquadProvider`, `leaguePlayersProvider`, `dashboard_providers` | `squad_screen`, `player_detail_screen` |
 | `GET /v4/leagues/{id}/lineup` | `getLineup()` | `LineupResponse` (`it`) | `player_providers` (Lineup-Fetch), `recommendation_providers` | – |
-| `POST /v4/leagues/{id}/lineup` | `updateLineup()` | – (ungenutzt) | – | – |
+| `POST /v4/leagues/{id}/lineup` | `updateLineup()` | Body `LineupUpdateRequest` als JSON `{"type":"4-4-2","players":[11 Startelf-IDs, TW→ABW→MF→ST]}` (text/plain → HTTP 415); gebaut via `LineupRecommendationService.buildUpdateRequest`/`swappedUpdateRequest` | `lineup_page` (Übernehmen, Tap-to-Swap) | – |
 | `GET /v4/leagues/{id}/teamcenter/myeleven` | `getMyEleven()` | Map (live Punkte) | `myElevenProvider` | `live_screen` |
 
 ## Transfermarkt
