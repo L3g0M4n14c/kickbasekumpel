@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+
 import '../../domain/repositories/repository_interfaces.dart';
 import '../models/user_model.dart';
 import '../models/league_model.dart';
@@ -301,7 +303,11 @@ class LeagueRepository extends BaseRepository<League>
 
   @override
   Future<Result<List<League>>> getByUserId(String userId) async {
-    return await queryWhere(field: 'members', value: userId, arrayContains: true);
+    return await queryWhere(
+      field: 'members',
+      value: userId,
+      arrayContains: true,
+    );
   }
 
   @override
@@ -732,8 +738,9 @@ class PlayerRepository extends BaseRepository<Player>
 
   /// Ruft voraussichtliche Aufstellungen von der `getLigainsiderLineups` Cloud Function ab.
   ///
-  /// Die Cloud Function cached Ergebnisse für 2 Stunden in Firestore.
-  /// Bei Erstaufruf oder veraltetem Cache wird Ligainsider neu gescraped.
+  /// Die Cloud Function liefert sofort den Firestore-Cache aus, den ein
+  /// Scheduler tagsüber alle 15 Minuten aktualisiert. Nur wenn noch nie
+  /// gescraped wurde, scraped sie synchron (daher der großzügige Timeout).
   ///
   /// Identisches Auth-Muster wie [triggerCloudFunctionPhotoUpdate].
   ///
@@ -747,10 +754,10 @@ class PlayerRepository extends BaseRepository<Player>
             ),
           )
           .timeout(
-            const Duration(minutes: 5),
+            const Duration(seconds: 90),
             onTimeout: () => throw TimeoutException(
               'getLigainsiderLineups Timeout',
-              const Duration(minutes: 5),
+              const Duration(seconds: 90),
             ),
           );
 
