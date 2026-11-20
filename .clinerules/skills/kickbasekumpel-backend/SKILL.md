@@ -34,7 +34,9 @@ Exportierte Functions (`functions/src/index.ts`):
 | Function | Typ | Zweck |
 |---|---|---|
 | `kickbaseProxy` | onRequest | CORS-Proxy für Kickbase-API auf Web (Ziel des `_webProxyUrl` im API-Client) |
-| `getLigainsiderLineups` | onRequest | LigenInsider-Aufstellungen |
+| `getLigainsiderLineups` | onRequest | Aufstellungen: liefert immer sofort den Cache `system/ligainsider-lineups-cache` (scraped nur, wenn noch keiner existiert) |
+| `scheduledLigainsiderLineupUpdate` | onSchedule | Aufstellungen scrapen, 07–23 Uhr Europe/Berlin alle 15 min |
+| `scheduledLigainsiderLineupUpdateNight` | onSchedule | Aufstellungen scrapen, 00–06 Uhr stündlich |
 | `updateLigainsiderPhotos` | onRequest | Foto-Update |
 | `scheduledLigainsiderPhotoUpdate` | onSchedule | Foto-Update Cron |
 | `getLigainsiderScraperStatus` | onRequest | Scraper-Status |

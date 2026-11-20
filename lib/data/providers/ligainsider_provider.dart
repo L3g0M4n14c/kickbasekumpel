@@ -81,8 +81,8 @@ final ligainsiderInitProvider = FutureProvider<void>((ref) async {
 
 /// Baut den Status-Index der voraussichtlichen Aufstellungen.
 ///
-/// Primär aus der Cloud Function (`getLigainsiderLineups`, Firestore-Cache
-/// 2 h) – die scraped serverseitig und funktioniert auch im Web. Nur wenn dort
+/// Primär aus der Cloud Function (`getLigainsiderLineups`, Firestore-Cache,
+/// per Scheduler alle 15 min aktualisiert) – funktioniert auch im Web. Nur wenn dort
 /// keine vollständigen Daten vorliegen, wird der lokale Scrape genutzt.
 final ligainsiderLineupIndexProvider = FutureProvider<LigainsiderLineupIndex>((
   ref,
@@ -162,8 +162,8 @@ final ligainsiderReloadProvider = FutureProvider<void>((ref) async {
 /// Provider exposing parsed match lineups
 ///
 /// Ruft die `getLigainsiderLineups` Cloud Function auf.
-/// Die Function cached Ergebnisse 2 Stunden in Firestore – sofortige Rückgabe
-/// bei frischem Cache, ansonsten wird Ligainsider.de neu gescraped.
+/// Die Function liefert sofort den Firestore-Cache aus; ein Scheduler hält ihn
+/// tagsüber alle 15 Minuten aktuell.
 ///
 /// Verwendung:
 /// ```dart

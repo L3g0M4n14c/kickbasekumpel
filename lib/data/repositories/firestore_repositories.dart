@@ -738,8 +738,9 @@ class PlayerRepository extends BaseRepository<Player>
 
   /// Ruft voraussichtliche Aufstellungen von der `getLigainsiderLineups` Cloud Function ab.
   ///
-  /// Die Cloud Function cached Ergebnisse für 2 Stunden in Firestore.
-  /// Bei Erstaufruf oder veraltetem Cache wird Ligainsider neu gescraped.
+  /// Die Cloud Function liefert sofort den Firestore-Cache aus, den ein
+  /// Scheduler tagsüber alle 15 Minuten aktualisiert. Nur wenn noch nie
+  /// gescraped wurde, scraped sie synchron (daher der großzügige Timeout).
   ///
   /// Identisches Auth-Muster wie [triggerCloudFunctionPhotoUpdate].
   ///
@@ -753,10 +754,10 @@ class PlayerRepository extends BaseRepository<Player>
             ),
           )
           .timeout(
-            const Duration(minutes: 5),
+            const Duration(seconds: 90),
             onTimeout: () => throw TimeoutException(
               'getLigainsiderLineups Timeout',
-              const Duration(minutes: 5),
+              const Duration(seconds: 90),
             ),
           );
 

@@ -221,30 +221,33 @@ export const initializeLigainsiderScraperMetadata = onDocumentCreated(
 );
 
 // ============================================================================
-// Cache-TTL für Aufstellungen: 2 Stunden
+// Voraussichtliche Aufstellungen (Ligainsider)
 // ============================================================================
-const LINEUP_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
+
+const LINEUP_CACHE_DOC = 'ligainsider-lineups-cache';
 
 /**
- * Liest gecachte Lineup-Daten aus Firestore (wenn frisch genug).
- * Returns null wenn kein Cache vorhanden oder veraltet.
+ * Ab diesem Alter gilt der Cache als veraltet. Der Scheduler läuft tagsüber
+ * alle 15 Minuten, nachts stündlich – das hier ist nur die Grenze für das
+ * `stale`-Flag in der Antwort.
  */
-async function getCachedLineups(): Promise<object[] | null> {
+const LINEUP_STALE_AFTER_MS = 90 * 60 * 1000;
+
+interface CachedLineups {
+    matches: object[];
+    scrapedAt: string;
+}
+
+/**
+ * Liest den Lineup-Cache aus Firestore – unabhängig vom Alter.
+ * Returns null nur, wenn noch gar kein Cache existiert.
+ */
+async function readLineupCache(): Promise<CachedLineups | null> {
     try {
-        const doc = await firestore.collection('system').doc('ligainsider-lineups-cache').get();
-        if (!doc.exists) return null;
-
+        const doc = await firestore.collection('system').doc(LINEUP_CACHE_DOC).get();
         const data = doc.data();
-        if (!data || !data.matches || !data.scrapedAt) return null;
-
-        const scrapedAt = new Date(data.scrapedAt as string).getTime();
-        if (Date.now() - scrapedAt > LINEUP_CACHE_TTL_MS) {
-            logger.info('Lineup-Cache veraltet (> 2h), wird neu gescraped');
-            return null;
-        }
-
-        logger.info({ scrapedAt: data.scrapedAt }, 'Lineup-Cache trifft (frisch)');
-        return data.matches as object[];
+        if (!data || !Array.isArray(data.matches) || !data.scrapedAt) return null;
+        return { matches: data.matches as object[], scrapedAt: data.scrapedAt as string };
     } catch (err) {
         logger.warn({ err }, 'Fehler beim Lesen des Lineup-Cache');
         return null;
@@ -252,35 +255,88 @@ async function getCachedLineups(): Promise<object[] | null> {
 }
 
 /**
- * Speichert Lineup-Daten im Firestore-Cache.
+ * Scraped ligainsider.de und schreibt das Ergebnis in den Firestore-Cache.
+ *
+ * Ein leeres Ergebnis (z. B. Seitenstruktur geändert, Ligainsider down)
+ * überschreibt einen vorhandenen Cache NICHT – lieber etwas ältere Daten
+ * als gar keine.
  */
-async function saveLineupsToCache(matches: object[], errors: string[]): Promise<void> {
-    try {
-        await firestore.collection('system').doc('ligainsider-lineups-cache').set({
-            matches,
-            scrapedAt: new Date().toISOString(),
-            matchCount: matches.length,
-            errors,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-        logger.info({ matchCount: matches.length }, 'Lineup-Cache gespeichert');
-    } catch (err) {
-        logger.warn({ err }, 'Fehler beim Speichern des Lineup-Cache');
+async function refreshLineupCache(): Promise<CachedLineups> {
+    const scraper = new LigainsiderLineupScraper();
+    const result = await scraper.scrapeLineups();
+    const matches = JSON.parse(JSON.stringify(result.matches)) as object[];
+
+    if (result.errors.length > 0) {
+        logger.warn({ errors: result.errors }, 'Lineup-Scraping mit Fehlern abgeschlossen');
     }
+
+    if (matches.length === 0) {
+        const existing = await readLineupCache();
+        if (existing) {
+            logger.warn('Lineup-Scraping leer – vorhandener Cache bleibt erhalten');
+            return existing;
+        }
+    }
+
+    await firestore.collection('system').doc(LINEUP_CACHE_DOC).set({
+        matches,
+        scrapedAt: result.scrapedAt,
+        matchCount: matches.length,
+        errors: result.errors,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    logger.info({ matchCount: matches.length }, 'Lineup-Cache gespeichert');
+
+    return { matches, scrapedAt: result.scrapedAt };
 }
+
+/**
+ * Cloud Function: Scheduler für die voraussichtlichen Aufstellungen.
+ *
+ * Tagsüber (07–23 Uhr deutscher Zeit) alle 15 Minuten, damit kurzfristige
+ * Änderungen vor dem Spieltag zeitnah in der App landen. Nachts reicht der
+ * stündliche Lauf von [scheduledLigainsiderLineupUpdateNight].
+ */
+export const scheduledLigainsiderLineupUpdate = onSchedule(
+    {
+        schedule: '*/15 7-23 * * *',
+        timeZone: 'Europe/Berlin',
+        timeoutSeconds: 300,
+        memory: '512MiB',
+        region: 'us-central1',
+        retryCount: 0,
+    },
+    async (_event) => {
+        logger.info('Starte geplantes Lineup-Scraping (tagsüber)...');
+        await refreshLineupCache();
+    }
+);
+
+/** Nachtlauf: stündlich 00–06 Uhr deutscher Zeit. */
+export const scheduledLigainsiderLineupUpdateNight = onSchedule(
+    {
+        schedule: '0 0-6 * * *',
+        timeZone: 'Europe/Berlin',
+        timeoutSeconds: 300,
+        memory: '512MiB',
+        region: 'us-central1',
+        retryCount: 0,
+    },
+    async (_event) => {
+        logger.info('Starte geplantes Lineup-Scraping (nachts)...');
+        await refreshLineupCache();
+    }
+);
 
 /**
  * Cloud Function: Voraussichtliche Aufstellungen von Ligainsider (HTTP GET)
  *
- * Wird aufgerufen wenn der User die Aufstellungs-View öffnet.
- *
- * - Bei frischem Cache (< 2h): sofortige Rückgabe der gecachten Daten
- * - Bei veraltetem Cache: Ligainsider scrapen, cachen und zurückgeben
+ * Liefert immer sofort den Firestore-Cache aus – aktuell gehalten wird er
+ * vom Scheduler. Nur wenn noch nie gescraped wurde, wird synchron gescraped.
  *
  * Öffentlicher Endpunkt – die Aufstellungsdaten sind öffentliche Infos von ligainsider.de.
- * Kein Auth nötig. Der 2h-Cache schützt vor übermäßigen Scraping-Aufrufen.
  *
- * Response: `{ matches: LigainsiderMatch[], scrapedAt: string, fromCache: boolean }`
+ * Response: `{ matches: LigainsiderMatch[], scrapedAt: string, fromCache: boolean, stale: boolean }`
  */
 export const getLigainsiderLineups = onRequest(
     {
@@ -300,42 +356,25 @@ export const getLigainsiderLineups = onRequest(
         }
 
         try {
-            // Schritt 1: Cache prüfen
-            const cached = await getCachedLineups();
-            if (cached !== null) {
-                const cacheDoc = await firestore
-                    .collection('system')
-                    .doc('ligainsider-lineups-cache')
-                    .get();
-                res.status(200).json({
-                    matches: cached,
-                    scrapedAt: cacheDoc.data()?.scrapedAt ?? '',
-                    fromCache: true,
-                });
-                return;
+            let fromCache = true;
+            let data = await readLineupCache();
+            if (data === null) {
+                logger.info('Kein Lineup-Cache vorhanden – scrape synchron');
+                data = await refreshLineupCache();
+                fromCache = false;
             }
 
-            // Schritt 2: Frisch scrapen
-            logger.info('Starte frisches Lineup-Scraping von ligainsider.de/bundesliga/spieltage/');
-            const scraper = new LigainsiderLineupScraper();
-            const result = await scraper.scrapeLineups();
-
-            // Matches als plain objects serialisieren (für Firestore)
-            const matchesPlain = JSON.parse(JSON.stringify(result.matches));
-
-            // Schritt 3: Cachen (auch wenn leer, um Thundering-Herd zu vermeiden)
-            await saveLineupsToCache(matchesPlain, result.errors);
-
-            // Schritt 4: Antwort
-            if (result.errors.length > 0) {
-                logger.warn({ errors: result.errors }, 'Lineup-Scraping mit Fehlern abgeschlossen');
+            const ageMs = Date.now() - new Date(data.scrapedAt).getTime();
+            const stale = ageMs > LINEUP_STALE_AFTER_MS;
+            if (stale) {
+                logger.warn({ scrapedAt: data.scrapedAt }, 'Lineup-Cache veraltet – läuft der Scheduler?');
             }
 
             res.status(200).json({
-                matches: matchesPlain,
-                scrapedAt: result.scrapedAt,
-                fromCache: false,
-                ...(result.errors.length > 0 && { warnings: result.errors }),
+                matches: data.matches,
+                scrapedAt: data.scrapedAt,
+                fromCache,
+                stale,
             });
         } catch (error) {
             logger.error({ error }, 'Kritischer Fehler in getLigainsiderLineups');
