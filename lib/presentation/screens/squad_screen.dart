@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../data/providers/league_detail_providers.dart';
 import '../../data/providers/league_providers.dart';
 import '../../data/providers/ligainsider_photo_provider.dart';

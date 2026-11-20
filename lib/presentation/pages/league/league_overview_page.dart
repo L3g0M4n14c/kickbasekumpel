@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../widgets/responsive_layout.dart';
 
 class LeagueOverviewPage extends ConsumerWidget {
@@ -103,9 +104,8 @@ class LeagueOverviewPage extends ConsumerWidget {
                     const SizedBox(height: 4),
                     Text(
                       'ID: $leagueId',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                      style: Theme.of(context).textTheme.bodyMedium
+                          ?.copyWith(color: Colors.grey),
                     ),
                   ],
                 ),
@@ -236,16 +236,14 @@ class _StatItem extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           value,
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleLarge
+              ?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
         Text(
           label,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+          style: Theme.of(context).textTheme.bodySmall
+              ?.copyWith(color: Colors.grey),
         ),
       ],
     );

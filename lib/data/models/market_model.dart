@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+
 import 'common_models.dart';
 
 part 'market_model.freezed.dart';

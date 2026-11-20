@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+
 import 'player_model.dart';
 
 part 'optimal_lineup_model.freezed.dart';

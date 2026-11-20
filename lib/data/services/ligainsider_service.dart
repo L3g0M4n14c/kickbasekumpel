@@ -672,7 +672,9 @@ class LigainsiderService {
   /// – pro Spiel zwei Links (Heim- und Gastmannschaft).
   static List<String> _extractTeamLineupUrls(Document document) {
     final urls = <String>[];
-    for (final anchor in document.querySelectorAll('a[href*="/bundesliga/team/"]')) {
+    for (final anchor in document.querySelectorAll(
+      'a[href*="/bundesliga/team/"]',
+    )) {
       final href = anchor.attributes['href'];
       if (href == null || !href.contains('/saison-')) continue;
       final absolute = href.startsWith('http') ? href : '$_baseUrl$href';
@@ -690,9 +692,7 @@ class LigainsiderService {
           .skip(i)
           .take(_lineupFetchConcurrency)
           .toList(growable: false);
-      final results = await Future.wait(
-        chunk.map(_fetchTeamLineupSlots),
-      );
+      final results = await Future.wait(chunk.map(_fetchTeamLineupSlots));
       for (final teamSlots in results) {
         slots.addAll(teamSlots);
       }
@@ -779,7 +779,6 @@ class LigainsiderService {
   }
 
   // MARK: - Name Normalization
-
 
   /// Namen-Segmente eines normalisierten Texts (z. B. "kevin bauer_123" →
   /// {kevin, bauer, 123}). Basis für exakten Segment-Match statt Contains –

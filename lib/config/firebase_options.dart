@@ -66,5 +66,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'kickbasekumpel.firebasestorage.app',
     iosBundleId: 'de.legomaniac.kickbasekumpel',
   );
-
 }

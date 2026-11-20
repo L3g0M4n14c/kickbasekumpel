@@ -82,10 +82,8 @@ class PlayerCountOverview extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 count.toString(),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).textTheme.titleMedium
+                    ?.copyWith(color: color, fontWeight: FontWeight.bold),
               ),
             ],
           ),

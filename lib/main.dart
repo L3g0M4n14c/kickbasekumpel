@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'config/router.dart';
 import 'config/theme.dart';
 import 'data/providers/ligainsider_provider.dart';
@@ -26,7 +27,7 @@ void main() async {
     // Continue anyway - might work later
   }
 
-    // Setup global error handlers
+  // Setup global error handlers
   FlutterError.onError = (FlutterErrorDetails details) {
     _logger.e('Flutter Error: ${details.exception}', stackTrace: details.stack);
     if (kDebugMode) {

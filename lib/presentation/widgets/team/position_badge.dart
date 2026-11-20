@@ -45,10 +45,8 @@ class PositionBadge extends StatelessWidget {
       child: Center(
         child: Text(
           positionLabel,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(context).textTheme.labelSmall
+              ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
     );

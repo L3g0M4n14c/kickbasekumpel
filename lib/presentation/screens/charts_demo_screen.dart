@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../widgets/charts/price_chart.dart';
 import '../widgets/charts/stats_bar_chart.dart';
 import '../widgets/charts/performance_line_chart.dart';
@@ -56,9 +57,8 @@ class ChartsDemoScreen extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
-        style: Theme.of(
-          context,
-        ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        style: Theme.of(context).textTheme.titleLarge
+            ?.copyWith(fontWeight: FontWeight.bold),
       ),
     );
   }

@@ -1,12 +1,15 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../data/providers/providers.dart';
 import '../../data/providers/ligainsider_photo_provider.dart';
 import '../../data/utils/parsing_utils.dart';
 import '../../data/models/ligainsider_model.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/error_widget.dart';
+
 import 'package:flutter/foundation.dart';
 
 // Sortier-Modus für Live-Ansicht
@@ -394,9 +397,8 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Text(
             header,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold),
           ),
         ),
         ...allPlayers.map((player) => _buildPlayerCard(context, player)),
@@ -424,9 +426,8 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
               const SizedBox(width: 8),
               Text(
                 positionName,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -572,9 +573,8 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
           const SizedBox(height: 8),
           Text(
             'Tritt einer Liga bei',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: Colors.grey),
           ),
         ],
       ),
@@ -595,9 +595,8 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
           const SizedBox(height: 8),
           Text(
             'Stelle deine Mannschaft auf',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: Colors.grey),
           ),
         ],
       ),

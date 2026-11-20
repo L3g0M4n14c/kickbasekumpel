@@ -24,7 +24,8 @@ class SettingsPage extends ConsumerWidget {
 
     if (context.mounted) {
       if (result == null) {
-        final error = ref.read(dailyBonusProvider).error ?? 'Unbekannter Fehler';
+        final error =
+            ref.read(dailyBonusProvider).error ?? 'Unbekannter Fehler';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Fehler beim Bonus sammeln: $error'),

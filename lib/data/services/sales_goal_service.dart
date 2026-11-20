@@ -222,9 +222,8 @@ class SalesGoalService {
           for (final player in squad)
             if (sellable.contains(player.id)) player,
         ]..sort((a, b) {
-          final priority = _priorityIndex(
-            priorityFor(a),
-          ).compareTo(_priorityIndex(priorityFor(b)));
+          final priority = _priorityIndex(priorityFor(a))
+              .compareTo(_priorityIndex(priorityFor(b)));
           if (priority != 0) return priority;
           return scoreOf(a).compareTo(scoreOf(b));
         });

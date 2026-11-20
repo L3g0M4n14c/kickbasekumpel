@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../domain/repositories/auth_repository_interface.dart';
 import '../repositories/auth_repository.dart';
 import '../sources/auth_source.dart';

@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+
 import '../../domain/exceptions/kickbase_exceptions.dart';
 import '../models/user_model.dart';
 import '../services/demo_kickbase_api_client.dart';
@@ -117,8 +118,7 @@ class KickbaseAuthNotifier extends Notifier<KickbaseAuthState> {
         await _apiClient.clearAuthToken();
         state = state.copyWith(
           isAuthenticated: false,
-          error:
-              'Deine Kickbase-Sitzung ist abgelaufen. Bitte melde dich erneut an.',
+          error: 'Deine Kickbase-Sitzung ist abgelaufen. Bitte melde dich erneut an.',
         );
       } on AuthenticationException catch (e) {
         // 401 – token is invalid
@@ -126,8 +126,7 @@ class KickbaseAuthNotifier extends Notifier<KickbaseAuthState> {
         await _apiClient.clearAuthToken();
         state = state.copyWith(
           isAuthenticated: false,
-          error:
-              'Deine Kickbase-Sitzung ist abgelaufen. Bitte melde dich erneut an.',
+          error: 'Deine Kickbase-Sitzung ist abgelaufen. Bitte melde dich erneut an.',
         );
       }
     } catch (e, stackTrace) {

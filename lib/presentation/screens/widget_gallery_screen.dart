@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../widgets/app_bars/custom_app_bar.dart';
 import '../widgets/app_bars/search_app_bar.dart';
 import '../widgets/app_bars/tabbed_app_bar.dart';
@@ -418,9 +419,8 @@ class _WidgetGalleryScreenState extends State<WidgetGalleryScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
-        style: Theme.of(
-          context,
-        ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        style: Theme.of(context).textTheme.titleMedium
+            ?.copyWith(fontWeight: FontWeight.bold),
       ),
     );
   }

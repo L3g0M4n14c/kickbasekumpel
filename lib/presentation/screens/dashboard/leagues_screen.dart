@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../data/providers/league_providers.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/error_widget.dart';

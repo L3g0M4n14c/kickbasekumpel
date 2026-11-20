@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../config/screen_size.dart';
 import '../../widgets/responsive_layout.dart';
 import '../../widgets/common/app_logo.dart';
@@ -142,9 +143,8 @@ class PlayerHistoryPage extends ConsumerWidget {
                 const SizedBox(height: 16),
                 Text(
                   'Chart kommt bald',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                  style: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(color: Colors.grey),
                 ),
               ],
             ),
@@ -179,9 +179,8 @@ class _HistorySection extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -221,9 +220,8 @@ class _HistoryItem extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               date,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: Colors.grey),
             ),
           ],
         ),

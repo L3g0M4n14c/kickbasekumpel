@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../config/screen_size.dart';
 import '../../widgets/responsive_layout.dart';
 
@@ -116,23 +117,20 @@ class PlayerStatsPage extends ConsumerWidget {
           const SizedBox(height: 16),
           Text(
             'Spieler-Name',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontSize: 24 * context.fontSizeMultiplier,
-            ),
+            style: Theme.of(context).textTheme.headlineSmall
+                ?.copyWith(fontSize: 24 * context.fontSizeMultiplier),
           ),
           const SizedBox(height: 4),
           Text(
             'Verein • Position',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: Colors.grey),
           ),
           const SizedBox(height: 8),
           Text(
             'ID: $playerId',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: Colors.grey),
           ),
           const SizedBox(height: 16),
           Wrap(
@@ -214,9 +212,8 @@ class PlayerStatsPage extends ConsumerWidget {
         children: [
           Text(
             'Zusatzinformationen',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           const Text('Vertragsende: 2025'),
@@ -247,17 +244,14 @@ class _StatBadge extends StatelessWidget {
       children: [
         Text(
           value,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
+          style: Theme.of(context).textTheme.titleLarge
+              ?.copyWith(fontWeight: FontWeight.bold, color: color),
         ),
         const SizedBox(height: 4),
         Text(
           label,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+          style: Theme.of(context).textTheme.bodySmall
+              ?.copyWith(color: Colors.grey),
         ),
       ],
     );
@@ -280,9 +274,8 @@ class _StatsSection extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             child: Text(
               title,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           const Divider(height: 1),

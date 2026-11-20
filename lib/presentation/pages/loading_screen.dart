@@ -25,9 +25,8 @@ class LoadingScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Initializing...',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: Colors.grey),
             ),
           ],
         ),

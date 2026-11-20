@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+
 import '../../domain/repositories/auth_repository_interface.dart';
 
 /// Exception types for authentication errors

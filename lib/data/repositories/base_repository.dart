@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../domain/repositories/repository_interfaces.dart';
 
 /// Base Repository with common Firestore operations

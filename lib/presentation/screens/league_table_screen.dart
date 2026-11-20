@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../data/providers/providers.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/error_widget.dart';
@@ -8,10 +9,7 @@ import '../widgets/responsive_layout.dart';
 class LeagueTableScreen extends ConsumerWidget {
   final String competitionId;
 
-  const LeagueTableScreen({
-    required this.competitionId,
-    super.key,
-  });
+  const LeagueTableScreen({required this.competitionId, super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -23,18 +21,18 @@ class LeagueTableScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () => ref.invalidate(competitionTableProvider(competitionId)),
+            onPressed: () =>
+                ref.invalidate(competitionTableProvider(competitionId)),
           ),
         ],
       ),
       body: tableAsync.when(
         data: (tableData) {
-          final teams = tableData['t'] as List? ?? tableData['teams'] as List? ?? [];
+          final teams =
+              tableData['t'] as List? ?? tableData['teams'] as List? ?? [];
 
           if (teams.isEmpty) {
-            return const Center(
-              child: Text('Keine Tabellendaten verfügbar'),
-            );
+            return const Center(child: Text('Keine Tabellendaten verfügbar'));
           }
 
           return ResponsiveLayout(
@@ -47,7 +45,8 @@ class LeagueTableScreen extends ConsumerWidget {
         error: (error, stack) => Center(
           child: ErrorWidgetCustom(
             error: error,
-            onRetry: () => ref.invalidate(competitionTableProvider(competitionId)),
+            onRetry: () =>
+                ref.invalidate(competitionTableProvider(competitionId)),
           ),
         ),
       ),
@@ -177,13 +176,12 @@ class LeagueTableScreen extends ConsumerWidget {
           teamName,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text('$matchesPlayed Sp | $wins S - $draws U - $losses N | $goalsFor:$goalsAgainst Tore'),
+        subtitle: Text(
+          '$matchesPlayed Sp | $wins S - $draws U - $losses N | $goalsFor:$goalsAgainst Tore',
+        ),
         trailing: Text(
           '$points Pkt',
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
       ),
     );
@@ -223,9 +221,8 @@ class LeagueTableScreen extends ConsumerWidget {
               flex: 3,
               child: Text(
                 teamName,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
             Expanded(
